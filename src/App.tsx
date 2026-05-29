@@ -16,6 +16,7 @@ import Navbar from "./components/Navbar";
 import ChatPanel from "./components/ChatPanel";
 import FilePanel from "./components/FilePanel";
 import { Sparkles, MessageSquare, HardDrive, CircleAlert, CloudLightning } from "lucide-react";
+import { GoogleGenAI } from "@google/genai";
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -26,6 +27,14 @@ export default function App() {
   const [selectedFile, setSelectedFile] = useState<SavedFile | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatLoading, setChatLoading] = useState(false);
+
+  // Connection settings for Gemini (allows Vercel deployment direct mode fallback)
+  const [apiMode, setApiMode] = useState<"proxy" | "client">(
+    () => (localStorage.getItem("workspace_api_mode") as "proxy" | "client") || "proxy"
+  );
+  const [clientApiKey, setClientApiKey] = useState(
+    () => localStorage.getItem("workspace_client_api_key") || ""
+  );
 
   // Navigation tab for mobile layouts
   const [activeTab, setActiveTab] = useState<"chat" | "files">("chat");
@@ -175,28 +184,97 @@ export default function App() {
         });
       }
 
-      // Query proxy server
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: finalQuery,
-          history: chatMessages.slice(-8), // Send sliding window of history
-          enableSearch,
-        }),
-      });
+      let mainAnswerText = "";
+      let searchSources: any[] = [];
 
-      if (!res.ok) {
-        const errObj = await res.json();
-        throw new Error(errObj.error || "Gagal memperoleh respons asisten.");
+      if (apiMode === "client") {
+        // Mode Direct Client API (Vercel-friendly directly from browser)
+        if (!clientApiKey) {
+          throw new Error("API Key Gemini belum diatur. Masukkan API Key Gemini Anda di panel setelan atas untuk menggunakan Direct Client Mode.");
+        }
+
+        const aiBrowser = new GoogleGenAI({ apiKey: clientApiKey });
+        
+        // Standardize chat format for @google/genai SDK
+        const formattedContents = chatMessages.slice(-8).map((msg: any) => ({
+          role: msg.role === "user" ? "user" : "model",
+          parts: [{ text: msg.text || "" }]
+        }));
+
+        // Add current user message
+        formattedContents.push({
+          role: "user",
+          parts: [{ text: finalQuery }]
+        });
+
+        const config: any = {
+          systemInstruction: "You are Gemini Chat, a highly capable and intelligent AI assistant. Help the user draft notes, code, generate text documents, and analyze data. Reply in Indonesian by default (or speak the language the user speaks). If the user asks for a file, data structure or code, deliver well-formatted Markdown blocks.",
+        };
+
+        if (enableSearch) {
+          config.tools = [{ googleSearch: {} }];
+        }
+
+        const response = await aiBrowser.models.generateContent({
+          model: "gemini-3.5-flash",
+          contents: formattedContents,
+          config,
+        });
+
+        mainAnswerText = response.text || "";
+        
+        // Extract search grounding metadata if available
+        const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
+        searchSources = groundingChunks.map((chunk: any) => ({
+          uri: chunk.web?.uri || "",
+          title: chunk.web?.title || ""
+        })).filter((source: any) => source.uri && source.title);
+
+      } else {
+        // Query proxy server
+        let res;
+        try {
+          res = await fetch("/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              message: finalQuery,
+              history: chatMessages.slice(-8), // Send sliding window of history
+              enableSearch,
+            }),
+          });
+        } catch (fetchErr: any) {
+          throw new Error("Gagal menghubungi server proxy. Jika Anda mendeploy static build di Vercel, aktifkan 'Direct Client (Browser Key)' di panel setelan atas.");
+        }
+
+        const responseText = await res.text();
+        
+        if (!res.ok) {
+          let errorMsg = "Gagal memperoleh respons asisten.";
+          try {
+            const errObj = JSON.parse(responseText);
+            errorMsg = errObj.error || errorMsg;
+          } catch {
+            errorMsg = responseText || errorMsg;
+          }
+          throw new Error(errorMsg);
+        }
+
+        let answerData;
+        try {
+          answerData = JSON.parse(responseText);
+        } catch (jsonErr) {
+          console.error("Failed to parse JSON", jsonErr, responseText);
+          throw new Error("Respon tidak valid (Bukan JSON). Server Vercel Anda mungkin mengembalikan halaman HTML 404/500 karena Serverless Functions belum terdeploy atau Express server dinonaktifkan. Silakan aktifkan 'Direct Client (Browser Key)' di panel atas!");
+        }
+
+        mainAnswerText = answerData.text;
+        searchSources = answerData.sources || [];
       }
 
-      const answerData = await res.json();
-
-      let mainAnswerText = answerData.text;
-      if (answerData.sources && answerData.sources.length > 0) {
+      if (searchSources && searchSources.length > 0) {
         mainAnswerText += "\n\n**Sumber rujukan pencarian Google Search:**\n" + 
-          answerData.sources.map((src: any) => `- [${src.title}](${src.uri})`).join("\n");
+          searchSources.map((src: any) => `- [${src.title}](${src.uri})`).join("\n");
       }
 
       const modelMsg: ChatMessage = {
@@ -388,6 +466,16 @@ export default function App() {
               onSendMessage={handleSendMessage}
               files={files}
               onSaveAsFile={handleSaveResponseAsFile}
+              apiMode={apiMode}
+              setApiMode={(mode) => {
+                setApiMode(mode);
+                localStorage.setItem("workspace_api_mode", mode);
+              }}
+              clientApiKey={clientApiKey}
+              setClientApiKey={(key) => {
+                setClientApiKey(key);
+                localStorage.setItem("workspace_client_api_key", key);
+              }}
             />
           </div>
 

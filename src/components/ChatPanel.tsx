@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { ChatMessage, SavedFile, SearchSource } from "../types";
-import { Send, Sparkles, FileText, Globe, ArrowRight, CircleAlert, Disc } from "lucide-react";
+import { Send, Sparkles, FileText, Globe, ArrowRight, CircleAlert, Disc, Settings, Key, Cpu, Eye, EyeOff, HelpCircle } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 interface ChatPanelProps {
@@ -9,6 +9,10 @@ interface ChatPanelProps {
   onSendMessage: (text: string, enableSearch: boolean, referencedFile?: SavedFile | null) => Promise<void>;
   files: SavedFile[];
   onSaveAsFile: (content: string, requestedFileName?: string) => void;
+  apiMode: "proxy" | "client";
+  setApiMode: (mode: "proxy" | "client") => void;
+  clientApiKey: string;
+  setClientApiKey: (key: string) => void;
 }
 
 export default function ChatPanel({
@@ -17,10 +21,16 @@ export default function ChatPanel({
   onSendMessage,
   files,
   onSaveAsFile,
+  apiMode,
+  setApiMode,
+  clientApiKey,
+  setClientApiKey,
 }: ChatPanelProps) {
   const [input, setInput] = useState("");
   const [enableSearch, setEnableSearch] = useState(false);
   const [selectedFileId, setSelectedFileId] = useState<string>("");
+  const [showConfig, setShowConfig] = useState(false);
+  const [showKey, setShowKey] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const activeReferencedFile = files.find((f) => f.id === selectedFileId) || null;
@@ -70,26 +80,131 @@ export default function ChatPanel({
           </span>
         </div>
 
-        {/* Reference File Picker */}
-        <div className="flex items-center gap-2">
-          <FileText className="h-4 w-4 text-slate-500" />
-          <span className="hidden text-xs font-semibold text-slate-300 sm:inline">
-            Rujuk File:
-          </span>
-          <select
-            value={selectedFileId}
-            onChange={(e) => setSelectedFileId(e.target.value)}
-            className="rounded-xl border border-slate-800 bg-slate-900 px-3 py-1 text-xs text-slate-300 focus:border-blue-500 focus:outline-none font-medium"
+        {/* Reference File Picker & Settings */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            <FileText className="h-4 w-4 text-slate-500" />
+            <span className="hidden text-xs font-semibold text-slate-300 sm:inline">
+              Rujuk:
+            </span>
+            <select
+              value={selectedFileId}
+              onChange={(e) => setSelectedFileId(e.target.value)}
+              className="rounded-xl border border-slate-800 bg-slate-900 px-3 py-1 text-xs text-slate-300 focus:border-blue-500 focus:outline-none font-medium"
+            >
+              <option value="">-- Tanpa Rujukan --</option>
+              {files.map((file) => (
+                <option key={file.id} value={file.id} className="bg-slate-900 text-slate-300">
+                  {file.name} ({(file.size / 1024).toFixed(1)} KB)
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowConfig(!showConfig)}
+            className={`flex items-center gap-1.5 rounded-xl px-2.5 py-1 text-xs font-bold font-mono transition ${
+              showConfig ? "bg-blue-600 text-white" : "border border-slate-800 text-slate-400 bg-slate-900/60 hover:text-white"
+            }`}
           >
-            <option value="">-- Tanpa Rujukan --</option>
-            {files.map((file) => (
-              <option key={file.id} value={file.id} className="bg-slate-900 text-slate-300">
-                {file.name} ({(file.size / 1024).toFixed(1)} KB)
-              </option>
-            ))}
-          </select>
+            <Settings className={`h-3.5 w-3.5 ${showConfig ? "animate-spin" : ""}`} />
+            <span>SETELAN ({apiMode === "client" ? "CLIENT" : "PROXY"})</span>
+          </button>
         </div>
       </div>
+
+      <AnimatePresence>
+        {showConfig && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden border-b border-slate-900 bg-slate-950 px-4 py-4 space-y-4"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl mx-auto text-sm">
+              {/* Option 1: Connection Mode Selection */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold font-mono uppercase tracking-widest text-slate-500 block">
+                  Mode Koneksi Gemini AI
+                </label>
+                <div className="flex rounded-xl bg-slate-900 p-1 border border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setApiMode("proxy")}
+                    className={`flex-1 flex items-center justify-center gap-2 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-colors ${
+                      apiMode === "proxy"
+                        ? "bg-blue-600 text-white"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    <Cpu className="h-3.5 w-3.5" />
+                    <span>Proxy Server</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setApiMode("client")}
+                    className={`flex-1 flex items-center justify-center gap-2 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-colors ${
+                      apiMode === "client"
+                        ? "bg-blue-600 text-white"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    <Key className="h-3.5 w-3.5" />
+                    <span>Direct Client</span>
+                  </button>
+                </div>
+                <p className="text-[10px] text-slate-500 leading-normal font-sans">
+                  {apiMode === "proxy" 
+                    ? "Menggunakan proxy server default di AI Studio. Cepat & aman tanpa setup manual."
+                    : "Menghubungi API Gemini langsung dari browser Anda. Sangat ideal untuk deploy static di Vercel!"}
+                </p>
+              </div>
+
+              {/* Option 2: Browser API Key input */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold font-mono uppercase tracking-widest text-slate-500 block">
+                  Gemini API Key Client
+                </label>
+                <div className="relative flex items-center bg-slate-900 border border-slate-800 rounded-xl overflow-hidden px-3">
+                  <Key className="h-4 w-4 text-slate-500 mr-2 shrink-0" />
+                  <input
+                    type={showKey ? "text" : "password"}
+                    value={clientApiKey}
+                    onChange={(e) => setClientApiKey(e.target.value)}
+                    placeholder="Masukkan AI Studio API Key..."
+                    className="w-full bg-transparent border-none text-xs text-slate-200 placeholder-slate-700 focus:outline-none focus:ring-0 py-2.5"
+                    disabled={apiMode !== "client"}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowKey(!showKey)}
+                    className="text-slate-500 hover:text-slate-300 px-1"
+                    disabled={apiMode !== "client"}
+                  >
+                    {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                <p className="text-[10px] text-slate-500 leading-normal font-sans">
+                  Kunci API ini disimpan secara lokal di browser Anda. <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline hover:text-blue-300">Buat API Key gratis disini &rarr;</a>
+                </p>
+              </div>
+            </div>
+
+            {/* Direct Vercel information note */}
+            <div className="max-w-3xl mx-auto rounded-xl bg-slate-900/60 border border-slate-900 p-3 flex items-start gap-3 text-xs text-slate-400">
+              <CircleAlert className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <span className="font-semibold text-slate-200">Tips Sukses Deploy Vercel:</span>
+                <p className="leading-normal font-sans">
+                  Kami telah membuat serverless handler otomatis di file <code className="text-emerald-400 font-mono">/api/chat.ts</code>. Saat mendeploy website ini ke Vercel, pastikan Anda menambahkan <code className="text-emerald-400 font-mono">GEMINI_API_KEY</code> pada tab <strong>Environment Variables</strong> di dashboard proyek Vercel Anda, maka respons chat Anda akan berfungsi tanpa pengaturan tambahan!
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Messages Canvas */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6">

@@ -338,13 +338,13 @@ export default function ChatPanel({
 
                       {/* Msg content bubble */}
                       <div
-                        className={`rounded-2xl px-5 py-3.5 text-sm leading-relaxed whitespace-pre-wrap shadow-sm border ${
+                        className={`rounded-2xl px-5 py-3.5 text-sm leading-relaxed shadow-sm border ${
                           isUser
-                            ? "bg-indigo-600 border-indigo-500 text-white rounded-tr-none"
+                            ? "bg-indigo-600 border-indigo-500 text-white rounded-tr-none whitespace-pre-wrap"
                             : "bg-white border-slate-200 text-slate-800 rounded-tl-none font-medium"
                         }`}
                       >
-                        <div>{msg.text}</div>
+                        {isUser ? <div>{msg.text}</div> : renderFormattedText(msg.text)}
 
                         {!isUser && msg.text && (
                           <div className="mt-4 flex border-t border-slate-100 pt-3 text-right justify-between items-center gap-4">
@@ -433,4 +433,148 @@ export default function ChatPanel({
 
     </div>
   );
+}
+
+function renderFormattedText(text: string) {
+  if (!text) return null;
+
+  // Split lines
+  const lines = text.split("\n");
+
+  return (
+    <div className="space-y-2 mt-1">
+      {lines.map((line, idx) => {
+        const trimmed = line.trim();
+
+        // 1. Headings (### or ## or #)
+        if (trimmed.startsWith("###")) {
+          return (
+            <h4 key={idx} className="font-display font-extrabold text-slate-900 border-none text-sm mt-3 mb-1 block">
+              {parseInlineMarkdown(trimmed.replace(/^###\s+/, ""))}
+            </h4>
+          );
+        }
+        if (trimmed.startsWith("##")) {
+          return (
+            <h3 key={idx} className="font-display font-extrabold text-slate-900 border-none text-base mt-4 mb-2 block">
+              {parseInlineMarkdown(trimmed.replace(/^##\s+/, ""))}
+            </h3>
+          );
+        }
+        if (trimmed.startsWith("#")) {
+          return (
+            <h2 key={idx} className="font-display font-extrabold text-slate-900 border-none text-lg mt-5 mb-2 block">
+              {parseInlineMarkdown(trimmed.replace(/^#\s+/, ""))}
+            </h2>
+          );
+        }
+
+        // 2. Ordered lists (1. 2. etc)
+        const orderedListMatch = trimmed.match(/^(\d+)\.\s+(.*)/);
+        if (orderedListMatch) {
+          return (
+            <div key={idx} className="flex gap-2.5 ml-3 my-1.5 text-xs text-slate-700 leading-relaxed">
+              <span className="font-mono bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded font-black text-[10px] shadow-3sm shrink-0 h-fit">
+                {orderedListMatch[1]}.
+              </span>
+              <p className="flex-1 mt-0.5">{parseInlineMarkdown(orderedListMatch[2])}</p>
+            </div>
+          );
+        }
+
+        // 3. Bullet points (- or * or •)
+        if (trimmed.startsWith("- ") || trimmed.startsWith("* ") || trimmed.startsWith("• ")) {
+          const content = trimmed.replace(/^[-*•]\s+/, "");
+          return (
+            <div key={idx} className="flex gap-2.5 ml-3 my-1 text-xs text-slate-700 items-start leading-relaxed animate-none">
+              <span className="text-sky-500 mt-1.5 shrink-0 select-none text-[10px]">•</span>
+              <p className="flex-1 mt-0.5">{parseInlineMarkdown(content)}</p>
+            </div>
+          );
+        }
+
+        // 4. Standard Paragraph / Line
+        if (line === "") {
+          return <div key={idx} className="h-1.5" />;
+        }
+
+        return (
+          <p key={idx} className="text-slate-800 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap">
+            {parseInlineMarkdown(line)}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
+function parseInlineMarkdown(text: string) {
+  const parts: React.ReactNode[] = [];
+  let currentText = text;
+  let keyIdx = 0;
+
+  while (currentText.length > 0) {
+    // Look for bold and link patterns
+    const boldIndex = currentText.indexOf("**");
+    const linkIndex = currentText.indexOf("[");
+
+    if (boldIndex === -1 && linkIndex === -1) {
+      parts.push(<span key={keyIdx++}>{currentText}</span>);
+      break;
+    }
+
+    if (boldIndex !== -1 && (linkIndex === -1 || boldIndex < linkIndex)) {
+      // Bold comes first
+      if (boldIndex > 0) {
+        parts.push(<span key={keyIdx++}>{currentText.substring(0, boldIndex)}</span>);
+      }
+      const rest = currentText.substring(boldIndex + 2);
+      const nextBoldIndex = rest.indexOf("**");
+      if (nextBoldIndex !== -1) {
+        parts.push(
+          <strong key={keyIdx++} className="font-extrabold text-slate-950 bg-slate-100/80 rounded px-1.5 py-0.5 shadow-3sm border border-slate-200 inline">
+            {rest.substring(0, nextBoldIndex)}
+          </strong>
+        );
+        currentText = rest.substring(nextBoldIndex + 2);
+      } else {
+        parts.push(<span key={keyIdx++}>**</span>);
+        currentText = rest;
+      }
+    } else {
+      // Link comes first
+      if (linkIndex > 0) {
+        parts.push(<span key={keyIdx++}>{currentText.substring(0, linkIndex)}</span>);
+      }
+      const rest = currentText.substring(linkIndex + 1);
+      const closingBracketIndex = rest.indexOf("]");
+      if (closingBracketIndex !== -1) {
+        const linkText = rest.substring(0, closingBracketIndex);
+        const urlPart = rest.substring(closingBracketIndex + 1);
+        if (urlPart.startsWith("(")) {
+          const closingParenthesisIndex = urlPart.indexOf(")");
+          if (closingParenthesisIndex !== -1) {
+            const url = urlPart.substring(1, closingParenthesisIndex);
+            parts.push(
+              <a
+                key={keyIdx++}
+                href={url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-sky-600 hover:text-sky-800 underline font-extrabold transition inline"
+              >
+                {linkText}
+              </a>
+            );
+            currentText = urlPart.substring(closingParenthesisIndex + 1);
+            continue;
+          }
+        }
+      }
+      parts.push(<span key={keyIdx++}>[</span>);
+      currentText = rest;
+    }
+  }
+
+  return parts;
 }

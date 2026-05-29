@@ -616,7 +616,19 @@ export default function App() {
           let errorMsg = "Gagal memperoleh respons asisten.";
           try {
             const errObj = JSON.parse(responseText);
-            errorMsg = errObj.error || errorMsg;
+            if (errObj && typeof errObj === "object") {
+              if (errObj.error && typeof errObj.error === "object") {
+                errorMsg = errObj.error.message || JSON.stringify(errObj.error);
+              } else if (typeof errObj.error === "string") {
+                errorMsg = errObj.error;
+              } else if (errObj.message) {
+                errorMsg = errObj.message;
+              } else {
+                errorMsg = JSON.stringify(errObj);
+              }
+            } else {
+              errorMsg = responseText || errorMsg;
+            }
           } catch {
             errorMsg = responseText || errorMsg;
           }
@@ -667,15 +679,106 @@ export default function App() {
       
       let friendlyText = err?.message || "Koneksi terhambat. Silakan coba kembali.";
       
-      // Check if error is due to rate limits or quota issues (429 / RESOURCE_EXHAUSTED / quota)
       if (typeof friendlyText === "string") {
-        const lowerText = friendlyText.toLowerCase();
-        if (lowerText.includes("quota") || 
-            lowerText.includes("429") || 
-            lowerText.includes("resource_exhausted") || 
-            lowerText.includes("limit exceeded") || 
-            lowerText.includes("billing")) {
-          friendlyText = `⚠️ **Batas Kuota Penggunaan Terlampaui (RESOURCE_EXHAUSTED / HTTP 429)**\n\nSistem serverless saat ini kehabisan sisa kuota harian/menit untuk kunci API bawaan.\n\n### 💡 Solusi Cepat untuk Melanjutkan Sesi:\n1. **Buat/Gunakan API Key Pribadi Anda sendiri:** Ini gratis, cepat, dan aman!\n2. Di sudut kanan atas panel obrolan, klik tombol **KONEKSI** berwarna abu-abu.\n3. Ganti metode koneksi ke **"Direct Key (Browser)"**.\n4. Masukkan **Gemini API Key** Anda sendiri yang masih aktif dari Google AI Studio ([Buka Google AI Studio untuk membuat Kunci Gratis](https://aistudio.google.com/)).\n5. Pengaturan ini aman karena disimpan langsung di dalam browser lokal Anda dan tidak dikirimkan ke server luar. Setelah itu, silakan kirim kembali pertanyaan Anda!`;
+        const originalMsg = friendlyText;
+        
+        // Try to parse error as JSON in case it is serialized JSON
+        let parsedError: any = null;
+        try {
+          const jsonStart = originalMsg.indexOf("{");
+          const jsonEnd = originalMsg.lastIndexOf("}");
+          if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+            const jsonStr = originalMsg.substring(jsonStart, jsonEnd + 1);
+            parsedError = JSON.parse(jsonStr);
+          } else {
+            parsedError = JSON.parse(originalMsg);
+          }
+        } catch (e) {
+          // Not a valid JSON string
+        }
+
+        let code = err?.status || err?.statusCode || "";
+        let status = "";
+        let messageText = originalMsg;
+
+        if (parsedError) {
+          if (parsedError.error) {
+            code = parsedError.error.code || code;
+            status = parsedError.error.status || status;
+            messageText = parsedError.error.message || messageText;
+          } else {
+            code = parsedError.code || code;
+            status = parsedError.status || status;
+            messageText = parsedError.message || messageText;
+          }
+        }
+
+        const lowercaseMsg = messageText.toLowerCase();
+        const lowercaseOriginal = originalMsg.toLowerCase();
+
+        // 1. Quota / Rate Limits (429)
+        if (
+          code === 429 ||
+          status === "RESOURCE_EXHAUSTED" ||
+          lowercaseMsg.includes("quota") ||
+          lowercaseMsg.includes("429") ||
+          lowercaseMsg.includes("resource_exhausted") ||
+          lowercaseMsg.includes("rate limit") ||
+          lowercaseOriginal.includes("quota") ||
+          lowercaseOriginal.includes("429") ||
+          lowercaseOriginal.includes("resource_exhausted")
+        ) {
+          friendlyText = `⚠️ **Batas Kuota Penggunaan Terlampaui (RESOURCE_EXHAUSTED / HTTP 429)**
+
+Sistem serverless saat ini kehabisan sisa kuota harian/menit untuk kunci API bawaan.
+
+### 💡 Solusi Cepat untuk Melanjutkan Sesi:
+1. **Buat/Gunakan API Key Pribadi Anda sendiri:** Ini gratis, cepat, dan aman!
+2. Di panel atas chat, silakan klik tombol **KONEKSI (BROWSER)**.
+3. Masukkan **Gemini API Key** Anda sendiri yang masih aktif dari Google AI Studio ([Buka Google AI Studio untuk membuat Kunci Gratis](https://aistudio.google.com/)).
+4. Pengaturan ini aman karena disimpan langsung di dalam browser lokal Anda dan tidak dikirimkan ke server luar. Setelah dimasukkan, Anda tinggal mengirim kembali pesan Anda!`;
+        }
+        // 2. High Demand / Unavailable (503)
+        else if (
+          code === 503 ||
+          status === "UNAVAILABLE" ||
+          lowercaseMsg.includes("503") ||
+          lowercaseMsg.includes("high demand") ||
+          lowercaseMsg.includes("unavailable") ||
+          lowercaseMsg.includes("temporary") ||
+          lowercaseOriginal.includes("503") ||
+          lowercaseOriginal.includes("high demand") ||
+          lowercaseOriginal.includes("unavailable")
+        ) {
+          friendlyText = `⚠️ **Layanan Sedang Padat (SERVICE_UNAVAILABLE / HTTP 503)**
+
+Model AI Gemini saat ini sedang menerima permintaan yang sangat padat (High Demand). Lonjakan ini biasanya bersifat sementara.
+
+### 💡 Solusi Cepat untuk Melanjutkan Sesi:
+1. **Gunakan API Key Pribadi Anda:** Menggunakan API Key pribadi Anda dari AI Studio seringkali memiliki jatah kuota dan prioritas antrean yang berbeda secara personal. Silakan klik tombol **KONEKSI (BROWSER)** di atas chat untuk memasukkan kunci Anda.
+2. **Tunggu beberapa saat** lalu silakan klik tombol kirim kembali pesan Anda.`;
+        }
+        // 3. API Key Invalid (400)
+        else if (
+          code === 400 && 
+          (lowercaseMsg.includes("api_key_invalid") || lowercaseMsg.includes("key is invalid") || lowercaseMsg.includes("invalid api key") || lowercaseMsg.includes("api key") || lowercaseMsg.includes("not found"))
+        ) {
+          friendlyText = `⚠️ **Pemberitahuan Kunci API Tidak Valid (API_KEY_INVALID / HTTP 400)**
+
+Kunci API Gemini yang dikonfigurasi tidak dikenali atau tidak sah menurut sistem Google AI Studio.
+
+### 💡 Solusi Cepat:
+1. Silakan klik tombol **KONEKSI (BROWSER)** di panel bagian atas chat.
+2. Periksa kembali kunci yang disalin. Pastikan tidak ada karakter terpotong atau spasi tambahan di awal/akhir kunci.
+3. Anda bisa mendapatkan kunci baru secara cepat di [Google AI Studio](https://aistudio.google.com/) secara gratis.`;
+        }
+        else if (parsedError && messageText) {
+          friendlyText = `⚠️ **Terjadi Hambatan saat Menghubungi Gemini AI**
+
+**Penyebab Teknis:** ${messageText}
+
+### 💡 Rekomendasi Solusi:
+Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masukkan **Gemini API Key pribadi** Anda.`;
         }
       }
 

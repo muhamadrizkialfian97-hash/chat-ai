@@ -3,6 +3,8 @@ export interface ChatMessage {
   role: "user" | "model";
   text: string;
   timestamp: number;
+  sender?: string;
+  peerId?: string;
 }
 
 export interface ChatHistory {

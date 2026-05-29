@@ -28,6 +28,19 @@
         "updatedAt": { "type": "string", "description": "Last updated timestamp" }
       },
       "required": ["id", "userId", "title", "messages", "updatedAt"]
+    },
+    "RegistrationRequest": {
+      "title": "RegistrationRequest",
+      "description": "Represents an account registration request pending admin approval",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "User ID of the registrant" },
+        "fullName": { "type": "string", "description": "Full name of the registrant" },
+        "email": { "type": "string", "description": "Corporate email address" },
+        "status": { "type": "string", "enum": ["pending", "approved"], "description": "Status of the request" },
+        "updatedAt": { "type": "integer", "description": "Timestamp of the registrar update" }
+      },
+      "required": ["id", "fullName", "email", "status", "updatedAt"]
     }
   },
   "firestore": {
@@ -38,6 +51,10 @@
     "users/{userId}/chats/{chatId}": {
       "schema": "ChatHistory",
       "description": "User's individual chat logs and thread history with Gemini AI"
+    },
+    "registration_requests/{requestId}": {
+      "schema": "RegistrationRequest",
+      "description": "Registration requests requiring admin approval"
     }
   }
 }

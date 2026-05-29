@@ -9,10 +9,7 @@ import {
   Save,
   Tag,
   Upload,
-  Sparkles,
-  CloudLightning,
   ChevronLeft,
-  X,
   RefreshCw,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -45,7 +42,7 @@ export default function FilePanel({
   const [editTags, setEditTags] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Initialize edit forms when file selected
+  // Initialize edit forms when file is selected
   React.useEffect(() => {
     if (selectedFile) {
       setEditName(selectedFile.name);
@@ -117,11 +114,11 @@ export default function FilePanel({
 
   const createNewEmptyFile = async () => {
     const defaultFile: Partial<SavedFile> = {
-      name: `catatan_baru_${Date.now().toString().slice(-4)}.md`,
-      content: `# Catatan Baru\n\nTulis konten Anda di sini...`,
+      name: `catatan_analisis_${Date.now().toString().slice(-4)}.md`,
+      content: `# Dokumen Analisis Baru\n\nTulis konten draf atau ringkasan hasil audit di sini...`,
       mimeType: "text/markdown",
-      size: 34,
-      tags: ["Notes"],
+      size: 55,
+      tags: ["Draf"],
     };
     await onSaveFile(defaultFile);
   };
@@ -163,23 +160,22 @@ export default function FilePanel({
   };
 
   return (
-    <div className="flex h-full flex-col bg-slate-950 border-l border-slate-900">
+    <div className="flex h-full flex-col bg-slate-50 border-l border-slate-200">
       {selectedFile ? (
         /* FILE EDITOR VIEW */
         <div className="flex h-full flex-col">
           {/* Editor Header */}
-          <div className="flex items-center justify-between border-b border-slate-900 px-4 py-3 bg-slate-950/80 backdrop-blur-md">
+          <div className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 shadow-sm">
             <button
               onClick={() => onSelectFile(null)}
-              className="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-white transition"
+              className="flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-slate-800 transition bg-slate-50 hover:bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl cursor-pointer"
             >
-              <ChevronLeft className="h-4 w-4 text-blue-400" />
+              <ChevronLeft className="h-4 w-4 text-sky-600" />
               <span>Kembali</span>
             </button>
             <div className="flex items-center gap-2">
-              <span className="flex items-center gap-1.5 text-[10px] font-mono font-semibold text-slate-400 uppercase tracking-wider">
-                <CloudLightning className="h-3.5 w-3.5 text-blue-400 animate-pulse" />
-                {isUserSignedIn ? "Firebase Sync: Active" : "Local Mirror State"}
+              <span className="flex items-center gap-1 text-[10px] font-mono font-bold text-slate-500 uppercase tracking-widest bg-slate-100 px-2 py-1 rounded">
+                {isUserSignedIn ? "SYNC: FIREBASE ACTIVE" : "LOCAL MIRROR FILE"}
               </span>
               <button
                 onClick={() => {
@@ -187,7 +183,8 @@ export default function FilePanel({
                     onDeleteFile(selectedFile.id);
                   }
                 }}
-                className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-900 text-slate-400 hover:bg-red-500/15 hover:text-red-400 transition"
+                className="flex h-8 w-8 items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-400 hover:bg-red-50 hover:border-red-200 hover:text-red-650 transition cursor-pointer"
+                title="Hapus Dokumen"
               >
                 <Trash2 className="h-4 w-4" />
               </button>
@@ -196,62 +193,62 @@ export default function FilePanel({
 
           {/* Editor Fields */}
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5">
-            <div>
-              <label className="text-[10px] font-bold font-mono uppercase tracking-widest text-slate-500">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-extrabold font-mono uppercase tracking-wider text-slate-400 block">
                 Nama File / Identitas
               </label>
               <input
                 type="text"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                className="mt-1.5 w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2.5 text-sm font-semibold text-slate-100 focus:border-blue-500 focus:outline-none transition"
-                placeholder="nama_file.txt"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-bold text-slate-800 focus:border-sky-500 focus:ring-1 focus:ring-sky-100 focus:outline-none transition"
+                placeholder="nama_file.md"
               />
             </div>
 
-            <div>
-              <label className="text-[10px] font-bold font-mono uppercase tracking-widest text-slate-500">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-extrabold font-mono uppercase tracking-wider text-slate-400 block">
                 Kategori / Tag (pisahkan dengan koma)
               </label>
-              <div className="mt-1.5 flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2.5 focus-within:border-blue-500 transition">
-                <Tag className="h-4 w-4 text-slate-500" />
+              <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 focus-within:border-sky-500 focus-within:ring-1 focus-within:ring-sky-100 transition">
+                <Tag className="h-4 w-4 text-slate-400" />
                 <input
                   type="text"
                   value={editTags}
                   onChange={(e) => setEditTags(e.target.value)}
-                  className="w-full bg-transparent text-xs text-slate-100 focus:outline-none placeholder-slate-600"
-                  placeholder="Notes, Skripsi, Code..."
+                  className="w-full bg-transparent text-xs font-bold text-slate-800 focus:outline-none placeholder-slate-400"
+                  placeholder="Comercial, HCA, Audit, Finansial..."
                 />
               </div>
             </div>
 
-            <div className="flex flex-col flex-1 min-h-[240px]">
-              <label className="text-[10px] font-bold font-mono uppercase tracking-widest text-slate-500 mb-1.5">
+            <div className="flex flex-col flex-1 min-h-[280px] space-y-1.5">
+              <label className="text-[10px] font-extrabold font-mono uppercase tracking-wider text-slate-400 block">
                 Isi Dokumen / Buffer
               </label>
               <textarea
                 value={editContent}
                 onChange={(e) => setEditContent(e.target.value)}
-                className="w-full flex-1 rounded-xl border border-slate-800 bg-slate-900 p-4 font-mono text-xs leading-relaxed text-slate-200 focus:border-blue-500 focus:outline-none transition min-h-[240px]"
+                className="w-full flex-1 rounded-xl border border-slate-200 bg-white p-4 font-mono text-xs leading-relaxed text-slate-800 focus:border-sky-500 focus:ring-1 focus:ring-sky-100 focus:outline-none transition min-h-[280px]"
                 placeholder="# Dokumen Anda..."
               />
             </div>
           </div>
 
           {/* Editor Footer Actions */}
-          <div className="flex items-center justify-between border-t border-slate-900 p-4 bg-slate-950/85">
+          <div className="flex items-center justify-between border-t border-slate-200 p-4 bg-white shadow-md">
             <button
               onClick={handleDownload}
-              className="flex items-center gap-1.5 rounded-xl border border-slate-850 bg-slate-900 px-3.5 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition"
+              className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 transition cursor-pointer hover:text-slate-900"
             >
-              <Download className="h-4 w-4 text-blue-450" />
+              <Download className="h-4 w-4 text-indigo-600" />
               <span>Ekspor File</span>
             </button>
 
             <button
               onClick={handleSaveEdit}
               disabled={isSaving}
-              className="flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-600"
+              className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-indigo-500 disabled:bg-slate-100 disabled:text-slate-400 cursor-pointer"
             >
               {isSaving ? (
                 <>
@@ -270,21 +267,22 @@ export default function FilePanel({
       ) : (
         /* FILE LIST VIEW */
         <div className="flex h-full flex-col p-4 sm:p-6">
+          
           {/* New Document Actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <button
               onClick={createNewEmptyFile}
-              className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-xs font-bold text-slate-200 border border-slate-800 transition"
+              className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-white hover:bg-slate-50 text-xs font-extrabold text-slate-700 border border-slate-200 py-3 transition cursor-pointer shadow-sm shadow-black/[0.02]"
             >
-              <Plus className="h-4 w-4 text-blue-400" />
-              <span>Dokumen Baru</span>
+              <Plus className="h-4 w-4 text-indigo-600" />
+              <span>Buat Dokumen Baru</span>
             </button>
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-slate-800 bg-slate-955/40 px-3.5 py-2 text-xs font-bold text-slate-300 hover:border-slate-700 hover:bg-slate-900 transition"
+              className="flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-slate-250 bg-white px-3.5 py-3 text-xs font-extrabold text-slate-700 hover:bg-slate-50 hover:border-slate-350 transition cursor-pointer"
             >
-              <Upload className="h-4 w-4" />
-              <span>Unggah File</span>
+              <Upload className="h-4 w-4 text-sky-600" />
+              <span>Unggah</span>
             </button>
             <input
               ref={fileInputRef}
@@ -296,14 +294,14 @@ export default function FilePanel({
           </div>
 
           {/* Search Header */}
-          <div className="mt-4 relative flex items-center">
-            <Search className="absolute left-3 w-4 h-4 text-slate-500 pointer-events-none" />
+          <div className="mt-4 relative flex items-center shadow-3sm">
+            <Search className="absolute left-3 w-4 h-4 text-slate-400 pointer-events-none font-bold" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari file..."
-              className="w-full rounded-xl border border-slate-800 bg-slate-900 py-2.5 pl-9 pr-4 text-xs font-medium text-slate-300 focus:bg-slate-900/60 focus:border-blue-500 focus:outline-none font-sans"
+              placeholder="Cari draf dokumen atau simulasi..."
+              className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-4 text-xs font-bold text-slate-700 placeholder-slate-400 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-100 font-sans"
             />
           </div>
 
@@ -312,10 +310,10 @@ export default function FilePanel({
             <div className="mt-3.5 flex flex-wrap gap-1.5 max-h-[64px] overflow-y-auto pb-1">
               <button
                 onClick={() => setSelectedTag("")}
-                className={`rounded-xl px-3 py-1 text-[10px] font-mono tracking-wide font-semibold ${
+                className={`rounded-xl px-3 py-1 text-[10px] font-mono tracking-wide font-bold ${
                   !selectedTag
-                    ? "bg-blue-600 text-white"
-                    : "bg-slate-900 text-slate-400 border border-slate-805 hover:text-white"
+                    ? "bg-indigo-600 text-white shadow-sm"
+                    : "bg-white text-slate-500 border border-slate-200 hover:bg-slate-50"
                 }`}
               >
                 #Semua
@@ -324,10 +322,10 @@ export default function FilePanel({
                 <button
                   key={tag}
                   onClick={() => setSelectedTag(tag === selectedTag ? "" : tag)}
-                  className={`rounded-xl px-3 py-1 text-[10px] font-mono tracking-wide font-semibold ${
+                  className={`rounded-xl px-3 py-1 text-[10px] font-mono tracking-wide font-bold ${
                     selectedTag === tag
-                      ? "bg-blue-600 text-white"
-                      : "bg-slate-900 text-slate-405 border border-slate-800 hover:text-white"
+                      ? "bg-indigo-600 text-white shadow-sm"
+                      : "bg-white text-slate-500 border border-slate-200 hover:bg-slate-50"
                   }`}
                 >
                   #{tag}
@@ -344,24 +342,24 @@ export default function FilePanel({
             onDrop={handleDrop}
             className={`mt-4 flex-1 overflow-y-auto rounded-xl border border-dashed transition-all p-3 ${
               dragActive
-                ? "border-blue-500 bg-blue-500/5"
-                : "border-slate-850"
+                ? "border-sky-505 bg-sky-50/50 shadow-inner"
+                : "border-slate-200 bg-white shadow-sm"
             }`}
           >
             {dragActive ? (
               <div className="flex h-full flex-col items-center justify-center text-center">
-                <Upload className="h-8 w-8 text-blue-400 animate-bounce mb-2" />
-                <p className="text-xs font-semibold text-blue-400 font-mono uppercase tracking-wider">Lepaskan file di sini...</p>
-                <p className="text-[10px] text-slate-550 font-mono">Membaca file teks secara real-time</p>
+                <Upload className="h-8 w-8 text-sky-600 animate-bounce mb-2" />
+                <p className="text-xs font-bold text-sky-700 font-mono uppercase tracking-wider">Lepaskan berkas disini...</p>
+                <p className="text-[10px] text-slate-400 font-mono">Membaca data & draf ringkasan seketika</p>
               </div>
             ) : filteredFiles.length === 0 ? (
               <div className="flex h-full flex-col items-center justify-center text-center py-10">
-                <FileText className="h-10 w-10 text-slate-700 mb-2" />
-                <p className="text-xs font-semibold text-slate-400 font-mono uppercase tracking-wider">
-                  {searchQuery || selectedTag ? "File tidak ditemukan" : "Tidak ada file"}
+                <FileText className="h-10 w-10 text-slate-300 mb-2" />
+                <p className="text-xs font-bold text-slate-400 font-mono uppercase tracking-widest">
+                  {searchQuery || selectedTag ? "Hasil tidak cocok" : "Penyimpanan Kosong"}
                 </p>
-                <p className="max-w-[190px] text-[10px] text-slate-500 mt-1 leading-relaxed">
-                  Seret file teks (.txt, .md) ke area ini untuk menyimpannya ke mirror storage.
+                <p className="max-w-[190px] text-[10px] text-slate-400 mt-1 leading-relaxed font-bold">
+                  Draf analisis Gemini yang disimpan atau file unggahan draf audit Anda akan terdaftar di sini. Support seret-unggah.
                 </p>
               </div>
             ) : (
@@ -371,28 +369,28 @@ export default function FilePanel({
                     key={file.id}
                     layoutId={`file-${file.id}`}
                     onClick={() => onSelectFile(file)}
-                    className="flex cursor-pointer items-start justify-between rounded-xl border border-slate-850 p-3 transition-all bg-slate-900/40 hover:bg-slate-900/90 hover:border-slate-750"
+                    className="flex cursor-pointer items-start justify-between rounded-xl border border-slate-150 p-3 bg-white hover:bg-slate-50 hover:border-slate-300 transition shadow-sm hover:shadow"
                   >
                     <div className="flex items-start gap-2.5 min-w-0">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-900 border border-slate-800 text-slate-400">
-                        <FileText className="h-4 w-4 text-blue-450" />
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sky-50 border border-sky-100 text-sky-600">
+                        <FileText className="h-4 w-4" />
                       </div>
                       <div className="min-w-0">
-                        <p className="truncate text-xs font-bold leading-tight text-slate-200">
+                        <p className="truncate text-xs font-extrabold leading-tight text-slate-800">
                           {file.name}
                         </p>
-                        <p className="truncate text-[10px] text-slate-500 mt-1 max-w-[200px]">
-                          {file.content.slice(0, 45) || "(tidak ada isi)"}
+                        <p className="truncate text-[10px] text-slate-500 mt-1 max-w-[200px] font-medium">
+                          {file.content.replace(/[#*`]/g, "").slice(0, 45) || "(tidak ada isi)"}
                         </p>
-                        <div className="mt-2 flex items-center gap-1.5">
-                          <span className="font-mono text-[9px] text-slate-600">
+                        <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+                          <span className="font-mono text-[9px] text-slate-400 font-bold">
                             {(file.size / 1024).toFixed(2)} KB
                           </span>
                           {file.tags &&
                             file.tags.slice(0, 2).map((tag, i) => (
                               <span
                                 key={i}
-                                className="inline-block rounded-md bg-blue-500/10 border border-blue-500/10 px-1.5 py-0.5 text-[8px] font-semibold text-blue-400 font-mono uppercase tracking-wider"
+                                className="inline-block rounded-md bg-sky-50 border border-sky-100 px-1.5 py-0.5 text-[8px] font-extrabold text-sky-700 font-mono uppercase tracking-wider"
                               >
                                 {tag}
                               </span>
@@ -409,7 +407,8 @@ export default function FilePanel({
                           onDeleteFile(file.id);
                         }
                       }}
-                      className="text-slate-600 hover:text-red-400 transition"
+                      className="text-slate-400 hover:text-red-500 transition cursor-pointer p-1"
+                      title="Hapus file"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>

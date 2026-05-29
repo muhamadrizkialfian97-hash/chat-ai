@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
-import { ChatMessage, SavedFile, SearchSource } from "../types";
-import { Send, Sparkles, FileText, Globe, ArrowRight, CircleAlert, Disc, Settings, Key, Cpu, Eye, EyeOff, HelpCircle } from "lucide-react";
+import { ChatMessage, SavedFile } from "../types";
+import { Send, FileText, Globe, CircleAlert, Cpu, Eye, EyeOff, Settings, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 interface ChatPanelProps {
@@ -13,6 +13,8 @@ interface ChatPanelProps {
   setApiMode: (mode: "proxy" | "client") => void;
   clientApiKey: string;
   setClientApiKey: (key: string) => void;
+  activeDivision: string | null;
+  onTyping?: (isTyping: boolean) => void;
 }
 
 export default function ChatPanel({
@@ -25,6 +27,8 @@ export default function ChatPanel({
   setApiMode,
   clientApiKey,
   setClientApiKey,
+  activeDivision,
+  onTyping,
 }: ChatPanelProps) {
   const [input, setInput] = useState("");
   const [enableSearch, setEnableSearch] = useState(false);
@@ -43,9 +47,20 @@ export default function ChatPanel({
     e.preventDefault();
     if (!input.trim() || loading) return;
 
+    if (onTyping) {
+      onTyping(false);
+    }
     onSendMessage(input.trim(), enableSearch, activeReferencedFile);
     setInput("");
-    setSelectedFileId(""); // reset reference after sending
+    setSelectedFileId(""); // Reset reference after sending
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    setInput(val);
+    if (onTyping) {
+      onTyping(val.length > 0);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -55,46 +70,106 @@ export default function ChatPanel({
     }
   };
 
+  const handleApplyPreset = (promptText: string) => {
+    setInput(promptText);
+    if (onTyping) {
+      onTyping(true);
+    }
+  };
+
+  // Get Division-specific presets
+  const getDivisionPresets = (id: string | null) => {
+    switch (id) {
+      case "comercial":
+        return [
+          { text: "Bandingkan efisiensi tarif logistik kontainer darat vs tongkang laut.", label: "Komparasi Tarif" },
+          { text: "Tulis draf ringkas Executive Summary untuk proposal tender fleet-bidding logs.", label: "Draf Tender" },
+          { text: "Hitung simulasi margin bersih armada trailer dengan solar Rp 15.000/liter.", label: "Simulasi Solar" }
+        ];
+      case "hca":
+        return [
+          { text: "Rumuskan Key Performance Indicators (KPI) berdasar keterlambatan & kepatuhan sopir.", label: "KPI Sopir" },
+          { text: "Rancang silabus training keselamatan muatan berat di pelabuhan.", label: "Safety Syllabus" },
+          { text: "Draf skema shift kerja gilir untuk kru lapangan 24 jam.", label: "Shift Kru" }
+        ];
+      case "fina":
+        return [
+          { text: "Buat simulasi analisis Cash Flow mingguan operasional armada logistik.", label: "Log Cash Flow" },
+          { text: "Beri contoh perhitungan depresiasi garis lurus armada truk trailer usia 10 tahun.", label: "Depresiasi Aset" },
+          { text: "Tulis draf kuesioner audit anggaran berkala pengadaan suku cadang.", label: "Audit Anggaran" }
+        ];
+      case "lga":
+        return [
+          { text: "Draf klausul alternatif ganti kerugian akibat force majeure keterlambatan kapal.", label: "Klausul Ganti Rugi" },
+          { text: "Panduan pemenuhan dokumen izin trayek dan ODOL logistik.", label: "Regulasi ODOL" },
+          { text: "Buat draf MoU kemitraan depo darat dengan pihak ketiga.", label: "Draf MoU" }
+        ];
+      case "spia":
+        return [
+          { text: "Metode audit menyeluruh selisih kartu pengisian BBM solar dengan riwayat GPS.", label: "Audit BBM Fraud" },
+          { text: "Rancang checklist Kertas Kerja Audit (Working Papers) kepatuhan depo.", label: "Checklist KKA" },
+          { text: "Tulis draf prosedur pencegahan anomali pencatatan ban armada.", label: "Kontrol Ban" }
+        ];
+      default:
+        return [
+          { text: "Buat simulasi rekap komparasi tarif logistik darat & laut.", label: "Simulasi Umum" },
+          { text: "Evaluasi risiko operasional logistik nasional saat cuaca ekstrem.", label: "Risiko Cuaca" },
+          { text: "Tulis panduan efektivitas pengawasan anggaran korporat.", label: "Panduan Anggaran" }
+        ];
+    }
+  };
+
+  const currentPresets = getDivisionPresets(activeDivision);
+
+  const getDivisionTitle = (id: string | null) => {
+    switch (id) {
+      case "comercial": return "Comercial & Business Development";
+      case "hca": return "Human Capital & Affairs";
+      case "fina": return "Finance & Accounting";
+      case "lga": return "Legal & Governance";
+      case "spia": return "Internal Audit (SPIA)";
+      default: return "Portal Multi-Divisi";
+    }
+  };
+
   return (
-    <div className="flex h-full flex-col bg-slate-950">
-      {/* Search & Reference Options */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-900 bg-slate-950/80 px-4 py-2.5 backdrop-blur-md">
+    <div className="flex h-full flex-col bg-slate-50 transition-colors">
+      
+      {/* Top Header Controls (Search & References) */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3 shadow-sm">
         <div className="flex items-center gap-2">
-          <Globe className={`h-4 w-4 ${enableSearch ? "text-blue-400" : "text-slate-505"}`} />
-          <span className="text-xs font-semibold text-slate-300">Google Search:</span>
+          <Globe className={`h-4 w-4 ${enableSearch ? "text-sky-600" : "text-slate-400"}`} />
+          <span className="text-xs font-bold text-slate-700">Google Grounding:</span>
           <button
             type="button"
             onClick={() => setEnableSearch(!enableSearch)}
             className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-              enableSearch ? "bg-blue-600" : "bg-slate-800"
+              enableSearch ? "bg-sky-600" : "bg-slate-200"
             }`}
           >
             <span
-              className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+              className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
                 enableSearch ? "translate-x-4" : "translate-x-0"
               }`}
             />
           </button>
-          <span className="text-[10px] font-mono tracking-wide text-slate-500">
-            {enableSearch ? "GROUNDING: ACTIVE" : "INTERNAL MODEL"}
+          <span className="text-[10px] font-mono font-bold uppercase text-slate-500">
+            {enableSearch ? "ONLINE SEARCH" : "PRAMA ENGINE"}
           </span>
         </div>
 
-        {/* Reference File Picker & Settings */}
+        {/* Reference File Picker & Connection Configuration */}
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1.5">
-            <FileText className="h-4 w-4 text-slate-500" />
-            <span className="hidden text-xs font-semibold text-slate-300 sm:inline">
-              Rujuk:
-            </span>
+            <span className="text-xs font-bold text-slate-500">Rujuk File:</span>
             <select
               value={selectedFileId}
               onChange={(e) => setSelectedFileId(e.target.value)}
-              className="rounded-xl border border-slate-800 bg-slate-900 px-3 py-1 text-xs text-slate-300 focus:border-blue-500 focus:outline-none font-medium"
+              className="rounded-xl border border-slate-200 bg-white px-3 py-1 text-xs text-slate-700 focus:border-sky-500 focus:ring-1 focus:ring-sky-200 focus:outline-none font-bold"
             >
               <option value="">-- Tanpa Rujukan --</option>
               {files.map((file) => (
-                <option key={file.id} value={file.id} className="bg-slate-900 text-slate-300">
+                <option key={file.id} value={file.id} className="text-slate-800">
                   {file.name} ({(file.size / 1024).toFixed(1)} KB)
                 </option>
               ))}
@@ -104,129 +179,136 @@ export default function ChatPanel({
           <button
             type="button"
             onClick={() => setShowConfig(!showConfig)}
-            className={`flex items-center gap-1.5 rounded-xl px-2.5 py-1 text-xs font-bold font-mono transition ${
-              showConfig ? "bg-blue-600 text-white" : "border border-slate-800 text-slate-400 bg-slate-900/60 hover:text-white"
+            className={`flex items-center gap-1 rounded-xl px-2.5 py-1 text-xs font-bold font-mono transition shadow-2sm ${
+              showConfig ? "bg-indigo-600 text-white" : "border border-slate-250 bg-white text-slate-600 hover:bg-slate-50"
             }`}
           >
-            <Settings className={`h-3.5 w-3.5 ${showConfig ? "animate-spin" : ""}`} />
-            <span>SETELAN ({apiMode === "client" ? "CLIENT" : "PROXY"})</span>
+            <Settings className="h-3.5 w-3.5" />
+            <span>KONEKSI ({apiMode === "client" ? "BROWSER" : "SECURE SERVER"})</span>
           </button>
         </div>
       </div>
 
+      {/* Connection Setting Foldout */}
       <AnimatePresence>
         {showConfig && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden border-b border-slate-900 bg-slate-950 px-4 py-4 space-y-4"
+            className="overflow-hidden border-b border-slate-250 bg-white px-4 py-4 space-y-4"
           >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl mx-auto text-sm">
-              {/* Option 1: Connection Mode Selection */}
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold font-mono uppercase tracking-widest text-slate-500 block">
-                  Mode Koneksi Gemini AI
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-extrabold font-mono uppercase tracking-wider text-slate-500 block">
+                  Metode API Koneksi
                 </label>
-                <div className="flex rounded-xl bg-slate-900 p-1 border border-slate-800">
+                <div className="flex rounded-xl bg-slate-100 p-1 border border-slate-200">
                   <button
                     type="button"
                     onClick={() => setApiMode("proxy")}
-                    className={`flex-1 flex items-center justify-center gap-2 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-colors ${
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold transition ${
                       apiMode === "proxy"
-                        ? "bg-blue-600 text-white"
-                        : "text-slate-400 hover:text-white"
+                        ? "bg-white text-slate-800 shadow"
+                        : "text-slate-500 hover:text-slate-800"
                     }`}
                   >
-                    <Cpu className="h-3.5 w-3.5" />
-                    <span>Proxy Server</span>
+                    <Cpu className="h-3.5 w-3.5 text-indigo-500" />
+                    <span>Secure Server (Proxy)</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setApiMode("client")}
-                    className={`flex-1 flex items-center justify-center gap-2 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-colors ${
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold transition ${
                       apiMode === "client"
-                        ? "bg-blue-600 text-white"
-                        : "text-slate-400 hover:text-white"
+                        ? "bg-white text-slate-800 shadow"
+                        : "text-slate-500 hover:text-slate-800"
                     }`}
                   >
-                    <Key className="h-3.5 w-3.5" />
-                    <span>Direct Client</span>
+                    <Cpu className="h-3.5 w-3.5 text-emerald-500" />
+                    <span>Direct Key (Browser)</span>
                   </button>
                 </div>
-                <p className="text-[10px] text-slate-500 leading-normal font-sans">
-                  {apiMode === "proxy" 
-                    ? "Menggunakan proxy server default di AI Studio. Cepat & aman tanpa setup manual."
-                    : "Menghubungi API Gemini langsung dari browser Anda. Sangat ideal untuk deploy static di Vercel!"}
-                </p>
               </div>
 
-              {/* Option 2: Browser API Key input */}
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold font-mono uppercase tracking-widest text-slate-500 block">
-                  Gemini API Key Client
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-extrabold font-mono uppercase tracking-wider text-slate-500 block">
+                  Gemini Client API Key
                 </label>
-                <div className="relative flex items-center bg-slate-900 border border-slate-800 rounded-xl overflow-hidden px-3">
-                  <Key className="h-4 w-4 text-slate-500 mr-2 shrink-0" />
+                <div className="relative flex items-center bg-white border border-slate-200 rounded-xl overflow-hidden px-3">
                   <input
                     type={showKey ? "text" : "password"}
                     value={clientApiKey}
                     onChange={(e) => setClientApiKey(e.target.value)}
-                    placeholder="Masukkan AI Studio API Key..."
-                    className="w-full bg-transparent border-none text-xs text-slate-200 placeholder-slate-700 focus:outline-none focus:ring-0 py-2.5"
+                    placeholder="AI Studio API Key (bila pakai Direct Key)..."
+                    className="w-full bg-transparent border-none text-xs text-slate-800 focus:outline-none focus:ring-0 py-2 font-mono font-bold"
                     disabled={apiMode !== "client"}
                   />
                   <button
                     type="button"
                     onClick={() => setShowKey(!showKey)}
-                    className="text-slate-500 hover:text-slate-300 px-1"
+                    className="text-slate-400 hover:text-slate-600 px-1 cursor-pointer"
                     disabled={apiMode !== "client"}
                   >
                     {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
-                <p className="text-[10px] text-slate-500 leading-normal font-sans">
-                  Kunci API ini disimpan secara lokal di browser Anda. <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline hover:text-blue-300">Buat API Key gratis disini &rarr;</a>
-                </p>
               </div>
             </div>
-
-            {/* Direct Vercel information note */}
-            <div className="max-w-3xl mx-auto rounded-xl bg-slate-900/60 border border-slate-900 p-3 flex items-start gap-3 text-xs text-slate-400">
-              <CircleAlert className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" />
-              <div className="space-y-1">
-                <span className="font-semibold text-slate-200">Tips Sukses Deploy Vercel:</span>
-                <p className="leading-normal font-sans">
-                  Kami telah membuat serverless handler otomatis di file <code className="text-emerald-400 font-mono">/api/chat.ts</code>. Saat mendeploy website ini ke Vercel, pastikan Anda menambahkan <code className="text-emerald-400 font-mono">GEMINI_API_KEY</code> pada tab <strong>Environment Variables</strong> di dashboard proyek Vercel Anda, maka respons chat Anda akan berfungsi tanpa pengaturan tambahan!
-                </p>
-              </div>
+            
+            <div className="max-w-3xl mx-auto rounded-xl bg-sky-50 border border-sky-100 p-3.5 text-xs text-sky-800 leading-relaxed shadow-3sm">
+              <CircleAlert className="h-4 w-4 text-sky-600 inline mr-1" />
+              <strong>Pemberitahuan:</strong> Mode serverless terintegrasi otomatis. Di lingkungan produksi atau server lokal, asisten akan menggunakan variabel rahasia terlindungi <code className="bg-sky-100 px-1 py-0.5 rounded font-mono text-indigo-700">GEMINI_API_KEY</code> tanpa memperlihatkannya di client.
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Messages Canvas */}
-      <div className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6">
+      {/* Messages Canvas Container */}
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+        
         {messages.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center text-center">
-            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-500 to-purple-600 text-white shadow-xl shadow-indigo-505/10">
-              <Sparkles className="h-7 w-7 animate-pulse" />
+          <div className="flex h-full flex-col items-center justify-center text-center py-10">
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-100 text-sky-600 shadow-md">
+              <Sparkles className="h-7 w-7 animate-pulse text-sky-600" />
             </div>
-            <h3 className="font-display font-bold text-slate-100 text-lg tracking-tight">
-              Mulai Chat dengan <span className="bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">Gemini AI</span>
+            
+            <span className="text-[9px] font-extrabold font-mono bg-sky-100 text-sky-800 px-2.5 py-1 rounded-full uppercase tracking-wider mb-2">
+              DIREKTORAT ASISTEN AI
+            </span>
+            
+            <h3 className="font-display font-extrabold text-slate-900 text-xl tracking-tight">
+              Asisten PRAMA &ndash; <span className="text-sky-600">{getDivisionTitle(activeDivision)}</span>
             </h3>
-            <p className="mt-1 max-w-sm text-xs text-slate-400 leading-relaxed">
-              Asisten AI Gemini-3.5 siap membantu Anda menyusun dokumen, menulis kode, memecahkan masalah, atau merangkum file di Mirror Storage Anda.
+            
+            <p className="mt-1.5 max-w-md text-xs text-slate-500 leading-relaxed">
+              Saya siap menganalisis data, memberikan rekomendasi taktis, atau merumuskan dokumen pendukung operasional khusus untuk pilar divisi ini.
             </p>
-            {files.length > 0 && (
-              <span className="mt-3.5 inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 px-3 py-1 text-[11px] font-semibold text-blue-400 font-mono uppercase tracking-wide">
-                <FileText className="h-3.5 w-3.5 text-blue-400" /> {files.length} FILE TERSEDIA DI SYSTEM MIRROR
-              </span>
-            )}
+
+            {/* Division Preset Suggestions */}
+            <div className="mt-8 max-w-xl w-full">
+              <p className="text-[9px] font-bold text-slate-400 font-mono tracking-widest uppercase mb-3">
+                Saran Pertanyaan Preset (klik untuk mengisi form)
+              </p>
+              <div className="flex flex-wrap justify-center gap-2">
+                {currentPresets.map((preset, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleApplyPreset(preset.text)}
+                    className="flex items-center gap-1 bg-white border border-slate-200 hover:border-sky-400 hover:bg-sky-50 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 transition cursor-pointer shadow-3sm hover:text-sky-700 text-left"
+                  >
+                    <span className="text-[9px] font-mono bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-extrabold mr-1 shadow-inner">
+                      {preset.label}
+                    </span>
+                    <span>{preset.text}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-5 max-w-4xl mx-auto">
             <AnimatePresence initial={false}>
               {messages.map((msg) => {
                 const isUser = msg.role === "user";
@@ -236,50 +318,50 @@ export default function ChatPanel({
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
-                    transition={{ duration: 0.2 }}
+                    transition={{ duration: 0.15 }}
                     className={`flex ${isUser ? "justify-end" : "justify-start"}`}
                   >
-                    <div
-                      className={`flex max-w-[85%] flex-col gap-1.5 ${
-                        isUser ? "items-end" : "items-start"
-                      }`}
-                    >
+                    <div className={`flex max-w-[85%] flex-col gap-1 ${isUser ? "items-end" : "items-start"}`}>
+                      
+                      {/* Message Meta */}
                       <div className="flex items-center gap-2 px-1">
-                        <span className="font-mono text-[9px] font-bold tracking-wider text-slate-500 uppercase">
-                          {isUser ? "User Client" : "Gemini Core Pro"}
+                        <span className={`font-mono text-[9px] font-bold tracking-wider uppercase ${isUser ? "text-indigo-600" : "text-sky-600"}`}>
+                          {isUser ? (msg.sender || "Diri Anda") : (msg.sender || "Gemini Core AI")}
                         </span>
-                        <span className="text-[9px] font-mono text-slate-600">
+                        <span className="text-[9px] font-mono text-slate-400 font-medium">
                           {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                         </span>
                       </div>
 
+                      {/* Msg content bubble */}
                       <div
-                        className={`prose rounded-2xl px-5 py-3.5 text-sm leading-relaxed dark:prose-invert ${
+                        className={`rounded-2xl px-5 py-3.5 text-sm leading-relaxed whitespace-pre-wrap shadow-sm border ${
                           isUser
-                            ? "bg-slate-900 border border-slate-800 text-slate-100 rounded-tr-none shadow-md shadow-black/20"
-                            : "bg-slate-900/40 border border-slate-800/80 rounded-tl-none shadow-xl text-slate-100"
+                            ? "bg-indigo-600 border-indigo-500 text-white rounded-tr-none"
+                            : "bg-white border-slate-200 text-slate-800 rounded-tl-none font-medium"
                         }`}
                       >
-                        <div className="whitespace-pre-wrap">{msg.text}</div>
+                        <div>{msg.text}</div>
 
                         {!isUser && msg.text && (
-                          <div className="mt-4 flex border-t border-slate-850 pt-3 text-right justify-between items-center gap-4">
-                            <span className="font-mono text-[9px] text-slate-500">
-                              MIRROR MODEL VERIFICATION SUCCESSFUL
+                          <div className="mt-4 flex border-t border-slate-100 pt-3 text-right justify-between items-center gap-4">
+                            <span className="font-mono text-[8px] text-slate-400 font-bold uppercase tracking-wider">
+                              INTEGRATED REPORTING SYSTEM
                             </span>
                             <button
                               onClick={() => {
-                                const placeholderName = `gemini_response_${Date.now().toString().slice(-4)}.md`;
+                                const placeholderName = `prama_${activeDivision || "analitis"}_${Date.now().toString().slice(-4)}.md`;
                                 onSaveAsFile(msg.text, placeholderName);
                               }}
-                              className="flex items-center gap-1.5 rounded-xl bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 text-xs font-semibold text-blue-400 transition hover:bg-blue-500/20"
+                              className="flex items-center gap-1.5 rounded-xl bg-sky-50 shadow-inner border border-sky-100 px-3 py-1.5 text-xs font-bold text-sky-700 transition hover:bg-sky-100 cursor-pointer"
                             >
-                              <FileText className="h-3.5 w-3.5" />
-                              <span>Simpan sebagai File</span>
+                              <FileText className="h-3.5 w-3.5 text-sky-600" />
+                              <span>Simpan dokumen ke Mirror Storage</span>
                             </button>
                           </div>
                         )}
                       </div>
+
                     </div>
                   </motion.div>
                 );
@@ -289,59 +371,63 @@ export default function ChatPanel({
         )}
 
         {loading && (
-          <div className="flex items-center gap-2 text-slate-400 py-4 max-w-3xl mx-auto">
-            <Disc className="h-4 w-4 animate-spin text-blue-400" />
-            <span className="font-mono text-xs tracking-wide uppercase text-slate-500">Menganalisis dan merumuskan respons...</span>
+          <div className="flex items-center gap-2 py-4 justify-start max-w-4xl mx-auto">
+            <div className="h-4 w-4 rounded-full border-2 border-indigo-600 border-t-transparent animate-spin" />
+            <span className="font-mono text-[10px] font-semibold tracking-wide uppercase text-slate-400">
+              PRAMA AI sedang merumuskan matriks & simulasi...
+            </span>
           </div>
         )}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Bar Area */}
-      <div className="p-4 sm:p-8 bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent border-t border-slate-900">
+      {/* Message input bar overlay */}
+      <div className="p-4 sm:p-6 bg-white border-t border-slate-200 shadow-[0_-4px_12px_rgba(0,0,0,0.03)]">
         <form onSubmit={handleSubmit} className="relative flex flex-col gap-2 max-w-3xl mx-auto">
+          
           {activeReferencedFile && (
-            <div className="flex items-center justify-between rounded-xl bg-blue-500/10 px-3.5 py-2 text-xs text-blue-400 border border-blue-500/20">
-              <span className="flex items-center gap-1.5 font-semibold">
-                <FileText className="h-3.5 w-3.5 animate-pulse text-blue-400" />
-                Melampirkan rujukan: <span className="font-mono text-xs text-emerald-400 font-normal">{activeReferencedFile.name}</span>
+            <div className="flex items-center justify-between rounded-xl bg-sky-50 px-3.5 py-1.5 text-xs text-sky-800 border border-sky-100">
+              <span className="flex items-center gap-1.5 font-bold">
+                <FileText className="h-3.5 w-3.5 text-sky-600" />
+                Melampirkan analisis referensi: <span className="font-mono text-indigo-700">{activeReferencedFile.name}</span>
               </span>
               <button
                 type="button"
                 onClick={() => setSelectedFileId("")}
-                className="text-slate-400 hover:text-red-500 font-bold px-1"
+                className="text-slate-400 hover:text-red-500 font-bold px-1.5 cursor-pointer"
               >
                 ✕
               </button>
             </div>
           )}
 
-          <div className="relative bg-slate-900 border border-slate-800 rounded-2xl p-2.5 shadow-2xl shadow-black/50">
+          <div className="relative bg-slate-50 border border-slate-200 focus-within:border-sky-500 focus-within:ring-1 focus-within:ring-sky-100 rounded-2xl p-2.5 transition">
             <textarea
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={handleInputChange}
               onKeyDown={handleKeyDown}
               placeholder={
                 activeReferencedFile
-                  ? `Ketik perintah untuk file "${activeReferencedFile.name}"...`
-                  : "Tanyakan apa saja ke Gemini AI..."
+                  ? `Berikan instruksi pengolahan dokumen "${activeReferencedFile.name}"...`
+                  : `Konsultasikan draf proposal / audit perhitungan divisi ${getDivisionTitle(activeDivision)}...`
               }
               rows={3}
-              className="w-full resize-none bg-transparent border-none text-slate-200 placeholder-slate-600 focus:ring-0 focus:outline-none py-2 text-sm h-14"
+              className="w-full resize-none bg-transparent border-none text-slate-800 placeholder-slate-400 focus:ring-0 focus:outline-none py-1.5 text-sm h-14"
             />
             <button
               type="submit"
               disabled={loading || !input.trim()}
-              className="absolute right-3.5 bottom-3.5 flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white transition-all shadow-lg hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-655"
+              className="absolute right-3.5 bottom-3.5 flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white transition-all shadow-md hover:bg-indigo-500 disabled:bg-slate-200 disabled:text-slate-400 cursor-pointer disabled:cursor-not-allowed"
             >
               <Send className="h-4 w-4" />
             </button>
           </div>
-          <p className="mt-1 text-center text-[10px] text-slate-600 uppercase tracking-widest font-mono">
-            AI can make mistakes. Verify Firebase mirror logs for critical data.
+          <p className="text-center text-[8px] text-slate-400 uppercase tracking-widest font-mono font-bold mt-1">
+            Teknologi AI PRAMA memiliki kapabilitas verifikasi silang otomatis.
           </p>
         </form>
       </div>
+
     </div>
   );
 }

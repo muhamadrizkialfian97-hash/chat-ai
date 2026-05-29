@@ -80,5 +80,30 @@ service cloud.firestore {
         && request.resource.data.updatedAt == request.time;
       allow delete: if isOwner(userId);
     }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == "muhamadrizkialfian@gmail.com" || 
+        request.auth.token.email == "muhamadrizkialfian97@gmail.com"
+      );
+    }
+
+    function isValidRegistration(data) {
+      return data.keys().hasAll(['id', 'fullName', 'email', 'status', 'updatedAt'])
+        && data.keys().size() == 5
+        && data.id is string
+        && data.id == request.auth.uid
+        && data.fullName is string
+        && data.email is string
+        && data.status is string
+        && (data.status == 'pending' || data.status == 'approved');
+    }
+
+    match /registration_requests/{requestId} {
+      allow read, list: if isSignedIn() && (request.auth.uid == requestId || isAdmin());
+      allow create: if isSignedIn() && request.auth.uid == requestId && isValidRegistration(request.resource.data);
+      allow update: if isAdmin() || (isSignedIn() && request.auth.uid == requestId && isValidRegistration(request.resource.data));
+      allow delete: if isAdmin();
+    }
   }
 }

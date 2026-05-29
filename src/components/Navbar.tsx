@@ -1,24 +1,25 @@
 import React from "react";
 import { auth } from "../firebase";
-import { signInWithPopup, GoogleAuthProvider, signOut, User } from "firebase/auth";
-import { Sparkles, Database, LogIn, LogOut, FileCode } from "lucide-react";
+import { signOut, User } from "firebase/auth";
+import { Database, LogOut, Briefcase, ChevronRight } from "lucide-react";
 import { motion } from "motion/react";
 
 interface NavbarProps {
   user: User | null;
   loading: boolean;
+  activeDivision: string | null;
+  onClearDivision: () => void;
+  collabUsername?: string;
 }
 
-export default function Navbar({ user, loading }: NavbarProps) {
-  const handleLogin = async () => {
-    const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-    } catch (err) {
-      console.error("Authentication Error:", err);
-    }
-  };
-
+export default function Navbar({ 
+  user, 
+  loading, 
+  activeDivision, 
+  onClearDivision,
+  collabUsername
+}: NavbarProps) {
+  
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -27,69 +28,91 @@ export default function Navbar({ user, loading }: NavbarProps) {
     }
   };
 
+  const getDivisionLabel = (id: string) => {
+    switch (id) {
+      case "comercial": return "Comercial & Business Dev";
+      case "hca": return "Human Capital & Affairs";
+      case "fina": return "Finance & Accounting";
+      case "lga": return "Legal & Governance";
+      case "spia": return "Internal Audit (SPIA)";
+      default: return id;
+    }
+  };
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-slate-900 bg-slate-950/80 backdrop-blur-md">
+    <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/90 backdrop-blur-md shadow-sm transition-all">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
+        
+        {/* Brand & Left Navigation */}
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-500 to-purple-600 text-white shadow-lg shadow-indigo-500/10">
-            <Sparkles className="h-5 w-5 animate-pulse" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 text-white shadow-md shadow-sky-500/20">
+            <span className="font-display font-extrabold text-lg tracking-wider">P</span>
           </div>
           <div>
-            <h1 className="font-display font-bold text-lg leading-none tracking-tight">
-              <span className="bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-500 bg-clip-text text-transparent">Gemini</span>{" "}
-              <span className="text-white">Workspace</span>
-            </h1>
-            <span className="font-mono text-[10px] text-slate-500">
-              Chat & Mirror Storage v1.5
+            <div className="flex items-center gap-2">
+              <h1 className="font-display font-extrabold text-base leading-none tracking-tight text-slate-900 md:text-lg">
+                PRAMA <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 border border-sky-200 ml-1.5 uppercase font-mono tracking-wider">System</span>
+              </h1>
+            </div>
+            <span className="font-mono text-[9px] font-bold text-slate-500 block">
+              PROJECT MANAGEMENT ANALITIC
             </span>
           </div>
+
+          {/* Division Breadcrumb */}
+          {activeDivision && (
+            <div className="hidden items-center gap-1.5 sm:flex pl-4 border-l border-slate-200 ml-4">
+              <ChevronRight className="h-4 w-4 text-slate-400" />
+              <Briefcase className="h-3.5 w-3.5 text-sky-600" />
+              <span className="text-xs font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded-lg">
+                {getDivisionLabel(activeDivision)}
+              </span>
+              <button 
+                onClick={onClearDivision}
+                className="text-[10px] font-bold text-sky-600 hover:text-indigo-700 cursor-pointer hover:underline ml-1"
+              >
+                Ganti Divisi
+              </button>
+            </div>
+          )}
         </div>
 
+        {/* Right Navigation & Status Indicators */}
         <div className="flex items-center gap-4">
-          {/* Firestore status indicator */}
-          <div className="hidden items-center gap-2.5 rounded-xl bg-slate-900/80 border border-slate-800/80 px-3 py-1.5 text-xs font-semibold text-slate-300 sm:flex">
-            <span className={`h-2.5 w-2.5 rounded-full ${user ? "bg-blue-500 shadow-md shadow-blue-500/50 animate-pulse" : "bg-amber-500 animate-pulse"}`} />
-            <Database className="h-3.5 w-3.5 text-blue-400" />
-            <span className="font-mono text-[11px] tracking-wide uppercase">{user ? "Firebase Mirror: Live" : "Local Database Mode"}</span>
+          
+          {/* Database Synchronization Status Node */}
+          <div className="hidden items-center gap-2 rounded-xl bg-slate-50 border border-slate-200/80 px-2.5 py-1.5 text-xs font-bold text-slate-600 sm:flex shadow-2sm">
+            <span className={`h-2 w-2 rounded-full ${user ? "bg-emerald-500 animate-pulse" : "bg-amber-500 animate-pulse"}`} />
+            <Database className="h-3.w w-3 text-sky-600" />
+            <span className="font-mono text-[10px] tracking-wide">
+              {user ? "KONEKSI PORTAL: ONLINE" : "MODE LOCAL OFFLINE"}
+            </span>
           </div>
 
           {loading ? (
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-800 border-t-blue-500" />
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-100 border-t-sky-600" />
           ) : user ? (
             <div className="flex items-center gap-3">
-              <div className="hidden text-right sm:block">
-                <p className="text-xs font-semibold text-slate-200">
-                  {user.displayName || "User Space"}
+              <div className="hidden text-right leading-tight sm:block">
+                <p className="text-xs font-bold text-slate-800">
+                  {collabUsername || user.displayName || user.email?.split("@")[0] || "Staf Prama"}
                 </p>
-                <p className="text-[10px] text-slate-500 font-mono">
-                  {user.email}
+                <p className="text-[9px] text-slate-500 font-mono font-medium">
+                  {user.email || "local@prama.net"}
                 </p>
               </div>
-              <img
-                src={user.photoURL || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=64"}
-                alt="Profile"
-                className="h-8 w-8 rounded-full border border-slate-850 bg-slate-900 object-cover"
-                referrerPolicy="no-referrer"
-              />
+              <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-sky-400 to-indigo-500 font-display font-extrabold text-sm text-white flex items-center justify-center border border-slate-200 shadow-inner">
+                {(collabUsername || user.displayName || user.email || "?").charAt(0).toUpperCase()}
+              </div>
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-1 rounded-xl border border-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-400 transition-all hover:bg-slate-900 hover:text-white"
+                className="flex items-center gap-1 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-600 transition-all cursor-pointer hover:text-red-600"
               >
-                <LogOut className="h-3.5 w-3.5" />
+                <LogOut className="h-3.5 w-3.5 shrink-0" />
                 <span className="hidden sm:inline">Keluar</span>
               </button>
             </div>
-          ) : (
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleLogin}
-              className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-900/30 transition-all hover:bg-blue-500"
-            >
-              <LogIn className="h-4 w-4" />
-              <span>Masuk via Google</span>
-            </motion.button>
-          )}
+          ) : null}
         </div>
       </div>
     </header>

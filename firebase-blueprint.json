@@ -1,0 +1,43 @@
+{
+  "entities": {
+    "SavedFile": {
+      "title": "SavedFile",
+      "description": "Represents a virtual file or document stored by the user, mirrored to Firestore",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier of the document" },
+        "name": { "type": "string", "description": "Name of the file including extension" },
+        "content": { "type": "string", "description": "Textual content of the file" },
+        "mimeType": { "type": "string", "description": "The mime type of the file, e.g. text/plain, text/markdown" },
+        "size": { "type": "integer", "description": "File size in bytes" },
+        "tags": { "type": "array", "description": "List of strings for categorization" },
+        "updatedAt": { "type": "string", "description": "Timestamp of the last update to the file" },
+        "userId": { "type": "string", "description": "User id of the owner of this file" }
+      },
+      "required": ["id", "name", "content", "mimeType", "size", "userId", "updatedAt"]
+    },
+    "ChatHistory": {
+      "title": "ChatHistory",
+      "description": "Represents a user chat thread stored in firestore",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier of the chat thread" },
+        "userId": { "type": "string", "description": "User id of the owner" },
+        "title": { "type": "string", "description": "Auto-generated title of the chat" },
+        "messages": { "type": "array", "description": "Array of messages containing role, parts, and timestamp" },
+        "updatedAt": { "type": "string", "description": "Last updated timestamp" }
+      },
+      "required": ["id", "userId", "title", "messages", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}/files/{fileId}": {
+      "schema": "SavedFile",
+      "description": "The set of virtual files created and stored by the user"
+    },
+    "users/{userId}/chats/{chatId}": {
+      "schema": "ChatHistory",
+      "description": "User's individual chat logs and thread history with Gemini AI"
+    }
+  }
+}

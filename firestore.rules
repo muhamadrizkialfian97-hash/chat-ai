@@ -1,0 +1,84 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Auth helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Helper functions for SavedFile schema validation
+    function isValidSavedFile(data) {
+      return data.keys().hasAll(['id', 'name', 'content', 'mimeType', 'size', 'userId', 'updatedAt'])
+        && data.keys().size() <= 8 // Allows optional tags
+        && data.id is string
+        && data.name is string
+        && data.name.size() <= 255
+        && data.content is string
+        && data.content.size() <= 512000 // Upper limit of 512KB for custom text/markdown file
+        && data.mimeType is string
+        && data.mimeType.size() <= 100
+        && data.size is int
+        && data.userId is string
+        && data.userId == request.auth.uid;
+    }
+
+    // Helper functions for ChatHistory schema validation
+    function isValidChatHistory(data) {
+      return data.keys().hasAll(['id', 'userId', 'title', 'messages', 'updatedAt'])
+        && data.keys().size() == 5
+        && data.id is string
+        && data.userId is string
+        && data.userId == request.auth.uid
+        && data.title is string
+        && data.title.size() <= 255
+        && data.messages is list;
+    }
+
+    // Match patterns for user-specific directories
+    match /users/{userId}/files/{fileId} {
+      allow read, list: if isOwner(userId);
+      allow create: if isOwner(userId)
+        && isValidId(fileId)
+        && isValidSavedFile(request.resource.data)
+        && request.resource.data.id == fileId
+        && request.resource.data.updatedAt == request.time;
+      allow update: if isOwner(userId)
+        && isValidId(fileId)
+        && isValidSavedFile(request.resource.data)
+        && request.resource.data.id == resource.data.id
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if isOwner(userId);
+    }
+
+    match /users/{userId}/chats/{chatId} {
+      allow read, list: if isOwner(userId);
+      allow create: if isOwner(userId)
+        && isValidId(chatId)
+        && isValidChatHistory(request.resource.data)
+        && request.resource.data.id == chatId
+        && request.resource.data.updatedAt == request.time;
+      allow update: if isOwner(userId)
+        && isValidId(chatId)
+        && isValidChatHistory(request.resource.data)
+        && request.resource.data.id == resource.data.id
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if isOwner(userId);
+    }
+  }
+}

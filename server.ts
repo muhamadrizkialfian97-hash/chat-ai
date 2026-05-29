@@ -77,11 +77,25 @@ app.post("/api/chat", async (req, res) => {
       config.tools = [{ googleSearch: {} }];
     }
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
-      contents: formattedContents,
-      config,
-    });
+    let response;
+    try {
+       response = await ai.models.generateContent({
+         model: "gemini-3.5-flash",
+         contents: formattedContents,
+         config,
+       });
+    } catch (fallbackError: any) {
+       console.warn("gemini-3.5-flash failed or unavailable, trying fallback gemini-1.5-flash...", fallbackError?.message);
+       try {
+         response = await ai.models.generateContent({
+           model: "gemini-1.5-flash",
+           contents: formattedContents,
+           config,
+         });
+       } catch (finalError) {
+         throw fallbackError; // throw the original error if fallback also fails
+       }
+    }
 
     const text = response.text || "";
 

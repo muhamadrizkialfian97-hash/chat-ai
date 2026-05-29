@@ -565,11 +565,25 @@ export default function App() {
           config.tools = [{ googleSearch: {} }];
         }
 
-        const response = await aiBrowser.models.generateContent({
-          model: "gemini-3.5-flash",
-          contents: formattedContents,
-          config,
-        });
+        let response;
+        try {
+          response = await aiBrowser.models.generateContent({
+            model: "gemini-3.5-flash",
+            contents: formattedContents,
+            config,
+          });
+        } catch (fallbackError: any) {
+          console.warn("Browser-side gemini-3.5-flash failed or unavailable, trying gemini-1.5-flash...", fallbackError?.message);
+          try {
+            response = await aiBrowser.models.generateContent({
+              model: "gemini-1.5-flash",
+              contents: formattedContents,
+              config,
+            });
+          } catch (finalError) {
+            throw fallbackError; // throw the original error if fallback also fails
+          }
+        }
 
         mainAnswerText = response.text || "";
         const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];

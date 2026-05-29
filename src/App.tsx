@@ -589,6 +589,7 @@ export default function App() {
               message: finalQuery,
               history: chatMessages.slice(-6),
               enableSearch,
+              customApiKey: clientApiKey || undefined
             }),
           });
         } catch (fetchErr: any) {

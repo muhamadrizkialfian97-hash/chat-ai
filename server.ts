@@ -36,14 +36,26 @@ function getGeminiClient() {
 // REST endpoint for chat
 app.post("/api/chat", async (req, res) => {
   try {
-    const { message, history = [], enableSearch = false } = req.body;
+    const { message, history = [], enableSearch = false, customApiKey } = req.body;
     
     if (!message || typeof message !== "string") {
       res.status(400).json({ error: "Message is required and must be a string." });
       return;
     }
 
-    const ai = getGeminiClient();
+    let ai;
+    if (customApiKey) {
+      ai = new GoogleGenAI({
+        apiKey: customApiKey,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build',
+          }
+        }
+      });
+    } else {
+      ai = getGeminiClient();
+    }
 
     // Standardize chat format for @google/genai SDK
     const formattedContents = history.map((msg: any) => ({
@@ -90,7 +102,7 @@ app.post("/api/chat", async (req, res) => {
     let friendlyError = originalMsg;
     
     if (originalMsg.toLowerCase().includes("quota") || originalMsg.includes("429") || originalMsg.toLowerCase().includes("resource_exhausted")) {
-      friendlyError = "Quota limits exceeded on Server (RESOURCE_EXHAUSTED / HTTP 429). Please click 'KONEKSI' at the top of the chat panel, set your connection method to 'Direct Key (Browser)', and provide your own Gemini API key.";
+      friendlyError = "Batas kuota penggunaan terlampaui di server (RESOURCE_EXHAUSTED / HTTP 429). Silakan buka panel KONEKSI di pojok kanan atas chat, masukkan Gemini API Key pribadi Anda, dan pilih metode 'Direct Key (Browser)' atau tetap gunakan 'Secure Server (Proxy)'.";
       res.status(429).json({ error: friendlyError });
       return;
     }

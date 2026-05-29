@@ -233,22 +233,20 @@ export default function ChatPanel({
 
               <div className="space-y-1.5">
                 <label className="text-[9px] font-extrabold font-mono uppercase tracking-wider text-slate-500 block">
-                  Gemini Client API Key
+                  Gemini Client API Key (Pribadi Anda)
                 </label>
                 <div className="relative flex items-center bg-white border border-slate-200 rounded-xl overflow-hidden px-3">
                   <input
                     type={showKey ? "text" : "password"}
                     value={clientApiKey}
                     onChange={(e) => setClientApiKey(e.target.value)}
-                    placeholder="AI Studio API Key (bila pakai Direct Key)..."
+                    placeholder="Masukkan Gemini API Key pribadi Anda (menyimpan otomatis)..."
                     className="w-full bg-transparent border-none text-xs text-slate-800 focus:outline-none focus:ring-0 py-2 font-mono font-bold"
-                    disabled={apiMode !== "client"}
                   />
                   <button
                     type="button"
                     onClick={() => setShowKey(!showKey)}
                     className="text-slate-400 hover:text-slate-600 px-1 cursor-pointer"
-                    disabled={apiMode !== "client"}
                   >
                     {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -256,9 +254,14 @@ export default function ChatPanel({
               </div>
             </div>
             
-            <div className="max-w-3xl mx-auto rounded-xl bg-sky-50 border border-sky-100 p-3.5 text-xs text-sky-800 leading-relaxed shadow-3sm">
-              <CircleAlert className="h-4 w-4 text-sky-600 inline mr-1" />
-              <strong>Pemberitahuan:</strong> Mode serverless terintegrasi otomatis. Di lingkungan produksi atau server lokal, asisten akan menggunakan variabel rahasia terlindungi <code className="bg-sky-100 px-1 py-0.5 rounded font-mono text-indigo-700">GEMINI_API_KEY</code> tanpa memperlihatkannya di client.
+            <div className="max-w-3xl mx-auto rounded-xl bg-emerald-50 border border-emerald-100 p-3.5 text-xs text-emerald-800 leading-relaxed shadow-3sm">
+              <CircleAlert className="h-4 w-4 text-emerald-600 inline mr-1" />
+              <strong>💡 Tips Vercel Instan & Tanpa Batas:</strong> 
+              {clientApiKey ? (
+                <> Kunci API pribadi Anda terdeteksi (<span className="font-mono text-[10px] bg-emerald-100 px-1 py-0.5 rounded text-emerald-950 font-bold">AKTIF</span>). Hubungan Gemini AI akan berjalan otomatis baik di Vercel maupun local sandbox tanpa konfigurasi server tambahan.</>
+              ) : (
+                <> Jika kuota server bawaan habis ( RESOURCE_EXHAUSTED ), Anda cukup memasukkan <strong>Gemini API Key pribadi</strong> Anda di atas. Ini akan otomatis disimpan di browser Anda secara aman dan dipakai sebagai jalur penghubung (proxy maupun direct) tanpa perlu mensetting Environment Variable apa pun di dashboard Vercel Anda!</>
+              )}
             </div>
           </motion.div>
         )}

@@ -20,20 +20,27 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    const { message, history = [], enableSearch = false } = req.body;
+    const { message, history = [], enableSearch = false, customApiKey } = req.body;
 
     if (!message || typeof message !== "string") {
       return res.status(400).json({ error: "Message is required and must be a string." });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = customApiKey || process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      return res.status(500).json({
-        error: "GEMINI_API_KEY environment variable is not defined on Vercel. Please add it in your Vercel Project Dashboard under Environment Variables."
+      return res.status(400).json({
+        error: "Kunci API (GEMINI_API_KEY) belum terpasang di Vercel atau belum dimasukkan. Silakan buka panel KONEKSI di atas, lalu masukkan Gemini API Key pribadi Anda."
       });
     }
 
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({
+      apiKey,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        }
+      }
+    });
 
     // Standardize chat format for @google/genai SDK
     const formattedContents = history.map((msg: any) => ({
@@ -76,8 +83,16 @@ export default async function handler(req: any, res: any) {
     });
   } catch (error: any) {
     console.error("Gemini API Error:", error);
+    const originalMsg = error?.message || "";
+    let friendlyError = originalMsg;
+    
+    if (originalMsg.toLowerCase().includes("quota") || originalMsg.includes("429") || originalMsg.toLowerCase().includes("resource_exhausted")) {
+      friendlyError = "Batas kuota penggunaan terlampaui di server (RESOURCE_EXHAUSTED / HTTP 429). Silakan buka panel KONEKSI di pojok kanan atas chat, masukkan Gemini API Key pribadi Anda, dan pilih metode 'Direct Key (Browser)' atau tetap gunakan 'Secure Server (Proxy)'.";
+      return res.status(429).json({ error: friendlyError });
+    }
+
     return res.status(500).json({
-      error: error?.message || "An unexpected error occurred while communicating with Gemini AI."
+      error: friendlyError || "An unexpected error occurred while communicating with Gemini AI."
     });
   }
 }

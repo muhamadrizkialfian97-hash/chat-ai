@@ -43,7 +43,11 @@ import {
   HardDrive,
   MessageSquare,
   ArrowRight,
-  BookOpen
+  BookOpen,
+  Cpu,
+  Eye,
+  EyeOff,
+  Settings
 } from "lucide-react";
 import { GoogleGenAI } from "@google/genai";
 
@@ -160,6 +164,7 @@ export default function App() {
   const [clientApiKey, setClientApiKey] = useState(
     () => localStorage.getItem("workspace_client_api_key") || ""
   );
+  const [showKey, setShowKey] = useState(false);
 
   // Navigation tab for mobile layouts
   const [activeTab, setActiveTab] = useState<"chat" | "files">("chat");
@@ -1317,6 +1322,80 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
                 <span>Masuk Tanpa Sandi / Tamu Offline</span>
               </button>
             </div>
+
+            {/* Connection configuration panel displayed at Login / Register */}
+            <div className="mt-6 pt-5 border-t border-slate-200 space-y-4">
+              <div className="flex items-center gap-1.5 justify-center md:justify-start">
+                <Settings className="h-3.5 w-3.5 text-indigo-600 animate-spin-slow" />
+                <h4 className="text-[10px] font-black text-slate-700 uppercase tracking-widest font-mono">
+                  KONFIGURASI HUB KONEKSI AI (VERCEL & LOCAL)
+                </h4>
+              </div>
+
+              {/* API Mode Selector */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-extrabold font-mono uppercase tracking-wider text-slate-500 block text-left">
+                    Metode API Koneksi
+                  </label>
+                  <div className="flex rounded-xl bg-slate-100 p-1 border border-slate-200">
+                    <button
+                      type="button"
+                      onClick={() => setApiMode("proxy")}
+                      className={`flex-1 flex items-center justify-center gap-1 py-1 rounded-lg text-[9px]  tracking-tight lg:text-[10px] font-extrabold transition cursor-pointer ${
+                        apiMode === "proxy"
+                          ? "bg-white text-slate-800 shadow border border-slate-200"
+                          : "text-slate-500 hover:text-slate-800"
+                      }`}
+                    >
+                      <Cpu className="h-3 w-3 text-indigo-505 text-indigo-500" />
+                      <span>Secure Server</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setApiMode("client")}
+                      className={`flex-1 flex items-center justify-center gap-1 py-1 rounded-lg text-[9px] tracking-tight lg:text-[10px] font-extrabold transition cursor-pointer ${
+                        apiMode === "client"
+                          ? "bg-white text-slate-800 shadow border border-slate-200"
+                          : "text-slate-500 hover:text-slate-800"
+                      }`}
+                    >
+                      <Cpu className="h-3 w-3 text-emerald-500" />
+                      <span>Direct Browser</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Input for API Key */}
+                <div className="space-y-1">
+                  <label className="text-[9px] font-extrabold font-mono uppercase tracking-wider text-slate-500 block text-left">
+                    Gemini Client API Key (Pribadi)
+                  </label>
+                  <div className="relative flex items-center bg-slate-50 border border-slate-205 rounded-xl overflow-hidden px-2.5">
+                    <input
+                      type={showKey ? "text" : "password"}
+                      value={clientApiKey}
+                      onChange={(e) => setClientApiKey(e.target.value)}
+                      placeholder="Masukkan Gemini API Key..."
+                      className="w-full bg-transparent border-none text-[11px] text-slate-800 focus:outline-none focus:ring-0 py-1.5 font-mono font-bold"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowKey(!showKey)}
+                      className="text-slate-400 hover:text-slate-600 px-1 cursor-pointer"
+                    >
+                      {showKey ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Help tip */}
+              <div className="rounded-xl bg-indigo-50 text-[10px] text-indigo-950 p-3 leading-relaxed border border-indigo-100 shadow-3sm">
+                <CircleAlert className="h-3.5 w-3.5 text-indigo-600 inline mr-1 shrink-0" />
+                <strong>💡 Informasi Hub API:</strong> Jika kuota bawaan habis (<code className="font-mono text-[9px] bg-indigo-100 px-1 py-0.5 rounded text-indigo-950 font-bold">RESOURCE_EXHAUSTED</code>), silakan masukkan <strong>Gemini API Key pribadi</strong> Anda di atas. Ini otomatis tersimpan di browser aman Anda baik di Vercel maupun local sandbox.
+              </div>
+            </div>
             
             <p className="mt-8 text-center text-[10px] text-slate-400 font-medium font-mono uppercase tracking-wider">
               Enkripsi Sesi: SSL TLS Secured Link.
@@ -1381,6 +1460,7 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
           activeDivision={null} 
           onClearDivision={handleLogoutAll} 
           collabUsername={collabUsername}
+          onLogout={handleLogoutAll}
         />
 
         {/* Division selector Body */}
@@ -1538,6 +1618,7 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
         activeDivision={activeDivision}
         onClearDivision={() => setActiveDivision(null)}
         collabUsername={collabUsername}
+        onLogout={handleLogoutAll}
       />
 
       {/* Collab bar */}

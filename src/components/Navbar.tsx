@@ -10,6 +10,7 @@ interface NavbarProps {
   activeDivision: string | null;
   onClearDivision: () => void;
   collabUsername?: string;
+  onLogout?: () => void;
 }
 
 export default function Navbar({ 
@@ -17,14 +18,22 @@ export default function Navbar({
   loading, 
   activeDivision, 
   onClearDivision,
-  collabUsername
+  collabUsername,
+  onLogout
 }: NavbarProps) {
   
   const handleLogout = async () => {
     try {
       await signOut(auth);
+      if (onLogout) {
+        onLogout();
+      }
     } catch (err) {
       console.error("Sign Out Error:", err);
+      // Fallback
+      if (onLogout) {
+        onLogout();
+      }
     }
   };
 

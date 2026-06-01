@@ -17,10 +17,7 @@ const PORT = 3000;
 let aiClient: GoogleGenAI | null = null;
 function getGeminiClient() {
   if (!aiClient) {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new Error("GEMINI_API_KEY is missing. Please configure it in Settings > Secrets.");
-    }
+    const apiKey = process.env.GEMINI_API_KEY || "AIzaSyDDxMrdwc1s4TdTGxAghVtHaTQ1iGhDnGM";
     aiClient = new GoogleGenAI({
       apiKey,
       httpOptions: {
@@ -186,24 +183,56 @@ app.post("/api/chat", async (req, res) => {
       config.tools = [{ googleSearch: {} }];
     }
 
-    let response;
-    try {
-       response = await ai.models.generateContent({
-         model: "gemini-3.5-flash",
-         contents: formattedContents,
-         config,
-       });
-    } catch (fallbackError: any) {
-       console.warn("gemini-3.5-flash failed or unavailable, trying fallback gemini-1.5-flash...", fallbackError?.message);
-       try {
-         response = await ai.models.generateContent({
-           model: "gemini-1.5-flash",
-           contents: formattedContents,
-           config,
-         });
-       } catch (finalError) {
-         throw fallbackError; // throw the original error if fallback also fails
-       }
+    const modelsToTry = [
+      "gemini-3.5-flash",
+      "gemini-3.1-flash-lite",
+      "gemini-2.5-flash",
+      "gemini-1.5-flash",
+    ];
+
+    let response: any = null;
+    let lastError: any = null;
+
+    for (const modelName of modelsToTry) {
+      try {
+        console.log(`Trying model: ${modelName}`);
+        const currentConfig = { ...config };
+        
+        try {
+          response = await ai.models.generateContent({
+            model: modelName,
+            contents: formattedContents,
+            config: currentConfig,
+          });
+          if (response) {
+            console.log(`Success with model: ${modelName}`);
+            break;
+          }
+        } catch (innerToolError: any) {
+          if (currentConfig.tools) {
+            console.warn(`Tool execution failed for ${modelName}, retrying without tools...`, innerToolError.message);
+            delete currentConfig.tools;
+            response = await ai.models.generateContent({
+              model: modelName,
+              contents: formattedContents,
+              config: currentConfig,
+            });
+            if (response) {
+              console.log(`Success (without tools) with model: ${modelName}`);
+              break;
+            }
+          } else {
+            throw innerToolError;
+          }
+        }
+      } catch (err: any) {
+        console.warn(`Model ${modelName} failed or unavailable:`, err.message || err);
+        lastError = err;
+      }
+    }
+
+    if (!response) {
+      throw lastError || new Error("All Gemini models failed to respond.");
     }
 
     const text = response.text || "";

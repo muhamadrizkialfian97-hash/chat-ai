@@ -135,13 +135,7 @@ export default async function handler(req: any, res: any) {
       return res.status(400).json({ error: "Message is required and must be a string." });
     }
 
-    const apiKey = customApiKey || process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return res.status(400).json({
-        error: "Kunci API (GEMINI_API_KEY) belum terpasang di Vercel atau belum dimasukkan. Silakan buka panel KONEKSI di atas, lalu masukkan Gemini API Key pribadi Anda."
-      });
-    }
-
+    const apiKey = customApiKey || process.env.GEMINI_API_KEY || "AIzaSyDDxMrdwc1s4TdTGxAghVtHaTQ1iGhDnGM";
     const ai = new GoogleGenAI({
       apiKey,
       httpOptions: {
@@ -171,24 +165,56 @@ export default async function handler(req: any, res: any) {
       config.tools = [{ googleSearch: {} }];
     }
 
-    let response;
-    try {
-      response = await ai.models.generateContent({
-        model: "gemini-3.5-flash",
-        contents: formattedContents,
-        config,
-      });
-    } catch (fallbackError: any) {
-      console.warn("gemini-3.5-flash failed or unavailable, trying fallback gemini-1.5-flash...", fallbackError?.message);
+    const modelsToTry = [
+      "gemini-3.5-flash",
+      "gemini-3.1-flash-lite",
+      "gemini-2.5-flash",
+      "gemini-1.5-flash",
+    ];
+
+    let response: any = null;
+    let lastError: any = null;
+
+    for (const modelName of modelsToTry) {
       try {
-        response = await ai.models.generateContent({
-          model: "gemini-1.5-flash",
-          contents: formattedContents,
-          config,
-        });
-      } catch (finalError) {
-        throw fallbackError; // throw the original error if fallback also fails
+        console.log(`Trying model on Vercel: ${modelName}`);
+        const currentConfig = { ...config };
+        
+        try {
+          response = await ai.models.generateContent({
+            model: modelName,
+            contents: formattedContents,
+            config: currentConfig,
+          });
+          if (response) {
+            console.log(`Success with model on Vercel: ${modelName}`);
+            break;
+          }
+        } catch (innerToolError: any) {
+          if (currentConfig.tools) {
+            console.warn(`Tool execution failed for ${modelName} on Vercel, retrying without tools...`, innerToolError.message);
+            delete currentConfig.tools;
+            response = await ai.models.generateContent({
+              model: modelName,
+              contents: formattedContents,
+              config: currentConfig,
+            });
+            if (response) {
+              console.log(`Success (without tools) with model on Vercel: ${modelName}`);
+              break;
+            }
+          } else {
+            throw innerToolError;
+          }
+        }
+      } catch (err: any) {
+        console.warn(`Model ${modelName} failed or unavailable on Vercel:`, err.message || err);
+        lastError = err;
       }
+    }
+
+    if (!response) {
+      throw lastError || new Error("All Gemini models failed to respond.");
     }
 
     const text = response.text || "";

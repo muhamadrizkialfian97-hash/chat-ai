@@ -39,6 +39,24 @@ export default function ChatPanel({
 
   const activeReferencedFile = files.find((f) => f.id === selectedFileId) || null;
 
+  const [localKeyInput, setLocalKeyInput] = useState(clientApiKey);
+  const [showLocalKey, setShowLocalKey] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+
+  useEffect(() => {
+    setLocalKeyInput(clientApiKey);
+  }, [clientApiKey]);
+
+  const handleSaveLocalKey = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!localKeyInput.trim()) return;
+    setClientApiKey(localKeyInput.trim());
+    setIsSaved(true);
+    setTimeout(() => {
+      setIsSaved(false);
+    }, 4000);
+  };
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
@@ -257,7 +275,104 @@ export default function ChatPanel({
                       >
                         {isUser ? <div>{msg.text}</div> : renderFormattedText(msg.text)}
 
-                        {!isUser && msg.text && (
+                        {!isUser && (
+                          (() => {
+                            const isApiError = msg.text.includes("⚠️") || 
+                                              msg.text.includes("Hambatan saat Menghubungi") || 
+                                              msg.text.includes("API Key") || 
+                                              msg.text.includes("RESOURCE_EXHAUSTED") || 
+                                              msg.text.includes("reported as leaked");
+                            if (isApiError) {
+                              return (
+                                <div className="mt-4 p-4 rounded-xl bg-slate-50 border border-slate-200 text-left space-y-3">
+                                  <div className="flex items-center gap-2">
+                                    <Settings className="h-4 w-4 text-indigo-600 animate-spin-slow" />
+                                    <span className="text-[10px] font-black font-mono text-slate-700 uppercase tracking-widest">
+                                      SETUP KONEKSI GEMINI PRIBADI (AKTIF SELALU)
+                                    </span>
+                                  </div>
+
+                                  <div className="text-[11px] text-slate-600 leading-relaxed font-bold">
+                                    Agar AI selalu aktif tanpa hambatan server bersama, silakan masukkan Gemini API Key yang masih aktif dari Google AI Studio:
+                                  </div>
+
+                                  <form onSubmit={handleSaveLocalKey} className="space-y-3">
+                                    <div className="flex flex-col sm:flex-row gap-2">
+                                      <div className="relative flex-1 flex items-center bg-white border border-slate-200 rounded-xl overflow-hidden px-3 shadow-3sm">
+                                        <input
+                                          type={showLocalKey ? "text" : "password"}
+                                          value={localKeyInput}
+                                          onChange={(e) => {
+                                            setLocalKeyInput(e.target.value);
+                                            setIsSaved(false);
+                                          }}
+                                          placeholder="Masukkan Gemini API Key (AIzaSy...)"
+                                          className="w-full bg-transparent border-none text-xs text-slate-800 focus:outline-none focus:ring-0 py-2 font-mono font-bold"
+                                        />
+                                        <button
+                                          type="button"
+                                          onClick={() => setShowLocalKey(!showLocalKey)}
+                                          className="text-slate-400 hover:text-slate-600 px-1 cursor-pointer"
+                                        >
+                                          {showLocalKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                        </button>
+                                      </div>
+
+                                      <button
+                                        type="submit"
+                                        className="rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2 shadow-sm transition shrink-0 cursor-pointer"
+                                      >
+                                        Sambungkan Kunci
+                                      </button>
+                                    </div>
+
+                                    {isSaved && (
+                                      <motion.div
+                                        initial={{ opacity: 0, y: -5 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="text-[11px] font-bold text-emerald-600 flex items-center gap-1.5"
+                                      >
+                                        <span className="p-0.5 rounded-full bg-emerald-100 text-emerald-700">✓</span>
+                                        <span>Koneksi Tersambung! Kunci berhasil disimpan di browser lokal Anda. Silakan coba kirim ulang pesan Anda.</span>
+                                      </motion.div>
+                                    )}
+
+                                    <div className="flex items-center gap-3.5 text-[9px] font-bold font-mono text-slate-500 pt-1">
+                                      <span>MODE API:</span>
+                                      <div className="flex items-center gap-1.5">
+                                        <button
+                                          type="button"
+                                          onClick={() => setApiMode("proxy")}
+                                          className={`px-2 py-0.5 rounded-md border text-[9px] transition ${
+                                            apiMode === "proxy"
+                                              ? "bg-indigo-50 border-indigo-200 text-indigo-700 font-extrabold"
+                                              : "bg-white border-slate-200 text-slate-500 hover:text-slate-700"
+                                          }`}
+                                        >
+                                          Proxy Server
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => setApiMode("client")}
+                                          className={`px-2 py-0.5 rounded-md border text-[9px] transition ${
+                                            apiMode === "client"
+                                              ? "bg-emerald-50 border-emerald-200 text-emerald-700 font-extrabold"
+                                              : "bg-white border-slate-200 text-slate-500 hover:text-slate-700"
+                                          }`}
+                                        >
+                                          Direct Browser
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </form>
+                                </div>
+                              );
+                            }
+                            return null;
+                          })()
+                        )}
+
+                        {!isUser && !msg.text.includes("⚠️") && !msg.text.includes("Hambatan saat Menghubungi") && !msg.text.includes("API Key") && !msg.text.includes("RESOURCE_EXHAUSTED") && !msg.text.includes("reported as leaked") && (
                           <div className="mt-4 flex border-t border-slate-100 pt-3 text-right justify-between items-center gap-4">
                             <span className="font-mono text-[8px] text-slate-400 font-bold uppercase tracking-wider">
                               INTEGRATED REPORTING SYSTEM

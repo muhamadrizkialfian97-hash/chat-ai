@@ -135,7 +135,7 @@ export default async function handler(req: any, res: any) {
       return res.status(400).json({ error: "Message is required and must be a string." });
     }
 
-    const apiKey = customApiKey || process.env.GEMINI_API_KEY || "AIzaSyDDxMrdwc1s4TdTGxAghVtHaTQ1iGhDnGM";
+    const apiKey = customApiKey || process.env.GEMINI_API_KEY || "";
     const ai = new GoogleGenAI({
       apiKey,
       httpOptions: {
@@ -169,7 +169,6 @@ export default async function handler(req: any, res: any) {
       "gemini-3.5-flash",
       "gemini-3.1-flash-lite",
       "gemini-2.5-flash",
-      "gemini-1.5-flash",
     ];
 
     let response: any = null;

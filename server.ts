@@ -17,7 +17,7 @@ const PORT = 3000;
 let aiClient: GoogleGenAI | null = null;
 function getGeminiClient() {
   if (!aiClient) {
-    const apiKey = process.env.GEMINI_API_KEY || "AIzaSyDDxMrdwc1s4TdTGxAghVtHaTQ1iGhDnGM";
+    const apiKey = process.env.GEMINI_API_KEY || "";
     aiClient = new GoogleGenAI({
       apiKey,
       httpOptions: {
@@ -187,7 +187,6 @@ app.post("/api/chat", async (req, res) => {
       "gemini-3.5-flash",
       "gemini-3.1-flash-lite",
       "gemini-2.5-flash",
-      "gemini-1.5-flash",
     ];
 
     let response: any = null;

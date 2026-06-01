@@ -13,6 +13,7 @@ import {
 } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "./firebase";
 import { ChatMessage, SavedFile } from "./types";
+import { generateLocalSmartResponse } from "./utils/localAssistant";
 import Navbar from "./components/Navbar";
 
 export interface User {
@@ -683,6 +684,7 @@ export default function App() {
       console.error(err);
       
       let friendlyText = err?.message || "Koneksi terhambat. Silakan coba kembali.";
+      let messageText = friendlyText;
       
       if (typeof friendlyText === "string") {
         const originalMsg = friendlyText;
@@ -704,7 +706,7 @@ export default function App() {
 
         let code = err?.status || err?.statusCode || "";
         let status = "";
-        let messageText = originalMsg;
+        messageText = originalMsg;
 
         if (parsedError) {
           if (parsedError.error) {
@@ -787,22 +789,55 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
         }
       }
 
-      const errMsg: ChatMessage = {
-        id: `m-err-${Date.now()}`,
+      // Generate highly intelligent Indonesian response tailored to the user's specific text + active division
+      const fallbackPayload = generateLocalSmartResponse(text, activeDivision, updatedMessages);
+      
+      const isKeyLeaked = (messageText || friendlyText).toLowerCase().includes("leaked") || 
+                          (messageText || friendlyText).toLowerCase().includes("leak") ||
+                          friendlyText.toLowerCase().includes("bocor");
+
+      let apiWarningContext = "";
+      if (isKeyLeaked) {
+        apiWarningContext = `⚠️ **PRAMA CLOUD NOTICE (Sistem Hibrida Aktif):** API Key bawaan dari serverless bersama terdeteksi *bocor (leaked)* oleh Google AI Studio, sehingga koneksi dialihkan ke model lokal sistem.`;
+      } else {
+        apiWarningContext = `⚠️ **PRAMA CLOUD NOTICE (Sistem Hibrida Aktif):** Koneksi cloud bersama mengalami gangguan atau limitasi (*${messageText || friendlyText}*).`;
+      }
+
+      const activeUser = user || guestUser;
+      const combinedText = fallbackPayload.text + `
+
+---
+${apiWarningContext}
+
+💡 **Kenapa pesan ini muncul?** Agar AI selalu aktif merespon tanpa hambatan kuota bersama, silakan masukkan **Gemini API Key pribadi** Anda di tombol **KONEKSI (BROWSER)** di navigasi atas chat. Kunci Anda aman, gratis dari Google, dan langsung disave di browser Anda!`;
+
+      const fallbackMsg: ChatMessage = {
+        id: `m-fallback-${Date.now()}`,
         role: "model",
-        text: friendlyText,
+        text: combinedText,
         timestamp: Date.now(),
-        sender: "Portal Error System",
+        sender: `Pramer AI (${activeDivision ? activeDivision.toUpperCase() : "Asisten"})`,
       };
-      const finalMessagesList = [...updatedMessages, errMsg];
+      const finalMessagesList = [...updatedMessages, fallbackMsg];
       setChatMessages(finalMessagesList);
       persistLocalChats(finalMessagesList);
 
       if (socket && socket.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify({
           type: "chat_message",
-          message: errMsg
+          message: fallbackMsg
         }));
+      }
+
+      if (user && activeUser) {
+        const chatsPath = `users/${activeUser.uid}/chats`;
+        setDoc(doc(db, chatsPath, "active_chat"), {
+          id: "active_chat",
+          userId: activeUser.uid,
+          title: "Sesi Aktif Gemini Workspace",
+          messages: finalMessagesList,
+          updatedAt: serverTimestamp(),
+        }).catch(err => console.error("Sync active_chat failed:", err));
       }
     } finally {
       setChatLoading(false);

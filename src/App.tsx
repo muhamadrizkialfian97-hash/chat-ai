@@ -13,7 +13,7 @@ import {
 } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "./firebase";
 import { ChatMessage, SavedFile } from "./types";
-import { generateLocalSmartResponse, cleanChatMessages } from "./utils/localAssistant";
+import { generateLocalSmartResponse } from "./utils/localAssistant";
 import Navbar from "./components/Navbar";
 
 export interface User {
@@ -311,7 +311,7 @@ export default function App() {
         switch (data.type) {
           case "init": {
             if (data.files) setFiles(data.files);
-            if (data.chats) setChatMessages(cleanChatMessages(data.chats));
+            if (data.chats) setChatMessages(data.chats);
             if (data.peerId) setMyPeerId(data.peerId);
             break;
           }
@@ -322,7 +322,7 @@ export default function App() {
           case "chat_message": {
             setChatMessages((prev) => {
               if (prev.some((m) => m.id === data.message.id)) return prev;
-              const next = cleanChatMessages([...prev, data.message]);
+              const next = [...prev, data.message];
               if (!user && !guestUser) {
                 localStorage.setItem("gemini_mirror_chats", JSON.stringify(next));
               }
@@ -386,7 +386,7 @@ export default function App() {
         const localFiles = localStorage.getItem("gemini_mirror_files");
         const localChats = localStorage.getItem("gemini_mirror_chats");
         setFiles(localFiles ? JSON.parse(localFiles) : []);
-        setChatMessages(localChats ? cleanChatMessages(JSON.parse(localChats)) : []);
+        setChatMessages(localChats ? JSON.parse(localChats) : []);
         return;
       }
 
@@ -432,7 +432,7 @@ export default function App() {
         (docSnap) => {
           if (docSnap.exists()) {
             const data = docSnap.data();
-            setChatMessages(cleanChatMessages(data.messages || []));
+            setChatMessages(data.messages || []);
           } else {
             setChatMessages([]);
           }
@@ -451,7 +451,7 @@ export default function App() {
       const localFiles = localStorage.getItem("gemini_mirror_files");
       const localChats = localStorage.getItem("gemini_mirror_chats");
       setFiles(localFiles ? JSON.parse(localFiles) : []);
-      setChatMessages(localChats ? cleanChatMessages(JSON.parse(localChats)) : []);
+      setChatMessages(localChats ? JSON.parse(localChats) : []);
     }
   }, [user, guestUser, authLoading, socketStatus]);
 
@@ -513,7 +513,7 @@ export default function App() {
       sender: collabUsername,
     };
 
-    const updatedMessages = cleanChatMessages([...chatMessages, userMsg]);
+    const updatedMessages = [...chatMessages, userMsg];
     setChatMessages(updatedMessages);
     persistLocalChats(updatedMessages);
 
@@ -659,7 +659,7 @@ export default function App() {
         sender: `Pramer AI (${activeDivision ? activeDivision.toUpperCase() : "Asisten"})`,
       };
 
-      const finalMessagesList = cleanChatMessages([...updatedMessages, modelMsg]);
+      const finalMessagesList = [...updatedMessages, modelMsg];
       setChatMessages(finalMessagesList);
       persistLocalChats(finalMessagesList);
 
@@ -800,7 +800,7 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
         timestamp: Date.now(),
         sender: `Pramer AI (${activeDivision ? activeDivision.toUpperCase() : "Asisten"})`,
       };
-      const finalMessagesList = cleanChatMessages([...updatedMessages, fallbackMsg]);
+      const finalMessagesList = [...updatedMessages, fallbackMsg];
       setChatMessages(finalMessagesList);
       persistLocalChats(finalMessagesList);
 

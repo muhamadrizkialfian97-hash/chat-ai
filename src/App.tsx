@@ -482,7 +482,25 @@ export default function App() {
       case "spia":
         return "Anda adalah PRAMA Satuan Pengawasan Intern / Internal Audit (SPIA) Inspector. Fokus audit utama Anda: audit fraud konsumsi solar (diesel) terhadap rute GPS, anomali pencatatan pergantian ban, perancangan Checklist internal control berkala, Kertas Kerja Audit (Working Papers) depo. Berikan arahan dalam Bahasa Indonesia.";
       default:
-        return "Anda adalah PRAMA (Project Management Analitic) Enterprise AI Advisor Pancaran Group. Bantu staf menyusun dokumen proyek, draf usulan, kalkulasi logistik, atau pemeriksaan kelayakan audit operasi secara cerdas, andal, dan analitis. Jawablah dalam Bahasa Indonesia.";
+        return `System Role: PRAMA Strategic AI Consultant
+
+Persona: Anda adalah Senior Project Management Consultant yang ahli dalam Analytic & AI Agent Integration. Tugas utama Anda adalah memberikan analisis mendalam untuk proyek "PRAMA" dengan fokus pada efisiensi operasional melalui AI.
+
+Ruang Lingkup Analisis (14 Pilar PRAMA):
+Anda hanya diperbolehkan memberikan respon berdasarkan kerangka kerja berikut:
+- Research Basis: Validasi data jurnal/riset terbaru.
+- Global/NAT: Overview standar industri global vs nasional.
+- Market & Competitor: Analisis peluang, TAM/SAM/SOM, dan posisi kompetitor.
+- Financial: Bedah Capex/Opex, ROI, dan LTV/CAC dengan simulasi efisiensi AI.
+- Ops & Flow: Perancangan Workflow, SLA, SOP, dan KPI organisasi.
+- Transition & GTM: Strategi Go-To-Market dan model transisi Pre-On-Post.
+- Risk & Digital: Manajemen risiko dan pemilihan tools otomasi/Digital Coverage.
+
+Prinsip Jawaban:
+- Setiap analisis wajib menyertakan bagaimana "AI Agent Integration" dapat mempercepat atau mengoptimasi poin tersebut.
+- Gunakan gaya bahasa profesional, data-driven, dan solutif.
+- Jika user meminta ringkasan akhir, tawarkan untuk menyusunnya ke dalam format laporan PDF.
+- Jawablah dalam Bahasa Indonesia secara terperinci.`;
     }
   };
 
@@ -562,9 +580,8 @@ export default function App() {
           parts: [{ text: finalQuery }]
         });
 
-        const activeSubSys = activeDivision ? getDivisionSystemInstruction(activeDivision) : "";
         const config: any = {
-          systemInstruction: `You are PRAMA (Project Management Analitic) AI Agent. ${activeSubSys} Help the user draft logs audit, notes, code, and analyze sheets. Reply in Indonesian by default.`,
+          systemInstruction: getDivisionSystemInstruction(activeDivision || ""),
         };
 
         if (enableSearch) {
@@ -601,6 +618,7 @@ export default function App() {
       } else {
         // Query server-side proxy
         let res;
+        let useBrowserFallback = false;
         try {
           res = await fetch("/api/chat", {
             method: "POST",
@@ -609,41 +627,106 @@ export default function App() {
               message: finalQuery,
               history: chatMessages.slice(-6),
               enableSearch,
-              customApiKey: clientApiKey || undefined
+              customApiKey: clientApiKey || undefined,
+              systemInstruction: getDivisionSystemInstruction(activeDivision || ""),
             }),
           });
         } catch (fetchErr: any) {
-          throw new Error("Gagal menghubungi server proxy. Silakan periksa koneksi Anda.");
-        }
-
-        const responseText = await res.text();
-        
-        if (!res.ok) {
-          let errorMsg = "Gagal memperoleh respons asisten.";
-          try {
-            const errObj = JSON.parse(responseText);
-            if (errObj && typeof errObj === "object") {
-              if (errObj.error && typeof errObj.error === "object") {
-                errorMsg = errObj.error.message || JSON.stringify(errObj.error);
-              } else if (typeof errObj.error === "string") {
-                errorMsg = errObj.error;
-              } else if (errObj.message) {
-                errorMsg = errObj.message;
-              } else {
-                errorMsg = JSON.stringify(errObj);
-              }
-            } else {
-              errorMsg = responseText || errorMsg;
-            }
-          } catch {
-            errorMsg = responseText || errorMsg;
+          if (clientApiKey) {
+            useBrowserFallback = true;
+          } else {
+            throw new Error("Gagal menghubungi server proxy. Silakan periksa koneksi Anda.");
           }
-          throw new Error(errorMsg);
         }
 
-        const answerData = JSON.parse(responseText);
-        mainAnswerText = answerData.text;
-        searchSources = answerData.sources || [];
+        if (useBrowserFallback) {
+          // Trigger direct client mode query as fallback
+          const aiBrowser = new GoogleGenAI({ apiKey: clientApiKey });
+          const formattedContents = chatMessages.slice(-6).map((msg: any) => ({
+            role: msg.role === "user" ? "user" : "model",
+            parts: [{ text: msg.text || "" }]
+          }));
+          formattedContents.push({
+            role: "user",
+            parts: [{ text: finalQuery }]
+          });
+          const config: any = {
+            systemInstruction: getDivisionSystemInstruction(activeDivision || ""),
+          };
+          if (enableSearch) {
+            config.tools = [{ googleSearch: {} }];
+          }
+          const response = await aiBrowser.models.generateContent({
+            model: "gemini-3.5-flash",
+            contents: formattedContents,
+            config,
+          });
+          mainAnswerText = (response.text || "") + "\n\n*(Diproses via Direct Browser AI karena server offline)*";
+          const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
+          searchSources = groundingChunks.map((chunk: any) => ({
+            uri: chunk.web?.uri || "",
+            title: chunk.web?.title || ""
+          })).filter((source: any) => source.uri && source.title);
+        } else {
+          const responseText = await res.text();
+          
+          if (!res.ok) {
+            // Check if we can fallback to clientApiKey if the proxy returned an API error (e.g., leaked key or quota issue)
+            if (clientApiKey && (responseText.includes("leaked") || responseText.includes("RESOURCE_EXHAUSTED") || res.status === 400 || res.status === 429)) {
+              const aiBrowser = new GoogleGenAI({ apiKey: clientApiKey });
+              const formattedContents = chatMessages.slice(-6).map((msg: any) => ({
+                role: msg.role === "user" ? "user" : "model",
+                parts: [{ text: msg.text || "" }]
+              }));
+              formattedContents.push({
+                role: "user",
+                parts: [{ text: finalQuery }]
+              });
+              const config: any = {
+                systemInstruction: getDivisionSystemInstruction(activeDivision || ""),
+              };
+              if (enableSearch) {
+                config.tools = [{ googleSearch: {} }];
+              }
+              const response = await aiBrowser.models.generateContent({
+                model: "gemini-3.5-flash",
+                contents: formattedContents,
+                config,
+              });
+              mainAnswerText = (response.text || "") + "\n\n*(Diproses via Direct Browser AI karena kendala server terbatas)*";
+              const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
+              searchSources = groundingChunks.map((chunk: any) => ({
+                uri: chunk.web?.uri || "",
+                title: chunk.web?.title || ""
+              })).filter((source: any) => source.uri && source.title);
+            } else {
+              let errorMsg = "Gagal memperoleh respons asisten.";
+              try {
+                const errObj = JSON.parse(responseText);
+                if (errObj && typeof errObj === "object") {
+                  if (errObj.error && typeof errObj.error === "object") {
+                    errorMsg = errObj.error.message || JSON.stringify(errObj.error);
+                  } else if (typeof errObj.error === "string") {
+                    errorMsg = errObj.error;
+                  } else if (errObj.message) {
+                    errorMsg = errObj.message;
+                  } else {
+                    errorMsg = JSON.stringify(errObj);
+                  }
+                } else {
+                  errorMsg = responseText || errorMsg;
+                }
+              } catch {
+                errorMsg = responseText || errorMsg;
+              }
+              throw new Error(errorMsg);
+            }
+          } else {
+            const answerData = JSON.parse(responseText);
+            mainAnswerText = answerData.text;
+            searchSources = answerData.sources || [];
+          }
+        }
       }
 
       if (searchSources && searchSources.length > 0) {

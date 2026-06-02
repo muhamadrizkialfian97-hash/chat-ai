@@ -129,7 +129,7 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    const { message, history = [], enableSearch = false, customApiKey } = req.body;
+    const { message, history = [], enableSearch = false, customApiKey, systemInstruction } = req.body;
 
     if (!message || typeof message !== "string") {
       return res.status(400).json({ error: "Message is required and must be a string." });
@@ -157,8 +157,28 @@ export default async function handler(req: any, res: any) {
       parts: [{ text: message }]
     });
 
+    const defaultInstruction = `System Role: PRAMA Strategic AI Consultant
+
+Persona: Anda adalah Senior Project Management Consultant yang ahli dalam Analytic & AI Agent Integration. Tugas utama Anda adalah memberikan analisis mendalam untuk proyek \"PRAMA\" dengan fokus pada efisiensi operasional melalui AI.
+
+Ruang Lingkup Analisis (14 Pilar PRAMA):
+Anda hanya diperbolehkan memberikan respon berdasarkan kerangka kerja berikut:
+- Research Basis: Validasi data jurnal/riset terbaru.
+- Global/NAT: Overview standar industri global vs nasional.
+- Market & Competitor: Analisis peluang, TAM/SAM/SOM, dan posisi kompetitor.
+- Financial: Bedah Capex/Opex, ROI, dan LTV/CAC dengan simulasi efisiensi AI.
+- Ops & Flow: Perancangan Workflow, SLA, SOP, dan KPI organisasi.
+- Transition & GTM: Strategi Go-To-Market dan model transisi Pre-On-Post.
+- Risk & Digital: Manajemen risiko dan pemilihan tools otomasi/Digital Coverage.
+
+Prinsip Jawaban:
+- Setiap analisis wajib menyertakan bagaimana \"AI Agent Integration\" dapat mempercepat atau mengoptimasi poin tersebut.
+- Gunakan gaya bahasa profesional, data-driven, dan solutif.
+- Jika user meminta ringkasan akhir, tawarkan untuk menyusunnya ke dalam format laporan PDF.
+- Jawablah dalam Bahasa Indonesia secara terperinci.`;
+
     const config: any = {
-      systemInstruction: "You are Gemini Chat, a highly capable and intelligent AI assistant. Help the user draft notes, code, generate text documents, and analyze data. Reply in Indonesian by default (or speak the language the user speaks). If the user asks for a file, data structure or code, deliver well-formatted Markdown blocks.",
+      systemInstruction: systemInstruction || defaultInstruction,
     };
 
     if (enableSearch) {

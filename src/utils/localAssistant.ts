@@ -264,3 +264,31 @@ Berikut adalah tabel draf langkah kerja atau pengalokasian langkah-langkah strat
 - Silakan berikan detail atau angka pembanding kuantitas muatan lebih lanjut di kolom chat agar saya dapat melakukan penyesuaian simulasi draf dokumen ini secara lebih presisi sesuai keinginan Anda.`
   };
 }
+
+export function cleanChatMessages(messages: any[]): any[] {
+  if (!messages || !Array.isArray(messages)) return [];
+  return messages.filter((m) => {
+    if (!m) return false;
+    const textLower = (m.text || "").toLowerCase();
+    const senderLower = (m.sender || "").toLowerCase();
+    
+    if (senderLower.includes("portal error") || senderLower.includes("error system") || senderLower.includes("sistem error") || senderLower.includes("portal error system")) {
+      return false;
+    }
+    if (
+      textLower.includes("terjadi hambatan") ||
+      textLower.includes("hambatan saat menghubungi") ||
+      textLower.includes("reported as leaked") ||
+      textLower.includes("key was reported as leaked") ||
+      textLower.includes("api key") ||
+      textLower.includes("api_key") ||
+      textLower.includes("resource_exhausted") ||
+      textLower.includes("koneksi terhambat") ||
+      textLower.includes("koneksi portal") ||
+      textLower.includes("bocor")
+    ) {
+      return false;
+    }
+    return true;
+  });
+}

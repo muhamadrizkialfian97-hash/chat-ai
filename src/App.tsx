@@ -15,6 +15,7 @@ import { db, handleFirestoreError, OperationType } from "./firebase";
 import { ChatMessage, SavedFile } from "./types";
 import { generateLocalSmartResponse, cleanChatMessages } from "./utils/localAssistant";
 import Navbar from "./components/Navbar";
+import pramaLogo from "./assets/images/prama_logo_1780452149937.png";
 
 export interface User {
   uid: string;
@@ -25,7 +26,6 @@ export interface User {
 }
 import ChatPanel from "./components/ChatPanel";
 import FilePanel from "./components/FilePanel";
-import CollabBar from "./components/CollabBar";
 import { 
   TrendingUp, 
   Users, 
@@ -169,6 +169,9 @@ export default function App() {
 
   // Navigation tab for mobile layouts
   const [activeTab, setActiveTab] = useState<"chat" | "files">("chat");
+
+  // Tab selector inside main dashboard
+  const [dashboardView, setDashboardView] = useState<"divisions" | "saved_docs">("divisions");
 
   // Persist connection settings
   useEffect(() => {
@@ -470,38 +473,56 @@ export default function App() {
 
   // Get dynamic instructions based on active division
   const getDivisionSystemInstruction = (divId: string) => {
+    let focusText = "";
     switch (divId) {
       case "comercial":
-        return "Anda adalah PRAMA Comercial & Business Development Specialist. Fokus analisis Anda meliputi: tarif logistik darat/laut, penyusunan draf proposal bidding tender armada kapal tugboat & barge atau truk logistik darat, simulasi kontainer, margin laba rute Jakarta-Surabaya dan rute Pancaran Group lainnya. Berikan ulasan taktis dalam Bahasa Indonesia.";
+        focusText = "Fokus analisis utama Anda saat ini adalah aspek komersial PRAMA: Market Opportunity, Competitor, Go To Market Strategy, TAM SAM SOM, serta Supply & Demand.";
+        break;
       case "hca":
-        return "Anda adalah PRAMA Human Capital & Affairs (HCA) Specialist. Fokus kerja Anda meliputi: Key Performance Indicators (KPI) kru kapal & sopir logistik trailer, analisis kompetensi awak kapal, rekrutmen staf lapangan Pancaran Group, penjadwalan gilir dinas, kepatuhan keselamatan muatan berat. Jawab dengan taktis dalam Bahasa Indonesia.";
+        focusText = "Fokus analisis utama Anda saat ini adalah aspek organisasi PRAMA: Organization (Qualification, Skill, Output/KPI, SOP) serta kepatuhan Structure.";
+        break;
       case "fina":
-        return "Anda adalah PRAMA Finance, Administration & Accounting (FINA) Auditor. Fokus analisis Anda meliputi: draf anggaran dwi-mingguan, pemantauan ketat cash flow mingguan, metode penyusutan lini armada trailer/tongkang, rasio profitabilitas P&L per unit kapal, audit cost-benefit suku cadang. Jawablah secara analitis dalam Bahasa Indonesia.";
+        focusText = "Fokus analisis utama Anda saat ini adalah aspek finansial PRAMA: Financial (Capex, Opex, P&L, Cash Flow, ROI) serta analisis CAC & LTV.";
+        break;
       case "lga":
-        return "Anda adalah PRAMA Legal & Governance Affairs (LGA) Counsel. Fokus hukum Anda: draf klausul deviasi angkutan logs, perlindungan asuransi muatan, audit kelayakan regulas ODOL (Over Dimension Over Load) dan kepatuhan trayek darat, perumusan adendum Nota Kesepahaman (MoU). Bahasa respon: Indonesia.";
+        focusText = "Fokus analisis utama Anda saat ini adalah aspek hukum dan mitigasi PRAMA: Risk Management serta Transition Model (Pre-On-Post).";
+        break;
       case "spia":
-        return "Anda adalah PRAMA Satuan Pengawasan Intern / Internal Audit (SPIA) Inspector. Fokus audit utama Anda: audit fraud konsumsi solar (diesel) terhadap rute GPS, anomali pencatatan pergantian ban, perancangan Checklist internal control berkala, Kertas Kerja Audit (Working Papers) depo. Berikan arahan dalam Bahasa Indonesia.";
+        focusText = "Fokus analisis utama Anda saat ini adalah aspek operasional dan audit PRAMA: Ops Model (Flow Process, Workflow Diagram, SLA) serta Digital Coverage (Tools, Method, Impact, Automation).";
+        break;
       default:
-        return `System Role: PRAMA Strategic AI Consultant
-
-Persona: Anda adalah Senior Project Management Consultant yang ahli dalam Analytic & AI Agent Integration. Tugas utama Anda adalah memberikan analisis mendalam untuk proyek "PRAMA" dengan fokus pada efisiensi operasional melalui AI.
-
-Ruang Lingkup Analisis (14 Pilar PRAMA):
-Anda hanya diperbolehkan memberikan respon berdasarkan kerangka kerja berikut:
-- Research Basis: Validasi data jurnal/riset terbaru.
-- Global/NAT: Overview standar industri global vs nasional.
-- Market & Competitor: Analisis peluang, TAM/SAM/SOM, dan posisi kompetitor.
-- Financial: Bedah Capex/Opex, ROI, dan LTV/CAC dengan simulasi efisiensi AI.
-- Ops & Flow: Perancangan Workflow, SLA, SOP, dan KPI organisasi.
-- Transition & GTM: Strategi Go-To-Market dan model transisi Pre-On-Post.
-- Risk & Digital: Manajemen risiko dan pemilihan tools otomasi/Digital Coverage.
-
-Prinsip Jawaban:
-- Setiap analisis wajib menyertakan bagaimana "AI Agent Integration" dapat mempercepat atau mengoptimasi poin tersebut.
-- Gunakan gaya bahasa profesional, data-driven, dan solutif.
-- Jika user meminta ringkasan akhir, tawarkan untuk menyusunnya ke dalam format laporan PDF.
-- Jawablah dalam Bahasa Indonesia secara terperinci.`;
+        focusText = "Analisis seluruh lingkup strategi manajemen proyek PRAMA secara menyeluruh.";
+        break;
     }
+
+    return `System Role: PRAMA Strategic AI Consultant
+
+Persona: Anda adalah Senior Project Management Consultant yang ahli dalam Analytic & AI Agent Integration. Tugas utama Anda adalah memberikan analisis mendalam untuk proyek PRAMA dengan fokus pada efisiensi operasional melalui AI serta memberikan strategi manajemen proyek yang lengkap. ${focusText}
+
+Ruang Lingkup Analisis (PRAMA):
+Anda hanya diperbolehkan memberikan respon dan menganalisis strategi di dalam batas lingkup berikut ini saja:
+1. New Journal
+2. Global/NAT Overview
+3. Market Opportunity
+4. Financial (Capex, Opex, P&L, Cash Flow, ROI)
+5. Supply & Demand
+6. Structure
+7. Organization (Qualification, Skill, Output/KPI, SOP)
+8. Transition Model (Pre-On-Post)
+9. Go To Market Strategy
+10. Ops Model (Flow Process, Workflow Diagram, SLA)
+11. Risk Management
+12. Digital Coverage (Tools, Method, Impact, Automation)
+13. Competitor
+14. TAM, SAM, SOM
+15. CAC, LTV
+
+Gaya Bahasa & Aturan Format Jawaban Terstruktur (SANGAT PENTING):
+1. Setiap penjelasan wajib diawali dengan paragraf pengantar yang memiliki kalimat awal yang rapi dan jelas.
+2. Jawaban harus disusun secara terstruktur dengan urutan hierarki yang mendalam. Jika membuat poin utama, WAJIB menggunakan penomoran angka biasa (contoh: 1., 2., 3.).
+3. Di bawah setiap poin utama tersebut, jika ingin menjelaskan kerucutan pembahasannya/rincian detailnya, gunakan urutan huruf abjad biasa (contoh: a., b., c.) dengan baris baru terpisah agar sistem chatting dapat memformat rincian kerucut secara rapi dan menjorok ke dalam dengan indah.
+4. Anda SAMA SEKALI TIDAK BOLEH menggunakan simbol "*" (tanda bintang) atau "#" (tanda pagar) di seluruh teks respon Anda. Jangan menulis bullet points menggunakan tanda bintang, jangan gunakan bold text bermarkdown seperti **teks**, jangan menggunakan hashtag atau heading bertanda pagar seperti #, ##, ### dsb. Gunakan spasi baris biasa, angka biasa, atau huruf biasa untuk pemisahan bagian agar tampilan sangat bersih dan rapi.
+5. Batasan Topik: Jangan menjawab pertanyaan di luar batas lingkup di atas. Jika pengguna menanyakan hal lain diluar manajemen proyek PRAMA, Anda harus menolak dengan santun dan mengingatkan bahwa Anda hanya melayani konsultasi manajemen proyek di bawah naungan PRAMA.`;
   };
 
   // 1. Send Message via API server-side route
@@ -588,24 +609,34 @@ Prinsip Jawaban:
           config.tools = [{ googleSearch: {} }];
         }
 
-        let response;
-        try {
-          response = await aiBrowser.models.generateContent({
-            model: "gemini-3.5-flash",
-            contents: formattedContents,
-            config,
-          });
-        } catch (fallbackError: any) {
-          console.warn("Browser-side gemini-3.5-flash failed or unavailable, trying gemini-1.5-flash...", fallbackError?.message);
+        const clientModelsToTry = [
+          "gemini-3.5-flash",
+          "gemini-flash-latest",
+          "gemini-3.1-flash-lite",
+          "gemini-2.5-flash"
+        ];
+
+        let response = null;
+        let lastClientError = null;
+
+        for (const modelName of clientModelsToTry) {
           try {
             response = await aiBrowser.models.generateContent({
-              model: "gemini-1.5-flash",
+              model: modelName,
               contents: formattedContents,
               config,
             });
-          } catch (finalError) {
-            throw fallbackError; // throw the original error if fallback also fails
+            if (response) {
+              break;
+            }
+          } catch (err: any) {
+            console.warn(`Browser-side model ${modelName} failed or unavailable:`, err.message || err);
+            lastClientError = err;
           }
+        }
+
+        if (!response) {
+          throw lastClientError || new Error("Semua model Gemini gagal merespons.");
         }
 
         mainAnswerText = response.text || "";
@@ -656,11 +687,30 @@ Prinsip Jawaban:
           if (enableSearch) {
             config.tools = [{ googleSearch: {} }];
           }
-          const response = await aiBrowser.models.generateContent({
-            model: "gemini-3.5-flash",
-            contents: formattedContents,
-            config,
-          });
+          const clientModelsToTry = [
+            "gemini-3.5-flash",
+            "gemini-flash-latest",
+            "gemini-3.1-flash-lite",
+            "gemini-2.5-flash"
+          ];
+          let response = null;
+          let lastClientError = null;
+          for (const modelName of clientModelsToTry) {
+            try {
+              response = await aiBrowser.models.generateContent({
+                model: modelName,
+                contents: formattedContents,
+                config,
+              });
+              if (response) break;
+            } catch (err: any) {
+              console.warn(`Browser-side fallback model ${modelName} failed or unavailable:`, err.message || err);
+              lastClientError = err;
+            }
+          }
+          if (!response) {
+            throw lastClientError || new Error("Semua model Gemini gagal merespons.");
+          }
           mainAnswerText = (response.text || "") + "\n\n*(Diproses via Direct Browser AI karena server offline)*";
           const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
           searchSources = groundingChunks.map((chunk: any) => ({
@@ -688,11 +738,30 @@ Prinsip Jawaban:
               if (enableSearch) {
                 config.tools = [{ googleSearch: {} }];
               }
-              const response = await aiBrowser.models.generateContent({
-                model: "gemini-3.5-flash",
-                contents: formattedContents,
-                config,
-              });
+              const clientModelsToTry = [
+                "gemini-3.5-flash",
+                "gemini-flash-latest",
+                "gemini-3.1-flash-lite",
+                "gemini-2.5-flash"
+              ];
+              let response = null;
+              let lastClientError = null;
+              for (const modelName of clientModelsToTry) {
+                try {
+                  response = await aiBrowser.models.generateContent({
+                    model: modelName,
+                    contents: formattedContents,
+                    config,
+                  });
+                  if (response) break;
+                } catch (err: any) {
+                  console.warn(`Browser-side fallback model ${modelName} failed or unavailable:`, err.message || err);
+                  lastClientError = err;
+                }
+              }
+              if (!response) {
+                throw lastClientError || new Error("Semua model Gemini gagal merespons.");
+              }
               mainAnswerText = (response.text || "") + "\n\n*(Diproses via Direct Browser AI karena kendala server terbatas)*";
               const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
               searchSources = groundingChunks.map((chunk: any) => ({
@@ -729,15 +798,18 @@ Prinsip Jawaban:
         }
       }
 
+      // Strip asterisks (*) and hash (#) symbols from the main assistant answer text to align with formatting rules
+      let sanitizedAnswerText = mainAnswerText.replace(/[*#]/g, "");
+
       if (searchSources && searchSources.length > 0) {
-        mainAnswerText += "\n\n**Sumber rujukan Google Search Grounding:**\n" + 
-          searchSources.map((src: any) => `- [${src.title}](${src.uri})`).join("\n");
+        sanitizedAnswerText += "\n\nSumber rujukan Google Search Grounding:\n" + 
+          searchSources.map((src: any) => `[${src.title}](${src.uri})`).join("\n");
       }
 
       const modelMsg: ChatMessage = {
         id: `m-gem-${Date.now()}`,
         role: "model",
-        text: mainAnswerText,
+        text: sanitizedAnswerText,
         timestamp: Date.now(),
         sender: `Pramer AI (${activeDivision ? activeDivision.toUpperCase() : "Asisten"})`,
       };
@@ -872,14 +944,34 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
         }
       }
 
-      // Generate highly intelligent Indonesian response tailored to the user's specific text + active division
-      const fallbackPayload = generateLocalSmartResponse(text, activeDivision, updatedMessages);
+      // Check if this is a genuine API key/quota/connection error
+      const lowercaseErr = (err?.message || "").toLowerCase();
+      const isGenuineAPIError = 
+        lowercaseErr.includes("api") || 
+        lowercaseErr.includes("key") || 
+        lowercaseErr.includes("quota") || 
+        lowercaseErr.includes("exhausted") || 
+        lowercaseErr.includes("gagal") || 
+        lowercaseErr.includes("hambatan") || 
+        lowercaseErr.includes("koneksi") || 
+        lowercaseErr.includes("proxy") || 
+        lowercaseErr.includes("invalid") ||
+        lowercaseErr.includes("failed to fetch");
+
+      let finalResponseText = "";
+      if (isGenuineAPIError) {
+        finalResponseText = friendlyText;
+      } else {
+        // Generate highly intelligent Indonesian response tailored to the user's specific text + active division
+        const fallbackPayload = generateLocalSmartResponse(text, activeDivision, updatedMessages);
+        finalResponseText = fallbackPayload.text;
+      }
 
       const activeUser = user || guestUser;
       const fallbackMsg: ChatMessage = {
         id: `m-fallback-${Date.now()}`,
         role: "model",
-        text: fallbackPayload.text,
+        text: finalResponseText,
         timestamp: Date.now(),
         sender: `Pramer AI (${activeDivision ? activeDivision.toUpperCase() : "Asisten"})`,
       };
@@ -1208,8 +1300,14 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
   if (authLoading) {
     return (
       <div className="flex h-screen w-screen flex-col items-center justify-center bg-slate-50 font-sans text-slate-800">
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-600 text-white shadow-lg animate-bounce duration-1000">
-          <span className="font-display font-extrabold text-2xl">P</span>
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl overflow-hidden bg-slate-50 border border-slate-200 shadow-lg animate-bounce duration-1000">
+          <img 
+            id="prama-loading-logo"
+            src={pramaLogo} 
+            alt="PRAMA Logo" 
+            className="h-full w-full object-cover"
+            referrerPolicy="no-referrer"
+          />
         </div>
         <h2 className="mt-4 font-display font-extrabold text-lg text-slate-800 tracking-wide uppercase">
           PRAMA PORTAL
@@ -1571,11 +1669,45 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
               PUSAT HUB DIREKTORAT ENTERPRISE
             </span>
             <h2 className="mt-2.5 font-display font-black text-2xl tracking-tight text-slate-900 md:text-3.5xl">
-              Pilih Hub Divisi Khusus
+              {dashboardView === "divisions" ? "Pilih Hub Divisi Khusus" : "Simpan Draf & Dokumen Artikel PM"}
             </h2>
             <p className="mt-1.5 text-xs text-slate-500 max-w-xl mx-auto font-bold leading-relaxed">
-              Klik salah satu pilar divisi operasional korporat logistik Pancaran Group di bawah ini untuk memulai sesi dialog analisis, audit, atau penyusunan dokumen berbasis asisten cerdas PRAMA.
+              {dashboardView === "divisions"
+                ? "Klik salah satu pilar divisi operasional korporat logistik Pancaran Group di bawah ini untuk memulai sesi dialog analisis, audit, atau penyusunan dokumen berbasis asisten cerdas PRAMA."
+                : "Kelola, edit, cari, cetak, dan ekspor draf artikel project management atau dokumen audit yang tersimpan di cloud terenkripsi portal PRAMA."}
             </p>
+          </div>
+
+          {/* Elegant Dashboard Tab Switcher */}
+          <div className="flex flex-wrap items-center justify-center gap-3 mb-10">
+            <button
+              onClick={() => setDashboardView("divisions")}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold transition-all duration-200 border cursor-pointer hover:scale-101 shrink-0 ${
+                dashboardView === "divisions"
+                  ? "bg-indigo-600 border-indigo-650 border-indigo-600 text-white shadow-md shadow-indigo-100"
+                  : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300"
+              }`}
+            >
+              <Building2 className="h-4 w-4 text-sky-500" />
+              <span>Pilar Divisi Analisis AI</span>
+            </button>
+
+            <button
+              onClick={() => setDashboardView("saved_docs")}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold transition-all duration-200 border cursor-pointer hover:scale-101 shrink-0 ${
+                dashboardView === "saved_docs"
+                  ? "bg-indigo-600 border-indigo-650 border-indigo-600 text-white shadow-md shadow-indigo-100"
+                  : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300"
+              }`}
+            >
+              <HardDrive className="h-4 w-4 text-emerald-505 text-emerald-500" />
+              <span>Menu Simpan Dokumen / Artikel PM</span>
+              <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded-md font-extrabold shadow-inner ${
+                dashboardView === "saved_docs" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-505 text-slate-500"
+              }`}>
+                {files.length}
+              </span>
+            </button>
           </div>
 
           {/* Admin Panel Console */}
@@ -1641,60 +1773,95 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
             </div>
           )}
 
-          {/* Division Bento-like Selection Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 text-left max-w-7xl mx-auto">
-            {divisions.map((div) => {
-              const IconComp = div.icon;
-              return (
-                <div
-                  key={div.id}
-                  onClick={() => setActiveDivision(div.id)}
-                  className="group relative flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 cursor-pointer hover:border-indigo-400 shadow-sm hover:shadow-lg transition-all duration-300"
-                >
-                  <div className="space-y-4">
-                    {/* Header: Icon and Division Code */}
-                    <div className="flex items-center justify-between">
-                      <div className={`flex h-10 w-10 items-center justify-center rounded-xl transition ${div.lightAccent} shadow-sm font-bold`}>
-                        <IconComp className="h-5 w-5" />
-                      </div>
-                      <span className="font-mono text-[9px] font-black tracking-widest bg-slate-100 text-slate-500 px-2 py-0.5 rounded border border-slate-200">
-                        {div.code}
-                      </span>
-                    </div>
-
-                    {/* Title & description */}
-                    <div>
-                      <h4 className="font-display font-extrabold text-sm text-slate-800 leading-snug group-hover:text-indigo-700 transition">
-                        {div.name}
-                      </h4>
-                      <p className="text-[10px] font-bold text-slate-400 mt-0.5 tracking-wide line-clamp-1 uppercase">
-                        {div.desc}
-                      </p>
-                    </div>
-
-                    {/* Quick profile info */}
-                    <div className="pt-2 border-t border-slate-100">
-                      <span className="text-[8px] font-extrabold text-slate-400 uppercase tracking-widest block font-mono">PROFIL ANALISIS</span>
-                      <p className="text-[10px] text-slate-500 leading-normal font-bold mt-1 line-clamp-4 italic">
-                        &quot;{div.details}&quot;
-                      </p>
-                    </div>
+          {dashboardView === "saved_docs" ? (
+            <div className="max-w-5xl mx-auto text-left bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden w-full h-[650px] flex flex-col">
+              <div className="bg-slate-900 px-6 py-4 flex items-center justify-between text-white border-b border-slate-800 shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-950 text-indigo-400 font-bold border border-indigo-800 text-sm">
+                    📁
                   </div>
-
-                  {/* Call to active button */}
-                  <div className="pt-4 mt-auto">
-                    <button
-                      type="button"
-                      className="w-full flex items-center justify-center gap-1 bg-indigo-65 bg-indigo-50 border border-indigo-15 border-indigo-100 hover:bg-indigo-600 hover:text-white rounded-xl py-2 text-xs font-bold text-indigo-700 transition group-hover:scale-102 shadow-2sm cursor-pointer"
-                    >
-                      <span>Masuk Tahap Analisis AI</span>
-                      <ArrowRight className="h-3 w-3 shrink-0" />
-                    </button>
+                  <div>
+                    <h3 className="font-display font-black text-xs tracking-wider uppercase leading-none text-white">
+                      MANAJEMEN DOKUMEN & DRAF PROYEK
+                    </h3>
+                    <p className="text-[9px] text-slate-400 font-mono tracking-widest font-bold mt-1">
+                      ARSIP LAPORAN, PROPOSAL ARTIKEL, & DRAFTING SYSTEM PM
+                    </p>
                   </div>
                 </div>
-              );
-            })}
-          </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-[9px] font-black bg-slate-800 text-emerald-400 border border-slate-705 border-slate-700 px-2.5 py-1 rounded-full uppercase tracking-widest">
+                    {files.length} Tersimpan
+                  </span>
+                </div>
+              </div>
+              <div className="flex-1 overflow-hidden relative">
+                <FilePanel
+                  files={files}
+                  selectedFile={selectedFile}
+                  onSelectFile={setSelectedFile}
+                  onSaveFile={handleSaveFile}
+                  onDeleteFile={handleDeleteFile}
+                  isUserSignedIn={!!user}
+                />
+              </div>
+            </div>
+          ) : (
+            /* Division Bento-like Selection Grid */
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 text-left max-w-7xl mx-auto">
+              {divisions.map((div) => {
+                const IconComp = div.icon;
+                return (
+                  <div
+                    key={div.id}
+                    onClick={() => setActiveDivision(div.id)}
+                    className="group relative flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 cursor-pointer hover:border-indigo-400 shadow-sm hover:shadow-lg transition-all duration-300"
+                  >
+                    <div className="space-y-4">
+                      {/* Header: Icon and Division Code */}
+                      <div className="flex items-center justify-between">
+                        <div className={`flex h-10 w-10 items-center justify-center rounded-xl transition ${div.lightAccent} shadow-sm font-bold`}>
+                          <IconComp className="h-5 w-5" />
+                        </div>
+                        <span className="font-mono text-[9px] font-black tracking-widest bg-slate-100 text-slate-500 px-2 py-0.5 rounded border border-slate-200">
+                          {div.code}
+                        </span>
+                      </div>
+
+                      {/* Title & description */}
+                      <div>
+                        <h4 className="font-display font-extrabold text-sm text-slate-800 leading-snug group-hover:text-indigo-700 transition">
+                          {div.name}
+                        </h4>
+                        <p className="text-[10px] font-bold text-slate-400 mt-0.5 tracking-wide line-clamp-1 uppercase">
+                          {div.desc}
+                        </p>
+                      </div>
+
+                      {/* Quick profile info */}
+                      <div className="pt-2 border-t border-slate-100">
+                        <span className="text-[8px] font-extrabold text-slate-400 uppercase tracking-widest block font-mono">PROFIL ANALISIS</span>
+                        <p className="text-[10px] text-slate-500 leading-normal font-bold mt-1 line-clamp-4 italic">
+                          &quot;{div.details}&quot;
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Call to active button */}
+                    <div className="pt-4 mt-auto">
+                      <button
+                        type="button"
+                        className="w-full flex items-center justify-center gap-1 bg-indigo-50 border border-indigo-100 hover:bg-indigo-600 hover:text-white rounded-xl py-2 text-xs font-bold text-indigo-700 transition group-hover:scale-102 shadow-2sm cursor-pointer"
+                      >
+                        <span>Masuk Tahap Analisis AI</span>
+                        <ArrowRight className="h-3 w-3 shrink-0" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
         </div>
 
@@ -1711,27 +1878,6 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-slate-100 font-sans text-slate-800 transition-colors duration-250">
       
-      {/* Navbar updated for division crumb display */}
-      <Navbar 
-        user={user || (guestUser ? (guestUser as any) : null)} 
-        loading={authLoading} 
-        activeDivision={activeDivision}
-        onClearDivision={() => setActiveDivision(null)}
-        collabUsername={collabUsername}
-        onLogout={handleLogoutAll}
-      />
-
-      {/* Collab bar */}
-      <CollabBar
-        roomId={roomId}
-        setRoomId={setRoomId}
-        username={collabUsername}
-        setUsername={setCollabUsername}
-        socketStatus={socketStatus}
-        presence={presence}
-        typingUsers={typingUsers}
-      />
-
       {/* Offline Mode alert inside Workspace */}
       {!user && (
         <div className="flex items-center gap-2.5 bg-amber-50 px-4 py-2 border-b border-amber-200 text-xs text-amber-800 font-bold shadow-3sm">
@@ -1796,44 +1942,8 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
         {/* Middle & Right Content Panels */}
         <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
           
-          {/* Mobile Tab swapper header */}
-          <div className="flex border-b border-slate-200 bg-white md:hidden shrink-0 w-full absolute top-0 z-10">
-            <button
-              onClick={() => setActiveTab("chat")}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-extrabold border-b-2 transition cursor-pointer ${
-                activeTab === "chat"
-                  ? "border-indigo-600 text-indigo-700 bg-indigo-50/20"
-                  : "border-transparent text-slate-500 hover:text-slate-800"
-              }`}
-            >
-              <MessageSquare className="h-4 w-4" />
-              <span>Sesi AI Chat</span>
-            </button>
-            <button
-              onClick={() => setActiveTab("files")}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-extrabold border-b-2 transition cursor-pointer ${
-                activeTab === "files"
-                  ? "border-indigo-600 text-indigo-700 bg-indigo-50/20"
-                  : "border-transparent text-slate-500 hover:text-slate-800"
-              }`}
-            >
-              <HardDrive className="h-4 w-4" />
-              <span>Mirror Storage</span>
-              {files.length > 0 && (
-                <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[9px] text-slate-600 font-mono border border-slate-200 font-bold ml-1.5">
-                  {files.length}
-                </span>
-              )}
-            </button>
-          </div>
-
-          {/* Desktop Dual Column Views */}
-          {/* Column 1: AI Chat Canvas */}
-          <div
-            className={`flex-1 flex flex-col h-full overflow-hidden ${
-              activeTab === "chat" ? "block w-full pt-[45px] md:pt-0" : "hidden md:flex md:w-[55%] border-r border-slate-200"
-            }`}
-          >
+          {/* Column 1: AI Chat Canvas - Full Width Focused View */}
+          <div className="flex-1 flex flex-col h-full overflow-hidden w-full">
             <ChatPanel
               messages={chatMessages}
               loading={chatLoading}
@@ -1852,22 +1962,8 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
               }}
               activeDivision={activeDivision}
               onTyping={handleTyping}
-            />
-          </div>
-
-          {/* Column 2: Mirror files Storage */}
-          <div
-            className={`flex-1 flex flex-col h-full overflow-hidden ${
-              activeTab === "files" ? "block w-full pt-[45px] md:pt-0" : "hidden md:flex md:w-[45%]"
-            }`}
-          >
-            <FilePanel
-              files={files}
-              selectedFile={selectedFile}
-              onSelectFile={setSelectedFile}
-              onSaveFile={handleSaveFile}
-              onDeleteFile={handleDeleteFile}
-              isUserSignedIn={!!user}
+              onBackToDashboard={() => setActiveDivision(null)}
+              onLogout={handleLogoutAll}
             />
           </div>
 

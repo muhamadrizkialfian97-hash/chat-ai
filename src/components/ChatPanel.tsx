@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import { ChatMessage, SavedFile } from "../types";
-import { Send, FileText, Globe, CircleAlert, Cpu, Eye, EyeOff, Settings, Sparkles } from "lucide-react";
+import { Send, FileText, Globe, CircleAlert, Cpu, Eye, EyeOff, Settings, Sparkles, Download, Printer, ArrowLeft, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { exportToWord, exportToPDF, downloadPDFDirect } from "../utils/documentExporter";
+import pramaLogo from "../assets/images/prama_logo_1780452149937.png";
 
 interface ChatPanelProps {
   messages: ChatMessage[];
@@ -15,6 +17,8 @@ interface ChatPanelProps {
   setClientApiKey: (key: string) => void;
   activeDivision: string | null;
   onTyping?: (isTyping: boolean) => void;
+  onBackToDashboard?: () => void;
+  onLogout?: () => void;
 }
 
 export default function ChatPanel({
@@ -29,6 +33,8 @@ export default function ChatPanel({
   setClientApiKey,
   activeDivision,
   onTyping,
+  onBackToDashboard,
+  onLogout,
 }: ChatPanelProps) {
   const [input, setInput] = useState("");
   const [enableSearch, setEnableSearch] = useState(false);
@@ -153,57 +159,90 @@ export default function ChatPanel({
   return (
     <div className="flex h-full flex-col bg-slate-50 transition-colors">
       
-      {/* Top Header Controls (Search & References) */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3 shadow-sm">
+      {/* Contact Head Bar (Chat-like Persona Status) */}
+      <div className="flex items-center justify-between border-b border-secondary bg-white px-4 py-3 shrink-0 shadow-sm z-10">
+        <div className="flex items-center gap-3">
+          {onBackToDashboard && (
+            <button
+              onClick={onBackToDashboard}
+              className="flex h-8 w-8 items-center justify-center rounded-xl hover:bg-slate-100 border border-slate-200 text-slate-500 hover:text-indigo-650 transition cursor-pointer shrink-0"
+              title="Kembali ke Dashboard / Ganti Divisi"
+            >
+              <ArrowLeft className="h-4.5 w-4.5" />
+            </button>
+          )}
+
+          <div className="relative flex h-10 w-10 items-center justify-center rounded-full overflow-hidden border border-slate-200 bg-slate-50 shadow-3sm shrink-0">
+            <img 
+              src={pramaLogo} 
+              alt="PRAMA Advisor" 
+              className="h-full w-full object-cover"
+              referrerPolicy="no-referrer"
+            />
+            <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white animate-pulse" />
+          </div>
+          <div>
+            <span className="block font-sans font-extrabold text-slate-900 text-sm tracking-tight">PRAMA Strategic AI Advisor</span>
+            <div className="flex items-center gap-1.5 text-[10px] text-emerald-600 font-bold uppercase tracking-wider">
+              <span>{getDivisionTitle(activeDivision)}</span>
+              <span>•</span>
+              <span className="text-emerald-500 lowercase font-medium">{loading ? "sedang merumuskan..." : "online"}</span>
+            </div>
+          </div>
+        </div>
+        
         <div className="flex items-center gap-2">
-          <Globe className={`h-4 w-4 ${enableSearch ? "text-sky-600" : "text-slate-400"}`} />
-          <span className="text-xs font-bold text-slate-700">Google Grounding:</span>
+          <div className="hidden md:flex items-center gap-1 px-3 py-1 bg-slate-50 border border-slate-200/60 rounded-full text-[9px] font-mono font-extrabold text-slate-400 tracking-wider">
+            <span>SECURE CHAT FEED</span>
+          </div>
+          {onLogout && (
+            <button
+              onClick={onLogout}
+              className="flex items-center gap-1.5 px-3 py-1 text-xs font-bold text-red-650 hover:text-white bg-red-50 hover:bg-red-600 border border-red-200 hover:border-red-600 rounded-xl transition cursor-pointer shrink-0 shadow-3sm"
+              title="Keluar dari Akun"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Keluar</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Connection & Configuration Controls */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50/80 px-4 py-2 text-xs">
+        <div className="flex items-center gap-2">
+          <Globe className={`h-3.5 w-3.5 ${enableSearch ? "text-sky-600" : "text-slate-400"}`} />
+          <span className="font-bold text-slate-500">Grounding Google:</span>
           <button
             type="button"
             onClick={() => setEnableSearch(!enableSearch)}
-            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+            className={`relative inline-flex h-4.5 w-8 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
               enableSearch ? "bg-sky-600" : "bg-slate-200"
             }`}
           >
             <span
-              className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
-                enableSearch ? "translate-x-4" : "translate-x-0"
+              className={`pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                enableSearch ? "translate-x-3.5" : "translate-x-0"
               }`}
             />
           </button>
-          <span className="text-[10px] font-mono font-bold uppercase text-slate-500">
+          <span className="text-[9px] font-mono font-bold uppercase text-slate-400">
             {enableSearch ? "ONLINE SEARCH" : "PRAMA ENGINE"}
           </span>
         </div>
 
-        {/* Reference File Picker & Connection Configuration */}
+        {/* Connection Configuration */}
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs font-bold text-slate-500">Rujuk File:</span>
-            <select
-              value={selectedFileId}
-              onChange={(e) => setSelectedFileId(e.target.value)}
-              className="rounded-xl border border-slate-200 bg-white px-3 py-1 text-xs text-slate-700 focus:border-sky-500 focus:ring-1 focus:ring-sky-200 focus:outline-none font-bold"
-            >
-              <option value="">-- Tanpa Rujukan --</option>
-              {files.map((file) => (
-                <option key={file.id} value={file.id} className="text-slate-800">
-                  {file.name} ({(file.size / 1024).toFixed(1)} KB)
-                </option>
-              ))}
-            </select>
-          </div>
-
           <button
             type="button"
             onClick={() => setShowConfig(!showConfig)}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-xl border text-xs font-bold transition cursor-pointer ${
+            className={`flex items-center gap-1 px-2.5 py-0.5 rounded-lg border text-[11px] font-bold transition cursor-pointer ${
               showConfig
-                ? "bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-100"
-                : "bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                ? "bg-indigo-600 border-indigo-600 text-white shadow-3sm"
+                : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
             }`}
           >
-            <Settings className={`h-3.5 w-3.5 ${showConfig ? "animate-spin-slow text-white" : "text-sky-500"}`} />
+            <Settings className="h-3 w-3 text-sky-500" />
             <span>Koneksi AI</span>
           </button>
         </div>
@@ -284,7 +323,7 @@ export default function ChatPanel({
                   </div>
                   <button
                     type="submit"
-                    className="w-full sm:w-auto h-10 rounded-xl bg-indigo-600 hover:bg-indigo-505 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2.5 shadow-sm transition shrink-0 cursor-pointer text-center"
+                    className="w-full sm:w-auto h-10 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2.5 shadow-sm transition shrink-0 cursor-pointer text-center"
                   >
                     Simpan
                   </button>
@@ -318,8 +357,8 @@ export default function ChatPanel({
         )}
       </AnimatePresence>
 
-      {/* Messages Canvas Container */}
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+      {/* Messages Canvas Container with chat background */}
+      <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 bg-[#f0f2f5] bg-[radial-gradient(#e4e6eb_1px,transparent_1px)] [background-size:20px_20px]">
         
         {messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center text-center py-10">
@@ -341,7 +380,7 @@ export default function ChatPanel({
 
             {/* Division Preset Suggestions */}
             <div className="mt-8 max-w-xl w-full">
-              <p className="text-[9px] font-bold text-slate-400 font-mono tracking-widest uppercase mb-3">
+              <p className="text-[9px] font-bold text-slate-400 font-mono tracking-widest uppercase mb-3 text-center">
                 Saran Pertanyaan Preset (klik untuk mengisi form)
               </p>
               <div className="flex flex-wrap justify-center gap-2">
@@ -350,9 +389,9 @@ export default function ChatPanel({
                     key={idx}
                     type="button"
                     onClick={() => handleApplyPreset(preset.text)}
-                    className="flex items-center gap-1 bg-white border border-slate-200 hover:border-sky-400 hover:bg-sky-50 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 transition cursor-pointer shadow-3sm hover:text-sky-700 text-left"
+                    className="flex items-center gap-1 bg-white border border-slate-200 hover:border-sky-450 hover:bg-sky-50 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 transition cursor-pointer shadow-3sm hover:text-sky-700 text-left"
                   >
-                    <span className="text-[9px] font-mono bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-extrabold mr-1 shadow-inner">
+                    <span className="text-[9px] font-mono bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-extrabold mr-1 shadow-inner whitespace-nowrap">
                       {preset.label}
                     </span>
                     <span>{preset.text}</span>
@@ -362,7 +401,7 @@ export default function ChatPanel({
             </div>
           </div>
         ) : (
-          <div className="space-y-5 max-w-4xl mx-auto">
+          <div className="space-y-4 max-w-4xl mx-auto">
             <AnimatePresence initial={false}>
               {messages.map((msg) => {
                 const isUser = msg.role === "user";
@@ -373,47 +412,85 @@ export default function ChatPanel({
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.15 }}
-                    className={`flex ${isUser ? "justify-end" : "justify-start"}`}
+                    className={`flex items-start gap-2.5 ${isUser ? "justify-end" : "justify-start"}`}
                   >
-                    <div className={`flex max-w-[85%] flex-col gap-1 ${isUser ? "items-end" : "items-start"}`}>
-                      
-                      {/* Message Meta */}
-                      <div className="flex items-center gap-2 px-1">
-                        <span className={`font-mono text-[9px] font-bold tracking-wider uppercase ${isUser ? "text-indigo-600" : "text-sky-600"}`}>
-                          {isUser ? (msg.sender || "Diri Anda") : (msg.sender || "Gemini Core AI")}
-                        </span>
-                        <span className="text-[9px] font-mono text-slate-400 font-medium">
-                          {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                        </span>
+                    {/* Robot Persona avatar on left for assistant messages */}
+                    {!isUser && (
+                      <div className="h-8 w-8 rounded-full overflow-hidden border border-slate-200 shadow-3sm bg-slate-100 shrink-0 mt-0.5 self-start">
+                        <img 
+                          src={pramaLogo} 
+                          alt="P" 
+                          className="h-full w-full object-cover" 
+                          referrerPolicy="no-referrer"
+                        />
                       </div>
+                    )}
 
-                      {/* Msg content bubble */}
+                    <div className={`flex max-w-[82%] flex-col gap-0.5 ${isUser ? "items-end" : "items-start"}`}>
+                      
+                      {/* Message Bubble Canvas */}
                       <div
-                        className={`rounded-2xl px-5 py-3.5 text-sm leading-relaxed shadow-sm border ${
+                        className={`rounded-2xl px-4 py-2 text-sm leading-relaxed shadow-3sm border relative ${
                           isUser
-                            ? "bg-indigo-600 border-indigo-500 text-white rounded-tr-none whitespace-pre-wrap"
-                            : "bg-white border-slate-200 text-slate-800 rounded-tl-none font-medium"
+                            ? "bg-[#d9fdd3] border-[#b7e4bc] text-slate-800 rounded-tr-xs"
+                            : "bg-white border-slate-200 text-slate-800 rounded-tl-xs"
                         }`}
                       >
-                        {isUser ? <div>{msg.text}</div> : renderFormattedText(msg.text)}
+                        {/* Sender Label */}
+                        <div className="mb-1 flex items-center justify-between gap-4">
+                          <span className={`text-[10px] font-extrabold tracking-wider uppercase ${isUser ? "text-emerald-700" : "text-sky-700"}`}>
+                            {isUser ? "Melihat Berkas" : (msg.sender || "Gemini AI")}
+                          </span>
+                        </div>
 
-                         {!isUser && (
-                          <div className="mt-4 flex border-t border-slate-100 pt-3 text-right justify-between items-center gap-4">
+                        <div className="break-words">
+                          {isUser ? <div>{msg.text}</div> : renderFormattedText(msg.text)}
+                        </div>
+
+                        {/* Interactive Tools for Reports inside Assistant Bubble */}
+                        {!isUser && (
+                          <div className="mt-4 flex flex-col sm:flex-row border-t border-slate-100 pt-3.5 justify-between items-start sm:items-center gap-3">
                             <span className="font-mono text-[8px] text-slate-400 font-bold uppercase tracking-wider">
                               INTEGRATED REPORTING SYSTEM
                             </span>
-                            <button
-                              onClick={() => {
-                                const placeholderName = `prama_${activeDivision || "analitis"}_${Date.now().toString().slice(-4)}.md`;
-                                onSaveAsFile(msg.text, placeholderName);
-                              }}
-                              className="flex items-center gap-1.5 rounded-xl bg-sky-50 shadow-inner border border-sky-100 px-3 py-1.5 text-xs font-bold text-sky-700 transition hover:bg-sky-100 cursor-pointer"
-                            >
-                              <FileText className="h-3.5 w-3.5 text-sky-600" />
-                              <span>Simpan dokumen ke Mirror Storage</span>
-                            </button>
+                            <div className="flex flex-wrap gap-1.5 w-full sm:w-auto">
+                              <button
+                                onClick={() => {
+                                  const title = `PRAMA_${activeDivision || "ANALITIS"}_${Date.now().toString().slice(-4)}`;
+                                  exportToWord(title, msg.text, activeDivision || "PORTAL");
+                                }}
+                                className="flex items-center gap-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 px-2.5 py-1 text-[11px] font-bold text-indigo-700 transition cursor-pointer"
+                                title="Unduh laporan dalam format Microsoft Word (.doc)"
+                              >
+                                <Download className="h-3.5 w-3.5 text-indigo-600" />
+                                <span>Word</span>
+                              </button>
+
+                              <button
+                                onClick={() => {
+                                  const title = `PRAMA_${activeDivision || "ANALITIS"}_${Date.now().toString().slice(-4)}`;
+                                  downloadPDFDirect(title, msg.text, activeDivision || "PORTAL");
+                                }}
+                                className="flex items-center gap-1 rounded-lg bg-red-50 hover:bg-red-100 border border-red-100 px-2.5 py-1 text-[11px] font-bold text-red-700 transition cursor-pointer"
+                                title="Unduh Laporan sebagai file PDF"
+                              >
+                                <Download className="h-3.5 w-3.5 text-red-650" />
+                                <span>Unduh PDF</span>
+                              </button>
+                            </div>
                           </div>
                         )}
+
+                        {/* Speech Bubble Foot Stats (Time & double checkticks) */}
+                        <div className="mt-1 flex items-center justify-end gap-1 text-[9px]">
+                          <span className="text-slate-400 font-mono font-medium">
+                            {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                          {isUser && (
+                            <span className="text-[10px] text-emerald-600 font-extrabold select-none">✓✓</span>
+                          )}
+                        </div>
+
                       </div>
 
                     </div>
@@ -425,10 +502,10 @@ export default function ChatPanel({
         )}
 
         {loading && (
-          <div className="flex items-center gap-2 py-4 justify-start max-w-4xl mx-auto">
-            <div className="h-4 w-4 rounded-full border-2 border-indigo-600 border-t-transparent animate-spin" />
-            <span className="font-mono text-[10px] font-semibold tracking-wide uppercase text-slate-400">
-              PRAMA AI sedang merumuskan matriks & simulasi...
+          <div className="flex items-center gap-2.5 py-3 justify-start max-w-4xl mx-auto">
+            <div className="h-4.5 w-4.5 rounded-full border-2 border-indigo-600 border-t-transparent animate-spin shrink-0" />
+            <span className="font-mono text-[10px] font-bold tracking-wide uppercase text-slate-400">
+              PRAMA AI sedang merumuskan draf tanggapan...
             </span>
           </div>
         )}
@@ -436,14 +513,14 @@ export default function ChatPanel({
       </div>
 
       {/* Message input bar overlay */}
-      <div className="p-4 sm:p-6 bg-white border-t border-slate-200 shadow-[0_-4px_12px_rgba(0,0,0,0.03)]">
+      <div className="p-4 sm:p-5 bg-[#f0f2f5] border-t border-slate-200">
         <form onSubmit={handleSubmit} className="relative flex flex-col gap-2 max-w-3xl mx-auto">
           
           {activeReferencedFile && (
             <div className="flex items-center justify-between rounded-xl bg-sky-50 px-3.5 py-1.5 text-xs text-sky-800 border border-sky-100">
               <span className="flex items-center gap-1.5 font-bold">
                 <FileText className="h-3.5 w-3.5 text-sky-600" />
-                Melampirkan analisis referensi: <span className="font-mono text-indigo-700">{activeReferencedFile.name}</span>
+                Melampirkan rujukan draf: <span className="font-mono text-indigo-700">{activeReferencedFile.name}</span>
               </span>
               <button
                 type="button"
@@ -455,29 +532,35 @@ export default function ChatPanel({
             </div>
           )}
 
-          <div className="relative bg-slate-50 border border-slate-200 focus-within:border-sky-500 focus-within:ring-1 focus-within:ring-sky-100 rounded-2xl p-2.5 transition">
-            <textarea
-              value={input}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
-              placeholder={
-                activeReferencedFile
-                  ? `Berikan instruksi pengolahan dokumen "${activeReferencedFile.name}"...`
-                  : `Konsultasikan draf proposal / audit perhitungan divisi ${getDivisionTitle(activeDivision)}...`
-              }
-              rows={3}
-              className="w-full resize-none bg-transparent border-none text-slate-800 placeholder-slate-400 focus:ring-0 focus:outline-none py-1.5 text-sm h-14"
-            />
+          {/* WhatsApp / Telegram dynamic round input capsules */}
+          <div className="flex items-end gap-2">
+            <div className="flex-1 bg-white border border-slate-200/80 focus-within:border-sky-400/80 rounded-2xl px-4 py-2.5 flex items-center gap-2 shadow-3sm transition">
+              <textarea
+                value={input}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                placeholder={
+                  activeReferencedFile
+                    ? `Perintahkan pengolahan berkas "${activeReferencedFile.name}"...`
+                    : `Ketik pesan ke PRAMA Strategic Advisor (${getDivisionTitle(activeDivision)})...`
+                }
+                rows={1}
+                className="flex-1 resize-none bg-transparent border-none text-slate-800 placeholder-slate-450 focus:ring-0 focus:outline-none py-1 text-sm h-7 max-h-24"
+              />
+            </div>
+            
             <button
               type="submit"
               disabled={loading || !input.trim()}
-              className="absolute right-3.5 bottom-3.5 flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white transition-all shadow-md hover:bg-indigo-500 disabled:bg-slate-200 disabled:text-slate-400 cursor-pointer disabled:cursor-not-allowed"
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-indigo-600 text-white transition-all shadow-md hover:bg-indigo-500 disabled:bg-slate-350 disabled:text-slate-400 cursor-pointer disabled:cursor-not-allowed shrink-0"
+              title="Kirim Pesan"
             >
-              <Send className="h-4 w-4" />
+              <Send className="h-4.5 w-4.5" />
             </button>
           </div>
-          <p className="text-center text-[8px] text-slate-400 uppercase tracking-widest font-mono font-bold mt-1">
-            Teknologi AI PRAMA memiliki kapabilitas verifikasi silang otomatis.
+          
+          <p className="text-center text-[8.5px] text-slate-400 uppercase tracking-widest font-mono font-extrabold mt-1">
+            Sistem Konsultan Strategis PRAMA &bull; Keamanan Terenkripsi
           </p>
         </form>
       </div>
@@ -529,6 +612,19 @@ function renderFormattedText(text: string) {
                 {orderedListMatch[1]}.
               </span>
               <p className="flex-1 mt-0.5">{parseInlineMarkdown(orderedListMatch[2])}</p>
+            </div>
+          );
+        }
+
+        // 2b. Indented alphabetical lists (a. b. c. etc for narrowing/sub-points)
+        const alphaListMatch = trimmed.match(/^([a-zA-Z])\.\s+(.*)/);
+        if (alphaListMatch) {
+          return (
+            <div key={idx} className="flex gap-2.5 ml-8 my-1 text-xs text-slate-600 leading-relaxed">
+              <span className="font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-bold text-[9px] shadow-3sm shrink-0 h-fit uppercase">
+                {alphaListMatch[1]}.
+              </span>
+              <p className="flex-1 mt-0.5">{parseInlineMarkdown(alphaListMatch[2])}</p>
             </div>
           );
         }

@@ -24,6 +24,7 @@ export interface SavedFile {
   tags: string[];
   userId: string;
   updatedAt: number;
+  division?: string;
 }
 
 export interface SearchSource {

@@ -3,6 +3,7 @@ import { auth } from "../firebase";
 import { signOut, User } from "firebase/auth";
 import { Database, LogOut, Briefcase, ChevronRight } from "lucide-react";
 import { motion } from "motion/react";
+import pramaLogo from "../assets/images/prama_logo_1780452149937.png";
 
 interface NavbarProps {
   user: User | null;
@@ -54,8 +55,14 @@ export default function Navbar({
         
         {/* Brand & Left Navigation */}
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 text-white shadow-md shadow-sky-500/20">
-            <span className="font-display font-extrabold text-lg tracking-wider">P</span>
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl overflow-hidden bg-slate-50 border border-slate-200 shadow-md">
+            <img 
+              id="prama-header-logo"
+              src={pramaLogo} 
+              alt="PRAMA Logo" 
+              className="h-full w-full object-cover"
+              referrerPolicy="no-referrer"
+            />
           </div>
           <div>
             <div className="flex items-center gap-2">

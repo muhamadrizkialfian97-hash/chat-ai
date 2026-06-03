@@ -10,7 +10,7 @@ interface LocalResponse {
   sources?: Array<{ title: string; uri: string }>;
 }
 
-export function generateLocalSmartResponse(
+function _generateLocalSmartResponseRaw(
   message: string,
   activeDivision: string | null,
   history: Array<{ role: string; text: string }> = []
@@ -262,6 +262,18 @@ Berikut adalah tabel draf langkah kerja atau pengalokasian langkah-langkah strat
 #### 💡 3. Saran Langkah Praktis Selanjutnya
 - Anda dapat menyalin draf tabel di atas ke berkas baru melalui tombol **"Buat Dokumen Baru"** di panel editor sebelah kanan.
 - Silakan berikan detail atau angka pembanding kuantitas muatan lebih lanjut di kolom chat agar saya dapat melakukan penyesuaian simulasi draf dokumen ini secara lebih presisi sesuai keinginan Anda.`
+  };
+}
+
+export function generateLocalSmartResponse(
+  message: string,
+  activeDivision: string | null,
+  history: Array<{ role: string; text: string }> = []
+): LocalResponse {
+  const rawRes = _generateLocalSmartResponseRaw(message, activeDivision, history);
+  return {
+    ...rawRes,
+    text: rawRes.text.replace(/[*#]/g, ""),
   };
 }
 

@@ -162,9 +162,22 @@ export default function App() {
   const [apiMode, setApiMode] = useState<"proxy" | "client">(
     () => (localStorage.getItem("workspace_api_mode") as "proxy" | "client") || "proxy"
   );
-  const [clientApiKey, setClientApiKey] = useState(
-    () => localStorage.getItem("workspace_client_api_key") || "AIzaSyDzh6235z1Nd3BFTLREBk3AWBfQ2lpsjxo"
-  );
+  const [clientApiKey, setClientApiKey] = useState(() => {
+    const defaultKey = "AQ.Ab8RN6J18XhfT7OD0MR1jvDqtfQbcWD8pdIVctyDE0ZrRF2GrA";
+    const isNewSession = !sessionStorage.getItem("workspace_session_initialized");
+    
+    if (isNewSession) {
+      sessionStorage.setItem("workspace_session_initialized", "true");
+      localStorage.setItem("workspace_client_api_key", defaultKey);
+      return defaultKey;
+    }
+
+    const key = localStorage.getItem("workspace_client_api_key");
+    if (!key || key === "AIzaSyDzh6235z1Nd3BFTLREBk3AWBfQ2lpsjxo" || key === "AIzaSyDDxMrdwc1s4TdTGxAghVtHaTQ1iGhDnGM") {
+      return defaultKey;
+    }
+    return key;
+  });
   const [showKey, setShowKey] = useState(false);
   const [showConfigLogin, setShowConfigLogin] = useState(false);
 
@@ -817,7 +830,7 @@ Gaya Bahasa & Aturan Format Jawaban Terstruktur (SANGAT PENTING):
         role: "model",
         text: sanitizedAnswerText,
         timestamp: Date.now(),
-        sender: `Pramer AI (${activeDivision ? activeDivision.toUpperCase() : "Asisten"})`,
+        sender: `Prama AI (${activeDivision ? activeDivision.toUpperCase() : "Asisten"})`,
       };
 
       const finalMessagesList = cleanChatMessages([...updatedMessages, modelMsg]);
@@ -979,7 +992,7 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
         role: "model",
         text: finalResponseText,
         timestamp: Date.now(),
-        sender: `Pramer AI (${activeDivision ? activeDivision.toUpperCase() : "Asisten"})`,
+        sender: `Prama AI (${activeDivision ? activeDivision.toUpperCase() : "Asisten"})`,
       };
       const finalMessagesList = cleanChatMessages([...updatedMessages, fallbackMsg]);
       setChatMessages(finalMessagesList);

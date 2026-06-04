@@ -55,7 +55,7 @@ export default function ChatPanel({
 
   const handleSaveLocalKey = (e: React.FormEvent) => {
     e.preventDefault();
-    const finalKey = localKeyInput.trim() || "AIzaSyDzh6235z1Nd3BFTLREBk3AWBfQ2lpsjxo";
+    const finalKey = localKeyInput.trim() || "AQ.Ab8RN6J18XhfT7OD0MR1jvDqtfQbcWD8pdIVctyDE0ZrRF2GrA";
     setLocalKeyInput(finalKey);
     setClientApiKey(finalKey);
     setIsSaved(true);
@@ -210,28 +210,7 @@ export default function ChatPanel({
       </div>
 
       {/* Connection & Configuration Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50/80 px-4 py-2 text-xs">
-        <div className="flex items-center gap-2">
-          <Globe className={`h-3.5 w-3.5 ${enableSearch ? "text-sky-600" : "text-slate-400"}`} />
-          <span className="font-bold text-slate-500">Grounding Google:</span>
-          <button
-            type="button"
-            onClick={() => setEnableSearch(!enableSearch)}
-            className={`relative inline-flex h-4.5 w-8 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-              enableSearch ? "bg-sky-600" : "bg-slate-200"
-            }`}
-          >
-            <span
-              className={`pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
-                enableSearch ? "translate-x-3.5" : "translate-x-0"
-              }`}
-            />
-          </button>
-          <span className="text-[9px] font-mono font-bold uppercase text-slate-400">
-            {enableSearch ? "ONLINE SEARCH" : "PRAMA ENGINE"}
-          </span>
-        </div>
-
+      <div className="flex flex-wrap items-center justify-end gap-3 border-b border-slate-200 bg-slate-50/80 px-4 py-2 text-xs">
         {/* Connection Configuration */}
         <div className="flex flex-wrap items-center gap-2">
           <button
@@ -332,8 +311,8 @@ export default function ChatPanel({
                     <button
                       type="button"
                       onClick={() => {
-                        setLocalKeyInput("AIzaSyDzh6235z1Nd3BFTLREBk3AWBfQ2lpsjxo");
-                        setClientApiKey("AIzaSyDzh6235z1Nd3BFTLREBk3AWBfQ2lpsjxo");
+                        setLocalKeyInput("AQ.Ab8RN6J18XhfT7OD0MR1jvDqtfQbcWD8pdIVctyDE0ZrRF2GrA");
+                        setClientApiKey("AQ.Ab8RN6J18XhfT7OD0MR1jvDqtfQbcWD8pdIVctyDE0ZrRF2GrA");
                         setIsSaved(true);
                         setTimeout(() => setIsSaved(false), 4400);
                       }}
@@ -393,27 +372,7 @@ export default function ChatPanel({
               Saya siap menganalisis data, memberikan rekomendasi taktis, atau merumuskan dokumen pendukung operasional khusus untuk pilar divisi ini.
             </p>
 
-            {/* Division Preset Suggestions */}
-            <div className="mt-8 max-w-xl w-full">
-              <p className="text-[9px] font-bold text-slate-400 font-mono tracking-widest uppercase mb-3 text-center">
-                Saran Pertanyaan Preset (klik untuk mengisi form)
-              </p>
-              <div className="flex flex-wrap justify-center gap-2">
-                {currentPresets.map((preset, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => handleApplyPreset(preset.text)}
-                    className="flex items-center gap-1 bg-white border border-slate-200 hover:border-sky-450 hover:bg-sky-50 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 transition cursor-pointer shadow-3sm hover:text-sky-700 text-left"
-                  >
-                    <span className="text-[9px] font-mono bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-extrabold mr-1 shadow-inner whitespace-nowrap">
-                      {preset.label}
-                    </span>
-                    <span>{preset.text}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
+
           </div>
         ) : (
           <div className="space-y-4 max-w-4xl mx-auto">

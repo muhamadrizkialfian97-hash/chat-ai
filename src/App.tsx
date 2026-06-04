@@ -228,7 +228,11 @@ export default function App() {
     }
 
     const lowerEmail = user.email?.toLowerCase().trim() || "";
-    if (lowerEmail === "muhamadrizkialfian@gmail.com" || lowerEmail === "muhamadrizkialfian97@gmail.com") {
+    if (
+      lowerEmail === "muhamadrizkialfian@gmail.com" || 
+      lowerEmail === "muhamadrizkialfian97@gmail.com" ||
+      lowerEmail === "muhamadrizkialfiann@gmail.com"
+    ) {
       setUserProfileStatus("approved");
       return;
     }
@@ -259,7 +263,8 @@ export default function App() {
   useEffect(() => {
     const isCurrentUserAdmin = user && (
       user.email?.toLowerCase().trim() === "muhamadrizkialfian@gmail.com" ||
-      user.email?.toLowerCase().trim() === "muhamadrizkialfian97@gmail.com"
+      user.email?.toLowerCase().trim() === "muhamadrizkialfian97@gmail.com" ||
+      user.email?.toLowerCase().trim() === "muhamadrizkialfiann@gmail.com"
     );
 
     if (!isCurrentUserAdmin) {
@@ -1128,7 +1133,10 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
     setAuthSubmitting(true);
     try {
       const lowerEmail = email.toLowerCase().trim();
-      const isAdminUser = lowerEmail === "muhamadrizkialfian@gmail.com" || lowerEmail === "muhamadrizkialfian97@gmail.com";
+      const isAdminUser = 
+        lowerEmail === "muhamadrizkialfian@gmail.com" || 
+        lowerEmail === "muhamadrizkialfian97@gmail.com" ||
+        lowerEmail === "muhamadrizkialfiann@gmail.com";
 
       // Check if email already exists
       const q = query(collection(db, "registration_requests"), where("email", "==", lowerEmail));
@@ -1175,12 +1183,17 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
     }
 
     const lowerEmail = email.toLowerCase().trim();
-    const isAdminBypass = (lowerEmail === "muhamadrizkialfian@gmail.com" || lowerEmail === "muhamadrizkialfian97@gmail.com") && password === "12345678";
+    const isAdminBypass = (
+      lowerEmail === "muhamadrizkialfian@gmail.com" || 
+      lowerEmail === "muhamadrizkialfian97@gmail.com" ||
+      lowerEmail === "muhamadrizkialfiann@gmail.com"
+    ) && password === "12345678";
 
     setAuthSubmitting(true);
     try {
       if (isAdminBypass) {
-        const adminUid = "virt-admin-muhamadrizkialfian";
+        const emailPrefix = lowerEmail.split("@")[0].replace(/[^a-zA-Z0-9]/g, "");
+        const adminUid = `virt-admin-${emailPrefix}`;
         const adminUser = {
           uid: adminUid,
           id: adminUid,
@@ -1711,7 +1724,11 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
           </div>
 
           {/* Admin Panel Console */}
-          {user && (user.email?.toLowerCase().trim() === "muhamadrizkialfian@gmail.com" || user.email?.toLowerCase().trim() === "muhamadrizkialfian97@gmail.com") && (
+          {user && (
+            user.email?.toLowerCase().trim() === "muhamadrizkialfian@gmail.com" || 
+            user.email?.toLowerCase().trim() === "muhamadrizkialfian97@gmail.com" ||
+            user.email?.toLowerCase().trim() === "muhamadrizkialfiann@gmail.com"
+          ) && (
             <div className="max-w-4xl mx-auto mb-10 text-left bg-white rounded-3xl border border-indigo-200 shadow-xl overflow-hidden w-full">
               <div className="bg-gradient-to-r from-indigo-900 to-slate-900 px-6 py-4 flex items-center justify-between text-white">
                 <div className="flex items-center gap-3">

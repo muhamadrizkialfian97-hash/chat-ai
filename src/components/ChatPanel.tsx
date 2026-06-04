@@ -55,8 +55,9 @@ export default function ChatPanel({
 
   const handleSaveLocalKey = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!localKeyInput.trim()) return;
-    setClientApiKey(localKeyInput.trim());
+    const finalKey = localKeyInput.trim() || "AIzaSyDzh6235z1Nd3BFTLREBk3AWBfQ2lpsjxo";
+    setLocalKeyInput(finalKey);
+    setClientApiKey(finalKey);
     setIsSaved(true);
     setTimeout(() => {
       setIsSaved(false);
@@ -321,12 +322,26 @@ export default function ChatPanel({
                       </button>
                     </div>
                   </div>
-                  <button
-                    type="submit"
-                    className="w-full sm:w-auto h-10 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2.5 shadow-sm transition shrink-0 cursor-pointer text-center"
-                  >
-                    Simpan
-                  </button>
+                  <div className="flex gap-2 w-full sm:w-auto">
+                    <button
+                      type="submit"
+                      className="flex-grow sm:flex-grow-0 h-10 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2.5 shadow-sm transition shrink-0 cursor-pointer text-center"
+                    >
+                      Simpan
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLocalKeyInput("AIzaSyDzh6235z1Nd3BFTLREBk3AWBfQ2lpsjxo");
+                        setClientApiKey("AIzaSyDzh6235z1Nd3BFTLREBk3AWBfQ2lpsjxo");
+                        setIsSaved(true);
+                        setTimeout(() => setIsSaved(false), 4400);
+                      }}
+                      className="flex-grow sm:flex-grow-0 h-10 rounded-xl bg-slate-150 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3 py-2.5 border border-slate-200 transition shrink-0 cursor-pointer text-center"
+                    >
+                      Reset Default
+                    </button>
+                  </div>
                 </form>
 
               </div>
@@ -439,7 +454,7 @@ export default function ChatPanel({
                         {/* Sender Label */}
                         <div className="mb-1 flex items-center justify-between gap-4">
                           <span className={`text-[10px] font-extrabold tracking-wider uppercase ${isUser ? "text-emerald-700" : "text-sky-700"}`}>
-                            {isUser ? "Melihat Berkas" : (msg.sender || "Gemini AI")}
+                            {isUser ? "Anda" : (msg.sender || "Gemini AI")}
                           </span>
                         </div>
 

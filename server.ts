@@ -17,7 +17,7 @@ const PORT = 3000;
 let aiClient: GoogleGenAI | null = null;
 function getGeminiClient() {
   if (!aiClient) {
-    const apiKey = process.env.GEMINI_API_KEY || "";
+    const apiKey = process.env.GEMINI_API_KEY || "AIzaSyDzh6235z1Nd3BFTLREBk3AWBfQ2lpsjxo";
     aiClient = new GoogleGenAI({
       apiKey,
       httpOptions: {

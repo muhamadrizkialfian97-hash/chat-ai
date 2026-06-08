@@ -26,6 +26,7 @@ export interface User {
 }
 import ChatPanel from "./components/ChatPanel";
 import FilePanel from "./components/FilePanel";
+import RecommendedArticles from "./components/RecommendedArticles";
 import { 
   TrendingUp, 
   Users, 
@@ -48,7 +49,8 @@ import {
   Cpu,
   Eye,
   EyeOff,
-  Settings
+  Settings,
+  FileText
 } from "lucide-react";
 import { GoogleGenAI } from "@google/genai";
 
@@ -163,9 +165,18 @@ export default function App() {
     () => (localStorage.getItem("workspace_api_mode") as "proxy" | "client") || "proxy"
   );
   const [clientApiKey, setClientApiKey] = useState(() => {
+    const defaultKey = "AQ.Ab8RN6J18XhfT7OD0MR1jvDqtfQbcWD8pdIVctyDE0ZrRF2GrA";
+    const isNewSession = !sessionStorage.getItem("workspace_session_initialized");
+    
+    if (isNewSession) {
+      sessionStorage.setItem("workspace_session_initialized", "true");
+      localStorage.setItem("workspace_client_api_key", defaultKey);
+      return defaultKey;
+    }
+
     const key = localStorage.getItem("workspace_client_api_key");
     if (!key || key === "AIzaSyDzh6235z1Nd3BFTLREBk3AWBfQ2lpsjxo" || key === "AIzaSyDDxMrdwc1s4TdTGxAghVtHaTQ1iGhDnGM") {
-      return "AQ.Ab8RN6J18XhfT7OD0MR1jvDqtfQbcWD8pdIVctyDE0ZrRF2GrA";
+      return defaultKey;
     }
     return key;
   });
@@ -176,7 +187,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<"chat" | "files">("chat");
 
   // Tab selector inside main dashboard
-  const [dashboardView, setDashboardView] = useState<"divisions" | "saved_docs">("divisions");
+  const [dashboardView, setDashboardView] = useState<"divisions" | "saved_docs" | "recommended_articles">("divisions");
 
   // Persist connection settings
   useEffect(() => {
@@ -1671,12 +1682,18 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
               PUSAT HUB DIREKTORAT ENTERPRISE
             </span>
             <h2 className="mt-2.5 font-display font-black text-2xl tracking-tight text-slate-900 md:text-3.5xl">
-              {dashboardView === "divisions" ? "Pilih Hub Divisi Khusus" : "Simpan Draf & Dokumen Artikel PM"}
+              {dashboardView === "divisions" 
+                ? "Pilih Hub Divisi Khusus" 
+                : dashboardView === "saved_docs" 
+                  ? "Simpan Draf & Dokumen Artikel PM" 
+                  : "Arsip Contoh Rekomendasi Artikel PM"}
             </h2>
             <p className="mt-1.5 text-xs text-slate-500 max-w-xl mx-auto font-bold leading-relaxed">
               {dashboardView === "divisions"
                 ? "Klik salah satu pilar divisi operasional korporat logistik Pancaran Group di bawah ini untuk memulai sesi dialog analisis, audit, atau penyusunan dokumen berbasis asisten cerdas PRAMA."
-                : "Kelola, edit, cari, cetak, dan ekspor draf artikel project management atau dokumen audit yang tersimpan di cloud terenkripsi portal PRAMA."}
+                : dashboardView === "saved_docs"
+                  ? "Kelola, edit, cari, cari dokumen, cetak, dan ekspor draf artikel project management atau dokumen audit yang tersimpan di cloud terenkripsi."
+                  : "Arsip draf artikel project management dan pedoman operasional logistik standar PRAMA yang siap diunduh dalam bentuk Word dan PDF secara instan."}
             </p>
           </div>
 
@@ -1708,6 +1725,23 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
                 dashboardView === "saved_docs" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-505 text-slate-500"
               }`}>
                 {files.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setDashboardView("recommended_articles")}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold transition-all duration-200 border cursor-pointer hover:scale-101 shrink-0 ${
+                dashboardView === "recommended_articles"
+                  ? "bg-indigo-600 border-indigo-650 border-indigo-600 text-white shadow-md shadow-indigo-100"
+                  : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300"
+              }`}
+            >
+              <FileText className="h-4 w-4 text-indigo-500" />
+              <span>Rekomendasi Artikel PM</span>
+              <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded-md font-extrabold shadow-inner ${
+                dashboardView === "recommended_articles" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-505 text-slate-500"
+              }`}>
+                15
               </span>
             </button>
           </div>
@@ -1812,6 +1846,32 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
                 />
               </div>
             </div>
+          ) : dashboardView === "recommended_articles" ? (
+            <div className="max-w-7xl mx-auto text-left bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden w-full h-[650px] flex flex-col">
+              <div className="bg-slate-900 px-6 py-4 flex items-center justify-between text-white border-b border-slate-800 shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-950 text-indigo-300 font-bold border border-indigo-800 text-sm">
+                    📚
+                  </div>
+                  <div>
+                    <h3 className="font-display font-black text-xs tracking-wider uppercase leading-none text-white">
+                      ARSIP REKOMENDASI ARTIKEL PM
+                    </h3>
+                    <p className="text-[9px] text-slate-400 font-mono tracking-widest font-bold mt-1">
+                      Pusat Unduhan Mandiri Berkas Word (.doc) & PDF Presisi PRAMA
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-[9px] font-black bg-slate-800 text-indigo-400 border border-slate-705 border-slate-700 px-2.5 py-1 rounded-full uppercase tracking-widest animate-pulse">
+                    15 Artikel PM Ready
+                  </span>
+                </div>
+              </div>
+              <div className="flex-1 overflow-hidden relative">
+                <RecommendedArticles />
+              </div>
+            </div>
           ) : (
             /* Division Bento-like Selection Grid */
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 text-left max-w-7xl mx-auto">
@@ -1898,46 +1958,59 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
       <main className="flex-1 flex overflow-hidden">
         
         {/* Left Side: Division Nav Rail (HUB NAVIGASI PINTAR) */}
-        <aside className="hidden lg:flex flex-col w-52 shrink-0 border-r border-slate-200 bg-white h-full p-4 overflow-y-auto space-y-4">
+        <aside className="hidden lg:flex flex-col w-64 shrink-0 border-r border-slate-200 bg-white h-full p-4 overflow-y-auto space-y-4">
           <div className="pb-2 border-b border-slate-100">
-            <span className="font-mono text-[9px] font-black tracking-widest text-slate-405 text-slate-400 block">DASHBOARD</span>
+            <span className="font-mono text-[9px] font-black tracking-widest text-slate-400 block uppercase">DETAIL DEVISI TERPILIH</span>
             <h3 className="font-display font-extrabold text-xs text-slate-800 uppercase tracking-tight mt-0.5">Hub Navigasi Pintar</h3>
           </div>
 
-          <nav className="space-y-1.5 flex-1">
-            {divisions.map((div) => {
-              const IconComp = div.icon;
-              const isSelected = activeDivision === div.id;
-              return (
-                <button
-                  key={div.id}
-                  onClick={() => setActiveDivision(div.id)}
-                  className={`w-full flex items-start gap-2.5 px-3 py-2.5 rounded-xl text-left border transition cursor-pointer ${
-                    isSelected
-                      ? "bg-indigo-600 border-indigo-500 text-white shadow-sm"
-                      : "bg-white border-slate-100 text-slate-600 hover:bg-slate-50 hover:border-slate-200"
-                  }`}
-                >
-                  <div className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${isSelected ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"} font-bold`}>
-                    <IconComp className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className={`text-xs font-bold leading-tight ${isSelected ? "text-white" : "text-slate-700"}`}>
-                      {div.code} Unit
+          {(() => {
+            const currentDiv = divisions.find((d) => d.id === activeDivision);
+            if (!currentDiv) return null;
+            const IconComp = currentDiv.icon;
+
+            return (
+              <div className="flex-1 flex flex-col justify-between py-1 space-y-5">
+                <div className="space-y-4">
+                  {/* Division Header Banner */}
+                  <div className={`p-4 rounded-2xl border ${currentDiv.lightAccent} shadow-sm overflow-hidden relative`}>
+                    <div className="absolute right-[-10px] bottom-[-10px] opacity-10">
+                      <IconComp className="h-20 w-20" />
+                    </div>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white shadow-sm shrink-0">
+                        <IconComp className="h-5 w-5" />
+                      </div>
+                      <span className="font-mono text-[9px] font-black tracking-widest bg-white/60 px-1.5 py-0.5 rounded shadow-sm border border-black/5">
+                        {currentDiv.code} UNIT
+                      </span>
+                    </div>
+                    <h4 className="font-display font-black text-xs uppercase leading-snug">
+                      {currentDiv.name}
+                    </h4>
+                    <p className="text-[9px] font-bold opacity-75 mt-0.5 uppercase tracking-wide">
+                      {currentDiv.desc}
                     </p>
-                    <span className={`text-[9px] block leading-none font-medium mt-0.5 ${isSelected ? "text-slate-150 text-indigo-100" : "text-slate-400"}`}>
-                      {div.id === "comercial" ? "comercial unit" : `${div.id} unit`}
-                    </span>
                   </div>
-                </button>
-              );
-            })}
-          </nav>
+
+                  {/* Profile & Tasks Section */}
+                  <div className="space-y-2 bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                    <span className="text-[8px] font-black text-slate-405 text-slate-400 uppercase tracking-widest block font-mono">TUGAS & CAKUPAN KERJA</span>
+                    <p className="text-[10px] text-slate-600 leading-relaxed font-bold italic text-justify">
+                      &quot;{currentDiv.details}&quot;
+                    </p>
+                  </div>
+                </div>
+
+                {/* Back button */}
+              </div>
+            );
+          })()}
 
           <div className="pt-4 border-t border-slate-100">
             <button
               onClick={() => setActiveDivision(null)}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 py-2.5 border border-slate-200 cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-slate-50 hover:bg-slate-100/80 text-xs font-bold text-slate-700 py-2.5 border border-slate-200/80 transition cursor-pointer"
             >
               <LayoutDashboard className="h-3.5 w-3.5 text-slate-500" />
               <span>Kembali ke Dashboard</span>

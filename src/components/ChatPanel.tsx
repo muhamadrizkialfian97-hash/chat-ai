@@ -21,6 +21,8 @@ interface ChatPanelProps {
   onTyping?: (isTyping: boolean) => void;
   onBackToDashboard?: () => void;
   onLogout?: () => void;
+  onPreviewAndExportWord?: (text: string) => void;
+  onPreviewAndExportPDF?: (text: string) => void;
 }
 
 export default function ChatPanel({
@@ -39,6 +41,8 @@ export default function ChatPanel({
   onTyping,
   onBackToDashboard,
   onLogout,
+  onPreviewAndExportWord,
+  onPreviewAndExportPDF,
 }: ChatPanelProps) {
   const [input, setInput] = useState("");
   const [enableSearch, setEnableSearch] = useState(false);
@@ -489,8 +493,12 @@ export default function ChatPanel({
                                   <div className="flex gap-1.5">
                                     <button
                                       onClick={() => {
-                                        const title = `PRAMA_${activeDivision || "ANALITIS"}_${Date.now().toString().slice(-4)}`;
-                                        exportToWord(title, msg.text, activeDivision || "PORTAL");
+                                        if (onPreviewAndExportWord) {
+                                          onPreviewAndExportWord(msg.text);
+                                        } else {
+                                          const title = `PRAMA_${activeDivision || "ANALITIS"}_${Date.now().toString().slice(-4)}`;
+                                          exportToWord(title, msg.text, activeDivision || "PORTAL");
+                                        }
                                       }}
                                       className="flex items-center gap-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 px-3 py-1.5 text-xs font-bold text-indigo-700 transition cursor-pointer"
                                       title="Unduh laporan dalam format Microsoft Word (.doc)"
@@ -501,8 +509,12 @@ export default function ChatPanel({
 
                                     <button
                                       onClick={() => {
-                                        const title = `PRAMA_${activeDivision || "ANALITIS"}_${Date.now().toString().slice(-4)}`;
-                                        downloadPDFDirect(title, msg.text, activeDivision || "PORTAL");
+                                        if (onPreviewAndExportPDF) {
+                                          onPreviewAndExportPDF(msg.text);
+                                        } else {
+                                          const title = `PRAMA_${activeDivision || "ANALITIS"}_${Date.now().toString().slice(-4)}`;
+                                          downloadPDFDirect(title, msg.text, activeDivision || "PORTAL");
+                                        }
                                       }}
                                       className="flex items-center gap-1.5 rounded-lg bg-red-50 hover:bg-red-100 border border-red-100 px-3 py-1.5 text-xs font-bold text-red-700 transition cursor-pointer"
                                       title="Unduh Laporan sebagai file PDF"
@@ -521,8 +533,12 @@ export default function ChatPanel({
                                 <div className="flex flex-wrap gap-1.5 w-full sm:w-auto">
                                   <button
                                     onClick={() => {
-                                      const title = `PRAMA_${activeDivision || "ANALITIS"}_${Date.now().toString().slice(-4)}`;
-                                      exportToWord(title, msg.text, activeDivision || "PORTAL");
+                                      if (onPreviewAndExportWord) {
+                                        onPreviewAndExportWord(msg.text);
+                                      } else {
+                                        const title = `PRAMA_${activeDivision || "ANALITIS"}_${Date.now().toString().slice(-4)}`;
+                                        exportToWord(title, msg.text, activeDivision || "PORTAL");
+                                      }
                                     }}
                                     className="flex items-center gap-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 px-2.5 py-1 text-[11px] font-bold text-indigo-700 transition cursor-pointer"
                                     title="Unduh laporan dalam format Microsoft Word (.doc)"
@@ -533,8 +549,12 @@ export default function ChatPanel({
 
                                   <button
                                     onClick={() => {
-                                      const title = `PRAMA_${activeDivision || "ANALITIS"}_${Date.now().toString().slice(-4)}`;
-                                      downloadPDFDirect(title, msg.text, activeDivision || "PORTAL");
+                                      if (onPreviewAndExportPDF) {
+                                        onPreviewAndExportPDF(msg.text);
+                                      } else {
+                                        const title = `PRAMA_${activeDivision || "ANALITIS"}_${Date.now().toString().slice(-4)}`;
+                                        downloadPDFDirect(title, msg.text, activeDivision || "PORTAL");
+                                      }
                                     }}
                                     className="flex items-center gap-1 rounded-lg bg-red-50 hover:bg-red-100 border border-red-100 px-2.5 py-1 text-[11px] font-bold text-red-700 transition cursor-pointer"
                                     title="Unduh Laporan sebagai file PDF"

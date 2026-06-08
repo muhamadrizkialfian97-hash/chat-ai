@@ -14,7 +14,7 @@ import {
 import { db, handleFirestoreError, OperationType } from "./firebase";
 import { ChatMessage, SavedFile } from "./types";
 import { generateLocalSmartResponse, cleanChatMessages } from "./utils/localAssistant";
-import { exportToWord, exportToPPTX, extractProjectTitle } from "./utils/documentExporter";
+import { exportToWord, exportToPPTX, extractProjectTitle, downloadPDFDirect } from "./utils/documentExporter";
 import Navbar from "./components/Navbar";
 import pramaLogo from "./assets/images/prama_logo_1780452149937.png";
 
@@ -1277,7 +1277,7 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
   const handleExportArticle = async (lastMsgText: string) => {
     try {
       const projectTitle = extractProjectTitle(lastMsgText, activeDivision || "UMUM");
-      const cleanFilenameTitle = `Kajian_Artikel_${projectTitle.replace(/[^a-zA-Z0-9_\s-]/g, "").trim().replace(/\s+/g, "_")}`;
+      const cleanFilenameTitle = projectTitle.replace(/[^a-zA-Z0-9_\s-]/g, "").trim();
 
       const prompt = `Tulis sebuah artikel komprehensif, akademis/bisnis yang mendalam, terstruktur rapi, dan profesional dalam Bahasa Indonesia tentang ${projectTitle}. 
 Gunakan panduan materi berikut untuk mengembangkan pembahasan secara detail:
@@ -1304,10 +1304,44 @@ PENTING: Jangan gunakan karakter bintang (*) maupun pagar (#) sama sekali karena
       });
 
       // Trigger automatic Word file download
-      exportToWord(cleanFilenameTitle, articleText, activeDivision || "PORTAL");
+      exportToWord(projectTitle, articleText, activeDivision || "PORTAL");
     } catch (err: any) {
       console.error(err);
       alert("Gagal membuat artikel: " + (err.message || err));
+    }
+  };
+
+  const handlePreviewAndExportWord = (text: string) => {
+    try {
+      const projectTitle = extractProjectTitle(text, activeDivision || "UMUM");
+      const cleanFilenameTitle = projectTitle.replace(/[^a-zA-Z0-9_\s-]/g, "").trim();
+
+      setArticlePreview({
+        title: projectTitle,
+        content: text,
+        fileName: cleanFilenameTitle
+      });
+
+      exportToWord(projectTitle, text, activeDivision || "PORTAL");
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handlePreviewAndExportPDF = (text: string) => {
+    try {
+      const projectTitle = extractProjectTitle(text, activeDivision || "UMUM");
+      const cleanFilenameTitle = projectTitle.replace(/[^a-zA-Z0-9_\s-]/g, "").trim();
+
+      setArticlePreview({
+        title: projectTitle,
+        content: text,
+        fileName: cleanFilenameTitle
+      });
+
+      downloadPDFDirect(projectTitle, text, activeDivision || "PORTAL");
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -2304,6 +2338,8 @@ ${lastMsgText}`;
               onSaveAsFile={handleSaveResponseAsFile}
               onExportArticle={handleExportArticle}
               onExportPPT={handleExportPPT}
+              onPreviewAndExportWord={handlePreviewAndExportWord}
+              onPreviewAndExportPDF={handlePreviewAndExportPDF}
               apiMode={apiMode}
               setApiMode={(mode) => {
                 setApiMode(mode);
@@ -2337,7 +2373,7 @@ ${lastMsgText}`;
                 </div>
                 <div>
                   <h3 className="text-sm font-extrabold text-slate-800">PREVIEW LAPORAN STRATEGIS</h3>
-                  <p className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-widest">{articlePreview.fileName}.doc</p>
+                  <p className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-widest">{articlePreview.fileName}</p>
                 </div>
               </div>
               
@@ -2366,9 +2402,19 @@ ${lastMsgText}`;
                 <button
                   onClick={() => exportToWord(articlePreview.fileName, articlePreview.content, activeDivision || "PORTAL")}
                   className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-violet-600 text-white hover:bg-violet-700 rounded-xl transition cursor-pointer shadow-md shadow-violet-100"
+                  title="Unduh file Word (.doc)"
                 >
                   <Download className="h-3.5 w-3.5" />
                   <span>Unduh (.doc)</span>
+                </button>
+
+                <button
+                  onClick={() => downloadPDFDirect(articlePreview.fileName, articlePreview.content, activeDivision || "PORTAL")}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-rose-600 text-white hover:bg-rose-700 rounded-xl transition cursor-pointer shadow-md shadow-rose-100"
+                  title="Unduh file PDF (.pdf)"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  <span>Unduh PDF (.pdf)</span>
                 </button>
 
                 <button

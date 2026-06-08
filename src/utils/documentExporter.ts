@@ -15,6 +15,16 @@ export function parseInlineMarkdown(text: string): string {
     .replace(/`([^`]+)`/g, "<code style='background-color:#f1f5f9; padding: 2px 4px; border-radius: 4px; font-family: monospace; font-size: 90%; color: #dc2626;'>$1</code>");
 }
 
+export function cleanPDFMarkdown(text: string): string {
+  if (!text) return "";
+  return text
+    .replace(/\*\*/g, "")
+    .replace(/\*/g, "")
+    .replace(/__/g, "")
+    .replace(/_/g, "")
+    .replace(/`/g, "");
+}
+
 export function extractProjectTitle(text: string, divisionName: string): string {
   if (!text) return `Kajian_${divisionName.toUpperCase()}_Strategis`;
   
@@ -268,14 +278,19 @@ export function exportToWord(title: string, text: string, divisionName: string) 
   const blob = new Blob([htmlContent], { type: "application/msword;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
-  const sanitizedFilename = title.toLowerCase().replace(/[^a-z0-9]/g, "_") + ".doc";
+  const sanitizedFilename = title.trim().replace(/[/\\?%*:|"<>\s]+/g, "_") + ".doc";
   
   link.href = url;
   link.download = sanitizedFilename;
+  link.style.display = "none";
   document.body.appendChild(link);
   link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  
+  // Clean up after standard delay to guarantee file is downloaded in iframe previews
+  setTimeout(() => {
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, 1000);
 }
 
 export function exportToPDF(title: string, text: string, divisionName: string) {
@@ -431,7 +446,8 @@ export function downloadPDFDirect(title: string, text: string, divisionName: str
     if (trimmed.startsWith("# ") || trimmed.startsWith("## ") || trimmed.startsWith("### ")) {
       const isH1 = trimmed.startsWith("# ");
       const isH2 = trimmed.startsWith("## ");
-      const cleanText = isH1 ? trimmed.slice(2) : (isH2 ? trimmed.slice(3) : trimmed.slice(4));
+      const rawText = isH1 ? trimmed.slice(2) : (isH2 ? trimmed.slice(3) : trimmed.slice(4));
+      const cleanText = cleanPDFMarkdown(rawText);
       
       const fSize = isH1 ? 14 : (isH2 ? 12 : 11);
 
@@ -453,7 +469,8 @@ export function downloadPDFDirect(title: string, text: string, divisionName: str
     }
     // B. Lists (Bullet points)
     else if (trimmed.startsWith("- ") || trimmed.startsWith("* ") || trimmed.startsWith("• ")) {
-      const cleanText = trimmed.replace(/^[-*•]\s+/, "");
+      const rawText = trimmed.replace(/^[-*•]\s+/, "");
+      const cleanText = cleanPDFMarkdown(rawText);
       
       checkPageBreak(8);
       doc.setFont("helvetica", "normal");
@@ -472,7 +489,8 @@ export function downloadPDFDirect(title: string, text: string, divisionName: str
     else if (/^\d+\.\s+(.*)/.test(trimmed)) {
       const match = trimmed.match(/^(\d+\.)\s+(.*)/);
       const numPrefix = match ? match[1] : "";
-      const cleanText = match ? match[2] : trimmed;
+      const rawText = match ? match[2] : trimmed;
+      const cleanText = cleanPDFMarkdown(rawText);
 
       checkPageBreak(8);
       doc.setFont("helvetica", "bold");
@@ -490,7 +508,8 @@ export function downloadPDFDirect(title: string, text: string, divisionName: str
     // D. Normal Paragraphs
     else {
       const isBoldBlock = trimmed.startsWith("**") && trimmed.endsWith("**");
-      const cleanText = isBoldBlock ? trimmed.slice(2, -2) : trimmed;
+      const rawText = isBoldBlock ? trimmed.slice(2, -2) : trimmed;
+      const cleanText = cleanPDFMarkdown(rawText);
 
       checkPageBreak(10);
       doc.setFont("helvetica", isBoldBlock ? "bold" : "normal");
@@ -550,8 +569,17 @@ export function downloadPDFDirect(title: string, text: string, divisionName: str
   }
 
   // Save the generated document directly
-  const sanitizedFilename = title.toLowerCase().replace(/[^a-z0-9]/g, "_") + ".pdf";
+  const sanitizedFilename = title.trim().replace(/[/\\?%*:|"<>\s]+/g, "_") + ".pdf";
   doc.save(sanitizedFilename);
+
+  // IMMEDIATELY let them see the file in a new tab!
+  try {
+    const pdfBlob = doc.output("blob");
+    const blobUrl = URL.createObjectURL(pdfBlob);
+    window.open(blobUrl, "_blank");
+  } catch (err) {
+    console.error("Popup blocked:", err);
+  }
 }
 
 export function exportToPPTX(
@@ -675,6 +703,9 @@ export function exportToPPTX(
     });
   });
 
-  const sanitizedTitle = title.toLowerCase().replace(/[^a-z0-9]/g, "_") || "prama_slide";
-  pptx.writeFile({ fileName: `${sanitizedTitle}.pptx` });
+  const sanitizedTitle = title.trim().replace(/[/\\?%*:|"<>\s]+/g, "_") || "prama_slide";
+  const baseTitle = sanitizedTitle.toLowerCase().endsWith(".pptx") 
+    ? sanitizedTitle.slice(0, -5) 
+    : sanitizedTitle;
+  pptx.writeFile({ fileName: baseTitle });
 }

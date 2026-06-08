@@ -14,7 +14,7 @@ import {
 import { db, handleFirestoreError, OperationType } from "./firebase";
 import { ChatMessage, SavedFile } from "./types";
 import { generateLocalSmartResponse, cleanChatMessages } from "./utils/localAssistant";
-import { exportToWord, exportToPPTX } from "./utils/documentExporter";
+import { exportToWord, exportToPPTX, extractProjectTitle } from "./utils/documentExporter";
 import Navbar from "./components/Navbar";
 import pramaLogo from "./assets/images/prama_logo_1780452149937.png";
 
@@ -49,7 +49,14 @@ import {
   Cpu,
   Eye,
   EyeOff,
-  Settings
+  Settings,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Copy,
+  Check,
+  FileText,
+  Download
 } from "lucide-react";
 import { GoogleGenAI } from "@google/genai";
 
@@ -143,6 +150,12 @@ export default function App() {
   const [activeDivision, setActiveDivision] = useState<string | null>(() => {
     return localStorage.getItem("prama_active_division") || null;
   });
+
+  // State for document and PowerPoint interactive inline live previews
+  const [articlePreview, setArticlePreview] = useState<{ title: string; content: string; fileName: string } | null>(null);
+  const [pptPreview, setPptPreview] = useState<{ title: string; slides: Array<{ title: string; bullets: string[]; speakerNotes: string; imageUrl: string }>; fileName: string } | null>(null);
+  const [activeSlideIndex, setActiveSlideIndex] = useState<number>(0);
+  const [copiedState, setCopiedState] = useState<boolean>(false);
 
   // Active workspace states
   const [files, setFiles] = useState<SavedFile[]>([]);
@@ -1263,7 +1276,14 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
 
   const handleExportArticle = async (lastMsgText: string) => {
     try {
-      const prompt = `Tulis sebuah artikel komprehensif, akademis/bisnis yang mendalam, terstruktur rapi, dan profesional dalam Bahasa Indonesia berdasarkan topik bahasan berikut ini. 
+      const projectTitle = extractProjectTitle(lastMsgText, activeDivision || "UMUM");
+      const cleanFilenameTitle = `Kajian_Artikel_${projectTitle.replace(/[^a-zA-Z0-9_\s-]/g, "").trim().replace(/\s+/g, "_")}`;
+
+      const prompt = `Tulis sebuah artikel komprehensif, akademis/bisnis yang mendalam, terstruktur rapi, dan profesional dalam Bahasa Indonesia tentang ${projectTitle}. 
+Gunakan panduan materi berikut untuk mengembangkan pembahasan secara detail:
+
+Materi Rujukan:
+${lastMsgText}
 
 Artikel harus memiliki struktur berikut:
 1. Judul Artikel Penting & Menarik (tanpa karakter * atau #)
@@ -1272,14 +1292,19 @@ Artikel harus memiliki struktur berikut:
 4. Rekomendasi Solusi & Rencana Aksi Kerja Taktis (gunakan format sub-judul berhuruf abjad a., b., c., d.)
 5. Kesimpulan & Penutup
 
-PENTING: Jangan gunakan karakter bintang (*) maupun pagar (#) sama sekali karena sistem kami membersihkannya. Gunakan pemisahan baris kosong dan penomoran huruf atau angka biasa.
-
-Bahasan Materi:
-${lastMsgText}`;
+PENTING: Jangan gunakan karakter bintang (*) maupun pagar (#) sama sekali karena sistem kami membersihkannya. Gunakan pemisahan baris kosong dan penomoran huruf atau angka biasa.`;
 
       const articleText = await queryGeminiModel(prompt);
-      const title = `Kajian_Artikel_${activeDivision || "ANALISIS"}_${Date.now().toString().slice(-4)}`;
-      exportToWord(title, articleText, activeDivision || "PORTAL");
+      
+      // Store in state to show beautiful preview modal instantly
+      setArticlePreview({
+        title: projectTitle,
+        content: articleText,
+        fileName: cleanFilenameTitle
+      });
+
+      // Trigger automatic Word file download
+      exportToWord(cleanFilenameTitle, articleText, activeDivision || "PORTAL");
     } catch (err: any) {
       console.error(err);
       alert("Gagal membuat artikel: " + (err.message || err));
@@ -1288,7 +1313,10 @@ ${lastMsgText}`;
 
   const handleExportPPT = async (lastMsgText: string) => {
     try {
-      const prompt = `Buatlah draf materi presentasi PowerPoint (PPTX) yang profesional, informatif, dan sangat lengkap berdasarkan bahasan materi di bawah ini. Anda WAJIB memberikan respon HANYA berupa JSON array yang valid tanpa hiasan markdown penutup/pembuka (seperti kode block \`\`\`json) dan tanpa teks tambahan lainnya di luar tanda kurung siku [ dan ].
+      const projectTitle = extractProjectTitle(lastMsgText, activeDivision || "UMUM");
+      const cleanFilenameTitle = `Presentasi_Kajian_${projectTitle.replace(/[^a-zA-Z0-9_\s-]/g, "").trim().replace(/\s+/g, "_")}`;
+
+      const prompt = `Buatlah draf materi presentasi PowerPoint (PPTX) yang profesional, informatif, dan sangat lengkap tentang proyek "${projectTitle}" berdasarkan materi di bawah ini. Anda WAJIB memberikan respon HANYA berupa JSON array yang valid tanpa hiasan markdown penutup/pembuka (seperti kode block \`\`\`json) dan tanpa teks tambahan lainnya di luar tanda kurung siku [ dan ].
 
 Setiap slide di dalam array harus berupa JSON object dengan tipe data berikut:
 {
@@ -1304,7 +1332,7 @@ Setiap slide di dalam array harus berupa JSON object dengan tipe data berikut:
 }
 
 Buatlah slide yang terstruktur logis minimal 5-6 slide:
-Slide 1: Pembuka / Title Slide
+Slide 1: Pembuka / Title Slide (Misal: Kajian Strategis Proyek ${projectTitle})
 Slide 2: Latar Belakang & Tantangan Utama
 Slide 3 & 4: Solusi Strategis & Pembahasan Utama (materi analitis)
 Slide 5: Rencana Aksi Terstruktur (Action Plan/Timeline)
@@ -1352,8 +1380,16 @@ ${lastMsgText}`;
         };
       });
 
-      const title = `Presentasi_Kajian_${activeDivision || "ANALISIS"}_${Date.now().toString().slice(-4)}`;
-      exportToPPTX(title, mappedSlides, activeDivision || "PRAMA UNIT");
+      // Show slide preview modal interactive player on-screen
+      setPptPreview({
+        title: projectTitle,
+        slides: mappedSlides,
+        fileName: cleanFilenameTitle
+      });
+      setActiveSlideIndex(0);
+
+      // Trigger PowerPoint file build and build download
+      exportToPPTX(cleanFilenameTitle, mappedSlides, activeDivision || "PRAMA UNIT");
     } catch (err: any) {
       console.error(err);
       alert("Gagal membuat PPT: " + (err.message || err));
@@ -2288,6 +2324,339 @@ ${lastMsgText}`;
         </div>
 
       </main>
+
+      {/* 1. ARTICLE / DOCUMENT PREVIEW MODAL */}
+      {articlePreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs overflow-y-auto animate-fade-in">
+          <div className="flex flex-col bg-white rounded-3xl w-full max-w-4xl max-h-[92vh] shadow-2xl border border-slate-150 overflow-hidden">
+            {/* Modal Header */}
+            <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-violet-100 flex items-center justify-center text-violet-700">
+                  <FileText className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-extrabold text-slate-800">PREVIEW LAPORAN STRATEGIS</h3>
+                  <p className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-widest">{articlePreview.fileName}.doc</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(articlePreview.content);
+                    setCopiedState(true);
+                    setTimeout(() => setCopiedState(false), 2000);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 rounded-xl transition cursor-pointer"
+                >
+                  {copiedState ? (
+                    <>
+                      <Check className="h-3.5 w-3.5 text-emerald-600" />
+                      <span>Tersalin!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-3.5 w-3.5" />
+                      <span>Salin Teks</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => exportToWord(articlePreview.fileName, articlePreview.content, activeDivision || "PORTAL")}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-violet-600 text-white hover:bg-violet-700 rounded-xl transition cursor-pointer shadow-md shadow-violet-100"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  <span>Unduh (.doc)</span>
+                </button>
+
+                <button
+                  onClick={() => setArticlePreview(null)}
+                  className="h-8 w-8 flex items-center justify-center hover:bg-slate-200 text-slate-500 hover:text-slate-800 rounded-full transition cursor-pointer"
+                >
+                  <X className="h-4.5 w-4.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal content body styled beautifully like real MS Word A4 sheet */}
+            <div className="flex-1 overflow-y-auto bg-slate-100/60 p-6 sm:p-10 flex justify-center">
+              <div className="bg-white min-h-[70vh] w-full max-w-2xl rounded-2xl shadow-md border border-slate-200 p-8 sm:p-12 text-slate-700 relative overflow-hidden font-sans">
+                {/* Decorative corporate top header */}
+                <div className="flex justify-between items-center border-b-2 border-slate-800 pb-3 mb-6">
+                  <div>
+                    <div className="text-xs font-black tracking-widest text-slate-900 font-mono">PRAMA STRATEGIC SYSTEM</div>
+                    <div className="text-[8px] font-bold text-slate-400 font-mono uppercase tracking-widest">PANCARAN GROUP STRATEGIC CONSULTANCY SERVICES</div>
+                  </div>
+                  <div className="border border-slate-800 px-3 py-1 text-[8px] font-black text-center font-mono rounded tracking-wider uppercase text-indigo-700">
+                    PRAMA VERIFIED
+                  </div>
+                </div>
+
+                {/* Cover metadata card */}
+                <div className="bg-slate-50 border-l-4 border-slate-800 p-4 mb-8 text-[11px] text-slate-600 font-medium leading-relaxed rounded-r-lg">
+                  <div className="font-bold text-slate-800 font-mono text-[9px] uppercase tracking-wider mb-2 text-indigo-600">INFORMASI VERIFIKASI DOKUMEN:</div>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 font-mono">
+                    <div><span className="text-slate-400 font-bold">KATEGORI:</span> LAPORAN ANALISIS STRATEGIS</div>
+                    <div><span className="text-slate-400 font-bold">UNIT:</span> {(activeDivision || "ANALITIS").toUpperCase()} DIVISION</div>
+                    <div><span className="text-slate-400 font-bold">PROYEK:</span> {articlePreview.title.toUpperCase()}</div>
+                    <div><span className="text-slate-400 font-bold">STATUS:</span> INTERNAL VERIFIED (SECRET)</div>
+                  </div>
+                </div>
+
+                {/* Printable main headings and text */}
+                <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 border-b pb-2 mb-6 tracking-tight leading-snug">
+                  {articlePreview.title}
+                </h1>
+
+                {/* Beautiful clean parser */}
+                <div className="space-y-4 text-xs sm:text-sm leading-relaxed text-justify text-slate-800 font-normal">
+                  {articlePreview.content.split("\n").map((line, idx) => {
+                    const trimmed = line.trim();
+                    if (!trimmed) return <div key={idx} className="h-3" />;
+
+                    if (trimmed.startsWith("### ")) {
+                      return (
+                        <h3 key={idx} className="text-xs sm:text-sm font-extrabold text-slate-900 mt-5 mb-2 uppercase tracking-wide">
+                          {trimmed.slice(4)}
+                        </h3>
+                      );
+                    } else if (trimmed.startsWith("## ")) {
+                      return (
+                        <h2 key={idx} className="text-sm sm:text-base font-extrabold text-[#0369a1] border-b pb-1 mt-6 mb-3 tracking-tight">
+                          {trimmed.slice(3)}
+                        </h2>
+                      );
+                    } else if (trimmed.startsWith("# ")) {
+                      return (
+                        <h1 key={idx} className="text-base sm:text-lg font-black text-indigo-900 mt-8 border-b-2 pb-2 mb-4 tracking-tight">
+                          {trimmed.slice(2)}
+                        </h1>
+                      );
+                    } else if (trimmed.startsWith("- ") || trimmed.startsWith("* ") || trimmed.startsWith("• ")) {
+                      const cleanItem = trimmed.replace(/^[-*•]\s+/, "");
+                      return (
+                        <div key={idx} className="flex gap-2.5 items-start pl-4 text-xs sm:text-sm my-1.5 text-slate-700">
+                          <span className="text-indigo-600 mt-1 font-bold">•</span>
+                          <span>{cleanItem}</span>
+                        </div>
+                      );
+                    } else if (/^\d+\.\s+(.*)/.test(trimmed)) {
+                      const numText = trimmed.match(/^(\d+\.)\s+(.*)/);
+                      return (
+                        <div key={idx} className="flex gap-3 items-start pl-2 text-xs sm:text-sm font-medium my-2 text-slate-800">
+                          <span className="text-indigo-950 font-mono font-bold shrink-0">{numText ? numText[1] : "1."}</span>
+                          <span className="font-bold">{numText ? numText[2] : trimmed}</span>
+                        </div>
+                      );
+                    } else {
+                      return (
+                        <p key={idx} className="text-xs sm:text-sm text-slate-700 text-justify">
+                          {trimmed}
+                        </p>
+                      );
+                    }
+                  })}
+                </div>
+
+                {/* Footer decorator block */}
+                <div className="mt-12 border-t pt-4 text-[9px] text-slate-400 font-mono flex justify-between items-center">
+                  <span>PRAMA SYSTEM DIGITAL ARCHIVE SYSTEM &bull; PANCARAN GROUP</span>
+                  <span>© 2026 INTERNAL</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Bottom control */}
+            <div className="bg-slate-50 border-t border-slate-200 px-6 py-3.5 flex justify-end gap-2.5 shrink-0">
+              <span className="self-center font-mono text-[9px] text-slate-450 font-bold uppercase tracking-widest mr-auto select-none">
+                VERIFIED STUDY SUITE
+              </span>
+              <button
+                onClick={() => setArticlePreview(null)}
+                className="px-5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 border border-slate-200 rounded-xl transition cursor-pointer"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 2. PPT SLIDESHOW PREVIEW INTERACTIVE MODAL */}
+      {pptPreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 p-4 backdrop-blur-md overflow-y-auto animate-fade-in text-slate-800">
+          <div className="flex flex-col bg-white rounded-3xl w-full max-w-5xl max-h-[92vh] shadow-2xl overflow-hidden">
+            {/* Header toolbar */}
+            <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-sky-100 flex items-center justify-center text-sky-700">
+                  <Sparkles className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-extrabold text-slate-800">SLIDE SHOW & INTERACTIVE PREVIEW</h3>
+                  <p className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-widest">{pptPreview.fileName}.pptx</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2.5">
+                <button
+                  onClick={() => exportToPPTX(pptPreview.fileName, pptPreview.slides, activeDivision || "PORTAL")}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-sky-600 hover:bg-sky-700 text-white border-none rounded-xl transition cursor-pointer shadow-md shadow-sky-100"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  <span>Unduh PPTX (.pptx)</span>
+                </button>
+                <button
+                  onClick={() => setPptPreview(null)}
+                  className="h-8 w-8 flex items-center justify-center hover:bg-slate-200 text-slate-500 hover:text-slate-800 rounded-full transition cursor-pointer"
+                >
+                  <X className="h-4.5 w-4.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Main Interactive Screen with 16:9 canvas and Sidebar notes */}
+            <div className="flex-1 overflow-y-auto bg-slate-900 p-4 sm:p-8 flex flex-col items-center justify-center gap-6">
+              
+              {/* Projector slide backdrop container */}
+              <div className="w-full max-w-4xl aspect-[16/9] bg-slate-50 rounded-2xl shadow-2xl border border-slate-800 flex overflow-hidden relative group">
+                {activeSlideIndex === 0 ? (
+                  // TITLE COVER SLIDE STYLE
+                  <div className="flex-1 flex flex-col justify-center items-center bg-[#0f172a] p-8 text-center select-none">
+                    <div className="text-[10px] font-mono font-black text-sky-450 text-sky-400 uppercase tracking-widest mb-3 animate-pulse">
+                      PRAMA STRATEGIC CONSULTING
+                    </div>
+                    <h1 className="text-white text-2xl sm:text-4xl font-black max-w-2xl px-4 uppercase tracking-tight leading-tight select-text">
+                      {pptPreview.slides[activeSlideIndex]?.title}
+                    </h1>
+                    <div className="h-1 w-20 bg-sky-500 my-6 rounded-full" />
+                    <p className="text-slate-400 font-semibold font-mono text-[10px] sm:text-xs uppercase tracking-widest">
+                      PREDIKSI, STRATEGI, & MANAJEMEN RISIKO OPERASIONAL
+                    </p>
+                    <p className="text-slate-400 text-[9px] mt-2 font-mono uppercase font-bold tracking-widest">
+                      UNIT KERJA: {(activeDivision || "UMUM").toUpperCase()} &bull; PANCARAN GROUP © 2026
+                    </p>
+                  </div>
+                ) : (
+                  // BENTO SPLIT LAYOUT CONTENT SLIDE STYLE
+                  <div className="flex-1 flex flex-col md:flex-row bg-[#f8fafc] text-slate-85 relative">
+                    {/* Left half: Content & Bullets */}
+                    <div className="flex-1 flex flex-col justify-between p-6 sm:p-10 md:w-7/12">
+                      <div className="space-y-4">
+                        <div className="text-[10px] font-mono font-bold text-sky-600 uppercase tracking-widest flex items-center gap-1.5">
+                          <span>STRATEGIC AREA: {(activeDivision || "PORTAL").toUpperCase()}</span>
+                          <span className="inline-block h-1 w-1 bg-sky-400 rounded-full" />
+                          <span>SLIDE {activeSlideIndex + 1}</span>
+                        </div>
+                        <h2 className="text-slate-900 font-black text-lg sm:text-2xl leading-tight select-text border-b pb-1">
+                          {pptPreview.slides[activeSlideIndex]?.title}
+                        </h2>
+                        
+                        <div className="space-y-2.5 pt-2">
+                          {pptPreview.slides[activeSlideIndex]?.bullets.map((bulletText, bIdx) => (
+                            <div key={bIdx} className="flex gap-2.5 items-start pl-1">
+                              <span className="text-sky-500 mt-1 font-extrabold select-none">•</span>
+                              <p className="text-xs sm:text-sm text-slate-700 font-medium leading-relaxed select-text">
+                                {bulletText}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="text-[8px] font-mono text-slate-400 font-semibold border-t pt-3 mt-6">
+                        PRAMA DIGITAL PORTAL &bull; CONFIDENTIAL DIALOGUE
+                      </div>
+                    </div>
+
+                    {/* Right half: High-res Unsplash Background */}
+                    <div className="flex-1 md:w-5/12 bg-slate-200 relative min-h-[150px] md:min-h-0 overflow-hidden select-none">
+                      {pptPreview.slides[activeSlideIndex]?.imageUrl ? (
+                        <img
+                          src={pptPreview.slides[activeSlideIndex].imageUrl}
+                          alt="Slide context"
+                          className="w-full h-full object-cover transition duration-300 transform group-hover:scale-102"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-slate-200 text-slate-400">
+                          <FileText className="h-10 w-10" />
+                        </div>
+                      )}
+                      
+                      {/* Gradient overlay inside picture card */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent pointer-events-none" />
+                      <div className="absolute top-3 right-3 bg-slate-900/40 backdrop-blur-xs rounded-lg px-2.5 py-1 text-[8px] font-bold text-slate-100 font-mono">
+                        {(activeDivision || "UMUM").toUpperCase()} UNIT
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Left navigation arrow on-slide */}
+                <button
+                  disabled={activeSlideIndex === 0}
+                  onClick={() => setActiveSlideIndex(prev => Math.max(0, prev - 1))}
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 p-2 rounded-full bg-slate-900/60 hover:bg-slate-950 text-white disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer shadow transition z-20"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+
+                {/* Right navigation arrow on-slide */}
+                <button
+                  disabled={activeSlideIndex === pptPreview.slides.length - 1}
+                  onClick={() => setActiveSlideIndex(prev => Math.min(pptPreview.slides.length - 1, prev + 1))}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-2 rounded-full bg-slate-900/60 hover:bg-slate-950 text-white disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer shadow transition z-20"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Speaker Notes Presenter Window panel */}
+              <div className="w-full max-w-4xl bg-slate-800 rounded-2xl p-4 sm:p-5 border border-slate-700 shadow-xl">
+                <div className="flex justify-between items-center pb-2.5 border-b border-slate-700 mb-3">
+                  <span className="font-mono text-[10px] text-sky-400 font-black tracking-widest uppercase">
+                    SPEAKER NOTES / NASKAH PIDATO PRESENTER
+                  </span>
+                  <span className="bg-slate-700 text-white font-mono text-[9px] font-bold px-2 py-0.5 rounded border border-slate-600">
+                    Slide {activeSlideIndex + 1} dari {pptPreview.slides.length}
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm text-slate-200/95 leading-relaxed font-medium italic select-text">
+                  &quot;{pptPreview.slides[activeSlideIndex]?.speakerNotes || "Selamat pagi/siang bapak dan ibu sekalian. Slide pembuka ini menjelaskan judul dan pilar utama kajian proyek..."}&quot;
+                </p>
+              </div>
+
+            </div>
+
+            {/* Bottom slideshow controls & paginator */}
+            <div className="bg-slate-50 border-t border-slate-200 px-6 py-4 flex justify-between items-center shrink-0">
+              <div className="flex gap-1.5">
+                {pptPreview.slides.map((_, dotIdx) => (
+                  <button
+                    key={dotIdx}
+                    onClick={() => setActiveSlideIndex(dotIdx)}
+                    className={`h-2.5 rounded-full transition-all cursor-pointer ${
+                      activeSlideIndex === dotIdx ? "w-6 bg-sky-600" : "w-2.5 bg-slate-300 hover:bg-slate-400"
+                    }`}
+                  />
+                ))}
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setPptPreview(null)}
+                  className="px-5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 border border-slate-200 rounded-xl transition cursor-pointer"
+                >
+                  Tutup Slide Show
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

@@ -5,6 +5,62 @@
 import { jsPDF } from "jspdf";
 import pptxgen from "pptxgenjs";
 
+export function parseInlineMarkdown(text: string): string {
+  if (!text) return "";
+  return text
+    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*(.*?)\*/g, "<em>$1</em>")
+    .replace(/__(.*?)__/g, "<strong>$1</strong>")
+    .replace(/_(.*?)_/g, "<em>$1</em>")
+    .replace(/`([^`]+)`/g, "<code style='background-color:#f1f5f9; padding: 2px 4px; border-radius: 4px; font-family: monospace; font-size: 90%; color: #dc2626;'>$1</code>");
+}
+
+export function extractProjectTitle(text: string, divisionName: string): string {
+  if (!text) return `Kajian_${divisionName.toUpperCase()}_Strategis`;
+  
+  const lines = text.split("\n");
+  // 1. First choice: look for markdown headers like "# Laporan Kelayakan Proyek..."
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (trimmed.startsWith("# ") || trimmed.startsWith("## ") || trimmed.startsWith("### ")) {
+      const clean = trimmed
+        .replace(/^#+\s*/, "") // remove hashes
+        .replace(/[*_#]/g, "") // remove styling markers
+        .replace(/:/g, " - ") // replace colon
+        .trim();
+      if (clean.length > 3 && clean.length < 80) {
+        return clean;
+      }
+    }
+  }
+
+  // 2. Second choice: look for lines starting with "Judul:", "Project:", "Topik:", etc.
+  for (const line of lines) {
+    const trimmed = line.trim();
+    const match = trimmed.match(/^(judul|project|topik|nama\sproyek)\s*:\s*(.*)/i);
+    if (match && match[2]) {
+      const clean = match[2].replace(/[*_#]/g, "").trim();
+      if (clean.length > 3 && clean.length < 80) {
+        return clean;
+      }
+    }
+  }
+
+  // 3. Third choice: look for title in bold text on the first few lines
+  for (let i = 0; i < Math.min(lines.length, 10); i++) {
+    const trimmed = lines[i].trim();
+    if (trimmed.startsWith("**") && trimmed.endsWith("**")) {
+      const clean = trimmed.replace(/\*\*/g, "").trim();
+      if (clean.length > 5 && clean.length < 80) {
+        return clean;
+      }
+    }
+  }
+
+  // Fallback
+  return `Kajian_${divisionName.toUpperCase()}_Strategis`;
+}
+
 function formatMarkdownToHtml(text: string): string {
   if (!text) return "";
   const lines = text.split("\n");
@@ -28,11 +84,11 @@ function formatMarkdownToHtml(text: string): string {
 
     // 1. Headings
     if (trimmed.startsWith("### ")) {
-      html += `<h3>${trimmed.slice(4)}</h3>`;
+      html += `<h3 style="font-size: 11pt; color: #0f172a; margin-top: 14pt; margin-bottom: 6pt; font-weight: bold;">${parseInlineMarkdown(trimmed.slice(4))}</h3>`;
     } else if (trimmed.startsWith("## ")) {
-      html += `<h2>${trimmed.slice(3)}</h2>`;
+      html += `<h2 style="font-size: 14pt; color: #0369a1; margin-top: 18pt; margin-bottom: 8pt; font-weight: bold; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">${parseInlineMarkdown(trimmed.slice(3))}</h2>`;
     } else if (trimmed.startsWith("# ")) {
-      html += `<h1>${trimmed.slice(2)}</h1>`;
+      html += `<h1 style="font-size: 20pt; color: #1e3a8a; margin-top: 0; margin-bottom: 14pt; font-weight: bold; border-bottom: 2px solid #3b82f6; padding-bottom: 6pt;">${parseInlineMarkdown(trimmed.slice(2))}</h1>`;
     }
     // 2. Numbered main list points (e.g. 1., 2.)
     else if (/^\d+\.\s+(.*)/.test(trimmed)) {
@@ -41,11 +97,11 @@ function formatMarkdownToHtml(text: string): string {
         inSubList = false;
       }
       if (!inList) {
-        html += "<ol>";
+        html += "<ol style='margin-bottom: 12pt; padding-left: 20pt;'>";
         inList = true;
       }
       const val = trimmed.replace(/^\d+\.\s+/, "");
-      html += `<li><strong>${val}</strong></li>`;
+      html += `<li style="font-size: 10.5pt; margin-bottom: 6pt; color: #1e293b; text-align: justify;"><strong>${parseInlineMarkdown(val)}</strong></li>`;
     }
     // 3. Sub list points (e.g. a., b., c.)
     else if (/^[a-zA-Z]\.\s+(.*)/.test(trimmed)) {
@@ -54,7 +110,7 @@ function formatMarkdownToHtml(text: string): string {
         inSubList = true;
       }
       const val = trimmed.replace(/^[a-zA-Z]\.\s+/, "");
-      html += `<li>${val}</li>`;
+      html += `<li style="font-size: 10.5pt; margin-bottom: 4pt; color: #475569; text-align: justify;">${parseInlineMarkdown(val)}</li>`;
     }
     // 4. Bullet points
     else if (trimmed.startsWith("- ") || trimmed.startsWith("* ") || trimmed.startsWith("• ")) {
@@ -63,7 +119,7 @@ function formatMarkdownToHtml(text: string): string {
         inSubList = true;
       }
       const val = trimmed.replace(/^[-*•]\s+/, "");
-      html += `<li>${val}</li>`;
+      html += `<li style="font-size: 10.5pt; margin-bottom: 4pt; color: #334155; text-align: justify;">${parseInlineMarkdown(val)}</li>`;
     }
     // 5. Normal paragraphs
     else {
@@ -75,7 +131,7 @@ function formatMarkdownToHtml(text: string): string {
         html += "</ol>";
         inList = false;
       }
-      html += `<p>${trimmed}</p>`;
+      html += `<p style="font-size: 10.5pt; margin-bottom: 8pt; line-height: 1.6; text-align: justify; color: #334155;">${parseInlineMarkdown(trimmed)}</p>`;
     }
   });
 
@@ -86,76 +142,7 @@ function formatMarkdownToHtml(text: string): string {
   return html;
 }
 
-export function extractProjectTitle(text: string, fallback: string): string {
-  if (!text) return fallback;
-  const lines = text.split("\n").map(l => l.trim()).filter(l => l.length > 0);
-  
-  for (let i = 0; i < Math.min(12, lines.length); i++) {
-    const line = lines[i];
-    
-    // Skip greeting or meta intro
-    if (line.toLowerCase().startsWith("halo") || line.toLowerCase().startsWith("selamat") || line.toLowerCase().startsWith("pagi") || line.toLowerCase().startsWith("siang") || line.toLowerCase().startsWith("salam")) {
-      continue;
-    }
-    
-    // Check if it's a markdown header
-    if (line.startsWith("#")) {
-      const cleaned = line.replace(/^[#\s*:-]+/, "").replace(/[#\s*:-]+$/, "").trim();
-      if (cleaned.length > 3 && 
-          !cleaned.toLowerCase().includes("informasi") && 
-          !cleaned.toLowerCase().includes("laporan") && 
-          !cleaned.toLowerCase().includes("kajian strategis") &&
-          !cleaned.toLowerCase().includes("terbatas") &&
-          !cleaned.toLowerCase().includes("rahasia")) {
-        return cleaned;
-      }
-    }
-    
-    // Matches: Judul: ... or Proyek: ... or Project: ...
-    const keyMatch = line.match(/^(judul\s+artikel|judul|topic|kajian|proyek|project|subject)\s*:\s*(.+)/i);
-    if (keyMatch && keyMatch[2]) {
-      const cleaned = keyMatch[2].replace(/^[#\s*]+/, "").replace(/[#\s*]+$/, "").trim();
-      if (cleaned.length > 3) {
-        return cleaned;
-      }
-    }
-  }
-
-  // If first line of actual content is reasonably short, use it as title
-  for (let i = 0; i < Math.min(5, lines.length); i++) {
-    const line = lines[i];
-    if (!line.startsWith("`") && line.length < 100 && !line.toLowerCase().startsWith("halo") && !line.toLowerCase().startsWith("selamat")) {
-      const cleaned = line.replace(/^[#\s*:-]+/, "").replace(/[#\s*:-]+$/, "").trim();
-      if (cleaned.length > 5 && !cleaned.toLowerCase().includes("pendahuluan") && !cleaned.toLowerCase().includes("laporan")) {
-        return cleaned;
-      }
-    }
-  }
-
-  return fallback;
-}
-
 export function exportToWord(title: string, text: string, divisionName: string) {
-  // Extract custom project title if generic or provided title is slightly standard
-  let projectTitle = title;
-  const isGeneric = 
-    title.toLowerCase().startsWith("kajian_") || 
-    title.toLowerCase().startsWith("prama_") || 
-    title.toLowerCase() === "kajian proyek prama" || 
-    title.toLowerCase() === "laporan" ||
-    title.toLowerCase() === "word" ||
-    !title;
-
-  if (isGeneric) {
-    const extracted = extractProjectTitle(text, "");
-    if (extracted) {
-      projectTitle = extracted;
-    }
-  }
-
-  // Clean the title for file saving & display header
-  const cleanDisplayTitle = projectTitle.replace(/_/g, " ").replace(/\s+/g, " ").trim();
-
   const formattedHtml = formatMarkdownToHtml(text);
   const dateStr = new Date().toLocaleDateString("id-ID", {
     weekday: "long",
@@ -168,7 +155,7 @@ export function exportToWord(title: string, text: string, divisionName: string) 
     <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
     <head>
       <meta charset="utf-8">
-      <title>${cleanDisplayTitle}</title>
+      <title>${title}</title>
       <!--[if gte mso 9]>
       <xml>
         <w:WordDocument>
@@ -256,7 +243,7 @@ export function exportToWord(title: string, text: string, divisionName: string) 
     </head>
     <body>
       <div class="Section1">
-        <h1>LAPORAN: ${cleanDisplayTitle.toUpperCase()}</h1>
+        <h1>LAPORAN ANALISIS STRATEGIS PRAMA</h1>
         
         <div class="meta-container">
           <div class="meta-title">INFORMASI DOKUMEN</div>
@@ -281,13 +268,7 @@ export function exportToWord(title: string, text: string, divisionName: string) 
   const blob = new Blob([htmlContent], { type: "application/msword;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
-  
-  // Format clean filename from projectTitle
-  const sanitizedFilename = projectTitle
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, "")
-    .trim()
-    .replace(/\s+/g, "_") + ".doc";
+  const sanitizedFilename = title.toLowerCase().replace(/[^a-z0-9]/g, "_") + ".doc";
   
   link.href = url;
   link.download = sanitizedFilename;
@@ -298,23 +279,6 @@ export function exportToWord(title: string, text: string, divisionName: string) 
 }
 
 export function exportToPDF(title: string, text: string, divisionName: string) {
-  let projectTitle = title;
-  const isGeneric = 
-    title.toLowerCase().startsWith("kajian_") || 
-    title.toLowerCase().startsWith("prama_") || 
-    title.toLowerCase() === "kajian proyek prama" || 
-    title.toLowerCase() === "laporan" ||
-    !title;
-
-  if (isGeneric) {
-    const extracted = extractProjectTitle(text, "");
-    if (extracted) {
-      projectTitle = extracted;
-    }
-  }
-
-  const cleanDisplayTitle = projectTitle.replace(/_/g, " ").replace(/\s+/g, " ").trim();
-
   const formattedHtml = formatMarkdownToHtml(text);
   const dateStr = new Date().toLocaleDateString("id-ID", {
     weekday: "long",
@@ -364,7 +328,7 @@ export function exportToPDF(title: string, text: string, divisionName: string) {
       </div>
 
       <div class="content-wrapper" style="color: #000000; font-size: 14px;">
-        <h1 style="font-size: 22px; font-weight: 800; color: #0f172a; margin-top: 0; margin-bottom: 16px; letter-spacing: -0.025em; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">${cleanDisplayTitle.toUpperCase()}</h1>
+        <h1 style="font-size: 22px; font-weight: 800; color: #0f172a; margin-top: 0; margin-bottom: 16px; letter-spacing: -0.025em; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">${title}</h1>
         ${formattedHtml}
       </div>
 
@@ -378,7 +342,7 @@ export function exportToPDF(title: string, text: string, divisionName: string) {
   printSection.innerHTML = htmlContent;
 
   const originalTitle = document.title;
-  document.title = cleanDisplayTitle;
+  document.title = title;
 
   // Trigger browser print dialog for the main window (works seamlessly in sandboxed iframe)
   window.print();
@@ -393,23 +357,6 @@ export function exportToPDF(title: string, text: string, divisionName: string) {
 }
 
 export function downloadPDFDirect(title: string, text: string, divisionName: string) {
-  let projectTitle = title;
-  const isGeneric = 
-    title.toLowerCase().startsWith("kajian_") || 
-    title.toLowerCase().startsWith("prama_") || 
-    title.toLowerCase() === "kajian proyek prama" || 
-    title.toLowerCase() === "laporan" ||
-    !title;
-
-  if (isGeneric) {
-    const extracted = extractProjectTitle(text, "");
-    if (extracted) {
-      projectTitle = extracted;
-    }
-  }
-
-  const cleanDisplayTitle = projectTitle.replace(/_/g, " ").replace(/\s+/g, " ").trim();
-
   const doc = new jsPDF({
     orientation: "p",
     unit: "mm",
@@ -440,7 +387,7 @@ export function downloadPDFDirect(title: string, text: string, divisionName: str
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
   doc.setTextColor(15, 23, 42);
-  const splitTitle = doc.splitTextToSize(cleanDisplayTitle.toUpperCase(), usableWidth);
+  const splitTitle = doc.splitTextToSize(title.toUpperCase(), usableWidth);
   doc.text(splitTitle, margin, y);
   y += (splitTitle.length * 7) + 5;
 
@@ -603,12 +550,7 @@ export function downloadPDFDirect(title: string, text: string, divisionName: str
   }
 
   // Save the generated document directly
-  const sanitizedFilename = projectTitle
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, "")
-    .trim()
-    .replace(/\s+/g, "_") + ".pdf";
-  
+  const sanitizedFilename = title.toLowerCase().replace(/[^a-z0-9]/g, "_") + ".pdf";
   doc.save(sanitizedFilename);
 }
 

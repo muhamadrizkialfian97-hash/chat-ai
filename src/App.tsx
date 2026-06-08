@@ -1960,7 +1960,7 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
           </div>
 
           <nav className="space-y-1.5 flex-1">
-            {divisions.map((div) => {
+            {divisions.filter((d) => !d.locked).map((div) => {
               const IconComp = div.icon;
               const isSelected = activeDivision === div.id;
               return (

@@ -26,7 +26,6 @@ export interface User {
 }
 import ChatPanel from "./components/ChatPanel";
 import FilePanel from "./components/FilePanel";
-import RecommendedArticles from "./components/RecommendedArticles";
 import { 
   TrendingUp, 
   Users, 
@@ -49,8 +48,7 @@ import {
   Cpu,
   Eye,
   EyeOff,
-  Settings,
-  FileText
+  Settings
 } from "lucide-react";
 import { GoogleGenAI } from "@google/genai";
 
@@ -66,7 +64,8 @@ const divisions = [
     lightAccent: "bg-sky-50 text-sky-800 border-sky-100",
     hoverAccent: "group-hover:border-sky-400 group-hover:bg-sky-50/40",
     indicatorColor: "bg-sky-500",
-    icon: TrendingUp
+    icon: TrendingUp,
+    locked: false
   },
   {
     id: "hca",
@@ -78,7 +77,8 @@ const divisions = [
     lightAccent: "bg-indigo-50 text-indigo-800 border-indigo-100",
     hoverAccent: "group-hover:border-indigo-400 group-hover:bg-indigo-50/40",
     indicatorColor: "bg-indigo-500",
-    icon: Users
+    icon: Users,
+    locked: true
   },
   {
     id: "fina",
@@ -90,7 +90,8 @@ const divisions = [
     lightAccent: "bg-emerald-50 text-emerald-800 border-emerald-100",
     hoverAccent: "group-hover:border-emerald-400 group-hover:bg-emerald-50/40",
     indicatorColor: "bg-emerald-500",
-    icon: Wallet
+    icon: Wallet,
+    locked: true
   },
   {
     id: "lga",
@@ -102,7 +103,8 @@ const divisions = [
     lightAccent: "bg-teal-50 text-teal-800 border-teal-100",
     hoverAccent: "group-hover:border-teal-400 group-hover:bg-teal-50/40",
     indicatorColor: "bg-teal-500",
-    icon: Scale
+    icon: Scale,
+    locked: true
   },
   {
     id: "spia",
@@ -114,7 +116,8 @@ const divisions = [
     lightAccent: "bg-indigo-50 text-indigo-800 border-indigo-100",
     hoverAccent: "group-hover:border-indigo-450 group-hover:bg-indigo-50/40",
     indicatorColor: "bg-indigo-500",
-    icon: CheckSquare
+    icon: CheckSquare,
+    locked: true
   }
 ];
 
@@ -187,7 +190,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<"chat" | "files">("chat");
 
   // Tab selector inside main dashboard
-  const [dashboardView, setDashboardView] = useState<"divisions" | "saved_docs" | "recommended_articles">("divisions");
+  const [dashboardView, setDashboardView] = useState<"divisions" | "saved_docs">("divisions");
 
   // Persist connection settings
   useEffect(() => {
@@ -981,7 +984,19 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
 
       let finalResponseText = "";
       if (isGenuineAPIError) {
-        finalResponseText = friendlyText;
+        // Run local smart response
+        const fallbackPayload = generateLocalSmartResponse(text, activeDivision, updatedMessages);
+        
+        let warningHeader = "";
+        if (friendlyText.includes("RESOURCE_EXHAUSTED") || friendlyText.includes("429")) {
+          warningHeader = `> ⚠️ **PEMBERITAHUAN:** *Batas kuota harian server bersama terlampaui (RESOURCE_EXHAUSTED 429).* Menyajikan hasil menggunakan **Modul Analisis Logistik Internal PRAMA**. Silakan klik tombol **KONEKSI (BROWSER)** di atas percakapan untuk memasukkan Gemini API Key pribadi Anda jika ingin kembali ke Cloud AI.\n\n---\n\n`;
+        } else if (friendlyText.includes("API_KEY_INVALID") || friendlyText.includes("400")) {
+          warningHeader = `> ⚠️ **PEMBERITAHUAN:** *Kunci API Gemini tidak valid atau terblokir.* Menyajikan hasil menggunakan **Modul Analisis Logistik Internal PRAMA**. Silakan periksa atau ganti Gemini API Key Anda lewat tombol **KONEKSI (BROWSER)** di atas.\n\n---\n\n`;
+        } else {
+          warningHeader = `> ⚠️ **PEMBERITAHUAN:** *Mengalami kendala koneksi dengan Cloud AI Gemini.* Menyajikan hasil menggunakan **Modul Analisis Logistik Internal PRAMA**. Anda dapat mencoba beralih ke Kunci API pribadi atau silakan klik kirim ulang nanti.\n\n---\n\n`;
+        }
+
+        finalResponseText = warningHeader + fallbackPayload.text;
       } else {
         // Generate highly intelligent Indonesian response tailored to the user's specific text + active division
         const fallbackPayload = generateLocalSmartResponse(text, activeDivision, updatedMessages);
@@ -1682,18 +1697,12 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
               PUSAT HUB DIREKTORAT ENTERPRISE
             </span>
             <h2 className="mt-2.5 font-display font-black text-2xl tracking-tight text-slate-900 md:text-3.5xl">
-              {dashboardView === "divisions" 
-                ? "Pilih Hub Divisi Khusus" 
-                : dashboardView === "saved_docs" 
-                  ? "Simpan Draf & Dokumen Artikel PM" 
-                  : "Arsip Contoh Rekomendasi Artikel PM"}
+              {dashboardView === "divisions" ? "Pilih Hub Divisi Khusus" : "Simpan Draf & Dokumen Artikel PM"}
             </h2>
             <p className="mt-1.5 text-xs text-slate-500 max-w-xl mx-auto font-bold leading-relaxed">
               {dashboardView === "divisions"
                 ? "Klik salah satu pilar divisi operasional korporat logistik Pancaran Group di bawah ini untuk memulai sesi dialog analisis, audit, atau penyusunan dokumen berbasis asisten cerdas PRAMA."
-                : dashboardView === "saved_docs"
-                  ? "Kelola, edit, cari, cari dokumen, cetak, dan ekspor draf artikel project management atau dokumen audit yang tersimpan di cloud terenkripsi."
-                  : "Arsip draf artikel project management dan pedoman operasional logistik standar PRAMA yang siap diunduh dalam bentuk Word dan PDF secara instan."}
+                : "Kelola, edit, cari, cetak, dan ekspor draf artikel project management atau dokumen audit yang tersimpan di cloud terenkripsi portal PRAMA."}
             </p>
           </div>
 
@@ -1725,23 +1734,6 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
                 dashboardView === "saved_docs" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-505 text-slate-500"
               }`}>
                 {files.length}
-              </span>
-            </button>
-
-            <button
-              onClick={() => setDashboardView("recommended_articles")}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold transition-all duration-200 border cursor-pointer hover:scale-101 shrink-0 ${
-                dashboardView === "recommended_articles"
-                  ? "bg-indigo-600 border-indigo-650 border-indigo-600 text-white shadow-md shadow-indigo-100"
-                  : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300"
-              }`}
-            >
-              <FileText className="h-4 w-4 text-indigo-500" />
-              <span>Rekomendasi Artikel PM</span>
-              <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded-md font-extrabold shadow-inner ${
-                dashboardView === "recommended_articles" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-505 text-slate-500"
-              }`}>
-                15
               </span>
             </button>
           </div>
@@ -1846,32 +1838,6 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
                 />
               </div>
             </div>
-          ) : dashboardView === "recommended_articles" ? (
-            <div className="max-w-7xl mx-auto text-left bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden w-full h-[650px] flex flex-col">
-              <div className="bg-slate-900 px-6 py-4 flex items-center justify-between text-white border-b border-slate-800 shrink-0">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-950 text-indigo-300 font-bold border border-indigo-800 text-sm">
-                    📚
-                  </div>
-                  <div>
-                    <h3 className="font-display font-black text-xs tracking-wider uppercase leading-none text-white">
-                      ARSIP REKOMENDASI ARTIKEL PM
-                    </h3>
-                    <p className="text-[9px] text-slate-400 font-mono tracking-widest font-bold mt-1">
-                      Pusat Unduhan Mandiri Berkas Word (.doc) & PDF Presisi PRAMA
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-[9px] font-black bg-slate-800 text-indigo-400 border border-slate-705 border-slate-700 px-2.5 py-1 rounded-full uppercase tracking-widest animate-pulse">
-                    15 Artikel PM Ready
-                  </span>
-                </div>
-              </div>
-              <div className="flex-1 overflow-hidden relative">
-                <RecommendedArticles />
-              </div>
-            </div>
           ) : (
             /* Division Bento-like Selection Grid */
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 text-left max-w-7xl mx-auto">
@@ -1880,8 +1846,16 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
                 return (
                   <div
                     key={div.id}
-                    onClick={() => setActiveDivision(div.id)}
-                    className="group relative flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 cursor-pointer hover:border-indigo-400 shadow-sm hover:shadow-lg transition-all duration-300"
+                    onClick={() => {
+                      if (!div.locked) {
+                        setActiveDivision(div.id);
+                      }
+                    }}
+                    className={`group relative flex flex-col justify-between rounded-2xl border p-5 transition-all duration-300 ${
+                      div.locked
+                        ? "border-slate-200 bg-slate-50/70 opacity-75 cursor-not-allowed select-none"
+                        : "border-slate-200 bg-white cursor-pointer hover:border-indigo-400 shadow-sm hover:shadow-lg hover:-translate-y-0.5"
+                    }`}
                   >
                     <div className="space-y-4">
                       {/* Header: Icon and Division Code */}
@@ -1889,14 +1863,21 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
                         <div className={`flex h-10 w-10 items-center justify-center rounded-xl transition ${div.lightAccent} shadow-sm font-bold`}>
                           <IconComp className="h-5 w-5" />
                         </div>
-                        <span className="font-mono text-[9px] font-black tracking-widest bg-slate-100 text-slate-500 px-2 py-0.5 rounded border border-slate-200">
-                          {div.code}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          {div.locked && (
+                            <span className="flex items-center gap-0.5 text-[8px] font-black bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                              <Lock className="h-2 w-2" /> Terkunci
+                            </span>
+                          )}
+                          <span className="font-mono text-[9px] font-black tracking-widest bg-slate-100 text-slate-500 px-2 py-0.5 rounded border border-slate-200 animate-none">
+                            {div.code}
+                          </span>
+                        </div>
                       </div>
 
                       {/* Title & description */}
                       <div>
-                        <h4 className="font-display font-extrabold text-sm text-slate-800 leading-snug group-hover:text-indigo-700 transition">
+                        <h4 className={`font-display font-extrabold text-sm leading-snug transition ${div.locked ? "text-slate-600" : "text-slate-800 group-hover:text-indigo-700"}`}>
                           {div.name}
                         </h4>
                         <p className="text-[10px] font-bold text-slate-400 mt-0.5 tracking-wide line-clamp-1 uppercase">
@@ -1917,10 +1898,24 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
                     <div className="pt-4 mt-auto">
                       <button
                         type="button"
-                        className="w-full flex items-center justify-center gap-1 bg-indigo-50 border border-indigo-100 hover:bg-indigo-600 hover:text-white rounded-xl py-2 text-xs font-bold text-indigo-700 transition group-hover:scale-102 shadow-2sm cursor-pointer"
+                        disabled={div.locked}
+                        className={`w-full flex items-center justify-center gap-1 rounded-xl py-2 text-xs font-bold transition shadow-2sm ${
+                          div.locked
+                            ? "bg-slate-100 border border-slate-200 text-slate-400 cursor-not-allowed"
+                            : "bg-indigo-50 border border-indigo-100 hover:bg-indigo-600 hover:text-white text-indigo-700 cursor-pointer group-hover:scale-102"
+                        }`}
                       >
-                        <span>Masuk Tahap Analisis AI</span>
-                        <ArrowRight className="h-3 w-3 shrink-0" />
+                        {div.locked ? (
+                          <>
+                            <Lock className="h-3 w-3 text-slate-400" />
+                            <span>Akses Terkunci</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>Masuk Tahap Analisis AI</span>
+                            <ArrowRight className="h-3 w-3 shrink-0" />
+                          </>
+                        )}
                       </button>
                     </div>
                   </div>
@@ -1958,59 +1953,64 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
       <main className="flex-1 flex overflow-hidden">
         
         {/* Left Side: Division Nav Rail (HUB NAVIGASI PINTAR) */}
-        <aside className="hidden lg:flex flex-col w-64 shrink-0 border-r border-slate-200 bg-white h-full p-4 overflow-y-auto space-y-4">
+        <aside className="hidden lg:flex flex-col w-52 shrink-0 border-r border-slate-200 bg-white h-full p-4 overflow-y-auto space-y-4">
           <div className="pb-2 border-b border-slate-100">
-            <span className="font-mono text-[9px] font-black tracking-widest text-slate-400 block uppercase">DETAIL DEVISI TERPILIH</span>
+            <span className="font-mono text-[9px] font-black tracking-widest text-slate-405 text-slate-400 block">DASHBOARD</span>
             <h3 className="font-display font-extrabold text-xs text-slate-800 uppercase tracking-tight mt-0.5">Hub Navigasi Pintar</h3>
           </div>
 
-          {(() => {
-            const currentDiv = divisions.find((d) => d.id === activeDivision);
-            if (!currentDiv) return null;
-            const IconComp = currentDiv.icon;
-
-            return (
-              <div className="flex-1 flex flex-col justify-between py-1 space-y-5">
-                <div className="space-y-4">
-                  {/* Division Header Banner */}
-                  <div className={`p-4 rounded-2xl border ${currentDiv.lightAccent} shadow-sm overflow-hidden relative`}>
-                    <div className="absolute right-[-10px] bottom-[-10px] opacity-10">
-                      <IconComp className="h-20 w-20" />
-                    </div>
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white shadow-sm shrink-0">
-                        <IconComp className="h-5 w-5" />
-                      </div>
-                      <span className="font-mono text-[9px] font-black tracking-widest bg-white/60 px-1.5 py-0.5 rounded shadow-sm border border-black/5">
-                        {currentDiv.code} UNIT
-                      </span>
-                    </div>
-                    <h4 className="font-display font-black text-xs uppercase leading-snug">
-                      {currentDiv.name}
-                    </h4>
-                    <p className="text-[9px] font-bold opacity-75 mt-0.5 uppercase tracking-wide">
-                      {currentDiv.desc}
-                    </p>
+          <nav className="space-y-1.5 flex-1">
+            {divisions.map((div) => {
+              const IconComp = div.icon;
+              const isSelected = activeDivision === div.id;
+              return (
+                <button
+                  key={div.id}
+                  disabled={div.locked}
+                  onClick={() => {
+                    if (!div.locked) {
+                      setActiveDivision(div.id);
+                    }
+                  }}
+                  className={`w-full flex items-start gap-2.5 px-3 py-2.5 rounded-xl text-left border transition ${
+                    div.locked
+                      ? "bg-slate-50/50 border-slate-100 text-slate-400 cursor-not-allowed opacity-60"
+                      : isSelected
+                        ? "bg-indigo-600 border-indigo-500 text-white shadow-sm cursor-pointer"
+                        : "bg-white border-slate-100 text-slate-600 hover:bg-slate-50 hover:border-slate-200 cursor-pointer"
+                  }`}
+                >
+                  <div className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
+                    div.locked 
+                      ? "bg-slate-100 text-slate-300"
+                      : isSelected 
+                        ? "bg-white/20 text-white" 
+                        : "bg-slate-100 text-slate-500"
+                  } font-bold`}>
+                    {div.locked ? (
+                      <Lock className="h-3 w-3" />
+                    ) : (
+                      <IconComp className="h-4 w-4" />
+                    )}
                   </div>
-
-                  {/* Profile & Tasks Section */}
-                  <div className="space-y-2 bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                    <span className="text-[8px] font-black text-slate-405 text-slate-400 uppercase tracking-widest block font-mono">TUGAS & CAKUPAN KERJA</span>
-                    <p className="text-[10px] text-slate-600 leading-relaxed font-bold italic text-justify">
-                      &quot;{currentDiv.details}&quot;
+                  <div className="min-w-0 flex-1">
+                    <p className={`text-xs font-bold leading-tight ${isSelected ? "text-white" : "text-slate-700"} flex items-center justify-between gap-1`}>
+                      <span>{div.code} Unit</span>
+                      {div.locked && <Lock className="h-2.5 w-2.5 text-slate-350 shrink-0" />}
                     </p>
+                    <span className={`text-[9px] block leading-none font-medium mt-0.5 ${isSelected ? "text-slate-150 text-indigo-100" : "text-slate-400"}`}>
+                      {div.locked ? "terkunci" : div.id === "comercial" ? "comercial unit" : `${div.id} unit`}
+                    </span>
                   </div>
-                </div>
-
-                {/* Back button */}
-              </div>
-            );
-          })()}
+                </button>
+              );
+            })}
+          </nav>
 
           <div className="pt-4 border-t border-slate-100">
             <button
               onClick={() => setActiveDivision(null)}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-slate-50 hover:bg-slate-100/80 text-xs font-bold text-slate-700 py-2.5 border border-slate-200/80 transition cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 py-2.5 border border-slate-200 cursor-pointer"
             >
               <LayoutDashboard className="h-3.5 w-3.5 text-slate-500" />
               <span>Kembali ke Dashboard</span>

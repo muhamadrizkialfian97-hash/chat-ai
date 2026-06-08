@@ -64,8 +64,7 @@ const divisions = [
     lightAccent: "bg-sky-50 text-sky-800 border-sky-100",
     hoverAccent: "group-hover:border-sky-400 group-hover:bg-sky-50/40",
     indicatorColor: "bg-sky-500",
-    icon: TrendingUp,
-    locked: false
+    icon: TrendingUp
   },
   {
     id: "hca",
@@ -77,8 +76,7 @@ const divisions = [
     lightAccent: "bg-indigo-50 text-indigo-800 border-indigo-100",
     hoverAccent: "group-hover:border-indigo-400 group-hover:bg-indigo-50/40",
     indicatorColor: "bg-indigo-500",
-    icon: Users,
-    locked: true
+    icon: Users
   },
   {
     id: "fina",
@@ -90,8 +88,7 @@ const divisions = [
     lightAccent: "bg-emerald-50 text-emerald-800 border-emerald-100",
     hoverAccent: "group-hover:border-emerald-400 group-hover:bg-emerald-50/40",
     indicatorColor: "bg-emerald-500",
-    icon: Wallet,
-    locked: true
+    icon: Wallet
   },
   {
     id: "lga",
@@ -103,8 +100,7 @@ const divisions = [
     lightAccent: "bg-teal-50 text-teal-800 border-teal-100",
     hoverAccent: "group-hover:border-teal-400 group-hover:bg-teal-50/40",
     indicatorColor: "bg-teal-500",
-    icon: Scale,
-    locked: true
+    icon: Scale
   },
   {
     id: "spia",
@@ -116,8 +112,7 @@ const divisions = [
     lightAccent: "bg-indigo-50 text-indigo-800 border-indigo-100",
     hoverAccent: "group-hover:border-indigo-450 group-hover:bg-indigo-50/40",
     indicatorColor: "bg-indigo-500",
-    icon: CheckSquare,
-    locked: true
+    icon: CheckSquare
   }
 ];
 
@@ -168,18 +163,9 @@ export default function App() {
     () => (localStorage.getItem("workspace_api_mode") as "proxy" | "client") || "proxy"
   );
   const [clientApiKey, setClientApiKey] = useState(() => {
-    const defaultKey = "AQ.Ab8RN6J18XhfT7OD0MR1jvDqtfQbcWD8pdIVctyDE0ZrRF2GrA";
-    const isNewSession = !sessionStorage.getItem("workspace_session_initialized");
-    
-    if (isNewSession) {
-      sessionStorage.setItem("workspace_session_initialized", "true");
-      localStorage.setItem("workspace_client_api_key", defaultKey);
-      return defaultKey;
-    }
-
     const key = localStorage.getItem("workspace_client_api_key");
     if (!key || key === "AIzaSyDzh6235z1Nd3BFTLREBk3AWBfQ2lpsjxo" || key === "AIzaSyDDxMrdwc1s4TdTGxAghVtHaTQ1iGhDnGM") {
-      return defaultKey;
+      return "AQ.Ab8RN6J18XhfT7OD0MR1jvDqtfQbcWD8pdIVctyDE0ZrRF2GrA";
     }
     return key;
   });
@@ -984,19 +970,7 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
 
       let finalResponseText = "";
       if (isGenuineAPIError) {
-        // Run local smart response
-        const fallbackPayload = generateLocalSmartResponse(text, activeDivision, updatedMessages);
-        
-        let warningHeader = "";
-        if (friendlyText.includes("RESOURCE_EXHAUSTED") || friendlyText.includes("429")) {
-          warningHeader = `> ⚠️ **PEMBERITAHUAN:** *Batas kuota harian server bersama terlampaui (RESOURCE_EXHAUSTED 429).* Menyajikan hasil menggunakan **Modul Analisis Logistik Internal PRAMA**. Silakan klik tombol **KONEKSI (BROWSER)** di atas percakapan untuk memasukkan Gemini API Key pribadi Anda jika ingin kembali ke Cloud AI.\n\n---\n\n`;
-        } else if (friendlyText.includes("API_KEY_INVALID") || friendlyText.includes("400")) {
-          warningHeader = `> ⚠️ **PEMBERITAHUAN:** *Kunci API Gemini tidak valid atau terblokir.* Menyajikan hasil menggunakan **Modul Analisis Logistik Internal PRAMA**. Silakan periksa atau ganti Gemini API Key Anda lewat tombol **KONEKSI (BROWSER)** di atas.\n\n---\n\n`;
-        } else {
-          warningHeader = `> ⚠️ **PEMBERITAHUAN:** *Mengalami kendala koneksi dengan Cloud AI Gemini.* Menyajikan hasil menggunakan **Modul Analisis Logistik Internal PRAMA**. Anda dapat mencoba beralih ke Kunci API pribadi atau silakan klik kirim ulang nanti.\n\n---\n\n`;
-        }
-
-        finalResponseText = warningHeader + fallbackPayload.text;
+        finalResponseText = friendlyText;
       } else {
         // Generate highly intelligent Indonesian response tailored to the user's specific text + active division
         const fallbackPayload = generateLocalSmartResponse(text, activeDivision, updatedMessages);
@@ -1846,16 +1820,8 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
                 return (
                   <div
                     key={div.id}
-                    onClick={() => {
-                      if (!div.locked) {
-                        setActiveDivision(div.id);
-                      }
-                    }}
-                    className={`group relative flex flex-col justify-between rounded-2xl border p-5 transition-all duration-300 ${
-                      div.locked
-                        ? "border-slate-200 bg-slate-50/70 opacity-75 cursor-not-allowed select-none"
-                        : "border-slate-200 bg-white cursor-pointer hover:border-indigo-400 shadow-sm hover:shadow-lg hover:-translate-y-0.5"
-                    }`}
+                    onClick={() => setActiveDivision(div.id)}
+                    className="group relative flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 cursor-pointer hover:border-indigo-400 shadow-sm hover:shadow-lg transition-all duration-300"
                   >
                     <div className="space-y-4">
                       {/* Header: Icon and Division Code */}
@@ -1863,21 +1829,14 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
                         <div className={`flex h-10 w-10 items-center justify-center rounded-xl transition ${div.lightAccent} shadow-sm font-bold`}>
                           <IconComp className="h-5 w-5" />
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          {div.locked && (
-                            <span className="flex items-center gap-0.5 text-[8px] font-black bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded uppercase tracking-wider">
-                              <Lock className="h-2 w-2" /> Terkunci
-                            </span>
-                          )}
-                          <span className="font-mono text-[9px] font-black tracking-widest bg-slate-100 text-slate-500 px-2 py-0.5 rounded border border-slate-200 animate-none">
-                            {div.code}
-                          </span>
-                        </div>
+                        <span className="font-mono text-[9px] font-black tracking-widest bg-slate-100 text-slate-500 px-2 py-0.5 rounded border border-slate-200">
+                          {div.code}
+                        </span>
                       </div>
 
                       {/* Title & description */}
                       <div>
-                        <h4 className={`font-display font-extrabold text-sm leading-snug transition ${div.locked ? "text-slate-600" : "text-slate-800 group-hover:text-indigo-700"}`}>
+                        <h4 className="font-display font-extrabold text-sm text-slate-800 leading-snug group-hover:text-indigo-700 transition">
                           {div.name}
                         </h4>
                         <p className="text-[10px] font-bold text-slate-400 mt-0.5 tracking-wide line-clamp-1 uppercase">
@@ -1898,24 +1857,10 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
                     <div className="pt-4 mt-auto">
                       <button
                         type="button"
-                        disabled={div.locked}
-                        className={`w-full flex items-center justify-center gap-1 rounded-xl py-2 text-xs font-bold transition shadow-2sm ${
-                          div.locked
-                            ? "bg-slate-100 border border-slate-200 text-slate-400 cursor-not-allowed"
-                            : "bg-indigo-50 border border-indigo-100 hover:bg-indigo-600 hover:text-white text-indigo-700 cursor-pointer group-hover:scale-102"
-                        }`}
+                        className="w-full flex items-center justify-center gap-1 bg-indigo-50 border border-indigo-100 hover:bg-indigo-600 hover:text-white rounded-xl py-2 text-xs font-bold text-indigo-700 transition group-hover:scale-102 shadow-2sm cursor-pointer"
                       >
-                        {div.locked ? (
-                          <>
-                            <Lock className="h-3 w-3 text-slate-400" />
-                            <span>Akses Terkunci</span>
-                          </>
-                        ) : (
-                          <>
-                            <span>Masuk Tahap Analisis AI</span>
-                            <ArrowRight className="h-3 w-3 shrink-0" />
-                          </>
-                        )}
+                        <span>Masuk Tahap Analisis AI</span>
+                        <ArrowRight className="h-3 w-3 shrink-0" />
                       </button>
                     </div>
                   </div>
@@ -1960,46 +1905,28 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
           </div>
 
           <nav className="space-y-1.5 flex-1">
-            {divisions.filter((d) => !d.locked).map((div) => {
+            {divisions.map((div) => {
               const IconComp = div.icon;
               const isSelected = activeDivision === div.id;
               return (
                 <button
                   key={div.id}
-                  disabled={div.locked}
-                  onClick={() => {
-                    if (!div.locked) {
-                      setActiveDivision(div.id);
-                    }
-                  }}
-                  className={`w-full flex items-start gap-2.5 px-3 py-2.5 rounded-xl text-left border transition ${
-                    div.locked
-                      ? "bg-slate-50/50 border-slate-100 text-slate-400 cursor-not-allowed opacity-60"
-                      : isSelected
-                        ? "bg-indigo-600 border-indigo-500 text-white shadow-sm cursor-pointer"
-                        : "bg-white border-slate-100 text-slate-600 hover:bg-slate-50 hover:border-slate-200 cursor-pointer"
+                  onClick={() => setActiveDivision(div.id)}
+                  className={`w-full flex items-start gap-2.5 px-3 py-2.5 rounded-xl text-left border transition cursor-pointer ${
+                    isSelected
+                      ? "bg-indigo-600 border-indigo-500 text-white shadow-sm"
+                      : "bg-white border-slate-100 text-slate-600 hover:bg-slate-50 hover:border-slate-200"
                   }`}
                 >
-                  <div className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
-                    div.locked 
-                      ? "bg-slate-100 text-slate-300"
-                      : isSelected 
-                        ? "bg-white/20 text-white" 
-                        : "bg-slate-100 text-slate-500"
-                  } font-bold`}>
-                    {div.locked ? (
-                      <Lock className="h-3 w-3" />
-                    ) : (
-                      <IconComp className="h-4 w-4" />
-                    )}
+                  <div className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${isSelected ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"} font-bold`}>
+                    <IconComp className="h-4 w-4" />
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p className={`text-xs font-bold leading-tight ${isSelected ? "text-white" : "text-slate-700"} flex items-center justify-between gap-1`}>
-                      <span>{div.code} Unit</span>
-                      {div.locked && <Lock className="h-2.5 w-2.5 text-slate-350 shrink-0" />}
+                  <div className="min-w-0">
+                    <p className={`text-xs font-bold leading-tight ${isSelected ? "text-white" : "text-slate-700"}`}>
+                      {div.code} Unit
                     </p>
                     <span className={`text-[9px] block leading-none font-medium mt-0.5 ${isSelected ? "text-slate-150 text-indigo-100" : "text-slate-400"}`}>
-                      {div.locked ? "terkunci" : div.id === "comercial" ? "comercial unit" : `${div.id} unit`}
+                      {div.id === "comercial" ? "comercial unit" : `${div.id} unit`}
                     </span>
                   </div>
                 </button>

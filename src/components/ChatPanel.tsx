@@ -11,6 +11,8 @@ interface ChatPanelProps {
   onSendMessage: (text: string, enableSearch: boolean, referencedFile?: SavedFile | null) => Promise<void>;
   files: SavedFile[];
   onSaveAsFile: (content: string, requestedFileName?: string) => void;
+  onExportArticle?: (lastMessageText: string) => Promise<void>;
+  onExportPPT?: (lastMessageText: string) => Promise<void>;
   apiMode: "proxy" | "client";
   setApiMode: (mode: "proxy" | "client") => void;
   clientApiKey: string;
@@ -27,6 +29,8 @@ export default function ChatPanel({
   onSendMessage,
   files,
   onSaveAsFile,
+  onExportArticle,
+  onExportPPT,
   apiMode,
   setApiMode,
   clientApiKey,
@@ -48,6 +52,9 @@ export default function ChatPanel({
   const [localKeyInput, setLocalKeyInput] = useState(clientApiKey);
   const [showLocalKey, setShowLocalKey] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+
+  const [isGeneratingArticle, setIsGeneratingArticle] = useState(false);
+  const [isGeneratingPPT, setIsGeneratingPPT] = useState(false);
 
   useEffect(() => {
     setLocalKeyInput(clientApiKey);
@@ -379,6 +386,8 @@ export default function ChatPanel({
             <AnimatePresence initial={false}>
               {messages.map((msg) => {
                 const isUser = msg.role === "user";
+                const lastAssistantMessage = [...messages].reverse().find(m => m.role === "model");
+                const isLastAssistantMessage = lastAssistantMessage && lastAssistantMessage.id === msg.id;
                 return (
                   <motion.div
                     key={msg.id}
@@ -423,35 +432,119 @@ export default function ChatPanel({
 
                         {/* Interactive Tools for Reports inside Assistant Bubble */}
                         {!isUser && (
-                          <div className="mt-4 flex flex-col sm:flex-row border-t border-slate-100 pt-3.5 justify-between items-start sm:items-center gap-3">
-                            <span className="font-mono text-[8px] text-slate-400 font-bold uppercase tracking-wider">
-                              INTEGRATED REPORTING SYSTEM
-                            </span>
-                            <div className="flex flex-wrap gap-1.5 w-full sm:w-auto">
-                              <button
-                                onClick={() => {
-                                  const title = `PRAMA_${activeDivision || "ANALITIS"}_${Date.now().toString().slice(-4)}`;
-                                  exportToWord(title, msg.text, activeDivision || "PORTAL");
-                                }}
-                                className="flex items-center gap-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 px-2.5 py-1 text-[11px] font-bold text-indigo-700 transition cursor-pointer"
-                                title="Unduh laporan dalam format Microsoft Word (.doc)"
-                              >
-                                <Download className="h-3.5 w-3.5 text-indigo-600" />
-                                <span>Word</span>
-                              </button>
+                          <div className="mt-4 border-t border-slate-150 pt-3.5 flex flex-col gap-3">
+                            {isLastAssistantMessage ? (
+                              <div className="flex flex-col gap-3.5">
+                                {/* KAJIAN PROYEK TERAKHIR section */}
+                                <div className="flex flex-col gap-2">
+                                  <span className="font-mono text-[9px] text-slate-500 font-extrabold uppercase tracking-widest text-[#64748b]">
+                                    KAJIAN PROYEK TERAKHIR:
+                                  </span>
+                                  <div className="flex flex-wrap gap-2.5">
+                                    <button
+                                      disabled={isGeneratingArticle}
+                                      onClick={async () => {
+                                        if (onExportArticle) {
+                                          setIsGeneratingArticle(true);
+                                          await onExportArticle(msg.text);
+                                          setIsGeneratingArticle(false);
+                                        }
+                                      }}
+                                      className="flex items-center gap-2 rounded-full bg-violet-600 hover:bg-violet-700 text-white border-none px-4 py-2 text-xs font-bold transition cursor-pointer shadow-md shadow-violet-100 disabled:opacity-50"
+                                    >
+                                      {isGeneratingArticle ? (
+                                        <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                      ) : (
+                                        <FileText className="h-4 w-4 text-white" />
+                                      )}
+                                      <span>{isGeneratingArticle ? "Memproses..." : "Unduh Word (.doc)"}</span>
+                                    </button>
 
-                              <button
-                                onClick={() => {
-                                  const title = `PRAMA_${activeDivision || "ANALITIS"}_${Date.now().toString().slice(-4)}`;
-                                  downloadPDFDirect(title, msg.text, activeDivision || "PORTAL");
-                                }}
-                                className="flex items-center gap-1 rounded-lg bg-red-50 hover:bg-red-100 border border-red-100 px-2.5 py-1 text-[11px] font-bold text-red-700 transition cursor-pointer"
-                                title="Unduh Laporan sebagai file PDF"
-                              >
-                                <Download className="h-3.5 w-3.5 text-red-650" />
-                                <span>Unduh PDF</span>
-                              </button>
-                            </div>
+                                    <button
+                                      disabled={isGeneratingPPT}
+                                      onClick={async () => {
+                                        if (onExportPPT) {
+                                          setIsGeneratingPPT(true);
+                                          await onExportPPT(msg.text);
+                                          setIsGeneratingPPT(false);
+                                        }
+                                      }}
+                                      className="flex items-center gap-2 rounded-full bg-sky-600 hover:bg-sky-700 text-white border-none px-4 py-2 text-xs font-bold transition cursor-pointer shadow-md shadow-sky-100 disabled:opacity-50"
+                                    >
+                                      {isGeneratingPPT ? (
+                                        <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                      ) : (
+                                        <Sparkles className="h-4 w-4 text-white" />
+                                      )}
+                                      <span>{isGeneratingPPT ? "Memproses..." : "Unduh PPT (.pptx)"}</span>
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {/* PESAN INI section */}
+                                <div className="flex items-center justify-between gap-3 flex-wrap bg-slate-50/60 rounded-xl p-2.5 border border-slate-100">
+                                  <span className="font-mono text-[9px] text-slate-500 font-extrabold uppercase tracking-widest text-[#64748b]">
+                                    PESAN INI:
+                                  </span>
+                                  <div className="flex gap-1.5">
+                                    <button
+                                      onClick={() => {
+                                        const title = `PRAMA_${activeDivision || "ANALITIS"}_${Date.now().toString().slice(-4)}`;
+                                        exportToWord(title, msg.text, activeDivision || "PORTAL");
+                                      }}
+                                      className="flex items-center gap-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 px-3 py-1.5 text-xs font-bold text-indigo-700 transition cursor-pointer"
+                                      title="Unduh laporan dalam format Microsoft Word (.doc)"
+                                    >
+                                      <Download className="h-3.5 w-3.5 text-indigo-600" />
+                                      <span>Word</span>
+                                    </button>
+
+                                    <button
+                                      onClick={() => {
+                                        const title = `PRAMA_${activeDivision || "ANALITIS"}_${Date.now().toString().slice(-4)}`;
+                                        downloadPDFDirect(title, msg.text, activeDivision || "PORTAL");
+                                      }}
+                                      className="flex items-center gap-1.5 rounded-lg bg-red-50 hover:bg-red-100 border border-red-100 px-3 py-1.5 text-xs font-bold text-red-700 transition cursor-pointer"
+                                      title="Unduh Laporan sebagai file PDF"
+                                    >
+                                      <Download className="h-3.5 w-3.5 text-red-650" />
+                                      <span>PDF</span>
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                                <span className="font-mono text-[8px] text-slate-450 font-bold uppercase tracking-wider text-[#94a3b8]">
+                                  INTEGRATED REPORTING SYSTEM
+                                </span>
+                                <div className="flex flex-wrap gap-1.5 w-full sm:w-auto">
+                                  <button
+                                    onClick={() => {
+                                      const title = `PRAMA_${activeDivision || "ANALITIS"}_${Date.now().toString().slice(-4)}`;
+                                      exportToWord(title, msg.text, activeDivision || "PORTAL");
+                                    }}
+                                    className="flex items-center gap-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 px-2.5 py-1 text-[11px] font-bold text-indigo-700 transition cursor-pointer"
+                                    title="Unduh laporan dalam format Microsoft Word (.doc)"
+                                  >
+                                    <Download className="h-3.5 w-3.5 text-indigo-600" />
+                                    <span>Word</span>
+                                  </button>
+
+                                  <button
+                                    onClick={() => {
+                                      const title = `PRAMA_${activeDivision || "ANALITIS"}_${Date.now().toString().slice(-4)}`;
+                                      downloadPDFDirect(title, msg.text, activeDivision || "PORTAL");
+                                    }}
+                                    className="flex items-center gap-1 rounded-lg bg-red-50 hover:bg-red-100 border border-red-100 px-2.5 py-1 text-[11px] font-bold text-red-700 transition cursor-pointer"
+                                    title="Unduh Laporan sebagai file PDF"
+                                  >
+                                    <Download className="h-3.5 w-3.5 text-red-650" />
+                                    <span>Unduh PDF</span>
+                                  </button>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )}
 

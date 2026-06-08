@@ -14,6 +14,7 @@ import {
 import { db, handleFirestoreError, OperationType } from "./firebase";
 import { ChatMessage, SavedFile } from "./types";
 import { generateLocalSmartResponse, cleanChatMessages } from "./utils/localAssistant";
+import { exportToWord, exportToPPTX } from "./utils/documentExporter";
 import Navbar from "./components/Navbar";
 import pramaLogo from "./assets/images/prama_logo_1780452149937.png";
 
@@ -1123,6 +1124,242 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
     }
   };
 
+  const queryGeminiModel = async (customQuery: string, systemInstructionOverride?: string): Promise<string> => {
+    if (apiMode === "client") {
+      if (!clientApiKey) {
+        throw new Error("API Key Gemini belum diatur. Masukkan API Key Gemini Anda di panel setelan atas.");
+      }
+      const aiBrowser = new GoogleGenAI({ apiKey: clientApiKey });
+      const clientModelsToTry = [
+        "gemini-3.5-flash",
+        "gemini-flash-latest",
+        "gemini-3.1-flash-lite",
+        "gemini-2.5-flash"
+      ];
+      
+      let response = null;
+      let lastClientError = null;
+      for (const modelName of clientModelsToTry) {
+        try {
+          response = await aiBrowser.models.generateContent({
+            model: modelName,
+            contents: [{ role: "user", parts: [{ text: customQuery }] }],
+            config: {
+              systemInstruction: systemInstructionOverride || getDivisionSystemInstruction(activeDivision || ""),
+            }
+          });
+          if (response) break;
+        } catch (err: any) {
+          console.warn(`Browser-side model ${modelName} failed in custom query:`, err.message || err);
+          lastClientError = err;
+        }
+      }
+      if (!response) {
+        throw lastClientError || new Error("Semua model Gemini gagal merespons.");
+      }
+      return response.text || "";
+    } else {
+      // Query server-side proxy
+      let res;
+      try {
+        res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: customQuery,
+            history: [],
+            enableSearch: false,
+            customApiKey: clientApiKey || undefined,
+            systemInstruction: systemInstructionOverride || getDivisionSystemInstruction(activeDivision || ""),
+          }),
+        });
+      } catch (fetchErr: any) {
+        if (clientApiKey) {
+          const aiBrowser = new GoogleGenAI({ apiKey: clientApiKey });
+          const clientModelsToTry = [
+            "gemini-3.5-flash",
+            "gemini-flash-latest",
+            "gemini-3.1-flash-lite",
+            "gemini-2.5-flash"
+          ];
+          let response = null;
+          for (const modelName of clientModelsToTry) {
+            try {
+              response = await aiBrowser.models.generateContent({
+                model: modelName,
+                contents: [{ role: "user", parts: [{ text: customQuery }] }],
+                config: {
+                  systemInstruction: systemInstructionOverride || getDivisionSystemInstruction(activeDivision || ""),
+                }
+              });
+              if (response) break;
+            } catch (err) {
+              // ignore
+            }
+          }
+          if (response) {
+            return response.text || "";
+          }
+        }
+        throw new Error("Gagal menghubungi server proxy.");
+      }
+      if (!res.ok) {
+        throw new Error("Gagal memperoleh respons dari server.");
+      }
+      const data = await res.json();
+      return data.text || "";
+    }
+  };
+
+  const getUnsplashUrl = (keyword: string, divId: string | null): string => {
+    const kw = keyword.toLowerCase().trim();
+    const imageMap: Record<string, string> = {
+      "container": "1578575437130-527eed3abbec",
+      "shipping": "1586528116311-ad8dd3c8310d",
+      "truck": "1601584115197-04ecc0da31d7",
+      "highway": "1513828742140-ccaa28f3edd6",
+      "office": "1517048676732-d65bc937f952",
+      "collab": "1522071820081-009f0129c71c",
+      "team": "1522071820081-009f0129c71c",
+      "presentation": "1531538606174-0f90ff5dce43",
+      "meeting": "1542744173-059987805963",
+      "finance": "1554224155-8d04cb21cd6c",
+      "charts": "1460925895917-afdab827c52f",
+      "ledger": "1554224155-8d04cb21cd6c",
+      "excel": "1551288049-bebda4e38f71",
+      "legal": "1589829545856-d10d557cf95f",
+      "compliance": "1589829545856-d10d557cf95f",
+      "gavel": "1589829545856-d10d557cf95f",
+      "audit": "1454165804606-c3d57bc86b40",
+      "verification": "1454165804606-c3d57bc86b40",
+      "inspect": "1507537297725-24a1c029d3ca",
+      "growth": "1460925895917-afdab827c52f",
+      "database": "1558494949-ef010c7191ae",
+      "digital": "1526374965328-7f61d4dc18c5",
+      "dashboard": "1551288049-bebda4e38f71",
+      "handshake": "1516321318423-f06f85e504b3",
+      "hand": "1516321318423-f06f85e504b3",
+      "conclusion": "1542744094-113c6b22ddd8"
+    };
+
+    for (const key of Object.keys(imageMap)) {
+      if (kw.includes(key)) {
+        return `https://images.unsplash.com/photo-${imageMap[key]}?w=800&auto=format&fit=crop&q=80`;
+      }
+    }
+
+    const divisionFallbacks: Record<string, string> = {
+      "comercial": "1586528116311-ad8dd3c8310d",
+      "hca": "1517048676732-d65bc937f952",
+      "fina": "1554224155-8d04cb21cd6c",
+      "lga": "1589829545856-d10d557cf95f",
+      "spia": "1454165804606-c3d57bc86b40"
+    };
+
+    const div = divId || "general";
+    const id = divisionFallbacks[div] || "1516321318423-f06f85e504b3";
+    return `https://images.unsplash.com/photo-${id}?w=800&auto=format&fit=crop&q=80`;
+  };
+
+  const handleExportArticle = async (lastMsgText: string) => {
+    try {
+      const prompt = `Tulis sebuah artikel komprehensif, akademis/bisnis yang mendalam, terstruktur rapi, dan profesional dalam Bahasa Indonesia berdasarkan topik bahasan berikut ini. 
+
+Artikel harus memiliki struktur berikut:
+1. Judul Artikel Penting & Menarik (tanpa karakter * atau #)
+2. Pendahuluan (Penjelasan latar belakang rujukan dan masalah operasional)
+3. Pembahasan Kajian Teoretis & Analisis Lapangan mendetail (WAJIB terbagi dalam sub-judul bernomor angka biasa)
+4. Rekomendasi Solusi & Rencana Aksi Kerja Taktis (gunakan format sub-judul berhuruf abjad a., b., c., d.)
+5. Kesimpulan & Penutup
+
+PENTING: Jangan gunakan karakter bintang (*) maupun pagar (#) sama sekali karena sistem kami membersihkannya. Gunakan pemisahan baris kosong dan penomoran huruf atau angka biasa.
+
+Bahasan Materi:
+${lastMsgText}`;
+
+      const articleText = await queryGeminiModel(prompt);
+      const title = `Kajian_Artikel_${activeDivision || "ANALISIS"}_${Date.now().toString().slice(-4)}`;
+      exportToWord(title, articleText, activeDivision || "PORTAL");
+    } catch (err: any) {
+      console.error(err);
+      alert("Gagal membuat artikel: " + (err.message || err));
+    }
+  };
+
+  const handleExportPPT = async (lastMsgText: string) => {
+    try {
+      const prompt = `Buatlah draf materi presentasi PowerPoint (PPTX) yang profesional, informatif, dan sangat lengkap berdasarkan bahasan materi di bawah ini. Anda WAJIB memberikan respon HANYA berupa JSON array yang valid tanpa hiasan markdown penutup/pembuka (seperti kode block \`\`\`json) dan tanpa teks tambahan lainnya di luar tanda kurung siku [ dan ].
+
+Setiap slide di dalam array harus berupa JSON object dengan tipe data berikut:
+{
+  "title": "Judul slide yang ringkas dan padat (string)",
+  "bullets": [
+    "Poin penjelasan slide 1 (string)",
+    "Poin penjelasan slide 2 (string)",
+    "Poin penjelasan slide 3 (string)",
+    "Poin penjelasan slide 4 (string)"
+  ],
+  "speakerNotes": "Penjelasan pidato narasi lengkap per slide yang akan dibaca oleh presenter selama presentasi berlangsung (string)",
+  "keyword": "Satu kata kunci berbahasa Inggris yang sangat spesifik dan relevan dengan topik slide ini untuk menemukan gambar beresolusi tinggi di Unsplash. Contoh: 'logistics container cargo', 'office team presentation', 'financial charts calculations', 'cargo truck highway', 'legal compliance courthouse'"
+}
+
+Buatlah slide yang terstruktur logis minimal 5-6 slide:
+Slide 1: Pembuka / Title Slide
+Slide 2: Latar Belakang & Tantangan Utama
+Slide 3 & 4: Solusi Strategis & Pembahasan Utama (materi analitis)
+Slide 5: Rencana Aksi Terstruktur (Action Plan/Timeline)
+Slide 6: Kesimpulan & Penutup
+
+Bahasan Materi:
+${lastMsgText}`;
+
+      const systemInstructionOverride = "You are a PPT JSON generator assistant. You output ONLY clean, valid JSON array of objects without code block markdown, without explanations.";
+      const rawResponse = await queryGeminiModel(prompt, systemInstructionOverride);
+      
+      let cleanText = rawResponse.trim();
+      if (cleanText.startsWith("```")) {
+        const lines = cleanText.split("\n");
+        if (lines[0].includes("json") || lines[0] === "```") {
+          lines.shift();
+        }
+        if (lines[lines.length - 1] === "```") {
+          lines.pop();
+        }
+        cleanText = lines.join("\n").trim();
+      }
+      
+      const startIdx = cleanText.indexOf("[");
+      const endIdx = cleanText.lastIndexOf("]");
+      if (startIdx !== -1 && endIdx !== -1) {
+        cleanText = cleanText.substring(startIdx, endIdx + 1);
+      } else {
+        throw new Error("Format JSON presentasi tidak ditemukan dalam respons.");
+      }
+
+      const slidesData = JSON.parse(cleanText);
+      if (!Array.isArray(slidesData)) {
+        throw new Error("Data hasil presentasi bukan merupakan sebuah list/array slide.");
+      }
+
+      const mappedSlides = slidesData.map(s => {
+        const kw = s.keyword || s.title || "";
+        const imageUrl = getUnsplashUrl(kw, activeDivision);
+        return {
+          title: s.title || "Kajian Proyek PRAMA",
+          bullets: Array.isArray(s.bullets) ? s.bullets : ["Materi pembahasan rinci"],
+          speakerNotes: s.speakerNotes || "Penjelasan pendukung slide.",
+          imageUrl: imageUrl
+        };
+      });
+
+      const title = `Presentasi_Kajian_${activeDivision || "ANALISIS"}_${Date.now().toString().slice(-4)}`;
+      exportToPPTX(title, mappedSlides, activeDivision || "PRAMA UNIT");
+    } catch (err: any) {
+      console.error(err);
+      alert("Gagal membuat PPT: " + (err.message || err));
+    }
+  };
+
   // Quick helper to save AI notes response as a markdown file inside Workspace
   const handleSaveResponseAsFile = (content: string, requestedFileName?: string) => {
     const cleanContent = content.replace(/\*\*Sumber rujukan[\s\S]*$/, "");
@@ -2029,6 +2266,8 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
               onSendMessage={handleSendMessage}
               files={files}
               onSaveAsFile={handleSaveResponseAsFile}
+              onExportArticle={handleExportArticle}
+              onExportPPT={handleExportPPT}
               apiMode={apiMode}
               setApiMode={(mode) => {
                 setApiMode(mode);

@@ -3,6 +3,7 @@
  * Handles pristine formatted exports of analysis reports to MS Word (DOCX-compatible) and PDF formats.
  */
 import { jsPDF } from "jspdf";
+import pptxgen from "pptxgenjs";
 
 function formatMarkdownToHtml(text: string): string {
   if (!text) return "";
@@ -495,4 +496,129 @@ export function downloadPDFDirect(title: string, text: string, divisionName: str
   // Save the generated document directly
   const sanitizedFilename = title.toLowerCase().replace(/[^a-z0-9]/g, "_") + ".pdf";
   doc.save(sanitizedFilename);
+}
+
+export function exportToPPTX(
+  title: string,
+  slides: Array<{ title: string; bullets: string[]; speakerNotes: string; imageUrl: string }>,
+  divisionName: string
+) {
+  const pptx = new pptxgen();
+  pptx.layout = "LAYOUT_16x9";
+
+  // Slide 1: Welcome title slide (Elegant Dark Theme)
+  const openingSlide = pptx.addSlide();
+  openingSlide.background = { color: "0F172A" }; // Slate 900 / Dark Navy
+
+  openingSlide.addText(title.toUpperCase(), {
+    x: 1.0,
+    y: 2.2,
+    w: 11.33,
+    h: 1.8,
+    fontSize: 32,
+    bold: true,
+    color: "FFFFFF",
+    align: "center",
+    fontFace: "Arial"
+  });
+
+  openingSlide.addText(`PRAMA STRATEGIC ADVISORY REPORT • ${divisionName.toUpperCase()}`, {
+    x: 1.0,
+    y: 4.2,
+    w: 11.33,
+    h: 0.5,
+    fontSize: 12,
+    bold: true,
+    color: "38BDF8", // Light Blue
+    align: "center",
+    fontFace: "Arial"
+  });
+
+  openingSlide.addText("Dokumen Rahasia Internal • Pancaran Group © 2026", {
+    x: 1.0,
+    y: 4.8,
+    w: 11.33,
+    h: 0.5,
+    fontSize: 9,
+    color: "94A3B8",
+    align: "center",
+    fontFace: "Arial"
+  });
+
+  openingSlide.addNotes(`Selamat pagi/siang dan salam sejahtera. Presentasi ini berisi kajian proyek strategis PRAMA untuk unit kerja ${divisionName}.`);
+
+  // Content slides
+  slides.forEach((slideData, idx) => {
+    const slide = pptx.addSlide();
+    slide.background = { color: "F8FAFC" }; // Slate 50
+
+    // Top banner header text
+    slide.addText(`Kajian Strategis PRAMA Area: ${divisionName.toUpperCase()}`, {
+      x: 0.8,
+      y: 0.3,
+      w: 11.73,
+      h: 0.3,
+      fontSize: 10,
+      color: "3B82F6",
+      bold: true,
+      fontFace: "Arial"
+    });
+
+    // Title of slide
+    slide.addText(slideData.title, {
+      x: 0.8,
+      y: 0.6,
+      w: 6.0,
+      h: 0.9,
+      fontSize: 22,
+      color: "0F172A",
+      bold: true,
+      fontFace: "Arial"
+    });
+
+    // Bullets - format as paragraph blocks with indent
+    const formattedBullets = slideData.bullets.map((b) => ({
+      text: b,
+      options: { bullet: true, fontSize: 13, color: "334155", fontFace: "Arial" }
+    }));
+
+    // Set bullet point lists or lines
+    slide.addText(formattedBullets, {
+      x: 0.8,
+      y: 1.6,
+      w: 6.0,
+      h: 4.8,
+      valign: "top"
+    });
+
+    // Image right side (split layout)
+    if (slideData.imageUrl) {
+      slide.addImage({
+        path: slideData.imageUrl,
+        x: 7.2,
+        y: 1.0,
+        w: 5.3,
+        h: 5.0,
+      });
+    }
+
+    // Speaker notes
+    if (slideData.speakerNotes) {
+      slide.addNotes(slideData.speakerNotes);
+    }
+
+    // Footer watermark
+    slide.addText(`PRAMA Digital Integrated Reporting System • Halaman ${idx + 2}`, {
+      x: 0.8,
+      y: 7.0,
+      w: 11.73,
+      h: 0.3,
+      fontSize: 8,
+      color: "94A3B8",
+      fontFace: "Arial"
+    });
+  });
+
+  const sanitizedTitle = title.toLowerCase().replace(/[^a-z0-9]/g, "_") || "prama_slide";
+  pptx.writeFile({ fileName: `${sanitizedTitle}.pptx` });
 }

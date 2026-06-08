@@ -1350,7 +1350,110 @@ PENTING: Jangan gunakan karakter bintang (*) maupun pagar (#) sama sekali karena
       const projectTitle = extractProjectTitle(lastMsgText, activeDivision || "UMUM");
       const cleanFilenameTitle = `Presentasi_Kajian_${projectTitle.replace(/[^a-zA-Z0-9_\s-]/g, "").trim().replace(/\s+/g, "_")}`;
 
-      const prompt = `Buatlah draf materi presentasi PowerPoint (PPTX) yang profesional, informatif, dan sangat lengkap tentang proyek "${projectTitle}" berdasarkan materi di bawah ini. Anda WAJIB memberikan respon HANYA berupa JSON array yang valid tanpa hiasan markdown penutup/pembuka (seperti kode block \`\`\`json) dan tanpa teks tambahan lainnya di luar tanda kurung siku [ dan ].
+      const isForestryProject = projectTitle.toLowerCase().includes("forestry") || 
+                                projectTitle.toLowerCase().includes("kayu") || 
+                                projectTitle.toLowerCase().includes("timber") ||
+                                lastMsgText.toLowerCase().includes("forestry") ||
+                                lastMsgText.toLowerCase().includes("kayu");
+
+      let prompt = "";
+      if (isForestryProject) {
+        prompt = `Buatlah draf materi presentasi PowerPoint (PPTX) yang profesional, informatif, mendalam, dan sangat komprehensif tentang proyek "STRATEGI FORESTRY MANAGEMENT & TRANSPORTASI LOGISTIK KAYU PT PANCARAN GROUP" berdasarkan materi di bawah ini.
+Anda WAJIB memberikan respons berupa JSON array berisi tepat 15 objek slide (sesuai BAB 1 sampai BAB 15 di bawah ini). Format jawaban harus HANYA berupa JSON array yang valid tanpa hiasan markdown pembuka/penutup (seperti kode block \`\`\`json) dan tanpa teks tambahan lainnya.
+
+Setiap slide di dalam array harus berupa JSON object dengan tipe data berikut:
+{
+  "title": "Judul slide yang sesuai dengan panduan BAB (string)",
+  "bullets": [
+    "Paragraf/Poin pembuka berupa pengantar ringkas taktis tentang bab ini (string)",
+    "Poin taktis / rencana implementasi pertama (string)",
+    "Poin taktis / rencana implementasi kedua (string)",
+    "Poin taktis / rencana implementasi ketiga (string)"
+  ],
+  "speakerNotes": "Naskah lengkap pidato berbahasa Indonesia yang formal dan berbobot untuk presenter membacakan slide ini (string)",
+  "keyword": "Satu kata kunci berbahasa Inggris yang sangat spesifik dan relevan dengan topik slide ini untuk menemukan gambar beresolusi tinggi di Unsplash. Contoh: 'logistics container cargo', 'office team presentation', 'financial charts calculations', 'cargo truck highway', 'legal compliance courthouse'"
+}
+
+Susunan 15 Slide yang WAJIB Anda generate adalah:
+Slide 1 (BAB 1):
+- Judul: "Strategic Innovation & New Journal"
+- Bahasan: Kajian taktis repositori inovasi implementasi Forestry Management & Transportasi Logistik Kayu. Pembagian riset TAM, SAM, SOM, inovasi metodologi, dan Go To Market (GTM) knowledge-base.
+- Keyword: "laptop working office"
+
+Slide 2 (BAB 2):
+- Judul: "Global & National Regulatory Overview"
+- Bahasan: Analisis tren operasional global kargo kehutanan, kepatuhan keselamatan absolut, sinergi finansial, pelaporan ESG (Environmental, Social, and Governance), regulasi sektoral.
+- Keyword: "regulatory compliance papers"
+
+Slide 3 (BAB 3):
+- Judul: "Market Opportunity & Penetration"
+- Bahasan: Peluang pasar logistik kehutanan di Indonesia, pertumbuhan B2B demand, diferensiasi layanan digital, optimalisasi kontrak komersial (kalkulasi CAC & LTV).
+- Keyword: "market growth chart tablet"
+
+Slide 4 (BAB 4):
+- Judul: "Financial Planning (Capex, Opex, P&L, ROI)"
+- Bahasan: Proyeksi finansial komprehensif, skenario anggaran Capex, skema ROI timbal balik, efisiensi Opex melalui restrukturisasi personil, estimasi P&L pra dan pasca implementasi.
+- Keyword: "calculator finance audit"
+
+Slide 5 (BAB 5):
+- Judul: "Supply & Demand Synchronization"
+- Bahasan: Penyelarasan kapasitas pasokan armada PT Pancaran Group dengan permintaan load kayu, rute angkutan kosong/unladen miles reduction, fluktuasi panen musiman, kemitraan sub-kontraktor legal.
+- Keyword: "cargo warehouse logistics"
+
+Slide 6 (BAB 6):
+- Judul: "Organizational Structure & RACI Matrix"
+- Bahasan: Pembentukan struktur tim taktis, matriks penanggung jawab RACI (Responsible, Accountable, Consulted, Informed), pimpinan komite pengendali lintas direktorat, jalur koordinasi direksi.
+- Keyword: "business meeting team"
+
+Slide 7 (BAB 7):
+- Judul: "SOP & Skill Capability Development"
+- Bahasan: Standardisasi panduan kerja lapangan sopir, sertifikasi mengemudi aman (defensive driving course), indikator penilaian KPI efisiensi konsumsi bahan bakar, protokol material handling.
+- Keyword: "classroom training worker"
+
+Slide 8 (BAB 8):
+- Judul: "Transition Model (Pre-On-Post)"
+- Bahasan: Tiga fase krusial transisi (Pra-Implementasi, Fase Implementasi/On-Transition dengan pembinaan intensif sopir uji coba di Medan, serta Fase Pasca-Implementasi peninjauan kepatuhan).
+- Keyword: "presentation corporate transition"
+
+Slide 9 (BAB 9):
+- Judul: "Go To Market (GTM) Strategy"
+- Bahasan: Strategi repositioning armada logistik Pancaran Group sebagai spesialis kargo kayu bereputasi ESG, B2B Executive Bidding, dan paket bundling komersial hemat biaya bongkar muat.
+- Keyword: "marketing digital board"
+
+Slide 10 (BAB 10):
+- Judul: "Ops Model & Flow Process"
+- Bahasan: Alur kerja operasional pre-loading, perjalanan terkontrol GPS, penanganan bongkar kargo, disiplin SLA ketat batas toleransi 60 menit bongkar muat di jalur Medan, integrasi surat jalan digital.
+- Keyword: "dashboard analytics device"
+
+Slide 11 (BAB 11):
+- Judul: "Risk Management & Security Safeguards"
+- Bahasan: Mitigasi risiko operasional, audit kelayakan berkala sistem rem & sasis truk kargo, asuransi tanggung jawab hukum pihak ketiga, keselamatan jalur rawan, koordinasi BMKG antisipasi cuaca ekstrem.
+- Keyword: "man portrait dark background"
+
+Slide 12 (BAB 12):
+- Judul: "Digital Coverage, Sensors & Automation"
+- Bahasan: Pemanfaatan lompatan teknologi digital, pemasangan sensor tekanan ban RFID, sensor BBM ultrasonik anti-leakage terintegrasi server, serta dashcam DMS AI pendeteksi kantuk sopir.
+- Keyword: "electronics board rfid"
+
+Slide 13 (BAB 13):
+- Judul: "Competitor Analysis & Value Position"
+- Bahasan: Analisis keunggulan & kelemahan pesaing operasional logistik kargo berat, optimasi rute terpendek penghemat BBM hingga 12%, keunggulan pengawasan PRAMA untuk mencegah kecurangan.
+- Keyword: "target goal dart"
+
+Slide 14 (BAB 14):
+- Judul: "TAM, SAM, SOM Sizing Analysis"
+- Bahasan: Potensi cakupan pasar regional dan nasional logistik kayu, target pencapaian pangsa pasar strategis pelabuhan/depo regional Medan sebesar 18% dalam rentang waktu 5 tahun.
+- Keyword: "business strategy paperwork"
+
+Slide 15 (BAB 15):
+- Judul: "CAC & Lifetime Value Optimization"
+- Bahasan: Pengendalian margin logistik komersial kargo kayu, evaluasi ROI investasi digital, hubungan kemitraan dagang jangka panjang B2B, penandatanganan kontrak perpanjangan kargo tahunan.
+- Keyword: "checkout store terminal"
+
+Materi Referensi Tambahan:
+${lastMsgText}`;
+      } else {
+        prompt = `Buatlah draf materi presentasi PowerPoint (PPTX) yang profesional, informatif, dan sangat lengkap tentang proyek "${projectTitle}" berdasarkan materi di bawah ini. Anda WAJIB memberikan respon HANYA berupa JSON array yang valid tanpa hiasan markdown penutup/pembuka (seperti kode block \`\`\`json) dan tanpa teks tambahan lainnya di luar tanda kurung siku [ dan ].
 
 Setiap slide di dalam array harus berupa JSON object dengan tipe data berikut:
 {
@@ -1374,6 +1477,7 @@ Slide 6: Kesimpulan & Penutup
 
 Bahasan Materi:
 ${lastMsgText}`;
+      }
 
       const systemInstructionOverride = "You are a PPT JSON generator assistant. You output ONLY clean, valid JSON array of objects without code block markdown, without explanations.";
       const rawResponse = await queryGeminiModel(prompt, systemInstructionOverride);
@@ -2564,81 +2668,143 @@ ${lastMsgText}`;
             </div>
 
             {/* Main Interactive Screen with 16:9 canvas and Sidebar notes */}
-            <div className="flex-1 overflow-y-auto bg-slate-900 p-4 sm:p-8 flex flex-col items-center justify-center gap-6">
+            <div className="flex-1 overflow-y-auto bg-slate-950 p-4 sm:p-8 flex flex-col items-center justify-center gap-6">
               
               {/* Projector slide backdrop container */}
-              <div className="w-full max-w-4xl aspect-[16/9] bg-slate-50 rounded-2xl shadow-2xl border border-slate-800 flex overflow-hidden relative group">
+              <div className="w-full max-w-4xl aspect-[16/9] bg-white rounded-2xl shadow-2xl border border-slate-800 flex overflow-hidden relative group">
                 {activeSlideIndex === 0 ? (
-                  // TITLE COVER SLIDE STYLE
-                  <div className="flex-1 flex flex-col justify-center items-center bg-[#0f172a] p-8 text-center select-none">
-                    <div className="text-[10px] font-mono font-black text-sky-450 text-sky-400 uppercase tracking-widest mb-3 animate-pulse">
-                      PRAMA STRATEGIC CONSULTING
+                  // TITLE COVER SLIDE STYLE (MATCHES SLIDE 1)
+                  <div className="flex-1 flex flex-col justify-center items-start bg-[#06152B] p-12 text-left select-none relative">
+                    {/* Vibrant Green Border */}
+                    <div className="absolute inset-3 border border-[#00D285] pointer-events-none rounded-sm" />
+                    
+                    <div className="text-[10px] font-mono font-black text-[#00D285] uppercase tracking-wider mb-4 flex items-center gap-1.5">
+                      <span>✦ PRAMA COGNITIVE PORTAL</span>
+                      <span>•</span>
+                      <span>{(pptPreview.title || "").toUpperCase()}</span>
                     </div>
-                    <h1 className="text-white text-2xl sm:text-4xl font-black max-w-2xl px-4 uppercase tracking-tight leading-tight select-text">
-                      {pptPreview.slides[activeSlideIndex]?.title}
+                    
+                    <h1 className="text-white text-2xl sm:text-3xl lg:text-4xl font-extrabold max-w-3xl uppercase tracking-tight leading-tight select-text">
+                      KAJIAN STRATEGIS KOMPREHENSIF: {(pptPreview.title || "").toUpperCase()}
                     </h1>
-                    <div className="h-1 w-20 bg-sky-500 my-6 rounded-full" />
-                    <p className="text-slate-400 font-semibold font-mono text-[10px] sm:text-xs uppercase tracking-widest">
-                      PREDIKSI, STRATEGI, & MANAJEMEN RISIKO OPERASIONAL
+                    
+                    <div className="h-0.5 w-16 bg-[#00D285] my-5" />
+                    
+                    <p className="text-slate-400 font-medium text-xs sm:text-sm max-w-2xl">
+                      Kajian Komprehensif Skema Strategis & Operasional {pptPreview.title} PT Pancaran Group Berdasarkan Rekomendasi PRAMA AI Advisor
                     </p>
-                    <p className="text-slate-400 text-[9px] mt-2 font-mono uppercase font-bold tracking-widest">
-                      UNIT KERJA: {(activeDivision || "UMUM").toUpperCase()} &bull; PANCARAN GROUP © 2026
-                    </p>
+                    
+                    <div className="mt-8 space-y-1 text-left text-[#00D285] font-mono font-bold text-[9px] uppercase tracking-wider">
+                      <div>PROYEK: {pptPreview.title.toUpperCase()}</div>
+                      <div>UNIT DIREKTORAT: {(activeDivision || "UMUM").toUpperCase() + " & BUSINESS DEVELOPMENT"}</div>
+                      <div>KLASIFIKASI: TERBATAS / INTERNAL PT PANCARAN GROUP</div>
+                    </div>
+                  </div>
+                ) : activeSlideIndex === pptPreview.slides.length + 1 ? (
+                  // THANK YOU / PENUTUP SLIDE STYLE (MATCHES SLIDE 17)
+                  <div className="flex-1 flex flex-col justify-center items-center bg-[#06152B] p-12 text-center select-none relative">
+                    {/* Vibrant Green Border */}
+                    <div className="absolute inset-3 border border-[#00D285] pointer-events-none rounded-sm" />
+                    
+                    <h1 className="text-white text-3xl sm:text-5xl font-black tracking-widest leading-none mb-3 animate-pulse">
+                      TERIMA KASIH
+                    </h1>
+                    
+                    <h3 className="text-[#00D285] font-mono font-bold text-xs sm:text-sm uppercase tracking-wide mb-8">
+                      Sistem Dokumentasi Strategis & Operasional Terintegrasi
+                    </h3>
+                    
+                    <div className="mt-6 text-slate-400 font-mono text-[9px] sm:text-xs tracking-wide leading-relaxed">
+                      <div>✦ Diformulasikan secara otomatis oleh PRAMA Strategic AI Advisor</div>
+                      <div className="text-[#00D285] font-semibold mt-1">PT PANCARAN GROUP INDONESIA • RAHASIA INTERNAL SENSITIF</div>
+                    </div>
                   </div>
                 ) : (
                   // BENTO SPLIT LAYOUT CONTENT SLIDE STYLE
-                  <div className="flex-1 flex flex-col md:flex-row bg-[#f8fafc] text-slate-85 relative">
-                    {/* Left half: Content & Bullets */}
-                    <div className="flex-1 flex flex-col justify-between p-6 sm:p-10 md:w-7/12">
-                      <div className="space-y-4">
-                        <div className="text-[10px] font-mono font-bold text-sky-600 uppercase tracking-widest flex items-center gap-1.5">
-                          <span>STRATEGIC AREA: {(activeDivision || "PORTAL").toUpperCase()}</span>
-                          <span className="inline-block h-1 w-1 bg-sky-400 rounded-full" />
-                          <span>SLIDE {activeSlideIndex + 1}</span>
-                        </div>
-                        <h2 className="text-slate-900 font-black text-lg sm:text-2xl leading-tight select-text border-b pb-1">
-                          {pptPreview.slides[activeSlideIndex]?.title}
-                        </h2>
-                        
-                        <div className="space-y-2.5 pt-2">
-                          {pptPreview.slides[activeSlideIndex]?.bullets.map((bulletText, bIdx) => (
-                            <div key={bIdx} className="flex gap-2.5 items-start pl-1">
-                              <span className="text-sky-500 mt-1 font-extrabold select-none">•</span>
-                              <p className="text-xs sm:text-sm text-slate-700 font-medium leading-relaxed select-text">
-                                {bulletText}
-                              </p>
+                  (() => {
+                    const currentSlide = pptPreview.slides[activeSlideIndex - 1];
+                    let introPara = "Kajian komprehensif implementasi strategi, tata kelola, dan operasional guna mengoptimalkan kinerja proyek.";
+                    let bPoints = currentSlide?.bullets || [];
+                    if (currentSlide?.bullets && currentSlide.bullets.length > 0) {
+                      if (currentSlide.bullets.length >= 3) {
+                        introPara = currentSlide.bullets[0];
+                        bPoints = currentSlide.bullets.slice(1);
+                      }
+                    }
+
+                    return (
+                      <div className="flex-1 flex flex-col md:flex-row bg-white text-slate-800 relative">
+                        {/* Solid Top Accent Green Bar */}
+                        <div className="absolute top-0 left-0 right-0 h-1 bg-[#00D285]" />
+
+                        {/* Left half: Content & Bullets */}
+                        <div className="flex-1 flex flex-col justify-between p-6 sm:p-8 md:w-7/12 relative">
+                          <div className="space-y-3 pt-2">
+                            {/* Header row */}
+                            <div className="text-[9px] font-mono font-bold text-slate-400 uppercase tracking-wider flex justify-between items-center w-full pb-1">
+                              <span>{(pptPreview.title || "").toUpperCase()}</span>
+                              <span className="text-[#00D285]">SEKTOR: {(activeDivision || "UMUM").toUpperCase() + " & BD"}</span>
                             </div>
-                          ))}
+                            
+                            <div className="h-[1px] bg-slate-100 w-full" />
+
+                            <div className="text-[10px] font-bold text-[#00D285] font-mono uppercase tracking-widest pt-1">
+                              KAJIAN STRATEGIS: BAB {activeSlideIndex}
+                            </div>
+                            
+                            <h2 className="text-slate-900 font-extrabold text-lg sm:text-xl md:text-2xl leading-tight">
+                              {currentSlide?.title}
+                            </h2>
+                            
+                            <p className="text-xs text-slate-500 font-medium leading-relaxed pb-1 select-text">
+                              {introPara}
+                            </p>
+
+                            <div className="space-y-1.5">
+                              {bPoints.map((bulletText, bIdx) => (
+                                <div key={bIdx} className="flex gap-2 items-start pl-0.5">
+                                  <span className="text-[#00D285] mt-1 shrink-0 font-extrabold select-none text-[10px] sm:text-xs">•</span>
+                                  <p className="text-[10px] sm:text-xs text-slate-600 font-medium leading-relaxed select-text">
+                                    {bulletText}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Footer row */}
+                          <div className="text-[8px] font-mono font-bold text-slate-400 border-t pt-2 w-full flex justify-between items-center mt-4">
+                            <span>PANCARAN GROUP &bull; CONFIDENTIAL DOCUMENTATION</span>
+                            <span className="text-slate-700">HALAMAN {activeSlideIndex + 1} DARI {pptPreview.slides.length + 2}</span>
+                          </div>
+                        </div>
+
+                        {/* Right half: Photo Frame */}
+                        <div className="flex-1 md:w-5/12 bg-slate-150 relative min-h-[150px] md:min-h-0 overflow-hidden flex flex-col justify-center items-center p-6">
+                          {currentSlide?.imageUrl ? (
+                            <div className="w-full h-full flex flex-col justify-center items-center gap-2">
+                              {/* Photo framed with green border */}
+                              <div className="w-full h-[78%] border-2 border-[#00D285] p-0.5 bg-white shadow-md relative overflow-hidden rounded-sm">
+                                <img
+                                  src={currentSlide.imageUrl}
+                                  alt="Slide context"
+                                  className="w-full h-full object-cover rounded-2xs"
+                                  referrerPolicy="no-referrer"
+                                />
+                              </div>
+                              <span className="text-[8px] text-slate-400 italic font-medium text-center">
+                                Ilustrasi: {currentSlide?.title} di Pancaran Group
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400">
+                              <FileText className="h-8 w-8 text-slate-300" />
+                            </div>
+                          )}
                         </div>
                       </div>
-
-                      <div className="text-[8px] font-mono text-slate-400 font-semibold border-t pt-3 mt-6">
-                        PRAMA DIGITAL PORTAL &bull; CONFIDENTIAL DIALOGUE
-                      </div>
-                    </div>
-
-                    {/* Right half: High-res Unsplash Background */}
-                    <div className="flex-1 md:w-5/12 bg-slate-200 relative min-h-[150px] md:min-h-0 overflow-hidden select-none">
-                      {pptPreview.slides[activeSlideIndex]?.imageUrl ? (
-                        <img
-                          src={pptPreview.slides[activeSlideIndex].imageUrl}
-                          alt="Slide context"
-                          className="w-full h-full object-cover transition duration-300 transform group-hover:scale-102"
-                          referrerPolicy="no-referrer"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-slate-200 text-slate-400">
-                          <FileText className="h-10 w-10" />
-                        </div>
-                      )}
-                      
-                      {/* Gradient overlay inside picture card */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent pointer-events-none" />
-                      <div className="absolute top-3 right-3 bg-slate-900/40 backdrop-blur-xs rounded-lg px-2.5 py-1 text-[8px] font-bold text-slate-100 font-mono">
-                        {(activeDivision || "UMUM").toUpperCase()} UNIT
-                      </div>
-                    </div>
-                  </div>
+                    );
+                  })()
                 )}
 
                 {/* Left navigation arrow on-slide */}
@@ -2652,8 +2818,8 @@ ${lastMsgText}`;
 
                 {/* Right navigation arrow on-slide */}
                 <button
-                  disabled={activeSlideIndex === pptPreview.slides.length - 1}
-                  onClick={() => setActiveSlideIndex(prev => Math.min(pptPreview.slides.length - 1, prev + 1))}
+                  disabled={activeSlideIndex === pptPreview.slides.length + 1}
+                  onClick={() => setActiveSlideIndex(prev => Math.min(pptPreview.slides.length + 1, prev + 1))}
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 p-2 rounded-full bg-slate-900/60 hover:bg-slate-950 text-white disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer shadow transition z-20"
                 >
                   <ChevronRight className="h-5 w-5" />
@@ -2663,15 +2829,16 @@ ${lastMsgText}`;
               {/* Speaker Notes Presenter Window panel */}
               <div className="w-full max-w-4xl bg-slate-800 rounded-2xl p-4 sm:p-5 border border-slate-700 shadow-xl">
                 <div className="flex justify-between items-center pb-2.5 border-b border-slate-700 mb-3">
-                  <span className="font-mono text-[10px] text-sky-400 font-black tracking-widest uppercase">
+                  <span className="font-mono text-[10px] text-[#00D285] font-black tracking-widest uppercase flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-[#00D285] animate-pulse" />
                     SPEAKER NOTES / NASKAH PIDATO PRESENTER
                   </span>
                   <span className="bg-slate-700 text-white font-mono text-[9px] font-bold px-2 py-0.5 rounded border border-slate-600">
-                    Slide {activeSlideIndex + 1} dari {pptPreview.slides.length}
+                    Slide {activeSlideIndex + 1} dari {pptPreview.slides.length + 2}
                   </span>
                 </div>
                 <p className="text-xs sm:text-sm text-slate-200/95 leading-relaxed font-medium italic select-text">
-                  &quot;{pptPreview.slides[activeSlideIndex]?.speakerNotes || "Selamat pagi/siang bapak dan ibu sekalian. Slide pembuka ini menjelaskan judul dan pilar utama kajian proyek..."}&quot;
+                  &quot;{activeSlideIndex === 0 ? "Selamat pagi/siang bapak dan ibu sekalian. Slide pembuka ini menjelaskan judul dan pilar utama kajian proyek strategis PRAMA untuk PT Pancaran Group." : activeSlideIndex === pptPreview.slides.length + 1 ? "Sesi presentasi komprehensif selesai. Kami mengucapkan terima kasih kepada pimpinan komite, direksi, dan jajaran tim operasional PT Pancaran Group." : (pptPreview.slides[activeSlideIndex - 1]?.speakerNotes || "Penjelasan pendukung slide.")}&quot;
                 </p>
               </div>
 
@@ -2679,13 +2846,13 @@ ${lastMsgText}`;
 
             {/* Bottom slideshow controls & paginator */}
             <div className="bg-slate-50 border-t border-slate-200 px-6 py-4 flex justify-between items-center shrink-0">
-              <div className="flex gap-1.5">
-                {pptPreview.slides.map((_, dotIdx) => (
+              <div className="flex gap-1.5 overflow-x-auto max-w-[70%] py-1">
+                {Array.from({ length: pptPreview.slides.length + 2 }).map((_, dotIdx) => (
                   <button
                     key={dotIdx}
                     onClick={() => setActiveSlideIndex(dotIdx)}
-                    className={`h-2.5 rounded-full transition-all cursor-pointer ${
-                      activeSlideIndex === dotIdx ? "w-6 bg-sky-600" : "w-2.5 bg-slate-300 hover:bg-slate-400"
+                    className={`h-2.5 rounded-full transition-all cursor-pointer shrink-0 ${
+                      activeSlideIndex === dotIdx ? "w-6 bg-[#00D285]" : "w-2.5 bg-slate-300 hover:bg-slate-400"
                     }`}
                   />
                 ))}

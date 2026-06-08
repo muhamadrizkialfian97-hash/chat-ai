@@ -590,118 +590,310 @@ export function exportToPPTX(
   const pptx = new pptxgen();
   pptx.layout = "LAYOUT_16x9";
 
-  // Slide 1: Welcome title slide (Elegant Dark Theme)
-  const openingSlide = pptx.addSlide();
-  openingSlide.background = { color: "0F172A" }; // Slate 900 / Dark Navy
+  const totalSlidesCount = slides.length + 2; // +1 Cover, +1 Thank you
 
-  openingSlide.addText(title.toUpperCase(), {
+  // 1. Cover Slide (Slide 1) - Elegant Deep Navy & Vibrant Green Border Theme
+  const openingSlide = pptx.addSlide();
+  openingSlide.background = { color: "06152B" }; // Deep Navy
+
+  // Outer green border rectangle
+  openingSlide.addShape("rect", {
+    x: 0.3,
+    y: 0.3,
+    w: 12.73,
+    h: 6.9,
+    fill: { color: "none" },
+    line: { color: "00D285", width: 1.5 }
+  });
+
+  const displayTitle = title.replace("KAJIAN STRATEGIS KOMPREHENSIF: ", "").trim();
+
+  // Top header in Cover
+  openingSlide.addText(`✦ PRAMA COGNITIVE PORTAL • ${displayTitle.toUpperCase()}`, {
+    x: 0.8,
+    y: 0.8,
+    w: 11.73,
+    h: 0.4,
+    fontSize: 9.5,
+    bold: true,
+    color: "00D285",
+    fontFace: "Arial"
+  });
+
+  // Large centered/left main cover title
+  openingSlide.addText(`KAJIAN STRATEGIS KOMPREHENSIF: ${displayTitle.toUpperCase()}`, {
+    x: 0.8,
+    y: 1.8,
+    w: 11.73,
+    h: 2.2,
+    fontSize: 28,
+    bold: true,
+    color: "FFFFFF",
+    fontFace: "Arial",
+    valign: "middle"
+  });
+
+  // Subtitle
+  openingSlide.addText(`Kajian Komprehensif Skema Strategis & Operasional ${displayTitle} PT Pancaran Group Berdasarkan Rekomendasi PRAMA AI Advisor`, {
+    x: 0.8,
+    y: 4.3,
+    w: 11.73,
+    h: 0.8,
+    fontSize: 11,
+    color: "94A3B8",
+    fontFace: "Arial"
+  });
+
+  // Bottom left metadata stamp
+  openingSlide.addText(`PROYEK: ${displayTitle.toUpperCase()}\nUNIT DIREKTORAT: ${(divisionName || "UMUM").toUpperCase() + " & BUSINESS DEVELOPMENT"}\nKLASIFIKASI: TERBATAS / INTERNAL PT PANCARAN GROUP`, {
+    x: 0.8,
+    y: 5.6,
+    w: 11.73,
+    h: 1.0,
+    fontSize: 8,
+    bold: true,
+    color: "00D285",
+    fontFace: "Arial"
+  });
+
+  openingSlide.addNotes(`Selamat pagi/siang dan salam sejahtera bapak dan ibu sekalian. Slide pembuka ini menjelaskan judul dan pilar utama kajian proyek strategis PRAMA untuk unit kerja ${divisionName}.`);
+
+  // 2. Content Slides (Slide 2 to N-1)
+  slides.forEach((slideData, idx) => {
+    const slide = pptx.addSlide();
+    slide.background = { color: "FFFFFF" }; // White Background
+
+    // Solid Top Accent Green Band (from edge to edge)
+    slide.addShape("rect", {
+      x: 0.0,
+      y: 0.0,
+      w: 13.33,
+      h: 0.1,
+      fill: { color: "00D285" }
+    });
+
+    // Header Left-hand side
+    slide.addText(displayTitle.toUpperCase(), {
+      x: 0.8,
+      y: 0.25,
+      w: 6.0,
+      h: 0.3,
+      fontSize: 9,
+      color: "94A3B8",
+      fontFace: "Arial"
+    });
+
+    // Header Right-hand side
+    slide.addText(`SEKTOR: ${(divisionName || "UMUM").toUpperCase() + " & BUSINESS DEVELOPMENT"}`, {
+      x: 6.8,
+      y: 0.25,
+      w: 5.73,
+      h: 0.3,
+      fontSize: 9,
+      color: "00D285",
+      bold: true,
+      align: "right",
+      fontFace: "Arial"
+    });
+
+    // Thin grey divider below header
+    slide.addShape("rect", {
+      x: 0.8,
+      y: 0.55,
+      w: 11.73,
+      h: 0.015,
+      fill: { color: "E2E8F0" }
+    });
+
+    // Chapter category label (e.g. KAJIAN STRATEGIS: BAB X)
+    slide.addText(`KAJIAN STRATEGIS: BAB ${idx + 1}`, {
+      x: 0.8,
+      y: 0.75,
+      w: 11.73,
+      h: 0.3,
+      fontSize: 10,
+      color: "00D285",
+      bold: true,
+      fontFace: "Arial"
+    });
+
+    // Slide Body Main Title
+    slide.addText(slideData.title, {
+      x: 0.8,
+      y: 1.0,
+      w: 6.0,
+      h: 0.8,
+      fontSize: 22,
+      color: "0F172A",
+      bold: true,
+      fontFace: "Arial",
+      valign: "middle"
+    });
+
+    // Left Column logic - extract first bullet as intro paragraph
+    let introPara = "Kajian komprehensif implementasi strategi, tata kelola, dan operasional guna mengoptimalkan kinerja proyek.";
+    let bulletPoints = slideData.bullets;
+    if (slideData.bullets && slideData.bullets.length > 0) {
+      if (slideData.bullets.length >= 3) {
+        introPara = slideData.bullets[0];
+        bulletPoints = slideData.bullets.slice(1);
+      }
+    }
+
+    // Paragraph Summary Block
+    slide.addText(introPara, {
+      x: 0.8,
+      y: 2.0,
+      w: 5.8,
+      h: 1.6,
+      fontSize: 11.5,
+      color: "475569",
+      fontFace: "Arial",
+      valign: "top"
+    });
+
+    // Bullet List Options
+    const formattedBullets = bulletPoints.map((bullet) => ({
+      text: bullet,
+      options: { bullet: true, fontSize: 10.5, color: "334155", fontFace: "Arial" }
+    }));
+
+    // Add bullet box
+    slide.addText(formattedBullets, {
+      x: 0.8,
+      y: 3.7,
+      w: 5.8,
+      h: 2.8,
+      valign: "top"
+    });
+
+    // Right Column logic - Unsplash image container with green border frame
+    if (slideData.imageUrl) {
+      slide.addImage({
+        path: slideData.imageUrl,
+        x: 7.2,
+        y: 1.8,
+        w: 5.3,
+        h: 3.5,
+      });
+
+      // Draw bright green border around picture frame
+      slide.addShape("rect", {
+        x: 7.17,
+        y: 1.77,
+        w: 5.36,
+        h: 3.56,
+        fill: { color: "none" },
+        line: { color: "00D285", width: 2 }
+      });
+
+      // Figure caption label
+      slide.addText(`Ilustrasi: ${slideData.title} di Pancaran Group`, {
+        x: 7.2,
+        y: 5.4,
+        w: 5.3,
+        h: 0.5,
+        fontSize: 8.5,
+        italic: true,
+        color: "64748B",
+        align: "center",
+        fontFace: "Arial"
+      });
+    }
+
+    // Thin grey footer line
+    slide.addShape("rect", {
+      x: 0.8,
+      y: 6.8,
+      w: 11.73,
+      h: 0.015,
+      fill: { color: "E2E8F0" }
+    });
+
+    // Footer LHS
+    slide.addText("PANCARAN GROUP • CONFIDENTIAL DOCUMENTATION", {
+      x: 0.8,
+      y: 6.9,
+      w: 6.0,
+      h: 0.3,
+      fontSize: 8,
+      color: "94A3B8",
+      bold: true,
+      fontFace: "Arial"
+    });
+
+    // Footer RHS
+    slide.addText(`HALAMAN ${idx + 2} DARI ${totalSlidesCount}`, {
+      x: 6.8,
+      y: 6.9,
+      w: 5.73,
+      h: 0.3,
+      fontSize: 8,
+      color: "0F172A",
+      bold: true,
+      align: "right",
+      fontFace: "Arial"
+    });
+
+    // Speaker notes
+    if (slideData.speakerNotes) {
+      slide.addNotes(slideData.speakerNotes);
+    }
+  });
+
+  // 3. Last Slide (Slide 17) - Elegant Dark Theme "TERIMA KASIH"
+  const closingSlide = pptx.addSlide();
+  closingSlide.background = { color: "06152B" }; // Deep Navy
+
+  // Outer green border rectangle
+  closingSlide.addShape("rect", {
+    x: 0.3,
+    y: 0.3,
+    w: 12.73,
+    h: 6.9,
+    fill: { color: "none" },
+    line: { color: "00D285", width: 1.5 }
+  });
+
+  // Thank You text
+  closingSlide.addText("TERIMA KASIH", {
     x: 1.0,
     y: 2.2,
     w: 11.33,
-    h: 1.8,
-    fontSize: 32,
+    h: 1.0,
+    fontSize: 36,
     bold: true,
     color: "FFFFFF",
     align: "center",
     fontFace: "Arial"
   });
 
-  openingSlide.addText(`PRAMA STRATEGIC ADVISORY REPORT • ${divisionName.toUpperCase()}`, {
+  // Green Subtitle
+  closingSlide.addText("Sistem Dokumentasi Strategis & Operasional Terintegrasi", {
     x: 1.0,
-    y: 4.2,
+    y: 3.4,
     w: 11.33,
     h: 0.5,
-    fontSize: 12,
+    fontSize: 13,
     bold: true,
-    color: "38BDF8", // Light Blue
+    color: "00D285",
     align: "center",
     fontFace: "Arial"
   });
 
-  openingSlide.addText("Dokumen Rahasia Internal • Pancaran Group © 2026", {
+  // Bottom detailed credit labels
+  closingSlide.addText("✦ Diformulasikan secara otomatis oleh PRAMA Strategic AI Advisor\nPT PANCARAN GROUP INDONESIA • RAHASIA INTERNAL SENSITIF", {
     x: 1.0,
-    y: 4.8,
+    y: 5.3,
     w: 11.33,
-    h: 0.5,
-    fontSize: 9,
+    h: 1.0,
+    fontSize: 8.5,
     color: "94A3B8",
     align: "center",
     fontFace: "Arial"
   });
 
-  openingSlide.addNotes(`Selamat pagi/siang dan salam sejahtera. Presentasi ini berisi kajian proyek strategis PRAMA untuk unit kerja ${divisionName}.`);
-
-  // Content slides
-  slides.forEach((slideData, idx) => {
-    const slide = pptx.addSlide();
-    slide.background = { color: "F8FAFC" }; // Slate 50
-
-    // Top banner header text
-    slide.addText(`Kajian Strategis PRAMA Area: ${divisionName.toUpperCase()}`, {
-      x: 0.8,
-      y: 0.3,
-      w: 11.73,
-      h: 0.3,
-      fontSize: 10,
-      color: "3B82F6",
-      bold: true,
-      fontFace: "Arial"
-    });
-
-    // Title of slide
-    slide.addText(slideData.title, {
-      x: 0.8,
-      y: 0.6,
-      w: 6.0,
-      h: 0.9,
-      fontSize: 22,
-      color: "0F172A",
-      bold: true,
-      fontFace: "Arial"
-    });
-
-    // Bullets - format as paragraph blocks with indent
-    const formattedBullets = slideData.bullets.map((b) => ({
-      text: b,
-      options: { bullet: true, fontSize: 13, color: "334155", fontFace: "Arial" }
-    }));
-
-    // Set bullet point lists or lines
-    slide.addText(formattedBullets, {
-      x: 0.8,
-      y: 1.6,
-      w: 6.0,
-      h: 4.8,
-      valign: "top"
-    });
-
-    // Image right side (split layout)
-    if (slideData.imageUrl) {
-      slide.addImage({
-        path: slideData.imageUrl,
-        x: 7.2,
-        y: 1.0,
-        w: 5.3,
-        h: 5.0,
-      });
-    }
-
-    // Speaker notes
-    if (slideData.speakerNotes) {
-      slide.addNotes(slideData.speakerNotes);
-    }
-
-    // Footer watermark
-    slide.addText(`PRAMA Digital Integrated Reporting System • Halaman ${idx + 2}`, {
-      x: 0.8,
-      y: 7.0,
-      w: 11.73,
-      h: 0.3,
-      fontSize: 8,
-      color: "94A3B8",
-      fontFace: "Arial"
-    });
-  });
+  closingSlide.addNotes("Sesi presentasi selesai. Terima kasih kepada seluruh jajaran direksi, komite, dan tim operasional PT Pancaran Group atas perhatiannya.");
 
   const sanitizedTitle = title.trim().replace(/[/\\?%*:|"<>\s]+/g, "_") || "prama_slide";
   const baseTitle = sanitizedTitle.toLowerCase().endsWith(".pptx") 

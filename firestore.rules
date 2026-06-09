@@ -94,10 +94,31 @@ service cloud.firestore {
     }
 
     match /registration_requests/{requestId} {
-      allow read, list: if true; // Always allow reading registration requests to query emails and log in
-      allow create: if isValidRegistration(request.resource.data);
-      allow update: if isValidRegistration(request.resource.data);
-      allow delete: if true;
+      allow read, list, write, create, update, delete: if true;
+    }
+
+    match /mock_requests/{requestId} {
+      allow read, write: if true;
+    }
+
+    match /mock_request/{requestId} {
+      allow read, write: if true;
+    }
+
+    match /users/{userId}/folders/{folderId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    match /users/{userId}/folders/{folderId}/{document=**} {
+      allow read, write: if isOwner(userId);
+    }
+
+    match /folders/{folderId} {
+      allow read, write: if true;
+    }
+
+    match /folders/{folderId}/{document=**} {
+      allow read, write: if true;
     }
   }
 }

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { ChatMessage, SavedFile } from "../types";
-import { Send, FileText, Globe, CircleAlert, Cpu, Eye, EyeOff, Settings, Sparkles, Download, Printer, ArrowLeft, LogOut } from "lucide-react";
+import { Send, FileText, Globe, CircleAlert, Cpu, Eye, EyeOff, Settings, Sparkles, Download, Printer, ArrowLeft, LogOut, Bell, HardDrive, Users, CheckCircle, X, Search } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { exportToWord, exportToPDF, downloadPDFDirect } from "../utils/documentExporter";
 import pramaLogo from "../assets/images/prama_logo_1780452149937.png";
@@ -23,6 +23,12 @@ interface ChatPanelProps {
   onLogout?: () => void;
   onPreviewAndExportWord?: (text: string) => void;
   onPreviewAndExportPDF?: (text: string) => void;
+  pendingRequestsCount?: number;
+  onNavigateNotification?: (view: "divisions" | "saved_docs" | "approval_requests") => void;
+  isSearchingMessages?: boolean;
+  onToggleSearchMessages?: (active: boolean) => void;
+  searchQuery?: string;
+  onSearchQueryChange?: (query: string) => void;
 }
 
 export default function ChatPanel({
@@ -43,15 +49,34 @@ export default function ChatPanel({
   onLogout,
   onPreviewAndExportWord,
   onPreviewAndExportPDF,
+  pendingRequestsCount = 0,
+  onNavigateNotification,
+  isSearchingMessages = false,
+  onToggleSearchMessages,
+  searchQuery: searchQueryProps,
+  onSearchQueryChange: onSearchQueryChangeProps,
 }: ChatPanelProps) {
   const [input, setInput] = useState("");
   const [enableSearch, setEnableSearch] = useState(false);
   const [selectedFileId, setSelectedFileId] = useState<string>("");
+  
+  const [localSearchQuery, setLocalSearchQuery] = useState("");
+  const activeSearchQuery = searchQueryProps !== undefined ? searchQueryProps : localSearchQuery;
+  const setActiveSearchQuery = onSearchQueryChangeProps !== undefined ? onSearchQueryChangeProps : setLocalSearchQuery;
+
   const [showConfig, setShowConfig] = useState(false);
   const [showKey, setShowKey] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const activeReferencedFile = files.find((f) => f.id === selectedFileId) || null;
+
+  const filteredMessages = activeSearchQuery.trim()
+    ? messages.filter((msg) =>
+        msg.text.toLowerCase().includes(activeSearchQuery.toLowerCase())
+      )
+    : messages;
 
   const [localKeyInput, setLocalKeyInput] = useState(clientApiKey);
   const [showLocalKey, setShowLocalKey] = useState(false);
@@ -207,6 +232,169 @@ export default function ChatPanel({
           <div className="hidden md:flex items-center gap-1 px-3 py-1 bg-slate-50 border border-slate-200/60 rounded-full text-[9px] font-mono font-extrabold text-slate-400 tracking-wider">
             <span>SECURE CHAT FEED</span>
           </div>
+
+          {/* Notification Popover Button & Dropdown directly left of Keluar button */}
+          <div className="relative">
+            <button
+              onClick={() => setShowNotifications(!showNotifications)}
+              className={`relative flex h-8 w-8 items-center justify-center rounded-xl border transition-all cursor-pointer ${
+                showNotifications
+                  ? "bg-indigo-50 text-indigo-700 border-indigo-300 shadow-inner"
+                  : "bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200 hover:text-indigo-600"
+              }`}
+              title="Notifikasi Masuk"
+            >
+              <Bell className="h-4 w-4 shrink-0" />
+              {/* Dynamic Notification badge */}
+              {(pendingRequestsCount + (files.length > 0 ? 1 : 0) + 1) > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-red-500 text-[8px] font-black leading-none text-white ring-2 ring-white animate-pulse">
+                  {pendingRequestsCount + (files.length > 0 ? 1 : 0) + 1}
+                </span>
+              )}
+            </button>
+
+            {/* Backdrop to close popover when clicked outside */}
+            {showNotifications && (
+              <div
+                className="fixed inset-0 z-40 cursor-default"
+                onClick={() => setShowNotifications(false)}
+              />
+            )}
+
+            {/* Dropdown Card */}
+            <AnimatePresence>
+              {showNotifications && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  transition={{ duration: 0.15, ease: "easeOut" }}
+                  className="absolute right-0 mt-2.5 w-80 rounded-2xl border border-slate-200 bg-white shadow-xl z-50 overflow-hidden text-left"
+                >
+                  {/* Dropdown Header */}
+                  <div className="bg-slate-900 px-4 py-3.5 border-b border-slate-800 text-white flex items-center justify-between">
+                    <div>
+                      <h4 className="font-display font-extrabold text-[11px] tracking-wider uppercase leading-none">
+                        NOTIFIKASI PRAMA
+                      </h4>
+                      <span className="text-[8px] font-mono tracking-widest text-slate-400 font-bold block mt-1 uppercase">
+                        PUSAT INFORMASI LIVE SISTEM
+                      </span>
+                    </div>
+                    <span className="font-mono text-[9px] font-black bg-indigo-950 text-indigo-400 border border-indigo-800 px-2 py-0.5 rounded-full uppercase leading-none">
+                      {pendingRequestsCount + (files.length > 0 ? 1 : 0) + 1} Baru
+                    </span>
+                  </div>
+
+                  {/* Notification list */}
+                  <div className="divide-y divide-slate-100 max-h-80 overflow-y-auto">
+                    
+                    {/* 1. Dynamic Pending Approvals Notification */}
+                    {pendingRequestsCount > 0 ? (
+                      <div
+                        onClick={() => {
+                          setShowNotifications(false);
+                          if (onNavigateNotification) onNavigateNotification("approval_requests");
+                        }}
+                        className="p-3.5 hover:bg-slate-50/80 transition flex items-start gap-3 cursor-pointer"
+                      >
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-655 border border-indigo-100 shrink-0 shadow-inner">
+                          <Users className="h-4 w-4 text-indigo-600" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-1">
+                            <p className="text-xs font-black text-slate-800 leading-snug">
+                              Registrasi Pending Terdeteksi
+                            </p>
+                            <span className="h-1.5 w-1.5 rounded-full bg-red-500 shrink-0" />
+                          </div>
+                          <p className="text-[10px] text-slate-500 font-bold leading-normal mt-0.5 line-clamp-2">
+                            Ada {pendingRequestsCount} permohonan pendaftaran staf baru menunggu persetujuan Anda.
+                          </p>
+                          <span className="text-[8px] font-mono font-black text-indigo-600 mt-1 block uppercase tracking-wider">
+                            KLIK UNTUK VERIFIKASI →
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-3.5 hover:bg-slate-50/40 transition flex items-start gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-50 text-slate-400 border border-slate-100 shrink-0">
+                          <Users className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold text-slate-700 leading-snug">
+                            Persetujuan Akun PRAMA
+                          </p>
+                          <p className="text-[10.5px] text-slate-400 font-bold leading-normal mt-0.5">
+                            Belum ada kandidat pendaftaran baru saat ini. Semua staf aktif.
+                          </p>
+                          <span className="text-[8px] font-mono font-extrabold text-slate-400 mt-1 block uppercase">
+                            STATUS BERSIH
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 2. Saved Documents Notification */}
+                    {files.length > 0 && (
+                      <div
+                        onClick={() => {
+                          setShowNotifications(false);
+                          if (onNavigateNotification) onNavigateNotification("saved_docs");
+                        }}
+                        className="p-3.5 hover:bg-slate-50/80 transition flex items-start gap-3 cursor-pointer"
+                      >
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-605 border border-emerald-100 shrink-0 shadow-inner">
+                          <HardDrive className="h-4 w-4 text-emerald-500" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-1">
+                            <p className="text-xs font-black text-slate-800 leading-snug">
+                              Dokumen PM Tersimpan
+                            </p>
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
+                          </div>
+                          <p className="text-[10px] text-slate-500 font-bold leading-normal mt-0.5 line-clamp-2">
+                            Anda memiliki {files.length} draf analisis proyek & proposal yang tersimpan aman di cloud.
+                          </p>
+                          <span className="text-[8px] font-mono font-black text-emerald-600 mt-1 block uppercase tracking-wider">
+                            LIHAT ARSIP DOKUMEN →
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 3. Static Welcome Notification */}
+                    <div className="p-3.5 hover:bg-slate-50/40 transition flex items-start gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-50 text-sky-600 border border-sky-100 shrink-0">
+                        <CheckCircle className="h-4 w-4 text-sky-505" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-bold text-slate-800 leading-snug">
+                          Selamat Datang di PRAMA
+                        </p>
+                        <p className="text-[10px] text-slate-500 font-bold leading-normal mt-0.5">
+                          PRAMA System Cognitive Portal v1.5 siap membantu operasional peninjauan proyek Anda.
+                        </p>
+                        <span className="text-[8px] font-mono font-extrabold text-slate-400 mt-1 block uppercase">
+                          AKTIF SEKARANG
+                        </span>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* Footer */}
+                  <div className="bg-slate-50 border-t border-slate-100 px-4 py-2.5 text-center">
+                    <span className="text-[8px] font-mono font-extrabold text-slate-400 tracking-wider uppercase">
+                      © PORTAL ASISTEN CERDAS PRAMA
+                    </span>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
           {onLogout && (
             <button
               onClick={onLogout}
@@ -362,6 +550,37 @@ export default function ChatPanel({
         )}
       </AnimatePresence>
 
+      {/* Search Messages Sticky Bar */}
+      {isSearchingMessages && (
+        <div className="bg-slate-50 border-b border-slate-200 px-4 py-3 flex items-center gap-3 shadow-sm shrink-0 z-10">
+          <Search className="h-4 w-4 text-indigo-500 shrink-0" />
+          <input
+            type="text"
+            value={activeSearchQuery}
+            onChange={(e) => setActiveSearchQuery(e.target.value)}
+            placeholder="Cari kata kunci dalam percakapan..."
+            className="flex-1 text-slate-705 placeholder-slate-400 text-xs outline-none bg-transparent border-none py-1 h-full w-full focus:ring-0 focus:outline-none"
+            autoFocus
+          />
+          {activeSearchQuery.trim() && (
+            <span className="text-[10px] font-mono text-indigo-700 font-bold bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-150">
+              {filteredMessages.length} hasil terpilih
+            </span>
+          )}
+          <button
+            onClick={() => {
+              setActiveSearchQuery("");
+              if (onToggleSearchMessages) {
+                onToggleSearchMessages(false);
+              }
+            }}
+            className="text-slate-405 hover:text-slate-650 cursor-pointer p-1.5 rounded-full hover:bg-slate-200 transition"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
       {/* Messages Canvas Container with chat background */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 bg-[#f0f2f5] bg-[radial-gradient(#e4e6eb_1px,transparent_1px)] [background-size:20px_20px]">
         
@@ -388,7 +607,7 @@ export default function ChatPanel({
         ) : (
           <div className="space-y-4 max-w-4xl mx-auto">
             <AnimatePresence initial={false}>
-              {messages.map((msg) => {
+              {filteredMessages.map((msg) => {
                 const isUser = msg.role === "user";
                 const lastAssistantMessage = [...messages].reverse().find(m => m.role === "model");
                 const isLastAssistantMessage = lastAssistantMessage && lastAssistantMessage.id === msg.id;
@@ -618,6 +837,45 @@ export default function ChatPanel({
               </button>
             </div>
           )}
+
+          {/* PRAMA 15 Pillars Selection Menu Ribbon */}
+          <div className="mb-1">
+            <p className="text-[10px] text-indigo-700 font-black uppercase tracking-wider font-mono mb-1.5 flex items-center gap-1.5 select-none">
+              <Sparkles className="h-3.5 w-3.5 text-indigo-600 animate-pulse" />
+              MENU PILIHAN PILAR UTAMA PRAMA:
+            </p>
+            <div className="flex gap-1.5 overflow-x-auto pb-1.5 scrollbar-thin scrollbar-thumb-indigo-200 scrollbar-track-transparent touch-pan-x flex-nowrap mask-right">
+              {[
+                { label: "New Journal", prompt: "Mari diskusikan mengenai pilar New Journal untuk proyek kita." },
+                { label: "Global/NAT Overview", prompt: "Saya butuh analisis komparatif pilar Global & NAT Overview." },
+                { label: "Market Opportunity", prompt: "Mari bedah celah bisnis pada pilar Market Opportunity proyek ini." },
+                { label: "Financial Strategy", prompt: "Beri saya ulasan finansial lengkap mencakup Capex, Opex, P&L, Cash Flow, dan ROI ideal." },
+                { label: "Supply & Demand", prompt: "Mari rumuskan keseimbangan Supply & Demand pada rantai logistik kita." },
+                { label: "Structure", prompt: "Bagaimana rekomendasi rancangan pilar Structure operasional yang solid?" },
+                { label: "Organization SOP", prompt: "Tolong susun Qualification staf, matrix kompetensi, Output/KPI, beserta draf SOP terbaik." },
+                { label: "Transition Model", prompt: "Rancang strategi pilar Transition Model (Pre-transition, On-transition, dan Post-transition)." },
+                { label: "Go To Market", prompt: "Beri saya rancangan formula Go To Market Strategy yang paling taktis." },
+                { label: "Ops Model & SLA", prompt: "Susun Ops Model sistematis mencakup rancangan Flow Process, Workflow Diagram, beserta target SLA." },
+                { label: "Risk Management", prompt: "Rancang kerangka kerja Risk Management dan strategi mitigasi risiko operasional." },
+                { label: "Digital Automation", prompt: "Mari kita susun rancangan Digital Coverage meliputi tools, metode, dampak, dan otomatisasi." },
+                { label: "Competitor Strategy", prompt: "Bagaimana cara memetakan keunggulan kita dibanding Competitor?" },
+                { label: "TAM, SAM, SOM", prompt: "Tolong hitung rekomendasi angka TAM, SAM, dan SOM ideal (dalam Rupiah) untuk pasar logistik kita." },
+                { label: "CAC, LTV", prompt: "Berapa rasio keuangan ideal untuk metrik CAC dan LTV pilar PRAMA ini?" }
+              ].map((pillar, pIdx) => (
+                <button
+                  key={pIdx}
+                  type="button"
+                  onClick={() => {
+                    setInput(pillar.prompt);
+                    if (onTyping) onTyping(true);
+                  }}
+                  className="px-3 py-1.5 rounded-full text-[11px] font-bold bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 text-slate-700 hover:text-emerald-800 shadow-3sm hover:shadow-2sm transition cursor-pointer select-none shrink-0 active:scale-95"
+                >
+                  {pillar.label}
+                </button>
+              ))}
+            </div>
+          </div>
 
           {/* WhatsApp / Telegram dynamic round input capsules */}
           <div className="flex items-end gap-2">

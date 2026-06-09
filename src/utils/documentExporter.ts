@@ -742,7 +742,7 @@ export function downloadPDFDirect(title: string, text: string, divisionName: str
   doc.save(sanitizedFilename);
 }
 
-export function exportToPPTX(
+export async function exportToPPTX(
   title: string,
   slides: Array<{ title: string; bullets: string[]; speakerNotes: string; imageUrl: string }>,
   divisionName: string
@@ -752,7 +752,109 @@ export function exportToPPTX(
 
   const totalSlidesCount = slides.length + 2; // +1 Cover, +1 Thank you
 
-  // 1. Cover Slide (Slide 1) - Elegant Deep Navy & Vibrant Green Border Theme
+  // 1. Helper function: Pre-fetch Unsplash image as base64 data-URI
+  const getBase64FromUrl = async (url: string): Promise<string> => {
+    if (!url) return "";
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Fetch response status not OK");
+      const blob = await response.blob();
+      return new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error("FileReader failed"));
+        reader.readAsDataURL(blob);
+      });
+    } catch (err) {
+      console.warn("Using fallback image generator because fetch failed for:", url, err);
+      return "";
+    }
+  };
+
+  // 2. Helper function: Generate a beautiful corporate-branded fallback PNG using dynamic canvas
+  const generateFallbackPng = (slideTitleText: string): string => {
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = 800;
+      canvas.height = 500;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        // Gradient background
+        const grad = ctx.createLinearGradient(0, 0, 800, 500);
+        grad.addColorStop(0, "#0B1528"); // Deep Slate Board
+        grad.addColorStop(1, "#112240");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 800, 500);
+
+        // Vibrant Green outline frame
+        ctx.strokeStyle = "#00D285";
+        ctx.lineWidth = 6;
+        ctx.strokeRect(15, 15, 770, 470);
+
+        // Large PRAMA watermark
+        ctx.fillStyle = "rgba(0, 210, 133, 0.08)";
+        ctx.font = "italic bold 90px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("PRAMA ADVISOR", 400, 270);
+
+        // Core visual slide title decoration
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "bold 26px Arial";
+        ctx.textAlign = "center";
+        
+        // Wrap title if it is long
+        const words = slideTitleText.replace(/_+/g, " ").toUpperCase().split(" ");
+        let line = "";
+        let yPos = 190;
+        for (let n = 0; n < words.length; n++) {
+          const testLine = line + words[n] + " ";
+          const metrics = ctx.measureText(testLine);
+          if (metrics.width > 600 && n > 0) {
+            ctx.fillText(line, 400, yPos);
+            line = words[n] + " ";
+            yPos += 35;
+          } else {
+            line = testLine;
+          }
+        }
+        ctx.fillText(line, 400, yPos);
+
+        // Small sub decoration
+        ctx.fillStyle = "#00D285";
+        ctx.font = "bold 13px Arial";
+        ctx.fillText("PT PANCARAN GROUP • STRATEGIC ADVISORY", 400, 430);
+
+        return canvas.toDataURL("image/png");
+      }
+    } catch (e) {
+      console.error("Canvas image fallback generation error:", e);
+    }
+    // absolute minimum 1x1 base64 png fallback
+    return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mPcWw8AAf8Bf5GofbYAAAAASUVORK5CYII=";
+  };
+
+  // Pre-load all slide images to base64 synchronously/concurrently
+  const loadedBase64Images = await Promise.all(
+    slides.map(async (slideData) => {
+      if (slideData.imageUrl) {
+        const base64 = await getBase64FromUrl(slideData.imageUrl);
+        return base64;
+      }
+      return "";
+    })
+  );
+
+  // 3. Format and clean titles to display elegantly (no snake_case or double "Kajian")
+  const displayTitle = title.replace("KAJIAN STRATEGIS KOMPREHENSIF: ", "").trim();
+  const cleanDisplayTitle = displayTitle
+    .replace(/_+/g, " ")
+    .replace(/Presentasi Kajian Kajian/gi, "Presentasi Kajian")
+    .replace(/Kajian Kajian/gi, "Kajian")
+    .replace(/Presentasi Presentasi/gi, "Presentasi")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  // 4. Cover Slide (Slide 1) - Elegant Deep Navy & Vibrant Green Border Theme
   const openingSlide = pptx.addSlide();
   openingSlide.background = { color: "06152B" }; // Deep Navy
 
@@ -766,10 +868,8 @@ export function exportToPPTX(
     line: { color: "00D285", width: 1.5 }
   });
 
-  const displayTitle = title.replace("KAJIAN STRATEGIS KOMPREHENSIF: ", "").trim();
-
   // Top header in Cover
-  openingSlide.addText(`✦ PRAMA COGNITIVE PORTAL • ${displayTitle.toUpperCase()}`, {
+  openingSlide.addText(`✦ PRAMA COGNITIVE PORTAL • ${cleanDisplayTitle.toUpperCase()}`, {
     x: 0.8,
     y: 0.8,
     w: 11.73,
@@ -781,12 +881,12 @@ export function exportToPPTX(
   });
 
   // Large centered/left main cover title
-  openingSlide.addText(`KAJIAN STRATEGIS KOMPREHENSIF: ${displayTitle.toUpperCase()}`, {
+  openingSlide.addText(`KAJIAN STRATEGIS KOMPREHENSIF: \n${cleanDisplayTitle.toUpperCase()}`, {
     x: 0.8,
     y: 1.8,
     w: 11.73,
     h: 2.2,
-    fontSize: 28,
+    fontSize: 20,
     bold: true,
     color: "FFFFFF",
     fontFace: "Arial",
@@ -794,18 +894,18 @@ export function exportToPPTX(
   });
 
   // Subtitle
-  openingSlide.addText(`Kajian Komprehensif Skema Strategis & Operasional ${displayTitle} PT Pancaran Group Berdasarkan Rekomendasi PRAMA AI Advisor`, {
+  openingSlide.addText(`Kajian Komprehensif Skema Strategis & Operasional ${cleanDisplayTitle} PT Pancaran Group Berdasarkan Rekomendasi PRAMA AI Advisor`, {
     x: 0.8,
     y: 4.3,
     w: 11.73,
     h: 0.8,
-    fontSize: 11,
+    fontSize: 10,
     color: "94A3B8",
     fontFace: "Arial"
   });
 
   // Bottom left metadata stamp
-  openingSlide.addText(`PROYEK: ${displayTitle.toUpperCase()}\nUNIT DIREKTORAT: ${(divisionName || "UMUM").toUpperCase() + " & BUSINESS DEVELOPMENT"}\nKLASIFIKASI: TERBATAS / INTERNAL PT PANCARAN GROUP`, {
+  openingSlide.addText(`PROYEK: ${cleanDisplayTitle.toUpperCase()}\nUNIT DIREKTORAT: ${(divisionName || "UMUM").toUpperCase() + " & BUSINESS DEVELOPMENT"}\nKLASIFIKASI: TERBATAS / INTERNAL PT PANCARAN GROUP`, {
     x: 0.8,
     y: 5.6,
     w: 11.73,
@@ -818,7 +918,7 @@ export function exportToPPTX(
 
   openingSlide.addNotes(`Selamat pagi/siang dan salam sejahtera bapak dan ibu sekalian. Slide pembuka ini menjelaskan judul dan pilar utama kajian proyek strategis PRAMA untuk unit kerja ${divisionName}.`);
 
-  // 2. Content Slides (Slide 2 to N-1)
+  // 5. Content Slides (Slide 2 to N-1)
   slides.forEach((slideData, idx) => {
     const slide = pptx.addSlide();
     slide.background = { color: "FFFFFF" }; // White Background
@@ -833,23 +933,23 @@ export function exportToPPTX(
     });
 
     // Header Left-hand side
-    slide.addText(displayTitle.toUpperCase(), {
+    slide.addText(cleanDisplayTitle.toUpperCase(), {
       x: 0.8,
       y: 0.25,
-      w: 6.0,
-      h: 0.3,
-      fontSize: 9,
+      w: 5.5,
+      h: 0.25,
+      fontSize: 8.5,
       color: "94A3B8",
       fontFace: "Arial"
     });
 
-    // Header Right-hand side
+    // Header Right-hand side (Increased margins so it NEVER wraps and clips)
     slide.addText(`SEKTOR: ${(divisionName || "UMUM").toUpperCase() + " & BUSINESS DEVELOPMENT"}`, {
-      x: 6.8,
+      x: 6.4,
       y: 0.25,
-      w: 5.73,
-      h: 0.3,
-      fontSize: 9,
+      w: 6.1,
+      h: 0.25,
+      fontSize: 8.5,
       color: "00D285",
       bold: true,
       align: "right",
@@ -878,15 +978,16 @@ export function exportToPPTX(
       valign: "top"
     });
 
-    const titleWidth = slideData.imageUrl ? 6.0 : 11.73;
+    const cleanSlideTitle = slideData.title.replace(/_+/g, " ").trim();
+    const titleWidth = 6.0;
 
-    // Slide Body Main Title - Use valign top to prevent overflow/offsets
-    slide.addText(slideData.title, {
+    // Slide Body Main Title - Use valign top with size 15 to prevent any overlap or wrap collision
+    slide.addText(cleanSlideTitle, {
       x: 0.8,
       y: 0.95,
       w: titleWidth,
-      h: 0.9,
-      fontSize: 18,
+      h: 0.7,
+      fontSize: 15,
       color: "0F172A",
       bold: true,
       fontFace: "Arial",
@@ -903,68 +1004,69 @@ export function exportToPPTX(
       }
     }
 
-    const contentWidth = slideData.imageUrl ? 5.8 : 11.73;
+    const contentWidth = 5.8;
 
-    // Paragraph Summary Block - lowered to prevent overlap with title
+    // Paragraph Summary Block - lowered, height 1.1, size 10 to fit in bounds
     slide.addText(cleanPDFMarkdown(introPara), {
       x: 0.8,
-      y: 1.95,
+      y: 1.75,
       w: contentWidth,
-      h: 1.5,
-      fontSize: 11,
+      h: 1.1,
+      fontSize: 10,
       color: "475569",
       fontFace: "Arial",
       valign: "top"
     });
 
-    // Bullet List Options
-    const formattedBullets = bulletPoints.map((bullet) => ({
+    // Bullet List Options - constraint item count to max 4 items to ensure ZERO page overflow at the bottom
+    const bulletList = bulletPoints.slice(0, 4);
+    const formattedBullets = bulletList.map((bullet) => ({
       text: cleanPDFMarkdown(bullet),
-      options: { bullet: true, fontSize: 10, color: "334155", fontFace: "Arial" }
+      options: { bullet: true, fontSize: 9.5, color: "334155", fontFace: "Arial" }
     }));
 
-    // Add bullet box
+    // Add bullet box - starts at y: 2.95, height 3.5 (completely safe from 6.8 footer boundary)
     slide.addText(formattedBullets, {
       x: 0.8,
-      y: 3.55,
+      y: 2.95,
       w: contentWidth,
-      h: 3.1,
+      h: 3.5,
       valign: "top"
     });
 
-    // Right Column logic - Unsplash image container with green border frame
-    if (slideData.imageUrl) {
-      slide.addImage({
-        path: slideData.imageUrl,
-        x: 7.2,
-        y: 1.95,
-        w: 5.3,
-        h: 3.5,
-      });
+    // Right Column logic - Solid picture container utilizing preloaded safe Base64 or Canvas fallback
+    const finalImageBase64 = loadedBase64Images[idx] || generateFallbackPng(cleanSlideTitle);
 
-      // Draw bright green border around picture frame
-      slide.addShape("rect", {
-        x: 7.17,
-        y: 1.92,
-        w: 5.36,
-        h: 3.56,
-        fill: { color: "none" },
-        line: { color: "00D285", width: 2 }
-      });
+    slide.addImage({
+      data: finalImageBase64,
+      x: 7.2,
+      y: 1.75,
+      w: 5.3,
+      h: 3.5,
+    });
 
-      // Figure caption label
-      slide.addText(`Ilustrasi: ${slideData.title} di Pancaran Group`, {
-        x: 7.2,
-        y: 5.55,
-        w: 5.3,
-        h: 0.5,
-        fontSize: 8.5,
-        italic: true,
-        color: "64748B",
-        align: "center",
-        fontFace: "Arial"
-      });
-    }
+    // Draw bright green border around picture frame
+    slide.addShape("rect", {
+      x: 7.17,
+      y: 1.72,
+      w: 5.36,
+      h: 3.56,
+      fill: { color: "none" },
+      line: { color: "00D285", width: 2 }
+    });
+
+    // Figure caption label
+    slide.addText(`Ilustrasi: ${cleanSlideTitle} di Pancaran Group`, {
+      x: 7.2,
+      y: 5.35,
+      w: 5.3,
+      h: 0.5,
+      fontSize: 8.5,
+      italic: true,
+      color: "64748B",
+      align: "center",
+      fontFace: "Arial"
+    });
 
     // Thin grey footer line
     slide.addShape("rect", {
@@ -1006,7 +1108,7 @@ export function exportToPPTX(
     }
   });
 
-  // 3. Last Slide (Slide 17) - Elegant Dark Theme "TERIMA KASIH"
+  // 6. Last Slide (Slide 17) - Elegant Dark Theme "TERIMA KASIH"
   const closingSlide = pptx.addSlide();
   closingSlide.background = { color: "06152B" }; // Deep Navy
 

@@ -57,7 +57,11 @@ import {
   Check,
   FileText,
   Download,
-  Presentation
+  Presentation,
+  SquarePen,
+  Search,
+  Grid,
+  ArrowLeft
 } from "lucide-react";
 import { GoogleGenAI } from "@google/genai";
 
@@ -111,6 +115,8 @@ export default function App() {
   const [selectedFile, setSelectedFile] = useState<SavedFile | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatLoading, setChatLoading] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // --- REAL-TIME MULTIPLAYER COLLABORATION ---
   const [roomId, setRoomId] = useState(() => localStorage.getItem("workspace_collab_room_id") || "global-space");
@@ -153,7 +159,13 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<"chat" | "files">("chat");
 
   // Tab selector inside main dashboard
-  const [dashboardView, setDashboardView] = useState<"divisions" | "saved_docs">("divisions");
+  const [dashboardView, setDashboardView] = useState<"divisions" | "saved_docs" | "approval_requests">("divisions");
+
+  // Sidebar search & collections states
+  const [searchMessagesQuery, setSearchMessagesQuery] = useState("");
+  const [isSearchingMessages, setIsSearchingMessages] = useState(false);
+  const [showKoleksiSidebarModal, setShowKoleksiSidebarModal] = useState(false);
+  const [koleksiSearch, setKoleksiSearch] = useState("");
 
   // Persist connection settings
   useEffect(() => {
@@ -482,34 +494,57 @@ export default function App() {
         break;
     }
 
-    return `System Role: PRAMA Strategic AI Consultant
+    return `System Role: Anda adalah PRAMA (Project Management Analitic), sebuah AI Agent Konsultan Project Management senior sejati. Tugas Anda adalah membantu menganalisis dan memberikan strategi project management komprehensif.
 
-Persona: Anda adalah Senior Project Management Consultant yang ahli dalam Analytic & AI Agent Integration. Tugas utama Anda adalah memberikan analisis mendalam untuk proyek PRAMA dengan fokus pada efisiensi operasional melalui AI serta memberikan strategi manajemen proyek yang lengkap. ${focusText}
+Persona, Fokus & Karakter (SANGAT PENTING):
+1. Anda adalah PRAMA (Project Management Analitic), penasihat bisnis strategis dan konsultan project management senior yang ahli dalam tata kelola komersial, operasional, logistik, dan finansial.
+2. Anda harus ramah, hangat, empati tinggi, asyik diajak berbicara dua arah, dan menyajikan penjelasan lewat gaya bercerita (storytelling) yang mengalir indah. Sapa pengguna sebagai partner setara.
+3. Batasan Topik: Chat ini sebatas mengulas informasi strategis project management di bawah 15 pilar lingkup keahlian PRAMA berikut:
+- New Journal
+- Global/NAT Overview
+- Market Opportunity
+- Financial (Capex, Opex, P&L, Cash Flow, ROI)
+- Supply & Demand
+- Structure
+- Organization (Qualification, Skill, Output/KPI, SOP)
+- Transition Model (Pre-On-Post)
+- Go To Market Strategy
+- Ops Model (Flow Process, Workflow Diagram, SLA)
+- Risk Management
+- Digital Coverage (Tools, Method, Impact, Automation)
+- Competitor
+- TAM, SAM, SOM
+- CAC, LTV
+Jika pengguna bertanya hal di luar 15 pilar ini, tolaklah dengan anggun, humoris, dan ingatkan kembali fokus keahlian PRAMA Anda.
+4. Sesi Tanya Jawab Interaktif: Pada akhir setiap respon, Anda WAJIB memicu kelanjutan obrolan dengan bertanya secara santun apakah pengguna butuh dibuatkan artikel detail untuk salah satu bab/pilar tertentu dahulu (seperti bab TAM SAM SOM draf finansial) atau semuanya sekaligus. Buat sesi tanya jawab mengalir alami layaknya rekan kerja nyata.
+5. Larangan Keras Simbol Asing: Tulis deskripsi Anda dalam bentuk kalimat paragraf yang rapi, bersih, mengalir, dan jelas. Anda SAMA SEKALI TIDAK BOLEH menggunakan simbol bintang (*) atau pagar (#) di seluruh respon Anda. Hindari bold text markdown seperti **bold**, bullet point simbol *, hastag kaku, atau heading pagar # dsb. Gunakan spasi kosong, huruf kapital biasa, angka biasa, atau abjad biasa untuk memilah rincian agar visual layar chat tetap super rapi, estetik, dan elegan.
+6. Rekomendasi Kisaran Angka Kelayakan Finansial:
+Ketika menganalisis TAM, SAM, SOM, sebutkan rekomendasi kisaran angka Rupiah (IDR) ideal yang sangat logis dan realistis untuk skala korporat distribusi dan logistik cargo nasional:
+- TAM (Total Addressable Market potensi pasar logistik nasional): Estimasi IDR 350 Triliun - IDR 700 Triliun (logis dengan porsi PDB logistik nasional).
+- SAM (Serviceable Addressable Market pasar tambang/mineral domestik): Kisaran IDR 40 Triliun - IDR 80 Triliun.
+- SOM (Serviceable Obtainable Market porsi target armada PRAMA): Kisaran IDR 1.2 Triliun - IDR 3.5 Triliun.
+- Metrik CAC (Customer Acquisition Cost): Kisaran IDR 25 Juta - IDR 75 Juta per key account korporat, dengan nilai LTV (Lifetime Value) ideal berkisar IDR 5 Miliar - IDR 15 Miliar per tahun.
 
-Ruang Lingkup Analisis (PRAMA):
-Anda hanya diperbolehkan memberikan respon dan menganalisis strategi di dalam batas lingkup berikut ini saja:
-1. New Journal
-2. Global/NAT Overview
-3. Market Opportunity
-4. Financial (Capex, Opex, P&L, Cash Flow, ROI)
-5. Supply & Demand
-6. Structure
-7. Organization (Qualification, Skill, Output/KPI, SOP)
-8. Transition Model (Pre-On-Post)
-9. Go To Market Strategy
-10. Ops Model (Flow Process, Workflow Diagram, SLA)
-11. Risk Management
-12. Digital Coverage (Tools, Method, Impact, Automation)
-13. Competitor
-14. TAM, SAM, SOM
-15. CAC, LTV
+${focusText}`;
+  };
 
-Gaya Bahasa & Aturan Format Jawaban Terstruktur (SANGAT PENTING):
-1. Setiap penjelasan wajib diawali dengan paragraf pengantar yang memiliki kalimat awal yang rapi dan jelas.
-2. Jawaban harus disusun secara terstruktur dengan urutan hierarki yang mendalam. Jika membuat poin utama, WAJIB menggunakan penomoran angka biasa (contoh: 1., 2., 3.).
-3. Di bawah setiap poin utama tersebut, jika ingin menjelaskan kerucutan pembahasannya/rincian detailnya, gunakan urutan huruf abjad biasa (contoh: a., b., c.) dengan baris baru terpisah agar sistem chatting dapat memformat rincian kerucut secara rapi dan menjorok ke dalam dengan indah.
-4. Anda SAMA SEKALI TIDAK BOLEH menggunakan simbol "*" (tanda bintang) atau "#" (tanda pagar) di seluruh teks respon Anda. Jangan menulis bullet points menggunakan tanda bintang, jangan gunakan bold text bermarkdown seperti **teks**, jangan menggunakan hashtag atau heading bertanda pagar seperti #, ##, ### dsb. Gunakan spasi baris biasa, angka biasa, atau huruf biasa untuk pemisahan bagian agar tampilan sangat bersih dan rapi.
-5. Batasan Topik: Jangan menjawab pertanyaan di luar batas lingkup di atas. Jika pengguna menanyakan hal lain diluar manajemen proyek PRAMA, Anda harus menolak dengan santun dan mengingatkan bahwa Anda hanya melayani konsultasi manajemen proyek di bawah naungan PRAMA.`;
+  const handleNewChat = async () => {
+    setSearchQuery("");
+    setIsSearching(false);
+    
+    const activeUser = user || guestUser;
+    if (activeUser) {
+      try {
+        const chatsPath = `users/${activeUser.uid}/chats`;
+        const activeChatDoc = doc(db, chatsPath, "active_chat");
+        await setDoc(activeChatDoc, { messages: [] });
+      } catch (err) {
+        console.error("Gagal memulai percakapan baru:", err);
+      }
+    } else {
+      setChatMessages([]);
+      localStorage.setItem("gemini_mirror_chats", JSON.stringify([]));
+    }
   };
 
   // 1. Send Message via API server-side route
@@ -2021,6 +2056,11 @@ ${lastMsgText}`;
           onClearDivision={handleLogoutAll} 
           collabUsername={collabUsername}
           onLogout={handleLogoutAll}
+          pendingRequestsCount={pendingRequests.length}
+          filesCount={files.length}
+          onNavigateToView={(view) => {
+            setDashboardView(view);
+          }}
         />
 
         {/* Division selector Body */}
@@ -2031,113 +2071,23 @@ ${lastMsgText}`;
               PUSAT HUB DIREKTORAT ENTERPRISE
             </span>
             <h2 className="mt-2.5 font-display font-black text-2xl tracking-tight text-slate-900 md:text-3.5xl">
-              {dashboardView === "divisions" ? "Pilih Hub Divisi Khusus" : "Simpan Draf & Dokumen Artikel PM"}
+              {dashboardView === "divisions" 
+                ? "Pilih Hub Divisi Khusus" 
+                : dashboardView === "saved_docs"
+                ? "Simpan Draf & Dokumen Artikel PM"
+                : "Administrasi Persetujuan Registrasi"}
             </h2>
             <p className="mt-1.5 text-xs text-slate-500 max-w-xl mx-auto font-bold leading-relaxed">
               {dashboardView === "divisions"
                 ? "Klik salah satu pilar divisi operasional korporat logistik Pancaran Group di bawah ini untuk memulai sesi dialog analisis, audit, atau penyusunan dokumen berbasis asisten cerdas PRAMA."
-                : "Kelola, edit, cari, cetak, dan ekspor draf artikel project management atau dokumen audit yang tersimpan di cloud terenkripsi portal PRAMA."}
+                : dashboardView === "saved_docs"
+                ? "Kelola, edit, cari, cetak, dan ekspor draf artikel project management atau dokumen audit yang tersimpan di cloud terenkripsi portal PRAMA."
+                : "Verifikasi, terima, atau tolak permohonan pendaftaran dari kandidat staf baru sebelum mereka diberikan hak akses ke asisten cerdas internal PRAMA."}
             </p>
           </div>
 
-          {/* Elegant Dashboard Tab Switcher */}
-          <div className="flex flex-wrap items-center justify-center gap-3 mb-10">
-            <button
-              onClick={() => setDashboardView("divisions")}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold transition-all duration-200 border cursor-pointer hover:scale-101 shrink-0 ${
-                dashboardView === "divisions"
-                  ? "bg-indigo-600 border-indigo-650 border-indigo-600 text-white shadow-md shadow-indigo-100"
-                  : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300"
-              }`}
-            >
-              <Building2 className="h-4 w-4 text-sky-500" />
-              <span>Pilar Divisi Analisis AI</span>
-            </button>
-
-            <button
-              onClick={() => setDashboardView("saved_docs")}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold transition-all duration-200 border cursor-pointer hover:scale-101 shrink-0 ${
-                dashboardView === "saved_docs"
-                  ? "bg-indigo-600 border-indigo-650 border-indigo-600 text-white shadow-md shadow-indigo-100"
-                  : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300"
-              }`}
-            >
-              <HardDrive className="h-4 w-4 text-emerald-505 text-emerald-500" />
-              <span>Menu Simpan Dokumen / Artikel PM</span>
-              <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded-md font-extrabold shadow-inner ${
-                dashboardView === "saved_docs" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-505 text-slate-500"
-              }`}>
-                {files.length}
-              </span>
-            </button>
-          </div>
-
-          {/* Admin Panel Console */}
-          {user && (
-            user.email?.toLowerCase().trim() === "muhamadrizkialfian@gmail.com" || 
-            user.email?.toLowerCase().trim() === "muhamadrizkialfian97@gmail.com" ||
-            user.email?.toLowerCase().trim() === "muhamadrizkialfiann@gmail.com"
-          ) && (
-            <div className="max-w-4xl mx-auto mb-10 text-left bg-white rounded-3xl border border-indigo-200 shadow-xl overflow-hidden w-full">
-              <div className="bg-gradient-to-r from-indigo-900 to-slate-900 px-6 py-4 flex items-center justify-between text-white">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-800 text-sky-300 font-bold border border-indigo-700/50">
-                    👑
-                  </div>
-                  <div>
-                    <h3 className="font-display font-black text-xs tracking-wider uppercase leading-none">
-                      PANEL ADMIN PRAMA
-                    </h3>
-                    <p className="text-[9px] text-indigo-300 font-mono tracking-widest font-bold mt-1">
-                      PERSETUJUAN AKTIVASI AKUN KARYAWAN
-                    </p>
-                  </div>
-                </div>
-                <span className="font-mono text-[9px] font-black bg-indigo-950/40 text-emerald-400 border border-emerald-400/20 px-2.5 py-1 rounded-full uppercase tracking-widest animate-pulse">
-                  {pendingRequests.length} Menunggu Persetujuan
-                </span>
-              </div>
-
-              <div className="p-6">
-                {pendingRequests.length === 0 ? (
-                  <div className="text-center py-6">
-                    <p className="text-xs text-slate-400 font-bold uppercase tracking-wider font-mono">
-                      ✨ Tidak ada pendaftaran pending saat ini. Semua karyawan aktif.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-slate-100 max-h-60 overflow-y-auto pr-2">
-                    {pendingRequests.map((req) => (
-                      <div key={req.id} className="py-4 flex items-center justify-between first:pt-0 last:pb-0 gap-4">
-                        <div className="min-w-0">
-                          <p className="text-xs font-black text-slate-800 tracking-wide">
-                            {req.fullName || "Staf PRAMA"}
-                          </p>
-                          <p className="text-[10px] text-slate-500 font-bold font-mono mt-0.5">
-                            Email: {req.email || "No Email"}
-                          </p>
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleApproveRequest(req.id)}
-                            className="bg-emerald-600 hover:bg-emerald-500 active:scale-97 text-white text-[11px] font-extrabold px-3.5 py-1.5 rounded-xl shadow-md shadow-emerald-600/10 transition cursor-pointer"
-                          >
-                            Terima Akun
-                          </button>
-                          <button
-                            onClick={() => handleRejectRequest(req.id)}
-                            className="bg-red-50 hover:bg-red-100 text-red-700 text-[11px] font-extrabold px-3 py-1.5 rounded-xl border border-red-100 transition cursor-pointer"
-                          >
-                            Tolak
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+          {/* Menu switcher moved directly inside division cards */}
+          <div className="mb-6"></div>
 
           {dashboardView === "saved_docs" ? (
             <div className="max-w-5xl mx-auto text-left bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden w-full h-[650px] flex flex-col">
@@ -2155,10 +2105,17 @@ ${lastMsgText}`;
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-[9px] font-black bg-slate-800 text-emerald-400 border border-slate-705 border-slate-700 px-2.5 py-1 rounded-full uppercase tracking-widest">
+                <div className="flex items-center gap-3">
+                  <span className="font-mono text-[9px] font-black bg-slate-800 text-emerald-400 border border-slate-700 px-2.5 py-1 rounded-full uppercase tracking-widest">
                     {files.length} Tersimpan
                   </span>
+                  <button
+                    onClick={() => setDashboardView("divisions")}
+                    className="flex items-center gap-1 bg-indigo-950 hover:bg-indigo-900 active:scale-95 text-[11px] text-indigo-300 border border-indigo-850 border-indigo-800 rounded-xl px-3 py-1.5 font-bold cursor-pointer transition"
+                  >
+                    <ChevronLeft className="h-3 w-3 shrink-0 text-indigo-400" />
+                    <span>Kembali ke Divisi</span>
+                  </button>
                 </div>
               </div>
               <div className="flex-1 overflow-hidden relative">
@@ -2172,9 +2129,122 @@ ${lastMsgText}`;
                 />
               </div>
             </div>
+          ) : dashboardView === "approval_requests" ? (
+            <div className="max-w-4xl mx-auto text-left bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden w-full h-[600px] flex flex-col">
+              <div className="bg-slate-900 px-6 py-4 flex items-center justify-between text-white border-b border-slate-800 shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-950 text-indigo-400 font-bold border border-indigo-800 text-sm">
+                    👑
+                  </div>
+                  <div>
+                    <h3 className="font-display font-black text-xs tracking-wider uppercase leading-none text-white">
+                      ADMINISTRASI CEK APPROVAL PENDAFTARAN
+                    </h3>
+                    <p className="text-[9px] text-slate-400 font-mono tracking-widest font-bold mt-1">
+                      PUSAT OTORISASI AKUN KARYAWAN & STAF BARU PRAMA
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setDashboardView("divisions")}
+                    className="flex items-center gap-1 bg-indigo-950 hover:bg-indigo-900 active:scale-95 text-[11px] text-indigo-300 border border-indigo-850 border-indigo-800 rounded-xl px-3 py-1.5 font-bold cursor-pointer transition"
+                  >
+                    <ChevronLeft className="h-3 w-3 shrink-0 text-indigo-400" />
+                    <span>Kembali ke Divisi</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-6 bg-slate-50">
+                {/* Admin Status Guard */}
+                {!(
+                  user && (
+                    user.email?.toLowerCase().trim() === "muhamadrizkialfian@gmail.com" || 
+                    user.email?.toLowerCase().trim() === "muhamadrizkialfian97@gmail.com" ||
+                    user.email?.toLowerCase().trim() === "muhamadrizkialfiann@gmail.com"
+                  )
+                ) ? (
+                  <div className="flex flex-col items-center justify-center text-center h-full max-w-sm mx-auto space-y-4">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-50 border border-red-100 text-red-500 shadow-sm animate-pulse">
+                      <Lock className="h-7 w-7" />
+                    </div>
+                    <h4 className="font-display font-extrabold text-sm text-slate-800">
+                      Akses Terbatas & Dilindungi
+                    </h4>
+                    <p className="text-[11px] text-slate-505 text-slate-500 font-bold leading-relaxed">
+                      Sesi masuk Anda terdaftar sebagai akun non-admin. Halaman verifikasi dan persetujuan ini hanya dapat diakses oleh Administrator holding PT Pancaran Group Indonesia Services.
+                    </p>
+                    <button
+                      onClick={() => setDashboardView("divisions")}
+                      className="mt-2 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white text-[11px] font-black px-4 py-2 rounded-xl transition cursor-pointer"
+                    >
+                      Kembali ke Menu Utama
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    {pendingRequests.length === 0 ? (
+                      <div className="text-center py-16 flex flex-col items-center justify-center">
+                        <div className="h-16 w-16 bg-emerald-50 text-emerald-600 border border-emerald-105 border-emerald-100 rounded-full flex items-center justify-center mb-4 shadow-sm text-2xl">
+                          ✨
+                        </div>
+                        <h4 className="font-display font-extrabold text-slate-800 text-sm">
+                          Semua Permohonan Selesai Diproses
+                        </h4>
+                        <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto leading-relaxed font-semibold">
+                          Tidak ada draf pendaftaran pending saat ini. Semua staf atau karyawan baru PRAMA yang terdaftar telah diaktivasi.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs text-amber-805 text-amber-800 leading-relaxed font-bold">
+                          💡 Sebagai administrator PRAMA Advisor, tindak lanjuti setiap permohonan pendaftaran di bawah ini untuk memberikan akses penulisan, penyimpanan dokumen cloud, dan analitis model asisten.
+                        </div>
+                        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                          <div className="divide-y divide-slate-100">
+                            {pendingRequests.map((req) => (
+                              <div key={req.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition hover:bg-slate-50/50">
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <p className="text-xs font-black text-slate-850 text-slate-800 tracking-wide">
+                                      {req.fullName || "Staf PRAMA"}
+                                    </p>
+                                    <span className="font-mono text-[8px] font-extrabold tracking-wider bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-100 uppercase">
+                                      Kandidat Staf
+                                    </span>
+                                  </div>
+                                  <p className="text-[11px] text-slate-505 text-slate-503 text-slate-500 font-bold font-mono mt-1">
+                                    Email: <span className="text-indigo-600 font-extrabold">{req.email || "No Email"}</span>
+                                  </p>
+                                </div>
+                                <div className="flex gap-2 shrink-0">
+                                  <button
+                                    onClick={() => handleApproveRequest(req.id)}
+                                    className="bg-emerald-650 bg-emerald-600 hover:bg-emerald-500 active:scale-97 text-white text-[10.5px] font-black px-4 py-2 rounded-xl shadow-md transition cursor-pointer"
+                                  >
+                                    Terima Akun
+                                  </button>
+                                  <button
+                                    onClick={() => handleRejectRequest(req.id)}
+                                    className="bg-red-50 hover:bg-red-100 text-red-700 text-[10.5px] font-black px-4 py-2 rounded-xl border border-red-100 transition cursor-pointer"
+                                  >
+                                    Tolak
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
           ) : (
             /* Division Bento-like Selection Grid */
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 text-left max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-left max-w-5xl mx-auto">
               {divisions.map((div) => {
                 const IconComp = div.icon;
                 return (
@@ -2228,33 +2298,160 @@ ${lastMsgText}`;
                       </div>
                     </div>
 
-                    {/* Call to active button */}
+                    {/* Single full-width elegant action button */}
                     <div className="pt-4 mt-auto">
-                      <button
-                        type="button"
-                        disabled={div.locked}
-                        className={`w-full flex items-center justify-center gap-1 rounded-xl py-2 text-xs font-bold transition shadow-2sm ${
-                          div.locked
-                            ? "bg-slate-100 border border-slate-200 text-slate-400 cursor-not-allowed"
-                            : "bg-indigo-50 border border-indigo-100 hover:bg-indigo-600 hover:text-white text-indigo-700 cursor-pointer group-hover:scale-102"
-                        }`}
-                      >
-                        {div.locked ? (
-                          <>
-                            <Lock className="h-3 w-3 text-slate-400" />
-                            <span>Akses Terkunci</span>
-                          </>
-                        ) : (
-                          <>
-                            <span>Masuk Tahap Analisis AI</span>
-                            <ArrowRight className="h-3 w-3 shrink-0" />
-                          </>
-                        )}
-                      </button>
+                      {div.locked ? (
+                        <button
+                          type="button"
+                          disabled
+                          className="w-full flex items-center justify-center gap-1 rounded-xl py-2.5 text-xs font-bold transition shadow-2sm bg-slate-100 border border-slate-200 text-slate-400 cursor-not-allowed"
+                        >
+                          <Lock className="h-3 w-3 text-slate-400" />
+                          <span>Akses Terkunci</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveDivision(div.id);
+                          }}
+                          className="w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-black tracking-wide transition shadow-sm bg-indigo-50 border border-indigo-100 hover:bg-indigo-600 hover:text-white text-indigo-700 cursor-pointer hover:scale-101"
+                        >
+                          <span>Masuk Tahap Analisis AI</span>
+                          <ArrowRight className="h-3.5 w-3.5 shrink-0" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
               })}
+
+              {/* Standalone custom card for Dokumen PM (Menu Simpan Dokumen) */}
+              <div
+                onClick={() => {
+                  setDashboardView("saved_docs");
+                }}
+                className="group relative flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 transition-all duration-300 cursor-pointer hover:border-emerald-400 shadow-sm hover:shadow-lg hover:-translate-y-0.5"
+              >
+                <div className="space-y-4">
+                  {/* Header: Icon and Division Code */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl transition bg-emerald-50 text-emerald-800 border border-emerald-100 shadow-sm font-bold">
+                      <HardDrive className="h-5 w-5 text-emerald-500" />
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-mono text-[9px] font-black tracking-widest bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded border border-emerald-200 uppercase">
+                        DRAF PM
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Title & description */}
+                  <div>
+                    <h4 className="font-display font-extrabold text-sm leading-snug transition text-slate-800 group-hover:text-emerald-700">
+                      Menu Simpan Dokumen / Artikel PM
+                    </h4>
+                    <p className="text-[10px] font-bold text-slate-400 mt-0.5 tracking-wide line-clamp-1 uppercase">
+                      ARSIP LAPORAN, PROPOSAL, & DRAF SISTEM PM
+                    </p>
+                  </div>
+
+                  {/* Quick profile info */}
+                  <div className="pt-2 border-t border-slate-100">
+                    <span className="text-[8px] font-extrabold text-slate-400 uppercase tracking-widest block font-mono">FUNGSI INTEGRASI</span>
+                    <p className="text-[10px] text-slate-500 leading-normal font-bold mt-1 line-clamp-4 italic">
+                      &quot;Kelola, edit, cari, cetak, dan ekspor draf artikel project management atau hasil audit asisten cerdas PRAMA ke PDF terverifikasi, Word, atau PowerPoint.&quot;
+                    </p>
+                  </div>
+                </div>
+
+                {/* Standalone Button matches the Comercial height and font */}
+                <div className="pt-4 mt-auto">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDashboardView("saved_docs");
+                    }}
+                    className="w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-black tracking-wide transition shadow-sm bg-emerald-50 border border-emerald-100 hover:bg-emerald-600 hover:text-white text-emerald-700 cursor-pointer hover:scale-101"
+                  >
+                    <HardDrive className="h-4 w-4 shrink-0 text-emerald-500 group-hover:text-white" />
+                    <span>Akses Dokumen PM</span>
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-extrabold shadow-inner shrink-0 leading-none group-hover:bg-emerald-700 group-hover:text-slate-100 ml-1">
+                      {files.length}
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Standalone custom card for Administrasi Approval Pendaftaran */}
+              <div
+                onClick={() => {
+                  setDashboardView("approval_requests");
+                }}
+                className="group relative flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 transition-all duration-300 cursor-pointer hover:border-indigo-400 shadow-sm hover:shadow-lg hover:-translate-y-0.5"
+              >
+                <div className="space-y-4">
+                  {/* Header: Icon and Division Code */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl transition bg-indigo-50 text-indigo-800 border border-indigo-100 shadow-sm font-bold">
+                      <Users className="h-5 w-5 text-indigo-500" />
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      {pendingRequests.length > 0 ? (
+                        <span className="font-mono text-[9px] font-black tracking-widest bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded border border-emerald-200 uppercase animate-pulse">
+                          {pendingRequests.length} PENDING
+                        </span>
+                      ) : (
+                        <span className="font-mono text-[9px] font-black tracking-widest bg-slate-100 text-slate-500 px-2 py-0.5 rounded border border-slate-200 uppercase">
+                          BERSIH
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Title & description */}
+                  <div>
+                    <h4 className="font-display font-extrabold text-sm leading-snug transition text-slate-800 group-hover:text-indigo-700">
+                      Administrasi Cek Approval Pendaftaran
+                    </h4>
+                    <p className="text-[10px] font-bold text-slate-400 mt-0.5 tracking-wide line-clamp-1 uppercase">
+                      VERIFIKASI & AKTIVASI REGISTER KARYAWAN
+                    </p>
+                  </div>
+
+                  {/* Quick profile info */}
+                  <div className="pt-2 border-t border-slate-100">
+                    <span className="text-[8px] font-extrabold text-slate-400 uppercase tracking-widest block font-mono">FUNGSI OTORITAS</span>
+                    <p className="text-[10px] text-slate-500 leading-normal font-bold mt-1 line-clamp-4 italic">
+                      &quot;Akses kontrol pemantauan registrasi tim, peninjauan permohonan masuk, dan persetujuan otorisasi akun baru bagi seluruh staf PRAMA Pancaran Group.&quot;
+                    </p>
+                  </div>
+                </div>
+
+                {/* Standalone Button matches the other button heights and fonts */}
+                <div className="pt-4 mt-auto">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDashboardView("approval_requests");
+                    }}
+                    className="w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-black tracking-wide transition shadow-sm bg-indigo-50 border border-indigo-100 hover:bg-indigo-600 hover:text-white text-indigo-700 cursor-pointer hover:scale-101"
+                  >
+                    <Users className="h-4 w-4 shrink-0 text-indigo-500 group-hover:text-white" />
+                    <span>Akses Menu Approval</span>
+                    <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded-md font-extrabold shadow-inner shrink-0 leading-none ml-1 ${
+                      pendingRequests.length > 0 
+                        ? "bg-emerald-100 text-emerald-850 animate-pulse" 
+                        : "bg-indigo-100 text-indigo-800"
+                    }`}>
+                      {pendingRequests.length}
+                    </span>
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
@@ -2270,6 +2467,12 @@ ${lastMsgText}`;
   }
 
   // Render 4: Active Chat Workspace - Theme: Polished Bright Light Workspace (featuring Nav side rail + ChatPanel + FilePanel)
+  const filteredMessages = searchQuery
+    ? chatMessages.filter((msg) =>
+        msg.text.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : chatMessages;
+
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-slate-100 font-sans text-slate-800 transition-colors duration-250">
       
@@ -2287,66 +2490,112 @@ ${lastMsgText}`;
       <main className="flex-1 flex overflow-hidden">
         
         {/* Left Side: Division Nav Rail (HUB NAVIGASI PINTAR) */}
-        <aside className="hidden lg:flex flex-col w-52 shrink-0 border-r border-slate-200 bg-white h-full p-4 overflow-y-auto space-y-4">
-          <div className="pb-2 border-b border-slate-100">
-            <span className="font-mono text-[9px] font-black tracking-widest text-slate-405 text-slate-400 block">DASHBOARD</span>
-            <h3 className="font-display font-extrabold text-xs text-slate-800 uppercase tracking-tight mt-0.5">Hub Navigasi Pintar</h3>
-          </div>
+        <aside className="hidden lg:flex flex-col w-56 shrink-0 border-r border-slate-205 border-slate-200 bg-white h-full p-4 overflow-y-auto justify-between select-none">
+          <div className="space-y-4">
+            {/* Header: DASHBOARD & HUB NAVIGASI PINTAR */}
+            <div className="pb-3 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <span className="font-sans text-[9px] font-extrabold tracking-widest text-slate-400 block uppercase">DASHBOARD</span>
+                <h3 className="font-display font-extrabold text-[12px] leading-tight text-slate-800 uppercase tracking-tight mt-0.5">
+                  Hub Navigasi Pintar
+                </h3>
+              </div>
+              <button
+                onClick={() => setActiveDivision(null)}
+                title="Kembali ke Dashboard"
+                className="h-7 w-7 rounded-full border border-slate-200 hover:border-indigo-200 bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-500 hover:text-indigo-650 transition cursor-pointer shadow-3sm"
+              >
+                <ArrowLeft className="h-3.5 w-3.5 stroke-[2.5]" />
+              </button>
+            </div>
 
-          <nav className="space-y-1.5 flex-1">
-            {divisions.filter((d) => !d.locked).map((div) => {
-              const IconComp = div.icon;
-              const isSelected = activeDivision === div.id;
-              return (
-                <button
-                  key={div.id}
-                  disabled={div.locked}
-                  onClick={() => {
-                    if (!div.locked) {
-                      setActiveDivision(div.id);
-                    }
-                  }}
-                  className={`w-full flex items-start gap-2.5 px-3 py-2.5 rounded-xl text-left border transition ${
-                    div.locked
-                      ? "bg-slate-50/50 border-slate-100 text-slate-400 cursor-not-allowed opacity-60"
-                      : isSelected
-                        ? "bg-indigo-600 border-indigo-500 text-white shadow-sm cursor-pointer"
-                        : "bg-white border-slate-100 text-slate-600 hover:bg-slate-50 hover:border-slate-200 cursor-pointer"
-                  }`}
-                >
-                  <div className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
-                    div.locked 
-                      ? "bg-slate-100 text-slate-300"
-                      : isSelected 
-                        ? "bg-white/20 text-white" 
-                        : "bg-slate-100 text-slate-500"
-                  } font-bold`}>
-                    {div.locked ? (
-                      <Lock className="h-3 w-3" />
-                    ) : (
-                      <IconComp className="h-4 w-4" />
+            {/* Selected active division banner */}
+            <div className="bg-[#5B4DFB] text-white p-3.5 rounded-2xl flex items-center gap-3 shadow-md">
+              <div className="h-8 w-8 bg-white/20 rounded-xl flex items-center justify-center text-white shrink-0 shadow-inner">
+                <TrendingUp className="h-4 w-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-black leading-none uppercase tracking-wide">COMC Unit</p>
+                <span className="text-[9px] block text-indigo-150 text-indigo-100 font-medium leading-none mt-1.5">
+                  comercial unit
+                </span>
+              </div>
+            </div>
+
+            {/* Three primary options */}
+            <nav className="space-y-1 block">
+              {/* Option 1: Percakapan baru */}
+              <button
+                onClick={handleNewChat}
+                className="w-full h-10 flex items-center gap-3 px-3 rounded-xl text-left text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition cursor-pointer"
+              >
+                <SquarePen className="h-4 w-4 text-slate-650 text-slate-600 shrink-0" />
+                <span>Percakapan baru</span>
+              </button>
+
+              {/* Option 2: Telusuri percakapan */}
+              <button
+                onClick={() => {
+                  setIsSearching(!isSearching);
+                  if (isSearching) setSearchQuery("");
+                }}
+                className={`w-full h-10 flex items-center gap-3 px-3 rounded-xl text-left text-xs font-bold transition cursor-pointer ${
+                  isSearching
+                    ? "bg-indigo-50/70 text-[#5B4DFB] font-extrabold"
+                    : "text-slate-700 hover:bg-slate-50 hover:text-indigo-600"
+                }`}
+              >
+                <Search className="h-4 w-4 text-slate-600 shrink-0" />
+                <span>Telusuri percakapan</span>
+              </button>
+
+              {/* Collapsible conversation search input inline */}
+              {isSearching && (
+                <div className="px-2 pb-1.5 pt-0.5 transition-all">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Cari pesan..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full px-2.5 py-1.5 text-[11px] font-bold rounded-lg border border-slate-200 bg-slate-50 text-slate-750 focus:bg-white focus:border-[#5B4DFB] outline-none"
+                      autoFocus
+                    />
+                    {searchQuery && (
+                      <button
+                        onClick={() => setSearchQuery("")}
+                        className="absolute right-2 top-2 text-[9px] text-slate-400 hover:text-slate-700 font-extrabold"
+                      >
+                        Batal
+                      </button>
                     )}
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p className={`text-xs font-bold leading-tight ${isSelected ? "text-white" : "text-slate-700"} flex items-center justify-between gap-1`}>
-                      <span>{div.code} Unit</span>
-                      {div.locked && <Lock className="h-2.5 w-2.5 text-slate-350 shrink-0" />}
-                    </p>
-                    <span className={`text-[9px] block leading-none font-medium mt-0.5 ${isSelected ? "text-slate-150 text-indigo-100" : "text-slate-400"}`}>
-                      {div.locked ? "terkunci" : div.id === "comercial" ? "comercial unit" : `${div.id} unit`}
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
-          </nav>
+                </div>
+              )}
 
+              {/* Option 3: Koleksi */}
+              <button
+                onClick={() => {
+                  setShowKoleksiSidebarModal(true);
+                }}
+                className="w-full h-10 flex items-center gap-3 px-3 rounded-xl text-left text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition cursor-pointer"
+              >
+                <Grid className="h-4 w-4 text-slate-600 shrink-0" />
+                <span>Koleksi</span>
+                <span className="ml-auto text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-md font-mono font-bold">
+                  {files.length}
+                </span>
+              </button>
+            </nav>
+          </div>
+
+          {/* Bottom layout: Kembali ke Dashboard */}
           <div className="pt-4 border-t border-slate-100">
             <button
               onClick={() => setActiveDivision(null)}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 py-2.5 border border-slate-200 cursor-pointer"
+              className="w-full h-10 flex items-center justify-center gap-2 rounded-xl bg-slate-50 hover:bg-indigo-50/40 text-xs font-bold text-slate-700 hover:text-indigo-600 border border-slate-200 hover:border-indigo-150 transition cursor-pointer"
             >
-              <LayoutDashboard className="h-3.5 w-3.5 text-slate-500" />
+              <Grid className="h-3.5 w-3.5 text-slate-500 hover:text-indigo-650 shrink-0" />
               <span>Kembali ke Dashboard</span>
             </button>
           </div>
@@ -2357,7 +2606,7 @@ ${lastMsgText}`;
           
           {/* Column 1: AI Chat Canvas - Full Width Focused View */}
           <div className="flex-1 flex flex-col h-full overflow-hidden w-full">
-            <ChatPanel
+             <ChatPanel
               messages={chatMessages}
               loading={chatLoading}
               onSendMessage={handleSendMessage}
@@ -2381,12 +2630,180 @@ ${lastMsgText}`;
               onTyping={handleTyping}
               onBackToDashboard={() => setActiveDivision(null)}
               onLogout={handleLogoutAll}
+              pendingRequestsCount={pendingRequests.length}
+              onNavigateNotification={(view) => {
+                setActiveDivision(null);
+                setDashboardView(view);
+              }}
+              isSearchingMessages={isSearching}
+              onToggleSearchMessages={setIsSearching}
             />
           </div>
 
         </div>
 
       </main>
+
+      {/* KOLEKSI SIDEBAR MODAL */}
+      {showKoleksiSidebarModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs overflow-y-auto animate-fade-in">
+          <div className="flex flex-col bg-white rounded-3xl w-full max-w-4xl max-h-[85vh] shadow-2xl border border-slate-150 overflow-hidden animate-scale-up">
+            {/* Modal Header */}
+            <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-indigo-100 flex items-center justify-center text-[#5B4DFB]">
+                  <Grid className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-extrabold text-slate-800">Koleksi Dokumen Strategis ({activeDivision ? `${activeDivision.toUpperCase()} Unit` : "Semua Unit"})</h3>
+                  <p className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-widest">Akses dan Unduh Hasil Analisis & Laporan</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowKoleksiSidebarModal(false);
+                  setKoleksiSearch("");
+                }}
+                className="h-8 w-8 rounded-full border border-slate-200 hover:border-red-200 bg-white hover:bg-red-50 flex items-center justify-center text-slate-500 hover:text-red-650 transition cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Modal search bar and filters */}
+            <div className="p-4 bg-slate-50/50 border-b border-slate-150 flex flex-col sm:flex-row gap-3 items-center justify-between">
+              <div className="relative w-full sm:w-80">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Cari berdasarkan nama file..."
+                  value={koleksiSearch}
+                  onChange={(e) => setKoleksiSearch(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 text-xs font-bold rounded-xl border border-slate-200 bg-white text-slate-700 focus:border-[#5B4DFB] outline-none transition"
+                />
+              </div>
+              <span className="text-[10px] font-mono text-slate-400 font-bold bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200 select-none">
+                Total Dokumen: {
+                  files.filter(f => !activeDivision || f.division === activeDivision).length
+                }
+              </span>
+            </div>
+
+            {/* Modal Body: files grid */}
+            <div className="flex-1 overflow-y-auto p-6 bg-[#f8fafc]">
+              {(() => {
+                const filteredCol = files
+                  .filter((f) => !activeDivision || f.division === activeDivision)
+                  .filter((f) => !koleksiSearch || f.name.toLowerCase().includes(koleksiSearch.toLowerCase()));
+
+                if (filteredCol.length === 0) {
+                  return (
+                    <div className="flex flex-col items-center justify-center text-center py-12">
+                      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-500 border border-amber-100 shadow-sm">
+                        <FileText className="h-6 w-6" />
+                      </div>
+                      <h4 className="font-extrabold text-sm text-slate-800">Tidak ada dokumen</h4>
+                      <p className="mt-1 text-xs text-slate-500 max-w-sm">
+                        Belum ada dokumen yang disimpan untuk unit ini atau pencarian Anda tidak menemukan hasil.
+                      </p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {filteredCol.map((f) => (
+                      <div key={f.id} className="bg-white rounded-2xl border border-slate-150 p-4 shadow-3sm hover:border-[#5B4DFB]/30 hover:shadow-2sm transition flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-start justify-between gap-2.5 mb-2">
+                            <span className="text-[9px] font-mono font-black text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-md uppercase tracking-wider">
+                              {f.division || "PORTAL"} UNIT
+                            </span>
+                            <span className="text-[10px] font-mono text-slate-400 font-bold">
+                              {(f.size / 1024).toFixed(1)} KB
+                            </span>
+                          </div>
+                          <h4 className="font-extrabold text-xs text-slate-800 line-clamp-2 leading-snug mb-1" title={f.name}>
+                            {f.name}
+                          </h4>
+                          <p className="text-[10px] text-slate-400 mb-4 font-mono">
+                            Diperbarui: {new Date(f.updatedAt).toLocaleDateString("id-ID", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit"
+                            })}
+                          </p>
+                        </div>
+
+                        {/* Actions row */}
+                        <div className="flex items-center gap-1.5 flex-wrap pt-3 border-t border-slate-100">
+                          <button
+                            onClick={() => {
+                              setArticlePreview({
+                                title: f.name.replace(".md", "").toUpperCase(),
+                                content: f.content,
+                                fileName: f.name
+                              });
+                            }}
+                            className="flex-1 min-w-[70px] flex items-center justify-center gap-1 px-2.5 py-1.5 bg-[#5B4DFB] hover:bg-[#4a3ce3] text-white rounded-xl text-[10px] font-bold shadow-3sm hover:shadow-2sm transition cursor-pointer"
+                          >
+                            <FileText className="h-3 w-3" />
+                            <span>Lihat</span>
+                          </button>
+                          
+                          <button
+                            onClick={() => exportToWord(f.name, f.content, f.division || "PRAMA")}
+                            className="flex items-center justify-center h-8 w-8 bg-slate-50 hover:bg-sky-50 text-slate-600 hover:text-sky-700 border border-slate-200 hover:border-sky-200 rounded-xl transition cursor-pointer"
+                            title="Unduh Microsoft Word"
+                          >
+                            <Download className="h-3.5 w-3.5" />
+                          </button>
+
+                          <button
+                            onClick={() => downloadPDFDirect(f.name, f.content, f.division || "PRAMA")}
+                            className="flex items-center justify-center h-8 w-8 bg-slate-50 hover:bg-emerald-50 text-slate-600 hover:text-emerald-700 border border-slate-200 hover:border-emerald-200 rounded-xl transition cursor-pointer"
+                            title="Unduh PDF"
+                          >
+                            <Presentation className="h-3.5 w-3.5 text-slate-600" />
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              const isConfirmed = window.confirm(`Apakah Anda yakin ingin menghapus dokumen "${f.name}"?`);
+                              if (isConfirmed) {
+                                handleDeleteFile(f.id);
+                              }
+                            }}
+                            className="h-8 w-8 bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-[#e11d48] border border-slate-200 hover:border-red-200 rounded-xl flex items-center justify-center transition cursor-pointer"
+                            title="Hapus Dokumen"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="bg-slate-50 px-6 py-3 border-t border-slate-150 flex justify-end">
+              <button
+                onClick={() => {
+                  setShowKoleksiSidebarModal(false);
+                  setKoleksiSearch("");
+                }}
+                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-xl transition cursor-pointer"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 1. ARTICLE / DOCUMENT PREVIEW MODAL */}
       {articlePreview && (
@@ -2530,8 +2947,21 @@ ${lastMsgText}`;
 
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => exportToPPTX(pptPreview.fileName, pptPreview.slides, activeDivision || "PORTAL")}
-                  className="flex items-center gap-1.5 px-5 py-2.5 text-xs font-black bg-[#0082FB] hover:bg-[#0072DF] text-white border-none rounded-full transition-all cursor-pointer shadow-md shadow-blue-100"
+                  onClick={async (e) => {
+                    const btn = e.currentTarget;
+                    const originalText = btn.innerHTML;
+                    btn.disabled = true;
+                    btn.innerHTML = `<span class="flex items-center gap-1.5"><svg class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> <span>Menyiapkan PPTX...</span></span>`;
+                    try {
+                      await exportToPPTX(pptPreview.fileName, pptPreview.slides, activeDivision || "PORTAL");
+                    } catch (error) {
+                      console.error(error);
+                    } finally {
+                      btn.disabled = false;
+                      btn.innerHTML = originalText;
+                    }
+                  }}
+                  className="flex items-center gap-1.5 px-5 py-2.5 text-xs font-black bg-[#0082FB] hover:bg-[#0072DF] text-white border-none rounded-full transition-all cursor-pointer shadow-md shadow-blue-100 disabled:opacity-50"
                 >
                   <Download className="h-3.5 w-3.5 stroke-[2.5]" />
                   <span>Unduh PPTX (.pptx)</span>

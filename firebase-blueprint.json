@@ -41,6 +41,24 @@
         "updatedAt": { "type": "integer", "description": "Timestamp of the registrar update" }
       },
       "required": ["id", "fullName", "email", "status", "updatedAt"]
+    },
+    "MockRequest": {
+      "title": "MockRequest",
+      "description": "Represents a mock test request for evaluating platform services",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier of the request" }
+      },
+      "required": ["id"]
+    },
+    "Folder": {
+      "title": "Folder",
+      "description": "Represents a folder for categorizing user files or documents",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier of the folder" }
+      },
+      "required": ["id"]
     }
   },
   "firestore": {
@@ -55,6 +73,22 @@
     "registration_requests/{requestId}": {
       "schema": "RegistrationRequest",
       "description": "Registration requests requiring admin approval"
+    },
+    "mock_requests/{requestId}": {
+      "schema": "MockRequest",
+      "description": "Testing collection for mock requests"
+    },
+    "mock_request/{requestId}": {
+      "schema": "MockRequest",
+      "description": "Testing collection for singular mock request"
+    },
+    "users/{userId}/folders/{folderId}": {
+      "schema": "Folder",
+      "description": "User-specific folders"
+    },
+    "folders/{folderId}": {
+      "schema": "Folder",
+      "description": "Root-level folders"
     }
   }
 }

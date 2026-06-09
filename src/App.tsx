@@ -531,19 +531,25 @@ ${focusText}`;
   const handleNewChat = async () => {
     setSearchQuery("");
     setIsSearching(false);
+    setChatMessages([]);
+    localStorage.setItem("gemini_mirror_chats", JSON.stringify([]));
     
     const activeUser = user || guestUser;
     if (activeUser) {
+      const chatsPath = `users/${activeUser.uid}/chats`;
       try {
-        const chatsPath = `users/${activeUser.uid}/chats`;
         const activeChatDoc = doc(db, chatsPath, "active_chat");
-        await setDoc(activeChatDoc, { messages: [] });
+        await setDoc(activeChatDoc, {
+          id: "active_chat",
+          userId: activeUser.uid,
+          title: "Sesi Aktif Gemini Workspace",
+          messages: [],
+          updatedAt: serverTimestamp(),
+        });
       } catch (err) {
         console.error("Gagal memulai percakapan baru:", err);
+        handleFirestoreError(err, OperationType.WRITE, `${chatsPath}/active_chat`);
       }
-    } else {
-      setChatMessages([]);
-      localStorage.setItem("gemini_mirror_chats", JSON.stringify([]));
     }
   };
 

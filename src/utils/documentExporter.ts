@@ -871,22 +871,22 @@ export async function exportToPPTX(
   // Top header in Cover
   openingSlide.addText(`✦ PRAMA COGNITIVE PORTAL • ${cleanDisplayTitle.toUpperCase()}`, {
     x: 0.8,
-    y: 0.8,
+    y: 0.7,
     w: 11.73,
     h: 0.4,
-    fontSize: 9.5,
+    fontSize: 11,
     bold: true,
     color: "00D285",
     fontFace: "Arial"
   });
 
   // Large centered/left main cover title
-  openingSlide.addText(`KAJIAN STRATEGIS KOMPREHENSIF: \n${cleanDisplayTitle.toUpperCase()}`, {
+  openingSlide.addText(`KAJIAN STRATEGIS KOMPREHENSIF:\n${cleanDisplayTitle.toUpperCase()}`, {
     x: 0.8,
-    y: 1.8,
+    y: 1.4,
     w: 11.73,
     h: 2.2,
-    fontSize: 20,
+    fontSize: 30, // Big and readable
     bold: true,
     color: "FFFFFF",
     fontFace: "Arial",
@@ -896,10 +896,10 @@ export async function exportToPPTX(
   // Subtitle
   openingSlide.addText(`Kajian Komprehensif Skema Strategis & Operasional ${cleanDisplayTitle} PT Pancaran Group Berdasarkan Rekomendasi PRAMA AI Advisor`, {
     x: 0.8,
-    y: 4.3,
+    y: 4.0,
     w: 11.73,
     h: 0.8,
-    fontSize: 10,
+    fontSize: 13, // Perfectly readable subtitle size
     color: "94A3B8",
     fontFace: "Arial"
   });
@@ -907,10 +907,10 @@ export async function exportToPPTX(
   // Bottom left metadata stamp
   openingSlide.addText(`PROYEK: ${cleanDisplayTitle.toUpperCase()}\nUNIT DIREKTORAT: ${(divisionName || "UMUM").toUpperCase() + " & BUSINESS DEVELOPMENT"}\nKLASIFIKASI: TERBATAS / INTERNAL PT PANCARAN GROUP`, {
     x: 0.8,
-    y: 5.6,
+    y: 5.4,
     w: 11.73,
-    h: 1.0,
-    fontSize: 8,
+    h: 1.1,
+    fontSize: 10.5,
     bold: true,
     color: "00D285",
     fontFace: "Arial"
@@ -938,7 +938,7 @@ export async function exportToPPTX(
       y: 0.25,
       w: 5.5,
       h: 0.25,
-      fontSize: 8.5,
+      fontSize: 10,
       color: "94A3B8",
       fontFace: "Arial"
     });
@@ -949,7 +949,7 @@ export async function exportToPPTX(
       y: 0.25,
       w: 6.1,
       h: 0.25,
-      fontSize: 8.5,
+      fontSize: 10,
       color: "00D285",
       bold: true,
       align: "right",
@@ -971,7 +971,7 @@ export async function exportToPPTX(
       y: 0.68,
       w: 11.73,
       h: 0.25,
-      fontSize: 9.5,
+      fontSize: 11,
       color: "00D285",
       bold: true,
       fontFace: "Arial",
@@ -979,19 +979,18 @@ export async function exportToPPTX(
     });
 
     const cleanSlideTitle = slideData.title.replace(/_+/g, " ").trim();
-    const titleWidth = 6.0;
 
-    // Slide Body Main Title - Use valign top with size 15 to prevent any overlap or wrap collision
+    // Slide Body Main Title - Use valign top with size 24 for excellent visibility
     slide.addText(cleanSlideTitle, {
       x: 0.8,
       y: 0.95,
-      w: titleWidth,
+      w: 11.73,
       h: 0.7,
-      fontSize: 15,
+      fontSize: 24, // Great widescreen size
       color: "0F172A",
       bold: true,
       fontFace: "Arial",
-      valign: "top"
+      valign: "middle"
     });
 
     // Left Column logic - extract first bullet as intro paragraph
@@ -1006,13 +1005,13 @@ export async function exportToPPTX(
 
     const contentWidth = 5.8;
 
-    // Paragraph Summary Block - lowered, height 1.1, size 10 to fit in bounds
+    // Paragraph Summary Block - lowered, height 1.2, size 12.5 for readable prose
     slide.addText(cleanPDFMarkdown(introPara), {
       x: 0.8,
-      y: 1.75,
+      y: 1.85,
       w: contentWidth,
-      h: 1.1,
-      fontSize: 10,
+      h: 1.2,
+      fontSize: 12.5,
       color: "475569",
       fontFace: "Arial",
       valign: "top"
@@ -1022,15 +1021,15 @@ export async function exportToPPTX(
     const bulletList = bulletPoints.slice(0, 4);
     const formattedBullets = bulletList.map((bullet) => ({
       text: cleanPDFMarkdown(bullet),
-      options: { bullet: true, fontSize: 9.5, color: "334155", fontFace: "Arial" }
+      options: { bullet: true, fontSize: 11.5, color: "334155", fontFace: "Arial" }
     }));
 
-    // Add bullet box - starts at y: 2.95, height 3.5 (completely safe from 6.8 footer boundary)
+    // Add bullet box - starts at y: 3.15, height 3.4 (completely safe from 6.7 footer boundary)
     slide.addText(formattedBullets, {
       x: 0.8,
-      y: 2.95,
+      y: 3.15,
       w: contentWidth,
-      h: 3.5,
+      h: 3.4,
       valign: "top"
     });
 
@@ -1040,17 +1039,17 @@ export async function exportToPPTX(
     slide.addImage({
       data: finalImageBase64,
       x: 7.2,
-      y: 1.75,
+      y: 1.85,
       w: 5.3,
       h: 3.5,
     });
 
     // Draw bright green border around picture frame
     slide.addShape("rect", {
-      x: 7.17,
-      y: 1.72,
-      w: 5.36,
-      h: 3.56,
+      x: 7.15,
+      y: 1.80,
+      w: 5.4,
+      h: 3.6,
       fill: { color: "none" },
       line: { color: "00D285", width: 2 }
     });
@@ -1058,10 +1057,10 @@ export async function exportToPPTX(
     // Figure caption label
     slide.addText(`Ilustrasi: ${cleanSlideTitle} di Pancaran Group`, {
       x: 7.2,
-      y: 5.35,
+      y: 5.5,
       w: 5.3,
       h: 0.5,
-      fontSize: 8.5,
+      fontSize: 11,
       italic: true,
       color: "64748B",
       align: "center",
@@ -1071,7 +1070,7 @@ export async function exportToPPTX(
     // Thin grey footer line
     slide.addShape("rect", {
       x: 0.8,
-      y: 6.8,
+      y: 6.7,
       w: 11.73,
       h: 0.015,
       fill: { color: "E2E8F0" }
@@ -1080,10 +1079,10 @@ export async function exportToPPTX(
     // Footer LHS
     slide.addText("PANCARAN GROUP • CONFIDENTIAL DOCUMENTATION", {
       x: 0.8,
-      y: 6.9,
+      y: 6.8,
       w: 6.0,
       h: 0.3,
-      fontSize: 8,
+      fontSize: 10,
       color: "94A3B8",
       bold: true,
       fontFace: "Arial"
@@ -1092,10 +1091,10 @@ export async function exportToPPTX(
     // Footer RHS
     slide.addText(`HALAMAN ${idx + 2} DARI ${totalSlidesCount}`, {
       x: 6.8,
-      y: 6.9,
+      y: 6.8,
       w: 5.73,
       h: 0.3,
-      fontSize: 8,
+      fontSize: 10,
       color: "0F172A",
       bold: true,
       align: "right",
@@ -1127,8 +1126,8 @@ export async function exportToPPTX(
     x: 1.0,
     y: 2.2,
     w: 11.33,
-    h: 1.0,
-    fontSize: 36,
+    h: 1.2,
+    fontSize: 48, // Bold and prominent
     bold: true,
     color: "FFFFFF",
     align: "center",
@@ -1138,10 +1137,10 @@ export async function exportToPPTX(
   // Green Subtitle
   closingSlide.addText("Sistem Dokumentasi Strategis & Operasional Terintegrasi", {
     x: 1.0,
-    y: 3.4,
+    y: 3.6,
     w: 11.33,
-    h: 0.5,
-    fontSize: 13,
+    h: 0.6,
+    fontSize: 16,
     bold: true,
     color: "00D285",
     align: "center",
@@ -1151,10 +1150,10 @@ export async function exportToPPTX(
   // Bottom detailed credit labels
   closingSlide.addText("✦ Diformulasikan secara otomatis oleh PRAMA Strategic AI Advisor\nPT PANCARAN GROUP INDONESIA • RAHASIA INTERNAL SENSITIF", {
     x: 1.0,
-    y: 5.3,
+    y: 5.2,
     w: 11.33,
-    h: 1.0,
-    fontSize: 8.5,
+    h: 1.2,
+    fontSize: 11,
     color: "94A3B8",
     align: "center",
     fontFace: "Arial"

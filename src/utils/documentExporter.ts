@@ -77,9 +77,74 @@ function formatMarkdownToHtml(text: string): string {
   let html = "";
   let inList = false;
   let inSubList = false;
+  let inTable = false;
+  let tableRows: string[][] = [];
 
-  lines.forEach((line) => {
+  const flushTable = () => {
+    if (tableRows.length === 0) return "";
+    let tableHtml = `<table style="width: 100%; border-collapse: collapse; margin-top: 14pt; margin-bottom: 14pt; font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; border: 1px solid #cbd5e1;">`;
+    
+    // Check if there is a header divider row
+    let startIndex = 0;
+    let hasHeader = false;
+    if (tableRows.length > 1 && tableRows[1].some(cell => /^:?-+:?$/.test(cell.trim()))) {
+      hasHeader = true;
+    }
+
+    if (hasHeader) {
+      // Header Row
+      const headers = tableRows[0];
+      tableHtml += `<thead><tr style="background-color: #0f172a; color: #ffffff;">`;
+      headers.forEach(cell => {
+        tableHtml += `<th style="border: 1px solid #cbd5e1; padding: 8pt; text-align: left; font-weight: bold; font-family: 'Segoe UI', Arial, sans-serif;">${parseInlineMarkdown(cell.trim())}</th>`;
+      });
+      tableHtml += `</tr></thead>`;
+      startIndex = 2; // skip header and divider rows
+    }
+
+    tableHtml += `<tbody>`;
+    for (let i = startIndex; i < tableRows.length; i++) {
+      if (i === 1 && !hasHeader) {
+        if (tableRows[i].some(cell => /^:?-+:?$/.test(cell.trim()))) continue;
+      }
+      const row = tableRows[i];
+      const bgColor = i % 2 === 0 ? "#f8fafc" : "#ffffff";
+      tableHtml += `<tr style="background-color: ${bgColor};">`;
+      row.forEach(cell => {
+        tableHtml += `<td style="border: 1px solid #cbd5e1; padding: 8pt; text-align: left; color: #334155; font-family: 'Segoe UI', Arial, sans-serif;">${parseInlineMarkdown(cell.trim())}</td>`;
+      });
+      tableHtml += `</tr>`;
+    }
+    tableHtml += `</tbody></table>`;
+    tableRows = [];
+    inTable = false;
+    return tableHtml;
+  };
+
+  for (let idx = 0; idx < lines.length; idx++) {
+    const line = lines[idx];
     const trimmed = line.trim();
+
+    // Check for Table Row
+    if (trimmed.startsWith("|") && trimmed.endsWith("|")) {
+      if (inSubList) {
+        html += "</ul>";
+        inSubList = false;
+      }
+      if (inList) {
+        html += "</ol>";
+        inList = false;
+      }
+      inTable = true;
+      const cells = trimmed.split("|").slice(1, -1);
+      tableRows.push(cells);
+      continue;
+    } else {
+      if (inTable) {
+        html += flushTable();
+      }
+    }
+
     if (!trimmed) {
       if (inSubList) {
         html += "</ul>";
@@ -89,16 +154,22 @@ function formatMarkdownToHtml(text: string): string {
         html += "</ol>";
         inList = false;
       }
-      return;
+      continue;
     }
 
     // 1. Headings
     if (trimmed.startsWith("### ")) {
-      html += `<h3 style="font-size: 11pt; color: #0f172a; margin-top: 14pt; margin-bottom: 6pt; font-weight: bold;">${parseInlineMarkdown(trimmed.slice(4))}</h3>`;
+      if (inSubList) { html += "</ul>"; inSubList = false; }
+      if (inList) { html += "</ol>"; inList = false; }
+      html += `<h3 style="font-size: 11pt; color: #0f172a; margin-top: 14pt; margin-bottom: 6pt; font-weight: bold; font-family: 'Segoe UI', Arial, sans-serif;">${parseInlineMarkdown(trimmed.slice(4))}</h3>`;
     } else if (trimmed.startsWith("## ")) {
-      html += `<h2 style="font-size: 14pt; color: #0369a1; margin-top: 18pt; margin-bottom: 8pt; font-weight: bold; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">${parseInlineMarkdown(trimmed.slice(3))}</h2>`;
+      if (inSubList) { html += "</ul>"; inSubList = false; }
+      if (inList) { html += "</ol>"; inList = false; }
+      html += `<h2 style="font-size: 14pt; color: #0369a1; margin-top: 18pt; margin-bottom: 8pt; font-weight: bold; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; font-family: 'Segoe UI', Arial, sans-serif;">${parseInlineMarkdown(trimmed.slice(3))}</h2>`;
     } else if (trimmed.startsWith("# ")) {
-      html += `<h1 style="font-size: 20pt; color: #1e3a8a; margin-top: 0; margin-bottom: 14pt; font-weight: bold; border-bottom: 2px solid #3b82f6; padding-bottom: 6pt;">${parseInlineMarkdown(trimmed.slice(2))}</h1>`;
+      if (inSubList) { html += "</ul>"; inSubList = false; }
+      if (inList) { html += "</ol>"; inList = false; }
+      html += `<h1 style="font-size: 20pt; color: #1e3a8a; margin-top: 0; margin-bottom: 14pt; font-weight: bold; border-bottom: 2px solid #3b82f6; padding-bottom: 6pt; font-family: 'Segoe UI', Arial, sans-serif;">${parseInlineMarkdown(trimmed.slice(2))}</h1>`;
     }
     // 2. Numbered main list points (e.g. 1., 2.)
     else if (/^\d+\.\s+(.*)/.test(trimmed)) {
@@ -111,7 +182,7 @@ function formatMarkdownToHtml(text: string): string {
         inList = true;
       }
       const val = trimmed.replace(/^\d+\.\s+/, "");
-      html += `<li style="font-size: 10.5pt; margin-bottom: 6pt; color: #1e293b; text-align: justify;"><strong>${parseInlineMarkdown(val)}</strong></li>`;
+      html += `<li style="font-size: 10.5pt; margin-bottom: 6pt; color: #1e293b; text-align: justify; font-family: 'Segoe UI', Arial, sans-serif;"><strong>${parseInlineMarkdown(val)}</strong></li>`;
     }
     // 3. Sub list points (e.g. a., b., c.)
     else if (/^[a-zA-Z]\.\s+(.*)/.test(trimmed)) {
@@ -120,7 +191,7 @@ function formatMarkdownToHtml(text: string): string {
         inSubList = true;
       }
       const val = trimmed.replace(/^[a-zA-Z]\.\s+/, "");
-      html += `<li style="font-size: 10.5pt; margin-bottom: 4pt; color: #475569; text-align: justify;">${parseInlineMarkdown(val)}</li>`;
+      html += `<li style="font-size: 10.5pt; margin-bottom: 4pt; color: #475569; text-align: justify; font-family: 'Segoe UI', Arial, sans-serif;">${parseInlineMarkdown(val)}</li>`;
     }
     // 4. Bullet points
     else if (trimmed.startsWith("- ") || trimmed.startsWith("* ") || trimmed.startsWith("• ")) {
@@ -129,7 +200,7 @@ function formatMarkdownToHtml(text: string): string {
         inSubList = true;
       }
       const val = trimmed.replace(/^[-*•]\s+/, "");
-      html += `<li style="font-size: 10.5pt; margin-bottom: 4pt; color: #334155; text-align: justify;">${parseInlineMarkdown(val)}</li>`;
+      html += `<li style="font-size: 10.5pt; margin-bottom: 4pt; color: #334155; text-align: justify; font-family: 'Segoe UI', Arial, sans-serif;">${parseInlineMarkdown(val)}</li>`;
     }
     // 5. Normal paragraphs
     else {
@@ -141,11 +212,13 @@ function formatMarkdownToHtml(text: string): string {
         html += "</ol>";
         inList = false;
       }
-      html += `<p style="font-size: 10.5pt; margin-bottom: 8pt; line-height: 1.6; text-align: justify; color: #334155;">${parseInlineMarkdown(trimmed)}</p>`;
+      html += `<p style="font-size: 10.5pt; margin-bottom: 8pt; line-height: 1.6; text-align: justify; color: #334155; font-family: 'Segoe UI', Arial, sans-serif;">${parseInlineMarkdown(trimmed)}</p>`;
     }
-  });
+  }
 
-  // Close tags if open
+  if (inTable) {
+    html += flushTable();
+  }
   if (inSubList) html += "</ul>";
   if (inList) html += "</ol>";
 
@@ -160,6 +233,8 @@ export function exportToWord(title: string, text: string, divisionName: string) 
     month: "long",
     day: "numeric",
   });
+
+  const displayTitle = title.replace("KAJIAN STRATEGIS KOMPREHENSIF: ", "").trim();
 
   const htmlContent = `
     <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
@@ -178,7 +253,7 @@ export function exportToWord(title: string, text: string, divisionName: string) 
       <style>
         @page Section1 {
           size: 210mm 297mm; /* A4 Standard */
-          margin: 20mm 20mm 20mm 20mm; /* 2cm (0.78 in) margins for a wider, clean editorial flow */
+          margin: 20mm 20mm 20mm 20mm; /* 2cm margins */
           mso-header-margin: 36pt;
           mso-footer-margin: 36pt;
           mso-paper-source: 0;
@@ -190,13 +265,13 @@ export function exportToWord(title: string, text: string, divisionName: string) 
           font-family: 'Segoe UI', Arial, sans-serif; 
           line-height: 1.6; 
           color: #334155; 
-          margin: 0; /* Let @page handle document margins */
+          margin: 0;
         }
         h1 { 
-          font-size: 20pt; 
+          font-size: 22pt; 
           color: #1e3a8a; 
           margin-top: 0;
-          margin-bottom: 14pt; 
+          margin-bottom: 8pt; 
           font-weight: bold; 
           border-bottom: 2px solid #3b82f6;
           padding-bottom: 6pt;
@@ -220,7 +295,7 @@ export function exportToWord(title: string, text: string, divisionName: string) 
           margin-bottom: 8pt; 
           text-align: justify; 
         }
-        ol {
+        ol, ul {
           margin-bottom: 12pt;
           padding-left: 20pt;
         }
@@ -253,14 +328,15 @@ export function exportToWord(title: string, text: string, divisionName: string) 
     </head>
     <body>
       <div class="Section1">
-        <h1>LAPORAN ANALISIS STRATEGIS PRAMA</h1>
+        <div style="font-size: 10pt; color: #64748b; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px;">PRAMA SYSTEM INTEGRATED REPORT</div>
+        <h1>${displayTitle.toUpperCase()}</h1>
         
         <div class="meta-container">
           <div class="meta-title">INFORMASI DOKUMEN</div>
           <strong>Sistem Verifikasi:</strong> PRAMA Strategic Project Management Consultant<br>
           <strong>Direktorat Divisi:</strong> ${divisionName.toUpperCase()}<br>
           <strong>Tanggal Pembuatan:</strong> ${dateStr}<br>
-          <strong>Klasifikasi:</strong> Terbatas / Rahasia Internal
+          <strong>Klasifikasi:</strong> Terbatas / Rahasia Internal PT Pancaran Group
         </div>
 
         <div class="document-body">
@@ -435,11 +511,100 @@ export function downloadPDFDirect(title: string, text: string, divisionName: str
   // --- 3. DOCUMENT BODY CONTENT PARSER ---
   const lines = text.split("\n");
 
-  lines.forEach((line) => {
+  let inTable = false;
+  let tableRows: string[][] = [];
+
+  const flushPDFTable = () => {
+    if (tableRows.length === 0) return;
+    
+    // Filters out divider row (has hyphens like |---|)
+    const cleanRows = tableRows.filter(row => !row.some(cell => /^:?-+:?$/.test(cell.trim())));
+    if (cleanRows.length === 0) {
+      tableRows = [];
+      inTable = false;
+      return;
+    }
+
+    const colCount = cleanRows[0].length;
+    const colWidth = usableWidth / colCount;
+
+    // Check height needed
+    const rowHeight = 7;
+    const neededHeight = cleanRows.length * rowHeight + 4;
+    checkPageBreak(neededHeight);
+
+    // Let's render the table rows
+    cleanRows.forEach((row, rIdx) => {
+      // If it's the first row, style it as header
+      const isHeader = rIdx === 0;
+      
+      if (isHeader) {
+        doc.setFillColor(15, 23, 42); // slate-900 for header
+        doc.rect(margin, y, usableWidth, rowHeight, "F");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8.5);
+        doc.setTextColor(255, 255, 255);
+      } else {
+        const isAlternate = rIdx % 2 === 0;
+        doc.setFillColor(isAlternate ? 248 : 255, isAlternate ? 250 : 255, isAlternate ? 252 : 255); // alternating lightweight bg
+        doc.rect(margin, y, usableWidth, rowHeight, "F");
+        
+        // Draw thin borders around each cell
+        doc.setDrawColor(226, 232, 240); // slate-200
+        doc.setLineWidth(0.15);
+        doc.rect(margin, y, usableWidth, rowHeight, "S");
+        
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(51, 65, 85);
+      }
+
+      // Print cells
+      row.forEach((cell, cIdx) => {
+        const cellText = cleanPDFMarkdown(cell.trim());
+        const xPos = margin + (cIdx * colWidth) + 3;
+        const yPos = y + 4.8;
+        
+        // Draw vertical column divider inside rows
+        if (!isHeader) {
+          doc.setDrawColor(226, 232, 240);
+          doc.setLineWidth(0.15);
+          doc.line(margin + (cIdx * colWidth), y, margin + (cIdx * colWidth), y + rowHeight);
+        }
+
+        // Clip/Truncate cell text to fit cell width with padding
+        const maxTextWidth = colWidth - 5;
+        const splitText = doc.splitTextToSize(cellText, maxTextWidth);
+        doc.text(splitText[0] || "", xPos, yPos);
+      });
+
+      y += rowHeight;
+    });
+
+    y += 4; // Spacing after table
+    tableRows = [];
+    inTable = false;
+  };
+
+  for (let idx = 0; idx < lines.length; idx++) {
+    const line = lines[idx];
     const trimmed = line.trim();
+
+    // Check for Table Row
+    if (trimmed.startsWith("|") && trimmed.endsWith("|")) {
+      inTable = true;
+      const cells = trimmed.split("|").slice(1, -1);
+      tableRows.push(cells);
+      continue;
+    } else {
+      if (inTable) {
+        flushPDFTable();
+      }
+    }
+
     if (!trimmed) {
       y += 3; // empty spaces
-      return;
+      continue;
     }
 
     // A. Headings
@@ -520,7 +685,11 @@ export function downloadPDFDirect(title: string, text: string, divisionName: str
       doc.text(splitParagraph, margin, y + 3.5);
       y += (splitParagraph.length * 5.2) + 3;
     }
-  });
+  }
+
+  if (inTable) {
+    flushPDFTable();
+  }
 
   // --- 4. BACKDROP OVERLAYS & FOOTER STAMPS ON ALL PAGES ---
   const totalPages = (doc as any).internal.getNumberOfPages();
@@ -571,15 +740,6 @@ export function downloadPDFDirect(title: string, text: string, divisionName: str
   // Save the generated document directly
   const sanitizedFilename = title.trim().replace(/[/\\?%*:|"<>\s]+/g, "_") + ".pdf";
   doc.save(sanitizedFilename);
-
-  // IMMEDIATELY let them see the file in a new tab!
-  try {
-    const pdfBlob = doc.output("blob");
-    const blobUrl = URL.createObjectURL(pdfBlob);
-    window.open(blobUrl, "_blank");
-  } catch (err) {
-    console.error("Popup blocked:", err);
-  }
 }
 
 export function exportToPPTX(
@@ -708,26 +868,29 @@ export function exportToPPTX(
     // Chapter category label (e.g. KAJIAN STRATEGIS: BAB X)
     slide.addText(`KAJIAN STRATEGIS: BAB ${idx + 1}`, {
       x: 0.8,
-      y: 0.75,
+      y: 0.68,
       w: 11.73,
-      h: 0.3,
-      fontSize: 10,
+      h: 0.25,
+      fontSize: 9.5,
       color: "00D285",
       bold: true,
-      fontFace: "Arial"
+      fontFace: "Arial",
+      valign: "top"
     });
 
-    // Slide Body Main Title
+    const titleWidth = slideData.imageUrl ? 6.0 : 11.73;
+
+    // Slide Body Main Title - Use valign top to prevent overflow/offsets
     slide.addText(slideData.title, {
       x: 0.8,
-      y: 1.0,
-      w: 6.0,
-      h: 0.8,
-      fontSize: 22,
+      y: 0.95,
+      w: titleWidth,
+      h: 0.9,
+      fontSize: 18,
       color: "0F172A",
       bold: true,
       fontFace: "Arial",
-      valign: "middle"
+      valign: "top"
     });
 
     // Left Column logic - extract first bullet as intro paragraph
@@ -740,13 +903,15 @@ export function exportToPPTX(
       }
     }
 
-    // Paragraph Summary Block
-    slide.addText(introPara, {
+    const contentWidth = slideData.imageUrl ? 5.8 : 11.73;
+
+    // Paragraph Summary Block - lowered to prevent overlap with title
+    slide.addText(cleanPDFMarkdown(introPara), {
       x: 0.8,
-      y: 2.0,
-      w: 5.8,
-      h: 1.6,
-      fontSize: 11.5,
+      y: 1.95,
+      w: contentWidth,
+      h: 1.5,
+      fontSize: 11,
       color: "475569",
       fontFace: "Arial",
       valign: "top"
@@ -754,16 +919,16 @@ export function exportToPPTX(
 
     // Bullet List Options
     const formattedBullets = bulletPoints.map((bullet) => ({
-      text: bullet,
-      options: { bullet: true, fontSize: 10.5, color: "334155", fontFace: "Arial" }
+      text: cleanPDFMarkdown(bullet),
+      options: { bullet: true, fontSize: 10, color: "334155", fontFace: "Arial" }
     }));
 
     // Add bullet box
     slide.addText(formattedBullets, {
       x: 0.8,
-      y: 3.7,
-      w: 5.8,
-      h: 2.8,
+      y: 3.55,
+      w: contentWidth,
+      h: 3.1,
       valign: "top"
     });
 
@@ -772,7 +937,7 @@ export function exportToPPTX(
       slide.addImage({
         path: slideData.imageUrl,
         x: 7.2,
-        y: 1.8,
+        y: 1.95,
         w: 5.3,
         h: 3.5,
       });
@@ -780,7 +945,7 @@ export function exportToPPTX(
       // Draw bright green border around picture frame
       slide.addShape("rect", {
         x: 7.17,
-        y: 1.77,
+        y: 1.92,
         w: 5.36,
         h: 3.56,
         fill: { color: "none" },
@@ -790,7 +955,7 @@ export function exportToPPTX(
       // Figure caption label
       slide.addText(`Ilustrasi: ${slideData.title} di Pancaran Group`, {
         x: 7.2,
-        y: 5.4,
+        y: 5.55,
         w: 5.3,
         h: 0.5,
         fontSize: 8.5,

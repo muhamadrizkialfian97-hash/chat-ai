@@ -56,7 +56,8 @@ import {
   Copy,
   Check,
   FileText,
-  Download
+  Download,
+  Presentation
 } from "lucide-react";
 import { GoogleGenAI } from "@google/genai";
 
@@ -74,58 +75,6 @@ const divisions = [
     indicatorColor: "bg-sky-500",
     icon: TrendingUp,
     locked: false
-  },
-  {
-    id: "hca",
-    code: "HCA",
-    name: "Human Capital & Affairs",
-    desc: "SDM, HRD, Rekrutmen, & Manajemen Kinerja Karyawan",
-    details: "Fokus pada desain matriks kompetensi awak kapal dan pengemudi truk, perumusan Key Performance Indicators (KPI) supir logistik, sistem shift kerja, draf form Penilaian Kinerja, serta panduan keselamatan kerja.",
-    color: "violet",
-    lightAccent: "bg-indigo-50 text-indigo-800 border-indigo-100",
-    hoverAccent: "group-hover:border-indigo-400 group-hover:bg-indigo-50/40",
-    indicatorColor: "bg-indigo-500",
-    icon: Users,
-    locked: true
-  },
-  {
-    id: "fina",
-    code: "FINA",
-    name: "Finance, Administration & Accounting",
-    desc: "Anggaran, Cash Flow, Estimasi P&L, & Manajemen Pajak",
-    details: "Fokus pada perencanaan anggaran operasional dwi-mingguan, perhitungan depresiasi armada truk trailer & tongkang, rancangan simulasi Rugi Laba (P&L) unit logistik, serta audit kepatuhan pengeluaran depo.",
-    color: "emerald",
-    lightAccent: "bg-emerald-50 text-emerald-800 border-emerald-100",
-    hoverAccent: "group-hover:border-emerald-400 group-hover:bg-emerald-50/40",
-    indicatorColor: "bg-emerald-500",
-    icon: Wallet,
-    locked: true
-  },
-  {
-    id: "lga",
-    code: "LGA",
-    name: "Legal & Governance Affairs",
-    desc: "Kepatuhan Hukum, GCG, Tinjauan Kontrak, & Perizinan",
-    details: "Membantu draf klausul alternatif untuk Memorandum of Understanding (MoU), pemenuhan lisensi operasional transportasi laut/darat Republik Indonesia, tinjauan risiko gugatan keterlambatan muatan, serta tata kelola perusahaan.",
-    color: "teal",
-    lightAccent: "bg-teal-50 text-teal-800 border-teal-100",
-    hoverAccent: "group-hover:border-teal-400 group-hover:bg-teal-50/40",
-    indicatorColor: "bg-teal-500",
-    icon: Scale,
-    locked: true
-  },
-  {
-    id: "spia",
-    code: "SPIA",
-    name: "Satuan Pengawasan Intern / Internal Audit",
-    desc: "Audit Internal, Pengendalian Risiko, & Deteksi Fraud",
-    details: "Mengatasi audit kepatuhan pengeluaran bahan bakar solar (mencegah fraud BBM), penyusunan Kertas Kerja Audit (Working Paper) rute truk trailer, evaluasi keandalan SOP depo, serta investigasi anomali armada.",
-    color: "indigo",
-    lightAccent: "bg-indigo-50 text-indigo-800 border-indigo-100",
-    hoverAccent: "group-hover:border-indigo-450 group-hover:bg-indigo-50/40",
-    indicatorColor: "bg-indigo-500",
-    icon: CheckSquare,
-    locked: true
   }
 ];
 
@@ -1803,33 +1752,7 @@ ${lastMsgText}`;
                 Platform penunjang keputusan komersial, operasional, & akurasi keuangan. Ditenagai asisten AI penasihat khusus untuk pilar divisi komersial logistik darat & laut Pancaran Group.
               </p>
 
-              {/* Service bullet highlights */}
-              <div className="space-y-2.5 pt-4">
-                <div className="flex items-center gap-3 bg-white/5 border border-white/5 rounded-xl px-3 p-2">
-                  <div className="h-5 w-5 bg-sky-500 rounded-lg flex items-center justify-center text-xs font-bold text-white shadow">
-                    🚢
-                  </div>
-                  <div className="text-xs font-bold">
-                    <span className="text-sky-300">Armada Laut</span> - Tugboat & Barge
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 bg-white/5 border border-white/5 rounded-xl px-3 p-2">
-                  <div className="h-5 w-5 bg-emerald-500 rounded-lg flex items-center justify-center text-xs font-bold text-white shadow">
-                    🚛
-                  </div>
-                  <div className="text-xs font-bold">
-                    <span className="text-emerald-300">Armada Darat</span> - Trailer Logistics
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 bg-white/5 border border-white/5 rounded-xl px-3 p-2">
-                  <div className="h-5 w-5 bg-indigo-500 rounded-lg flex items-center justify-center text-xs font-bold text-white shadow">
-                    📁
-                  </div>
-                  <div className="text-xs font-bold">
-                    <span className="text-indigo-300">Grounding AI</span> - Prama Analitis
-                  </div>
-                </div>
-              </div>
+
             </div>
 
             <div className="pt-6 border-t border-white/10 text-slate-400 font-mono text-[9px] font-bold tracking-widest uppercase md:block hidden">
@@ -2561,53 +2484,8 @@ ${lastMsgText}`;
                 </h1>
 
                 {/* Beautiful clean parser */}
-                <div className="space-y-4 text-xs sm:text-sm leading-relaxed text-justify text-slate-800 font-normal">
-                  {articlePreview.content.split("\n").map((line, idx) => {
-                    const trimmed = line.trim();
-                    if (!trimmed) return <div key={idx} className="h-3" />;
-
-                    if (trimmed.startsWith("### ")) {
-                      return (
-                        <h3 key={idx} className="text-xs sm:text-sm font-extrabold text-slate-900 mt-5 mb-2 uppercase tracking-wide">
-                          {trimmed.slice(4)}
-                        </h3>
-                      );
-                    } else if (trimmed.startsWith("## ")) {
-                      return (
-                        <h2 key={idx} className="text-sm sm:text-base font-extrabold text-[#0369a1] border-b pb-1 mt-6 mb-3 tracking-tight">
-                          {trimmed.slice(3)}
-                        </h2>
-                      );
-                    } else if (trimmed.startsWith("# ")) {
-                      return (
-                        <h1 key={idx} className="text-base sm:text-lg font-black text-indigo-900 mt-8 border-b-2 pb-2 mb-4 tracking-tight">
-                          {trimmed.slice(2)}
-                        </h1>
-                      );
-                    } else if (trimmed.startsWith("- ") || trimmed.startsWith("* ") || trimmed.startsWith("• ")) {
-                      const cleanItem = trimmed.replace(/^[-*•]\s+/, "");
-                      return (
-                        <div key={idx} className="flex gap-2.5 items-start pl-4 text-xs sm:text-sm my-1.5 text-slate-700">
-                          <span className="text-indigo-600 mt-1 font-bold">•</span>
-                          <span>{cleanItem}</span>
-                        </div>
-                      );
-                    } else if (/^\d+\.\s+(.*)/.test(trimmed)) {
-                      const numText = trimmed.match(/^(\d+\.)\s+(.*)/);
-                      return (
-                        <div key={idx} className="flex gap-3 items-start pl-2 text-xs sm:text-sm font-medium my-2 text-slate-800">
-                          <span className="text-indigo-950 font-mono font-bold shrink-0">{numText ? numText[1] : "1."}</span>
-                          <span className="font-bold">{numText ? numText[2] : trimmed}</span>
-                        </div>
-                      );
-                    } else {
-                      return (
-                        <p key={idx} className="text-xs sm:text-sm text-slate-700 text-justify">
-                          {trimmed}
-                        </p>
-                      );
-                    }
-                  })}
+                <div className="space-y-4 text-xs sm:text-sm leading-relaxed text-slate-850 font-normal">
+                  {renderPreviewMarkdown(articlePreview.content)}
                 </div>
 
                 {/* Footer decorator block */}
@@ -2636,42 +2514,42 @@ ${lastMsgText}`;
 
       {/* 2. PPT SLIDESHOW PREVIEW INTERACTIVE MODAL */}
       {pptPreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 p-4 backdrop-blur-md overflow-y-auto animate-fade-in text-slate-800">
-          <div className="flex flex-col bg-white rounded-3xl w-full max-w-5xl max-h-[92vh] shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#030712]/90 p-4 backdrop-blur-md overflow-y-auto animate-fade-in text-slate-800">
+          <div className="flex flex-col bg-white rounded-[2rem] w-full max-w-5xl shadow-2xl overflow-hidden border border-slate-200">
             {/* Header toolbar */}
-            <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-sky-100 flex items-center justify-center text-sky-700">
-                  <Sparkles className="h-5 w-5" />
+            <div className="bg-white px-8 py-5 border-b border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-3.5">
+                <div className="h-10 w-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-sm">
+                  <Presentation className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-extrabold text-slate-800">SLIDE SHOW & INTERACTIVE PREVIEW</h3>
-                  <p className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-widest">{pptPreview.fileName}.pptx</p>
+                  <h3 className="text-xs sm:text-sm font-extrabold text-slate-800 uppercase tracking-wider font-display">SLIDE SHOW & INTERACTIVE PREVIEW</h3>
+                  <p className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest">{pptPreview.fileName.toUpperCase()}.PPTX</p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-3">
                 <button
                   onClick={() => exportToPPTX(pptPreview.fileName, pptPreview.slides, activeDivision || "PORTAL")}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-sky-600 hover:bg-sky-700 text-white border-none rounded-xl transition cursor-pointer shadow-md shadow-sky-100"
+                  className="flex items-center gap-1.5 px-5 py-2.5 text-xs font-black bg-[#0082FB] hover:bg-[#0072DF] text-white border-none rounded-full transition-all cursor-pointer shadow-md shadow-blue-100"
                 >
-                  <Download className="h-3.5 w-3.5" />
+                  <Download className="h-3.5 w-3.5 stroke-[2.5]" />
                   <span>Unduh PPTX (.pptx)</span>
                 </button>
                 <button
                   onClick={() => setPptPreview(null)}
-                  className="h-8 w-8 flex items-center justify-center hover:bg-slate-200 text-slate-500 hover:text-slate-800 rounded-full transition cursor-pointer"
+                  className="h-8 w-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 rounded-full transition cursor-pointer"
                 >
-                  <X className="h-4.5 w-4.5" />
+                  <X className="h-4.5 w-4.5 stroke-[2.5]" />
                 </button>
               </div>
             </div>
 
-            {/* Main Interactive Screen with 16:9 canvas and Sidebar notes */}
-            <div className="flex-1 overflow-y-auto bg-slate-950 p-4 sm:p-8 flex flex-col items-center justify-center gap-6">
+            {/* Main Interactive Screen with 16:9 canvas and Speaker notes */}
+            <div className="flex-1 overflow-y-auto bg-[#0B0F19] p-6 sm:p-8 flex flex-col items-center justify-center gap-6">
               
               {/* Projector slide backdrop container */}
-              <div className="w-full max-w-4xl aspect-[16/9] bg-white rounded-2xl shadow-2xl border border-slate-800 flex overflow-hidden relative group">
+              <div className="w-full max-w-4xl aspect-[16/9] bg-white rounded-2xl shadow-2xl border border-slate-800/20 flex overflow-hidden relative group">
                 {activeSlideIndex === 0 ? (
                   // TITLE COVER SLIDE STYLE (MATCHES SLIDE 1)
                   <div className="flex-1 flex flex-col justify-center items-start bg-[#06152B] p-12 text-left select-none relative">
@@ -2732,18 +2610,34 @@ ${lastMsgText}`;
                       }
                     }
 
+                    const formatBulletText = (text: string) => {
+                      let cleanText = text.replace(/\*\*/g, ""); // strip raw stars
+                      const colonIdx = cleanText.indexOf(":");
+                      if (colonIdx > 0 && colonIdx < 30) {
+                        const boldPrefix = cleanText.slice(0, colonIdx + 1);
+                        const rest = cleanText.slice(colonIdx + 1);
+                        return (
+                          <span>
+                            <strong className="font-extrabold text-slate-900">{boldPrefix}</strong>
+                            {rest}
+                          </span>
+                        );
+                      }
+                      return <span>{cleanText}</span>;
+                    };
+
                     return (
                       <div className="flex-1 flex flex-col md:flex-row bg-white text-slate-800 relative">
                         {/* Solid Top Accent Green Bar */}
-                        <div className="absolute top-0 left-0 right-0 h-1 bg-[#00D285]" />
+                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-[#00D285]" />
 
                         {/* Left half: Content & Bullets */}
                         <div className="flex-1 flex flex-col justify-between p-6 sm:p-8 md:w-7/12 relative">
                           <div className="space-y-3 pt-2">
                             {/* Header row */}
                             <div className="text-[9px] font-mono font-bold text-slate-400 uppercase tracking-wider flex justify-between items-center w-full pb-1">
-                              <span>{(pptPreview.title || "").toUpperCase()}</span>
-                              <span className="text-[#00D285]">SEKTOR: {(activeDivision || "UMUM").toUpperCase() + " & BD"}</span>
+                              <span>{pptPreview.fileName.toUpperCase()}</span>
+                              <span className="text-[#00D285] font-extrabold">SEKTOR: {(activeDivision || "UMUM").toUpperCase() + " & BD"}</span>
                             </div>
                             
                             <div className="h-[1px] bg-slate-100 w-full" />
@@ -2752,20 +2646,20 @@ ${lastMsgText}`;
                               KAJIAN STRATEGIS: BAB {activeSlideIndex}
                             </div>
                             
-                            <h2 className="text-slate-900 font-extrabold text-lg sm:text-xl md:text-2xl leading-tight">
+                            <h2 className="text-slate-900 font-extrabold text-lg sm:text-xl md:text-[22px] leading-tight select-text">
                               {currentSlide?.title}
                             </h2>
                             
                             <p className="text-xs text-slate-500 font-medium leading-relaxed pb-1 select-text">
-                              {introPara}
+                              {introPara.replace(/\*\*/g, "")}
                             </p>
 
-                            <div className="space-y-1.5">
+                            <div className="space-y-2">
                               {bPoints.map((bulletText, bIdx) => (
-                                <div key={bIdx} className="flex gap-2 items-start pl-0.5">
-                                  <span className="text-[#00D285] mt-1 shrink-0 font-extrabold select-none text-[10px] sm:text-xs">•</span>
-                                  <p className="text-[10px] sm:text-xs text-slate-600 font-medium leading-relaxed select-text">
-                                    {bulletText}
+                                <div key={bIdx} className="flex gap-2.5 items-start pl-0.5">
+                                  <span className="text-[#00D285] mt-1 shrink-0 font-extrabold select-none text-[10px] sm:text-sm">•</span>
+                                  <p className="text-[11px] sm:text-xs text-slate-600 font-medium leading-relaxed select-text">
+                                    {formatBulletText(bulletText)}
                                   </p>
                                 </div>
                               ))}
@@ -2773,34 +2667,42 @@ ${lastMsgText}`;
                           </div>
 
                           {/* Footer row */}
-                          <div className="text-[8px] font-mono font-bold text-slate-400 border-t pt-2 w-full flex justify-between items-center mt-4">
+                          <div className="text-[8px] font-mono font-bold text-slate-400 border-t border-slate-100 pt-2.5 w-full flex justify-between items-center mt-4">
                             <span>PANCARAN GROUP &bull; CONFIDENTIAL DOCUMENTATION</span>
-                            <span className="text-slate-700">HALAMAN {activeSlideIndex + 1} DARI {pptPreview.slides.length + 2}</span>
+                            <span className="text-slate-700 font-bold uppercase">HALAMAN {activeSlideIndex + 1} DARI {pptPreview.slides.length + 2}</span>
                           </div>
                         </div>
 
                         {/* Right half: Photo Frame */}
-                        <div className="flex-1 md:w-5/12 bg-slate-150 relative min-h-[150px] md:min-h-0 overflow-hidden flex flex-col justify-center items-center p-6">
-                          {currentSlide?.imageUrl ? (
-                            <div className="w-full h-full flex flex-col justify-center items-center gap-2">
-                              {/* Photo framed with green border */}
-                              <div className="w-full h-[78%] border-2 border-[#00D285] p-0.5 bg-white shadow-md relative overflow-hidden rounded-sm">
+                        <div className="flex-1 md:w-5/12 bg-slate-50 relative min-h-[150px] md:min-h-0 overflow-hidden flex flex-col justify-center items-center p-6">
+                          <div className="w-full h-full flex flex-col justify-center items-center gap-2">
+                            {/* Photo framed with green border */}
+                            <div className="w-full h-[85%] border-2 border-[#00D285] p-1 bg-white shadow-md relative overflow-hidden rounded-md flex items-center justify-center">
+                              {currentSlide?.imageUrl ? (
                                 <img
                                   src={currentSlide.imageUrl}
                                   alt="Slide context"
-                                  className="w-full h-full object-cover rounded-2xs"
+                                  className="w-full h-full object-cover rounded-xs"
                                   referrerPolicy="no-referrer"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                    const parent = e.currentTarget.parentElement;
+                                    if (parent) {
+                                      const textFallback = parent.querySelector('.fallback-txt');
+                                      if (textFallback) textFallback.classList.remove('hidden');
+                                    }
+                                  }}
                                 />
+                              ) : null}
+                              <div className="fallback-txt hidden flex flex-col items-center justify-center text-center p-4">
+                                <Presentation className="h-10 w-10 text-slate-300 mb-2 animate-pulse" />
+                                <span className="text-[10px] font-bold text-slate-400 font-mono">PRAMA DIAGRAM</span>
                               </div>
-                              <span className="text-[8px] text-slate-400 italic font-medium text-center">
-                                Ilustrasi: {currentSlide?.title} di Pancaran Group
-                              </span>
                             </div>
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400">
-                              <FileText className="h-8 w-8 text-slate-300" />
-                            </div>
-                          )}
+                            <span className="text-[8px] text-slate-400 italic font-bold tracking-wide text-center">
+                              Ilustrasi: {currentSlide?.title} di Pancaran Group
+                            </span>
+                          </div>
                         </div>
                       </div>
                     );
@@ -2811,7 +2713,7 @@ ${lastMsgText}`;
                 <button
                   disabled={activeSlideIndex === 0}
                   onClick={() => setActiveSlideIndex(prev => Math.max(0, prev - 1))}
-                  className="absolute left-2.5 top-1/2 -translate-y-1/2 p-2 rounded-full bg-slate-900/60 hover:bg-slate-950 text-white disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer shadow transition z-20"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 h-9 w-9 flex items-center justify-center rounded-full bg-slate-900/60 hover:bg-slate-950 text-white disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer shadow-lg transition-all z-20"
                 >
                   <ChevronLeft className="h-5 w-5" />
                 </button>
@@ -2820,39 +2722,41 @@ ${lastMsgText}`;
                 <button
                   disabled={activeSlideIndex === pptPreview.slides.length + 1}
                   onClick={() => setActiveSlideIndex(prev => Math.min(pptPreview.slides.length + 1, prev + 1))}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-2 rounded-full bg-slate-900/60 hover:bg-slate-950 text-white disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer shadow transition z-20"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 h-9 w-9 flex items-center justify-center rounded-full bg-slate-900/60 hover:bg-slate-950 text-white disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer shadow-lg transition-all z-20"
                 >
                   <ChevronRight className="h-5 w-5" />
                 </button>
               </div>
 
               {/* Speaker Notes Presenter Window panel */}
-              <div className="w-full max-w-4xl bg-slate-800 rounded-2xl p-4 sm:p-5 border border-slate-700 shadow-xl">
-                <div className="flex justify-between items-center pb-2.5 border-b border-slate-700 mb-3">
-                  <span className="font-mono text-[10px] text-[#00D285] font-black tracking-widest uppercase flex items-center gap-1.5">
+              <div className="w-full max-w-4xl bg-[#0D1527] rounded-2xl p-5 border border-slate-800 shadow-xl">
+                <div className="flex justify-between items-center pb-2.5 border-b border-slate-800 mb-3">
+                  <span className="font-mono text-[10px] text-[#00D285] font-black tracking-widest uppercase flex items-center gap-2">
                     <span className="h-2 w-2 rounded-full bg-[#00D285] animate-pulse" />
-                    SPEAKER NOTES / NASKAH PIDATO PRESENTER
+                    🎙️ SPEAKER NOTES / NASKAH PIDATO PRESENTER
                   </span>
-                  <span className="bg-slate-700 text-white font-mono text-[9px] font-bold px-2 py-0.5 rounded border border-slate-600">
+                  <span className="bg-slate-800 text-slate-300 font-mono text-[9px] font-extrabold px-3 py-1 rounded-full border border-slate-700 shadow-inner">
                     Slide {activeSlideIndex + 1} dari {pptPreview.slides.length + 2}
                   </span>
                 </div>
-                <p className="text-xs sm:text-sm text-slate-200/95 leading-relaxed font-medium italic select-text">
-                  &quot;{activeSlideIndex === 0 ? "Selamat pagi/siang bapak dan ibu sekalian. Slide pembuka ini menjelaskan judul dan pilar utama kajian proyek strategis PRAMA untuk PT Pancaran Group." : activeSlideIndex === pptPreview.slides.length + 1 ? "Sesi presentasi komprehensif selesai. Kami mengucapkan terima kasih kepada pimpinan komite, direksi, dan jajaran tim operasional PT Pancaran Group." : (pptPreview.slides[activeSlideIndex - 1]?.speakerNotes || "Penjelasan pendukung slide.")}&quot;
-                </p>
+                <div className="max-h-[100px] overflow-y-auto pr-1">
+                  <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-semibold italic select-text">
+                    &quot;{activeSlideIndex === 0 ? "Selamat pagi/siang bapak dan ibu sekalian. Slide pembuka ini menjelaskan judul dan pilar utama kajian proyek strategis PRAMA untuk PT Pancaran Group." : activeSlideIndex === pptPreview.slides.length + 1 ? "Sesi presentasi komprehensif selesai. Kami mengucapkan terima kasih kepada pimpinan komite, direksi, dan jajaran tim operasional PT Pancaran Group." : (pptPreview.slides[activeSlideIndex - 1]?.speakerNotes || "Penjelasan pendukung slide.")}&quot;
+                  </p>
+                </div>
               </div>
 
             </div>
 
             {/* Bottom slideshow controls & paginator */}
-            <div className="bg-slate-50 border-t border-slate-200 px-6 py-4 flex justify-between items-center shrink-0">
-              <div className="flex gap-1.5 overflow-x-auto max-w-[70%] py-1">
+            <div className="bg-white border-t border-slate-100 px-8 py-5 flex justify-between items-center shrink-0 rounded-b-[2rem]">
+              <div className="flex gap-2 overflow-x-auto max-w-[70%] py-1">
                 {Array.from({ length: pptPreview.slides.length + 2 }).map((_, dotIdx) => (
                   <button
                     key={dotIdx}
                     onClick={() => setActiveSlideIndex(dotIdx)}
                     className={`h-2.5 rounded-full transition-all cursor-pointer shrink-0 ${
-                      activeSlideIndex === dotIdx ? "w-6 bg-[#00D285]" : "w-2.5 bg-slate-300 hover:bg-slate-400"
+                      activeSlideIndex === dotIdx ? "w-7 bg-[#00D285]" : "w-2.5 bg-slate-200 hover:bg-slate-350"
                     }`}
                   />
                 ))}
@@ -2861,7 +2765,7 @@ ${lastMsgText}`;
               <div className="flex gap-2">
                 <button
                   onClick={() => setPptPreview(null)}
-                  className="px-5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 border border-slate-200 rounded-xl transition cursor-pointer"
+                  className="px-6 py-2.5 text-xs font-black text-slate-600 hover:text-slate-800 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-full transition cursor-pointer"
                 >
                   Tutup Slide Show
                 </button>
@@ -2873,4 +2777,234 @@ ${lastMsgText}`;
 
     </div>
   );
+}
+
+function renderPreviewMarkdown(text: string) {
+  if (!text) return null;
+
+  const lines = text.split("\n");
+  const elements: React.ReactNode[] = [];
+  let currentTableRows: string[][] = [];
+  let inTable = false;
+
+  const flushTable = (key: string | number) => {
+    if (currentTableRows.length === 0) return null;
+
+    const cleanRows = currentTableRows.filter(row => !row.some(cell => /^:?-+:?$/.test(cell.trim())));
+    if (cleanRows.length === 0) {
+      currentTableRows = [];
+      inTable = false;
+      return null;
+    }
+
+    let hasHeader = currentTableRows.length > 1 && currentTableRows[1].some(cell => /^:?-+:?$/.test(cell.trim()));
+    
+    const tableElement = (
+      <div key={key} className="overflow-x-auto my-4 border border-slate-200 rounded-xl shadow-xs max-w-full">
+        <table className="min-w-full divide-y divide-slate-200 text-left border-collapse">
+          {hasHeader && (
+            <thead className="bg-[#0f172a] text-white">
+              <tr>
+                {cleanRows[0].map((cell, cIdx) => (
+                  <th key={cIdx} className="px-3 py-2 text-[10px] sm:text-xs font-bold uppercase tracking-wider font-display border border-slate-700">
+                    {parsePreviewInlineMarkdown(cell.trim())}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+          )}
+          <tbody className="divide-y divide-slate-200 bg-white">
+            {cleanRows.slice(hasHeader ? 1 : 0).map((row, rIdx) => (
+              <tr key={rIdx} className={rIdx % 2 === 0 ? "bg-slate-50/50 hover:bg-slate-50" : "bg-white hover:bg-slate-50"}>
+                {row.map((cell, cIdx) => (
+                  <td key={cIdx} className="px-3 py-2 text-[11px] sm:text-xs text-slate-700 leading-relaxed border border-slate-100">
+                    {parsePreviewInlineMarkdown(cell.trim())}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+
+    currentTableRows = [];
+    inTable = false;
+    return tableElement;
+  };
+
+  for (let idx = 0; idx < lines.length; idx++) {
+    const line = lines[idx];
+    const trimmed = line.trim();
+
+    // Table checking
+    if (trimmed.startsWith("|") && trimmed.endsWith("|")) {
+      inTable = true;
+      const cells = trimmed.split("|").slice(1, -1);
+      currentTableRows.push(cells);
+      continue;
+    } else {
+      if (inTable) {
+        const table = flushTable(`table-${idx}`);
+        if (table) {
+          elements.push(table);
+        }
+      }
+    }
+
+    if (!trimmed) {
+      elements.push(<div key={`empty-${idx}`} className="h-1.5" />);
+      continue;
+    }
+
+    // 1. Headings (### or ## or #)
+    if (trimmed.startsWith("###")) {
+      elements.push(
+        <h4 key={`h3-${idx}`} className="font-display font-extrabold text-slate-900 border-none text-sm mt-5 mb-2 block uppercase tracking-wide">
+          {parsePreviewInlineMarkdown(trimmed.replace(/^###\s+/, ""))}
+        </h4>
+      );
+      continue;
+    }
+    if (trimmed.startsWith("##")) {
+      elements.push(
+        <h3 key={`h2-${idx}`} className="font-display font-extrabold text-[#0369a1] border-b pb-1 mt-6 mb-3 tracking-tight text-base block">
+          {parsePreviewInlineMarkdown(trimmed.replace(/^##\s+/, ""))}
+        </h3>
+      );
+      continue;
+    }
+    if (trimmed.startsWith("#")) {
+      elements.push(
+        <h2 key={`h1-${idx}`} className="font-display font-black text-indigo-900 border-b-2 pb-2 mt-8 mb-4 tracking-tight text-lg block">
+          {parsePreviewInlineMarkdown(trimmed.replace(/^#\s+/, ""))}
+        </h2>
+      );
+      continue;
+    }
+
+    // 2. Ordered lists (1. 2. etc)
+    const orderedListMatch = trimmed.match(/^(\d+)\.\s+(.*)/);
+    if (orderedListMatch) {
+      elements.push(
+        <div key={`ol-${idx}`} className="flex gap-2.5 ml-3 my-1.5 text-xs sm:text-sm text-slate-700 leading-relaxed">
+          <span className="font-mono text-indigo-700 font-bold shrink-0">
+            {orderedListMatch[1]}.
+          </span>
+          <p className="flex-1 font-medium">{parsePreviewInlineMarkdown(orderedListMatch[2])}</p>
+        </div>
+      );
+      continue;
+    }
+
+    // 2b. Indented alphabetical lists (a. b. c. etc for narrowing/sub-points)
+    const alphaListMatch = trimmed.match(/^([a-zA-Z])\.\s+(.*)/);
+    if (alphaListMatch) {
+      elements.push(
+        <div key={`al-${idx}`} className="flex gap-2.5 ml-8 my-1 text-xs text-slate-600 leading-relaxed">
+          <span className="font-mono text-slate-600 font-bold shrink-0 uppercase">
+            {alphaListMatch[1]}.
+          </span>
+          <p className="flex-1">{parsePreviewInlineMarkdown(alphaListMatch[2])}</p>
+        </div>
+      );
+      continue;
+    }
+
+    // 3. Bullet points (- or * or •)
+    if (trimmed.startsWith("- ") || trimmed.startsWith("* ") || trimmed.startsWith("• ")) {
+      const content = trimmed.replace(/^[-*•]\s+/, "");
+      elements.push(
+        <div key={`ul-${idx}`} className="flex gap-2.5 ml-3 my-1.5 text-xs sm:text-sm text-slate-705 items-start leading-relaxed">
+          <span className="text-indigo-600 font-bold select-none">•</span>
+          <p className="flex-1">{parsePreviewInlineMarkdown(content)}</p>
+        </div>
+      );
+      continue;
+    }
+
+    // 4. Standard Paragraph / Line
+    elements.push(
+      <p key={`p-${idx}`} className="text-slate-700 text-xs sm:text-sm text-justify leading-relaxed whitespace-pre-wrap">
+        {parsePreviewInlineMarkdown(line)}
+      </p>
+    );
+  }
+
+  if (inTable) {
+    const table = flushTable(`table-end`);
+    if (table) {
+      elements.push(table);
+    }
+  }
+
+  return <div className="space-y-4">{elements}</div>;
+}
+
+function parsePreviewInlineMarkdown(text: string) {
+  const parts: React.ReactNode[] = [];
+  let currentText = text;
+  let keyIdx = 0;
+
+  while (currentText.length > 0) {
+    const boldIndex = currentText.indexOf("**");
+    const linkIndex = currentText.indexOf("[");
+
+    if (boldIndex === -1 && linkIndex === -1) {
+      parts.push(<span key={keyIdx++}>{currentText}</span>);
+      break;
+    }
+
+    if (boldIndex !== -1 && (linkIndex === -1 || boldIndex < linkIndex)) {
+      if (boldIndex > 0) {
+        parts.push(<span key={keyIdx++}>{currentText.substring(0, boldIndex)}</span>);
+      }
+      const rest = currentText.substring(boldIndex + 2);
+      const nextBoldIndex = rest.indexOf("**");
+      if (nextBoldIndex !== -1) {
+        parts.push(
+          <strong key={keyIdx++} className="font-extrabold text-slate-900 bg-slate-100 rounded px-1 py-0.5 inline border border-slate-200 shadow-3sm">
+            {rest.substring(0, nextBoldIndex)}
+          </strong>
+        );
+        currentText = rest.substring(nextBoldIndex + 2);
+      } else {
+        parts.push(<span key={keyIdx++}>**</span>);
+        currentText = rest;
+      }
+    } else {
+      if (linkIndex > 0) {
+        parts.push(<span key={keyIdx++}>{currentText.substring(0, linkIndex)}</span>);
+      }
+      const rest = currentText.substring(linkIndex + 1);
+      const closingBracketIndex = rest.indexOf("]");
+      if (closingBracketIndex !== -1) {
+        const linkText = rest.substring(0, closingBracketIndex);
+        const urlPart = rest.substring(closingBracketIndex + 1);
+        if (urlPart.startsWith("(")) {
+          const closingParenthesisIndex = urlPart.indexOf(")");
+          if (closingParenthesisIndex !== -1) {
+            const url = urlPart.substring(1, closingParenthesisIndex);
+            parts.push(
+              <a
+                key={keyIdx++}
+                href={url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-sky-600 hover:text-sky-800 underline font-semibold inline"
+              >
+                {linkText}
+              </a>
+            );
+            currentText = urlPart.substring(closingParenthesisIndex + 1);
+            continue;
+          }
+        }
+      }
+      parts.push(<span key={keyIdx++}>[</span>);
+      currentText = rest;
+    }
+  }
+
+  return parts;
 }

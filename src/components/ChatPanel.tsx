@@ -659,87 +659,165 @@ export default function ChatPanel({
 function renderFormattedText(text: string) {
   if (!text) return null;
 
-  // Split lines
   const lines = text.split("\n");
+  const elements: React.ReactNode[] = [];
+  let currentTableRows: string[][] = [];
+  let inTable = false;
 
-  return (
-    <div className="space-y-2 mt-1">
-      {lines.map((line, idx) => {
-        const trimmed = line.trim();
+  const flushTable = (key: string | number) => {
+    if (currentTableRows.length === 0) return null;
 
-        // 1. Headings (### or ## or #)
-        if (trimmed.startsWith("###")) {
-          return (
-            <h4 key={idx} className="font-display font-extrabold text-slate-900 border-none text-sm mt-3 mb-1 block">
-              {parseInlineMarkdown(trimmed.replace(/^###\s+/, ""))}
-            </h4>
-          );
-        }
-        if (trimmed.startsWith("##")) {
-          return (
-            <h3 key={idx} className="font-display font-extrabold text-slate-900 border-none text-base mt-4 mb-2 block">
-              {parseInlineMarkdown(trimmed.replace(/^##\s+/, ""))}
-            </h3>
-          );
-        }
-        if (trimmed.startsWith("#")) {
-          return (
-            <h2 key={idx} className="font-display font-extrabold text-slate-900 border-none text-lg mt-5 mb-2 block">
-              {parseInlineMarkdown(trimmed.replace(/^#\s+/, ""))}
-            </h2>
-          );
-        }
+    // Filter out separator lines like |---|
+    const cleanRows = currentTableRows.filter(row => !row.some(cell => /^:?-+:?$/.test(cell.trim())));
+    if (cleanRows.length === 0) {
+      currentTableRows = [];
+      inTable = false;
+      return null;
+    }
 
-        // 2. Ordered lists (1. 2. etc)
-        const orderedListMatch = trimmed.match(/^(\d+)\.\s+(.*)/);
-        if (orderedListMatch) {
-          return (
-            <div key={idx} className="flex gap-2.5 ml-3 my-1.5 text-xs text-slate-700 leading-relaxed">
-              <span className="font-mono bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded font-black text-[10px] shadow-3sm shrink-0 h-fit">
-                {orderedListMatch[1]}.
-              </span>
-              <p className="flex-1 mt-0.5">{parseInlineMarkdown(orderedListMatch[2])}</p>
-            </div>
-          );
-        }
+    const colCount = cleanRows[0].length;
+    let hasHeader = currentTableRows.length > 1 && currentTableRows[1].some(cell => /^:?-+:?$/.test(cell.trim()));
+    
+    const tableElement = (
+      <div key={key} className="overflow-x-auto my-4 border border-slate-200 rounded-xl shadow-xs max-w-full">
+        <table className="min-w-full divide-y divide-slate-200 text-left border-collapse">
+          {hasHeader && (
+            <thead className="bg-[#0f172a] text-white">
+              <tr>
+                {cleanRows[0].map((cell, cIdx) => (
+                  <th key={cIdx} className="px-3 py-2 text-[10px] sm:text-xs font-bold uppercase tracking-wider font-display border border-slate-700">
+                    {parseInlineMarkdown(cell.trim())}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+          )}
+          <tbody className="divide-y divide-slate-200 bg-white">
+            {cleanRows.slice(hasHeader ? 1 : 0).map((row, rIdx) => (
+              <tr key={rIdx} className={rIdx % 2 === 0 ? "bg-slate-50/50 hover:bg-slate-50" : "bg-white hover:bg-slate-50"}>
+                {row.map((cell, cIdx) => (
+                  <td key={cIdx} className="px-3 py-2 text-[11px] sm:text-xs text-slate-700 leading-relaxed border border-slate-100">
+                    {parseInlineMarkdown(cell.trim())}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
 
-        // 2b. Indented alphabetical lists (a. b. c. etc for narrowing/sub-points)
-        const alphaListMatch = trimmed.match(/^([a-zA-Z])\.\s+(.*)/);
-        if (alphaListMatch) {
-          return (
-            <div key={idx} className="flex gap-2.5 ml-8 my-1 text-xs text-slate-600 leading-relaxed">
-              <span className="font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-bold text-[9px] shadow-3sm shrink-0 h-fit uppercase">
-                {alphaListMatch[1]}.
-              </span>
-              <p className="flex-1 mt-0.5">{parseInlineMarkdown(alphaListMatch[2])}</p>
-            </div>
-          );
-        }
+    currentTableRows = [];
+    inTable = false;
+    return tableElement;
+  };
 
-        // 3. Bullet points (- or * or •)
-        if (trimmed.startsWith("- ") || trimmed.startsWith("* ") || trimmed.startsWith("• ")) {
-          const content = trimmed.replace(/^[-*•]\s+/, "");
-          return (
-            <div key={idx} className="flex gap-2.5 ml-3 my-1 text-xs text-slate-700 items-start leading-relaxed animate-none">
-              <span className="text-sky-500 mt-1.5 shrink-0 select-none text-[10px]">•</span>
-              <p className="flex-1 mt-0.5">{parseInlineMarkdown(content)}</p>
-            </div>
-          );
-        }
+  for (let idx = 0; idx < lines.length; idx++) {
+    const line = lines[idx];
+    const trimmed = line.trim();
 
-        // 4. Standard Paragraph / Line
-        if (line === "") {
-          return <div key={idx} className="h-1.5" />;
+    // Table checking
+    if (trimmed.startsWith("|") && trimmed.endsWith("|")) {
+      inTable = true;
+      const cells = trimmed.split("|").slice(1, -1);
+      currentTableRows.push(cells);
+      continue;
+    } else {
+      if (inTable) {
+        const table = flushTable(`table-${idx}`);
+        if (table) {
+          elements.push(table);
         }
+      }
+    }
 
-        return (
-          <p key={idx} className="text-slate-800 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap">
-            {parseInlineMarkdown(line)}
-          </p>
-        );
-      })}
-    </div>
-  );
+    if (!trimmed) {
+      elements.push(<div key={`empty-${idx}`} className="h-1.5" />);
+      continue;
+    }
+
+    // 1. Headings (### or ## or #)
+    if (trimmed.startsWith("###")) {
+      elements.push(
+        <h4 key={`h3-${idx}`} className="font-display font-extrabold text-slate-900 border-none text-sm mt-3 mb-1 block">
+          {parseInlineMarkdown(trimmed.replace(/^###\s+/, ""))}
+        </h4>
+      );
+      continue;
+    }
+    if (trimmed.startsWith("##")) {
+      elements.push(
+        <h3 key={`h2-${idx}`} className="font-display font-extrabold text-slate-900 border-none text-base mt-4 mb-2 block">
+          {parseInlineMarkdown(trimmed.replace(/^##\s+/, ""))}
+        </h3>
+      );
+      continue;
+    }
+    if (trimmed.startsWith("#")) {
+      elements.push(
+        <h2 key={`h1-${idx}`} className="font-display font-extrabold text-slate-900 border-none text-lg mt-5 mb-2 block">
+          {parseInlineMarkdown(trimmed.replace(/^#\s+/, ""))}
+        </h2>
+      );
+      continue;
+    }
+
+    // 2. Ordered lists (1. 2. etc)
+    const orderedListMatch = trimmed.match(/^(\d+)\.\s+(.*)/);
+    if (orderedListMatch) {
+      elements.push(
+        <div key={`ol-${idx}`} className="flex gap-2.5 ml-3 my-1.5 text-xs text-slate-700 leading-relaxed">
+          <span className="font-mono bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded font-black text-[10px] shadow-3sm shrink-0 h-fit">
+            {orderedListMatch[1]}.
+          </span>
+          <p className="flex-1 mt-0.5">{parseInlineMarkdown(orderedListMatch[2])}</p>
+        </div>
+      );
+      continue;
+    }
+
+    // 2b. Indented alphabetical lists (a. b. c. etc for narrowing/sub-points)
+    const alphaListMatch = trimmed.match(/^([a-zA-Z])\.\s+(.*)/);
+    if (alphaListMatch) {
+      elements.push(
+        <div key={`al-${idx}`} className="flex gap-2.5 ml-8 my-1 text-xs text-slate-600 leading-relaxed">
+          <span className="font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-bold text-[9px] shadow-3sm shrink-0 h-fit uppercase">
+            {alphaListMatch[1]}.
+          </span>
+          <p className="flex-1 mt-0.5">{parseInlineMarkdown(alphaListMatch[2])}</p>
+        </div>
+      );
+      continue;
+    }
+
+    // 3. Bullet points (- or * or •)
+    if (trimmed.startsWith("- ") || trimmed.startsWith("* ") || trimmed.startsWith("• ")) {
+      const content = trimmed.replace(/^[-*•]\s+/, "");
+      elements.push(
+        <div key={`ul-${idx}`} className="flex gap-2.5 ml-3 my-1 text-xs text-slate-700 items-start leading-relaxed animate-none">
+          <span className="text-sky-500 mt-1.5 shrink-0 select-none text-[10px]">•</span>
+          <p className="flex-1 mt-0.5">{parseInlineMarkdown(content)}</p>
+        </div>
+      );
+      continue;
+    }
+
+    // 4. Standard Paragraph / Line
+    elements.push(
+      <p key={`p-${idx}`} className="text-slate-800 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap">
+        {parseInlineMarkdown(line)}
+      </p>
+    );
+  }
+
+  if (inTable) {
+    const table = flushTable(`table-end`);
+    if (table) {
+      elements.push(table);
+    }
+  }
+
+  return <div className="space-y-2 mt-1">{elements}</div>;
 }
 
 function parseInlineMarkdown(text: string) {

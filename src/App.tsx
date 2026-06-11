@@ -21,6 +21,13 @@ import {
   exportAllSectionsToWord, 
   exportAllSectionsToPPTX
 } from "./utils/projectDashboardHelper";
+import {
+  ChatIntelligenceState,
+  defaultChatIntelligence,
+  calculateBIAnalysis,
+  exportChatBIToWord,
+  exportChatBIToPPTX
+} from "./utils/chatIntelligenceHelper";
 import Navbar from "./components/Navbar";
 const pramaLogo = "https://lh3.googleusercontent.com/d/1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X";
 
@@ -67,9 +74,24 @@ import {
   SquarePen,
   Search,
   Grid,
-  ArrowLeft
+  ArrowLeft,
+  Hand,
+  Move
 } from "lucide-react";
 import { GoogleGenAI } from "@google/genai";
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as ReChartsTooltip,
+  Legend as ReChartsLegend,
+  Cell
+} from "recharts";
 
 // Division profiles matching real Pancaran Group Logistics & Audit operations
 const divisions = [
@@ -93,6 +115,11 @@ export default function App() {
   const [guestUser, setGuestUser] = useState<{ uid: string; email: string; displayName: string } | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [showHeroLanding, setShowHeroLanding] = useState<boolean>(() => {
+    // Jika tidak ada user virtual auth yang tersimpan di localStorage (belum login), selalu masuk ke Hero Landing saat refresh
+    const hasSavedUser = localStorage.getItem("prama_virtual_auth_user");
+    if (!hasSavedUser) {
+      return true;
+    }
     return sessionStorage.getItem("prama_hero_dismissed") !== "true";
   });
 
@@ -168,7 +195,12 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<"chat" | "files">("chat");
 
   // Tab selector inside main dashboard
-  const [dashboardView, setDashboardView] = useState<"divisions" | "saved_docs" | "approval_requests" | "project_dashboard">("divisions");
+  const [dashboardView, setDashboardView] = useState<"divisions" | "saved_docs" | "approval_requests" | "project_dashboard" | "chat_intelligence">("divisions");
+
+  // Chat Intelligence Custom BI parameters
+  const [chatBIState, setChatBIState] = useState<ChatIntelligenceState>(defaultChatIntelligence);
+
+  const [slideImageErrors, setSlideImageErrors] = useState<Record<number, boolean>>({});
 
   // Project Dashboard customized parameters
   const [dashboardProjectTitle, setDashboardProjectTitle] = useState("Kajian Strategis: Waste Management Transportation");
@@ -248,6 +280,134 @@ export default function App() {
       localStorage.removeItem("prama_virtual_auth_user");
     }
   }, [user]);
+
+  // Sync latest chat recommendations & metrics to Chat Intelligence BI Dashboard State
+  const handleSyncChatToBI = () => {
+    if (chatMessages.length === 0) {
+      alert("Tidak ada riwayat percakapan chat untuk disinkronkan. Silakan kirim pesan ke Asisten PRAMA terlebih dahulu!");
+      return;
+    }
+    
+    // Search newest to oldest for assistant messages
+    const botMessages = [...chatMessages].reverse().filter(m => m.sender === "assistant" || m.sender === "bot");
+    if (botMessages.length === 0) {
+      alert("Belum ada respon dari Asisten PRAMA di dalam riwayat chat untuk disinkronkan.");
+      return;
+    }
+
+    const latestText = botMessages[0].text;
+    
+    // Setup temporary variables with current state as fallback
+    let parsedTitle = chatBIState.projectTitle;
+    let parsedCapex = chatBIState.initialCapex;
+    let parsedSavings = chatBIState.annualSavings;
+    let parsedRevenue = chatBIState.salesIncrease;
+    let parsedRecommendations = [...chatBIState.recommendations];
+    let parsedSWOT = { ...chatBIState.swot };
+    let parsedTimeline = [...chatBIState.timeline];
+
+    // 1. Try extracting Project Title
+    const titleMatch = latestText.match(/(?:Judul|Project|Proyek|Kajian)\s*(?:Strategis|Komprehensif)?\s*:\s*([^\n]+)/i);
+    if (titleMatch && titleMatch[1].trim()) {
+      parsedTitle = titleMatch[1].trim().replace(/\*+/g, "").trim();
+    }
+
+    // 2. Try extracting CAPEX / Investment figure (e.g. 5 Miliar or 5000 Juta)
+    const capexMatch = latestText.match(/(?:CAPEX|Investasi Awal|Capital)\s*(?:Awal|Expenditure)?\s*(?:sebesar|yaitu|Rp)?\s*([\d\.,\s]+)\s*(?:Miliar|M|Juta|Jt)/i);
+    if (capexMatch) {
+      const cleanedNum = capexMatch[1].replace(/\s/g, "").replace(/,/g, ".");
+      const val = parseFloat(cleanedNum);
+      if (!isNaN(val)) {
+        parsedCapex = val < 80 ? Math.round(val * 1000) : Math.round(val);
+      }
+    }
+
+    // 3. Try extracting annual savings
+    const savingsMatch = latestText.match(/(?:Penghematan|Savings|Efisiensi)\s*(?:Ops|Operasional)?\s*(?:sebesar|yaitu|Rp)?\s*([\d\.,\s]+)\s*(?:Miliar|M|Juta|Jt)/i);
+    if (savingsMatch) {
+      const cleanedNum = savingsMatch[1].replace(/\s/g, "").replace(/,/g, ".");
+      const val = parseFloat(cleanedNum);
+      if (!isNaN(val)) {
+        parsedSavings = val < 80 ? Math.round(val * 1000) : Math.round(val);
+      }
+    }
+
+    // 4. Try extracting recommendations and SWOT metrics line-by-line
+    const lines = latestText.split("\n");
+    let recsFound: any[] = [];
+    let swotS: string[] = [];
+    let swotW: string[] = [];
+    let swotO: string[] = [];
+    let swotT: string[] = [];
+    let swotMode: "s" | "w" | "o" | "t" | "none" = "none";
+
+    lines.forEach((line) => {
+      const trimmed = line.trim();
+      const lower = trimmed.toLowerCase();
+      
+      // Determine SWOT section
+      if (lower.includes("strength") || lower.includes("kekuatan")) {
+        swotMode = "s";
+        return;
+      } else if (lower.includes("weakness") || lower.includes("kelemahan")) {
+        swotMode = "w";
+        return;
+      } else if (lower.includes("opportunity") || lower.includes("peluang")) {
+        swotMode = "o";
+        return;
+      } else if (lower.includes("threat") || lower.includes("ancaman") || lower.includes("risiko luar")) {
+        swotMode = "t";
+        return;
+      }
+
+      const cleanLine = trimmed.replace(/^[\s•\-\*\d\.\)]+\s*/, "").replace(/\*+/g, "").trim();
+
+      if (cleanLine.length > 15) {
+        if (swotMode === "s" && swotS.length < 3) swotS.push(cleanLine);
+        else if (swotMode === "w" && swotW.length < 3) swotW.push(cleanLine);
+        else if (swotMode === "o" && swotO.length < 3) swotO.push(cleanLine);
+        else if (swotMode === "t" && swotT.length < 3) swotT.push(cleanLine);
+      }
+
+      // Check for bullet lines looking like solid recommendations
+      if ((trimmed.startsWith("* ") || trimmed.startsWith("- ") || /^\d+[\.\)]\s+/.test(trimmed)) && cleanLine.length > 25) {
+        if (recsFound.length < 4 && !lower.includes("kekuatan") && !lower.includes("kelemahan") && !lower.includes("peluang") && !lower.includes("ancaman")) {
+          const categories = ["Digital", "Operasional", "SDM", "Risiko"];
+          const impactLevels: Array<"High" | "Medium"> = ["High", "Medium"];
+          const costEstimations = [450, 250, 350, 550];
+          
+          recsFound.push({
+            id: `rec-sync-${recsFound.length + 1}`,
+            title: cleanLine.split(".")[0].substring(0, 48).trim() + (cleanLine.split(".")[0].length > 48 ? "..." : ""),
+            category: categories[recsFound.length % categories.length],
+            description: cleanLine,
+            impact: impactLevels[recsFound.length % impactLevels.length],
+            cost: costEstimations[recsFound.length % costEstimations.length]
+          });
+        }
+      }
+    });
+
+    if (swotS.length > 0) parsedSWOT.strengths = swotS;
+    if (swotW.length > 0) parsedSWOT.weaknesses = swotW;
+    if (swotO.length > 0) parsedSWOT.opportunities = swotO;
+    if (swotT.length > 0) parsedSWOT.threats = swotT;
+    if (recsFound.length > 0) parsedRecommendations = recsFound;
+
+    setChatBIState({
+      projectTitle: parsedTitle,
+      targetCompany: chatBIState.targetCompany,
+      division: activeDivision === "comercial" ? "Commercial & Business Development" : "PRAMA Enterprise & Operations",
+      initialCapex: parsedCapex,
+      annualSavings: parsedSavings,
+      salesIncrease: parsedRevenue,
+      recommendations: parsedRecommendations,
+      swot: parsedSWOT,
+      timeline: parsedTimeline
+    });
+
+    alert("Sinkronisasi Sukses! Asisten Coder PRAMA telah mendeteksi metrik finansial, draf SWOT, dan rekomendasi program baru langsung dari isi chat terakhir Anda untuk dipetakan ke dasbor BI ini.");
+  };
 
   // Monitor registration approval status
   useEffect(() => {
@@ -1784,6 +1944,8 @@ ${lastMsgText}`;
     setGuestUser(null);
     setActiveDivision(null);
     setUser(null);
+    sessionStorage.removeItem("prama_hero_dismissed");
+    setShowHeroLanding(true);
   };
 
   const handleApproveRequest = async (requestId: string) => {
@@ -1812,7 +1974,13 @@ ${lastMsgText}`;
   if (authLoading) {
     return (
       <div className="flex h-screen w-screen flex-col items-center justify-center bg-slate-50 font-sans text-slate-800">
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl overflow-hidden bg-slate-50 border border-slate-200 shadow-lg animate-bounce duration-1000">
+        <a
+          href="https://aistudio.google.com/apps/d4e73b8b-0ce8-482c-838c-fcfa6d09b5b3?showAssistant=true&showPreview=true"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex h-14 w-14 items-center justify-center rounded-2xl overflow-hidden bg-slate-50 border border-slate-200 shadow-lg animate-bounce duration-1000 transition hover:scale-105"
+          title="Buka Google AI Studio Workspace"
+        >
           <img 
             id="prama-loading-logo"
             src={pramaLogo} 
@@ -1820,7 +1988,7 @@ ${lastMsgText}`;
             className="h-full w-full object-cover"
             referrerPolicy="no-referrer"
           />
-        </div>
+        </a>
         <h2 className="mt-4 font-display font-extrabold text-lg text-slate-800 tracking-wide uppercase">
           PRAMA PORTAL
         </h2>
@@ -1831,22 +1999,16 @@ ${lastMsgText}`;
     );
   }
 
-  // Render 1.5: Cinematic Video Landing/Intro Screen
+  // Render 1.5: Cinematic Photo Landing/Intro Screen
   if (showHeroLanding) {
     return (
       <div className="video-container" id="landing-hero-container">
-        <video 
-          autoPlay 
-          muted 
-          loop 
-          playsInline 
-          id="bg-video"
+        <img 
+          src="https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8" 
+          alt="Pancaran Group Background" 
           referrerPolicy="no-referrer"
-        >
-          <source src="nama_video_logistik_anda.mp4" type="video/mp4" />
-          <source src="https://assets.mixkit.co/videos/preview/mixkit-shipping-containers-loaded-on-a-cargo-ship-34149-large.mp4" type="video/mp4" />
-          Browser Anda tidak mendukung video HTML5.
-        </video>
+          className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 animate-fade-in"
+        />
 
         <div className="menu-content" id="landing-menu-content">
           <h1>Pancaran Group</h1>
@@ -1867,11 +2029,24 @@ ${lastMsgText}`;
     );
   }
 
-  // Render 2: Authentic Screen (Login & Register Form) - Theme: Light & Elegant
+  // Render 2: Authentic Screen (Login & Register Form) - Theme: Light & Elegant with Brand Background Image
   if (!activeUser) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-100 px-4 py-12 font-sans transition-colors duration-300">
-        <div className="w-full max-w-4xl bg-white rounded-3xl shadow-xl overflow-hidden grid grid-cols-1 md:grid-cols-2 border border-slate-200">
+      <div className="relative min-h-screen flex items-center justify-center px-4 py-12 font-sans overflow-hidden">
+        {/* Brand Background Image */}
+        <div className="absolute inset-0 z-0">
+          <img 
+            src="https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8" 
+            alt="Pancaran Group Background" 
+            referrerPolicy="no-referrer"
+            className="w-full h-full object-cover"
+          />
+          {/* Elegant Dark/Blur Overlay to focus and elevate contrast */}
+          <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-sm" />
+        </div>
+
+        {/* Auth Card wrapper with elevated relative z-index */}
+        <div className="relative z-10 w-full max-w-4xl bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl overflow-hidden grid grid-cols-1 md:grid-cols-2 border border-white/20">
           
           {/* Left panel: Info Hub Brand PRAMA */}
           <div className="bg-gradient-to-br from-indigo-700 via-indigo-900 to-slate-900 p-8 text-white flex flex-col justify-between">
@@ -1949,7 +2124,7 @@ ${lastMsgText}`;
                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider font-mono">
                     Nama Lengkap / Jabatan
                   </label>
-                  <div className="relative flex items-center bg-slate-55 bg-slate-100/60 rounded-xl overflow-hidden px-3 border border-slate-205 focus-within:border-sky-505 focus-within:ring-1 focus-within:ring-sky-100 transition shadow-2sm">
+                  <div className="relative flex items-center bg-slate-100/60 rounded-xl overflow-hidden px-3 border border-slate-200 focus-within:border-indigo-500 transition shadow-2sm">
                     <Users className="h-4 w-4 text-slate-400 mr-2 shrink-0 font-bold" />
                     <input
                       type="text"
@@ -1966,7 +2141,7 @@ ${lastMsgText}`;
                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider font-mono">
                   Alamat Email Korporat
                 </label>
-                <div className="relative flex items-center bg-slate-100/60 rounded-xl overflow-hidden px-3 border border-slate-200 focus-within:border-sky-500 focus-within:ring-1 focus-within:ring-sky-100 transition shadow-2sm">
+                <div className="relative flex items-center bg-slate-100/60 rounded-xl overflow-hidden px-3 border border-slate-200 focus-within:border-indigo-500 transition shadow-2sm">
                   <Mail className="h-4 w-4 text-slate-400 mr-2 shrink-0 font-bold" />
                   <input
                     type="email"
@@ -1982,7 +2157,7 @@ ${lastMsgText}`;
                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider font-mono">
                   Sandi Rahasia
                 </label>
-                <div className="relative flex items-center bg-slate-100/60 rounded-xl overflow-hidden px-3 border border-slate-200 focus-within:border-sky-500 focus-within:ring-1 focus-within:ring-sky-100 transition shadow-2sm">
+                <div className="relative flex items-center bg-slate-100/60 rounded-xl overflow-hidden px-3 border border-slate-200 focus-within:border-indigo-500 transition shadow-2sm">
                   <Lock className="h-4 w-4 text-slate-400 mr-2 shrink-0 font-bold" />
                   <input
                     type="password"
@@ -2400,7 +2575,7 @@ ${lastMsgText}`;
                       value={dashboardProjectTitle}
                       onChange={(e) => setDashboardProjectTitle(e.target.value)}
                       placeholder="Masukkan nama proyek / judul kajian..."
-                      className="w-full pl-3 pr-10 py-2.5 text-xs font-extrabold border border-slate-200 bg-white text-slate-800 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-shadow outline-none shadow-sm font-sans"
+                      className="w-full pl-3 pr-10 py-2.5 text-xs font-extrabold border border-slate-200 bg-white text-slate-800 rounded-xl focus:border-indigo-500 transition-shadow outline-none shadow-sm font-sans"
                     />
                     <div className="absolute right-3 top-2.5 text-[9px] text-slate-400 font-extrabold uppercase font-mono tracking-wider select-none bg-slate-50 border border-slate-100 rounded px-1.5 py-0.5 leading-none">
                       Edit
@@ -2619,6 +2794,730 @@ ${lastMsgText}`;
               {/* Footer detail */}
               <div className="bg-slate-900 border-t border-slate-800 text-[9.5px] text-slate-500 text-center py-2.5 font-mono select-none">
                 PT PANCARAN GROUP LOGISTICS SERVICES INTEGRATED CLOUD SYSTEM &bull; PRAMA ADVISOR v1.5
+              </div>
+            </div>
+          ) : dashboardView === "chat_intelligence" ? (
+            <div className="max-w-6xl mx-auto text-left bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden w-full min-h-[680px] flex flex-col transition-all duration-300">
+              {/* Header */}
+              <div className="bg-slate-900 px-6 py-5 flex flex-col md:flex-row md:items-center justify-between gap-4 text-white border-b border-slate-800 shrink-0">
+                <div className="flex items-center gap-3.5">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-cyan-950 text-cyan-400 font-extrabold border border-cyan-800 text-sm shadow-inner shadow-black/80">
+                    📊
+                  </div>
+                  <div>
+                    <h3 className="font-display font-black text-sm tracking-wider uppercase leading-none text-white flex items-center gap-2">
+                      DASHBOARD CHAT INTELLIGENCE & BUSINESS INTELLIGENCE (BI)
+                      <span className="text-[8px] font-bold font-mono tracking-widest px-2 py-0.5 rounded bg-cyan-900/80 text-cyan-200 border border-cyan-700 uppercase leading-none">
+                        COGNITIVE REPORT
+                      </span>
+                    </h3>
+                    <p className="text-[10px] text-slate-400 font-mono tracking-widest font-bold mt-1 uppercase">
+                      INTEGRASI REKOMENDASI ASISTEN & ANALISIS SIMULASI WORKBENCH
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 self-end md:self-center">
+                  <button
+                    onClick={handleSyncChatToBI}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-[10.5px] font-black rounded-xl transition shadow-md active:scale-97 cursor-pointer"
+                    title="Ambil rekomendasi teranyar dari chat asisten di sebelah kiri"
+                  >
+                    <Sparkles className="h-3.5 w-3.5 text-slate-950" />
+                    <span>Sinkronisasi Data Chat</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      exportChatBIToWord(chatBIState);
+                    }}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-650 bg-emerald-600 hover:bg-emerald-500 text-white text-[10.5px] font-black rounded-xl transition shadow-md active:scale-97 cursor-pointer"
+                  >
+                    <FileText className="h-3.5 w-3.5 text-white" />
+                    <span>Unduh Word (.doc)</span>
+                  </button>
+
+                  <button
+                    onClick={async () => {
+                      await exportChatBIToPPTX(chatBIState);
+                    }}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 bg-indigo-605 bg-indigo-600 hover:bg-indigo-500 text-white text-[10.5px] font-black rounded-xl transition shadow-md active:scale-97 cursor-pointer"
+                  >
+                    <Presentation className="h-3.5 w-3.5 text-white" />
+                    <span>Unduh PPTX Slides</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setDashboardView("divisions");
+                    }}
+                    className="flex items-center gap-1 bg-slate-800 hover:bg-slate-700 active:scale-97 text-slate-200 text-[10.5px] font-black px-3.5 py-1.5 rounded-xl border border-slate-700 transition cursor-pointer"
+                  >
+                    <ArrowLeft className="h-3.5 w-3.5" />
+                    <span>Kembali ke Divisi</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Main Content Area */}
+              <div className="flex-1 bg-slate-50 p-6 space-y-6 overflow-y-auto max-h-[75vh]">
+                {/* 1. PROJECT TITLE EDIT & METRICS ROW */}
+                <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="col-span-1 md:col-span-2">
+                      <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1.5">Judul Kajian BI Percakapan</label>
+                      <input
+                        type="text"
+                        value={chatBIState.projectTitle}
+                        onChange={(e) => setChatBIState(prev => ({ ...prev, projectTitle: e.target.value }))}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-cyan-500"
+                        placeholder="Nama Proyek Kajian"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1.5">Perusahaan Sasaran</label>
+                      <input
+                        type="text"
+                        value={chatBIState.targetCompany}
+                        onChange={(e) => setChatBIState(prev => ({ ...prev, targetCompany: e.target.value }))}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-cyan-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* KPI Row */}
+                  {(() => {
+                    const calc = calculateBIAnalysis(chatBIState);
+                    return (
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+                        <div className="bg-slate-900 text-white rounded-xl p-4 border border-slate-850 shadow-sm flex flex-col justify-between">
+                          <span className="text-[9px] font-black tracking-wider text-slate-400 uppercase">CAPEX INVESTASI AWAL</span>
+                          <span className="text-xl font-extrabold text-cyan-400 my-1">Rp {(chatBIState.initialCapex / 1000).toFixed(2)} Miliar</span>
+                          <span className="text-[9.5px] font-mono text-slate-450 text-slate-400">Rp {chatBIState.initialCapex.toLocaleString()} Juta</span>
+                        </div>
+                        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex flex-col justify-between">
+                          <span className="text-[9px] font-black tracking-wider text-slate-400 uppercase">MANFAAT TAHUNAN</span>
+                          <span className="text-xl font-extrabold text-emerald-600 my-1">Rp {(calc.annualBenefit / 1000).toFixed(2)} Miliar</span>
+                          <span className="text-[9.5px] text-slate-500">Kombinasi Ops & Kenaikan Sales</span>
+                        </div>
+                        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex flex-col justify-between">
+                          <span className="text-[9px] font-black tracking-wider text-slate-400 uppercase">PAYBACK PERIOD (PBP)</span>
+                          <span className="text-xl font-extrabold text-slate-800 my-1">{calc.paybackPeriod} Tahun</span>
+                          <span className="text-[9.5px] text-slate-500 font-bold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100 text-emerald-750 leading-none inline-block">Sangat Layak</span>
+                        </div>
+                        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex flex-col justify-between">
+                          <span className="text-[9px] font-black tracking-wider text-slate-400 uppercase">ROI PROYEKSI (3 TAHUN)</span>
+                          <span className="text-xl font-extrabold text-indigo-600 my-1">{calc.roiPercentage3Years}%</span>
+                          <span className="text-[9.5px] text-slate-500">Nilai Bersih: Rp {(calc.netBenefit3Years / 1000).toFixed(2)} Miliar</span>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {/* 2. SANDBOX WORKBENCH SLIDERS & RECHARTS GRAPHS */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                  {/* Sliders workbench */}
+                  <div className="lg:col-span-5 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between gap-4">
+                    <div>
+                      <h4 className="text-[12px] font-black text-slate-800 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                        <Wallet className="h-4 w-4 text-cyan-600" />
+                        Finansial Sandbox Simulation
+                      </h4>
+                      <p className="text-[10px] text-slate-400 font-semibold mb-2 leading-normal">
+                        Geser parameter untuk mensimulasikan kelayakan finansial dari rincian chat asisten secara realtime.
+                      </p>
+                    </div>
+
+                    <div className="space-y-4">
+                      {/* Slider 1: CAPEX */}
+                      <div>
+                        <div className="flex justify-between text-[11px] font-bold text-slate-700 mb-1">
+                          <span>Investasi Awal (CAPEX)</span>
+                          <span className="text-cyan-700">Rp {(chatBIState.initialCapex / 1000).toFixed(1)} Miliar</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="500"
+                          max="20000"
+                          step="100"
+                          value={chatBIState.initialCapex}
+                          onChange={(e) => setChatBIState(prev => ({ ...prev, initialCapex: parseInt(e.target.value) }))}
+                          className="w-full accent-cyan-600 h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer"
+                        />
+                      </div>
+
+                      {/* Slider 2: Annual Savings */}
+                      <div>
+                        <div className="flex justify-between text-[11px] font-bold text-slate-700 mb-1">
+                          <span>Target Penghematan Ops / Tahun</span>
+                          <span className="text-emerald-700">Rp {(chatBIState.annualSavings / 1000).toFixed(1)} Miliar</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="100"
+                          max="10000"
+                          step="50"
+                          value={chatBIState.annualSavings}
+                          onChange={(e) => setChatBIState(prev => ({ ...prev, annualSavings: parseInt(e.target.value) }))}
+                          className="w-full accent-emerald-600 h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer"
+                        />
+                      </div>
+
+                      {/* Slider 3: Sales Increase */}
+                      <div>
+                        <div className="flex justify-between text-[11px] font-bold text-slate-700 mb-1">
+                          <span>Peningkatan Penjualan Baru / Tahun</span>
+                          <span className="text-indigo-700">Rp {(chatBIState.salesIncrease / 1000).toFixed(1)} Miliar</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="100"
+                          max="10000"
+                          step="50"
+                          value={chatBIState.salesIncrease}
+                          onChange={(e) => setChatBIState(prev => ({ ...prev, salesIncrease: parseInt(e.target.value) }))}
+                          className="w-full accent-indigo-600 h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl text-[10px] text-slate-500 font-bold leading-normal">
+                      💡 <span className="text-slate-700">Tips Operasional B3:</span> Semakin rendah investasi alat sensor IoT dikombinasikan dengan sertifikasi internal supir tangki mandiri, payback period investasi akan meluncur di bawah <span className="text-cyan-600">2.0 Tahun</span>!
+                    </div>
+                  </div>
+
+                  {/* ReCharts representation */}
+                  <div className="lg:col-span-7 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm min-h-[300px] flex flex-col justify-between">
+                    <div>
+                      <h4 className="text-[12px] font-black text-slate-800 uppercase tracking-wider mb-2">
+                        PROYEKSI AKUMULASI PENGHEMATAN & ARUS KAS (5 TAHUN)
+                      </h4>
+                    </div>
+
+                    <div className="w-full h-56 select-none border border-slate-100 rounded-xl p-2 bg-slate-50">
+                      {(() => {
+                        const calc = calculateBIAnalysis(chatBIState);
+                        const benefit = calc.annualBenefit;
+                        const chartData = [
+                          { year: "Mulai", "Kas Kumulatif": -chatBIState.initialCapex, "Manfaat": 0 },
+                          { year: "Thn 1", "Kas Kumulatif": benefit - chatBIState.initialCapex, "Manfaat": benefit },
+                          { year: "Thn 2", "Kas Kumulatif": (benefit * 2) - chatBIState.initialCapex, "Manfaat": benefit * 2 },
+                          { year: "Thn 3", "Kas Kumulatif": (benefit * 3) - chatBIState.initialCapex, "Manfaat": benefit * 3 },
+                          { year: "Thn 4", "Kas Kumulatif": (benefit * 4) - chatBIState.initialCapex, "Manfaat": benefit * 4 },
+                          { year: "Thn 5", "Kas Kumulatif": (benefit * 5) - chatBIState.initialCapex, "Manfaat": benefit * 5 },
+                        ];
+
+                        return (
+                          <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={chartData} margin={{ top: 10, right: 15, left: -20, bottom: 0 }}>
+                              <defs>
+                                <linearGradient id="colorCash" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.4}/>
+                                  <stop offset="95%" stopColor="#06b6d4" stopOpacity={0}/>
+                                </linearGradient>
+                                <linearGradient id="colorBenefit" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
+                                  <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                                </linearGradient>
+                              </defs>
+                              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#CBD5E1" />
+                              <XAxis dataKey="year" stroke="#64748B" fontSize={10} fontWeight="bold" />
+                              <YAxis stroke="#64748B" fontSize={10} />
+                              <ReChartsTooltip formatter={(value: number) => `Rp ${value.toLocaleString()} Jt`} />
+                              <ReChartsLegend wrapperStyle={{ fontSize: 10, fontWeight: "bold" }} />
+                              <Area type="monotone" name="Kas Kumulatif (Jt)" dataKey="Kas Kumulatif" stroke="#06b6d4" strokeWidth={2.5} fillOpacity={1} fill="url(#colorCash)" />
+                              <Area type="monotone" name="Manfaat Akumulatif (Jt)" dataKey="Manfaat" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorBenefit)" />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. SWOT ANALYSIS GRID INTERACTIVE EDITORS */}
+                <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h4 className="text-[12px] font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <Scale className="h-4 w-4 text-emerald-600" />
+                      Strategic SWOT Matrix Editor
+                    </h4>
+                    <span className="text-[9px] font-extrabold text-slate-400-custom text-slate-400">INPUT BARU & LIHAT PERUBAHAN INSTAN</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Strengths */}
+                    <div className="bg-green-50/50 border border-green-200 rounded-xl p-4 flex flex-col justify-between">
+                      <div>
+                        <span className="text-[10px] font-extrabold text-green-700 uppercase tracking-wide block mb-3 font-display">STRENGTHS (KEKUATAN INTERNAL)</span>
+                        <div className="space-y-2">
+                          {chatBIState.swot.strengths.map((str, idx) => (
+                            <div key={idx} className="flex justify-between items-start gap-2 bg-white px-2.5 py-1.5 rounded-lg border border-green-150 text-[11px] text-slate-700 font-bold shadow-xs">
+                              <span className="line-clamp-2">{str}</span>
+                              <button
+                                onClick={() => setChatBIState(prev => ({
+                                  ...prev,
+                                  swot: { ...prev.swot, strengths: prev.swot.strengths.filter((_, i) => i !== idx) }
+                                }))}
+                                className="text-red-500 hover:text-red-700 text-xs shrink-0 cursor-pointer"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="mt-4 pt-4 border-t border-green-200/50 flex gap-2">
+                        <input
+                          type="text"
+                          id="new-strength-input"
+                          placeholder="Tambah muatan kekuatan..."
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              const input = e.currentTarget;
+                              if (input.value.trim()) {
+                                setChatBIState(prev => ({
+                                  ...prev,
+                                  swot: { ...prev.swot, strengths: [...prev.swot.strengths, input.value.trim()] }
+                                }));
+                                input.value = "";
+                              }
+                            }
+                          }}
+                          className="flex-1 px-2 py-1 bg-white border border-green-200 text-[10.5px] font-semibold rounded-lg text-slate-800"
+                        />
+                        <button
+                          onClick={() => {
+                            const input = document.getElementById("new-strength-input") as HTMLInputElement;
+                            if (input && input.value.trim()) {
+                              setChatBIState(prev => ({
+                                ...prev,
+                                swot: { ...prev.swot, strengths: [...prev.swot.strengths, input.value.trim()] }
+                              }));
+                              input.value = "";
+                            }
+                          }}
+                          className="bg-green-600 hover:bg-green-500 text-white text-[10px] font-black px-2.5 py-1 rounded-lg cursor-pointer"
+                        >
+                          Tambah
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Weaknesses */}
+                    <div className="bg-red-50/50 border border-red-200 rounded-xl p-4 flex flex-col justify-between">
+                      <div>
+                        <span className="text-[10px] font-extrabold text-red-700 uppercase tracking-wide block mb-3 font-display">WEAKNESSES (KELEMAHAN INTERNAL)</span>
+                        <div className="space-y-2">
+                          {chatBIState.swot.weaknesses.map((weak, idx) => (
+                            <div key={idx} className="flex justify-between items-start gap-2 bg-white px-2.5 py-1.5 rounded-lg border border-red-150 text-[11px] text-slate-700 font-bold shadow-xs">
+                              <span className="line-clamp-2">{weak}</span>
+                              <button
+                                onClick={() => setChatBIState(prev => ({
+                                  ...prev,
+                                  swot: { ...prev.swot, weaknesses: prev.swot.weaknesses.filter((_, i) => i !== idx) }
+                                }))}
+                                className="text-red-500 hover:text-red-700 text-xs shrink-0 cursor-pointer"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="mt-4 pt-4 border-t border-red-200/50 flex gap-2">
+                        <input
+                          type="text"
+                          id="new-weakness-input"
+                          placeholder="Tambah kelemahan internal..."
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              const input = e.currentTarget;
+                              if (input.value.trim()) {
+                                setChatBIState(prev => ({
+                                  ...prev,
+                                  swot: { ...prev.swot, weaknesses: [...prev.swot.weaknesses, input.value.trim()] }
+                                }));
+                                input.value = "";
+                              }
+                            }
+                          }}
+                          className="flex-1 px-2 py-1 bg-white border border-red-200 text-[10.5px] font-semibold rounded-lg text-slate-800"
+                        />
+                        <button
+                          onClick={() => {
+                            const input = document.getElementById("new-weakness-input") as HTMLInputElement;
+                            if (input && input.value.trim()) {
+                              setChatBIState(prev => ({
+                                ...prev,
+                                swot: { ...prev.swot, weaknesses: [...prev.swot.weaknesses, input.value.trim()] }
+                              }));
+                              input.value = "";
+                            }
+                          }}
+                          className="bg-red-650 bg-red-600 hover:bg-red-550 text-white text-[10px] font-black px-2.5 py-1 rounded-lg cursor-pointer"
+                        >
+                          Tambah
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Opportunities */}
+                    <div className="bg-blue-50/50 border border-blue-200 rounded-xl p-4 flex flex-col justify-between">
+                      <div>
+                        <span className="text-[10px] font-extrabold text-blue-700 uppercase tracking-wide block mb-3 font-display">OPPORTUNITIES (PELUANG EKSTERNAL)</span>
+                        <div className="space-y-2">
+                          {chatBIState.swot.opportunities.map((opp, idx) => (
+                            <div key={idx} className="flex justify-between items-start gap-2 bg-white px-2.5 py-1.5 rounded-lg border border-blue-150 text-[11px] text-slate-700 font-bold shadow-xs">
+                              <span className="line-clamp-2">{opp}</span>
+                              <button
+                                onClick={() => setChatBIState(prev => ({
+                                  ...prev,
+                                  swot: { ...prev.swot, opportunities: prev.swot.opportunities.filter((_, i) => i !== idx) }
+                                }))}
+                                className="text-red-500 hover:text-red-700 text-xs shrink-0 cursor-pointer"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="mt-4 pt-4 border-t border-blue-200/50 flex gap-2">
+                        <input
+                          type="text"
+                          id="new-opportunity-input"
+                          placeholder="Tambah peluang baru..."
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              const input = e.currentTarget;
+                              if (input.value.trim()) {
+                                setChatBIState(prev => ({
+                                  ...prev,
+                                  swot: { ...prev.swot, opportunities: [...prev.swot.opportunities, input.value.trim()] }
+                                }));
+                                input.value = "";
+                              }
+                            }
+                          }}
+                          className="flex-1 px-2 py-1 bg-white border border-blue-200 text-[10.5px] font-semibold rounded-lg text-slate-800"
+                        />
+                        <button
+                          onClick={() => {
+                            const input = document.getElementById("new-opportunity-input") as HTMLInputElement;
+                            if (input && input.value.trim()) {
+                              setChatBIState(prev => ({
+                                ...prev,
+                                swot: { ...prev.swot, opportunities: [...prev.swot.opportunities, input.value.trim()] }
+                              }));
+                              input.value = "";
+                            }
+                          }}
+                          className="bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black px-2.5 py-1 rounded-lg cursor-pointer"
+                        >
+                          Tambah
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Threats */}
+                    <div className="bg-amber-50/50 border border-amber-200 rounded-xl p-4 flex flex-col justify-between">
+                      <div>
+                        <span className="text-[10px] font-extrabold text-amber-700 uppercase tracking-wide block mb-3 font-display">THREATS (ANCAMAN RISIKO)</span>
+                        <div className="space-y-2">
+                          {chatBIState.swot.threats.map((thr, idx) => (
+                            <div key={idx} className="flex justify-between items-start gap-2 bg-white px-2.5 py-1.5 rounded-lg border border-amber-150 text-[11px] text-slate-700 font-bold shadow-xs">
+                              <span className="line-clamp-2">{thr}</span>
+                              <button
+                                onClick={() => setChatBIState(prev => ({
+                                  ...prev,
+                                  swot: { ...prev.swot, threats: prev.swot.threats.filter((_, i) => i !== idx) }
+                                }))}
+                                className="text-red-500 hover:text-red-700 text-xs shrink-0 cursor-pointer"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="mt-4 pt-4 border-t border-amber-200/50 flex gap-2">
+                        <input
+                          type="text"
+                          id="new-threat-input"
+                          placeholder="Tambah ancaman risiko..."
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              const input = e.currentTarget;
+                              if (input.value.trim()) {
+                                setChatBIState(prev => ({
+                                  ...prev,
+                                  swot: { ...prev.swot, threats: [...prev.swot.threats, input.value.trim()] }
+                                }));
+                                input.value = "";
+                              }
+                            }
+                          }}
+                          className="flex-1 px-2 py-1 bg-white border border-amber-200 text-[10.5px] font-semibold rounded-lg text-slate-800"
+                        />
+                        <button
+                          onClick={() => {
+                            const input = document.getElementById("new-threat-input") as HTMLInputElement;
+                            if (input && input.value.trim()) {
+                              setChatBIState(prev => ({
+                                ...prev,
+                                swot: { ...prev.swot, threats: [...prev.swot.threats, input.value.trim()] }
+                              }));
+                              input.value = "";
+                            }
+                          }}
+                          className="bg-amber-600 hover:bg-amber-500 text-white text-[10px] font-black px-2.5 py-1 rounded-lg cursor-pointer"
+                        >
+                          Tambah
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4. ACTIONABLE RECOMMENDATIONS EDITOR */}
+                <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+                  <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                    <h4 className="text-[12px] font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <Grid className="h-4 w-4 text-cyan-600" />
+                      Rincian Dokumen & Rekomendasi Program Strategis
+                    </h4>
+                    <span className="text-[9.5px] font-extrabold text-cyan-600 tracking-wider">EDIT TEKS REKOMENDASI TERSEMBUNYI SECARA INLINE</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {chatBIState.recommendations.map((rec, idx) => (
+                      <div key={rec.id} className="border border-slate-200 bg-slate-50/50 rounded-xl p-4 space-y-3 shadow-xs">
+                        <div className="flex justify-between items-center">
+                          <span className="px-2 py-0.5 text-[8px] font-mono font-black tracking-widest bg-cyan-100 text-cyan-800 rounded uppercase border border-cyan-200">
+                            Rekomendasi #{idx + 1}
+                          </span>
+                          <button
+                            onClick={() => setChatBIState(prev => ({
+                              ...prev,
+                              recommendations: prev.recommendations.filter(r => r.id !== rec.id)
+                            }))}
+                            className="bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 text-[9px] font-bold px-1.5 py-0.5 rounded cursor-pointer transition"
+                          >
+                            Hapus Program
+                          </button>
+                        </div>
+
+                        <div>
+                          <label className="block text-[9.5px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Judul Program</label>
+                          <input
+                            type="text"
+                            value={rec.title}
+                            onChange={(e) => {
+                              const titleVal = e.target.value;
+                              setChatBIState(prev => ({
+                                ...prev,
+                                recommendations: prev.recommendations.map(r => r.id === rec.id ? { ...r, title: titleVal } : r)
+                              }));
+                            }}
+                            className="w-full px-2.5 py-1.5 bg-white border border-slate-200 text-xs font-bold text-slate-800 rounded-lg focus:outline-cyan-500"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[9.5px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Kategori</label>
+                            <select
+                              value={rec.category}
+                              onChange={(e) => {
+                                const catVal = e.target.value;
+                                setChatBIState(prev => ({
+                                  ...prev,
+                                  recommendations: prev.recommendations.map(r => r.id === rec.id ? { ...r, category: catVal } : r)
+                                }));
+                              }}
+                              className="w-full px-2 py-1 bg-white border border-slate-200 text-xs font-semibold text-slate-700 rounded-lg"
+                            >
+                              <option value="Digital">Digital</option>
+                              <option value="Operasional">Operasional</option>
+                              <option value="SDM">SDM</option>
+                              <option value="Risiko">Risiko</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-[9.5px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Skala Dampak</label>
+                            <select
+                              value={rec.impact}
+                              onChange={(e) => {
+                                const impVal = e.target.value as "High" | "Medium" | "Low";
+                                setChatBIState(prev => ({
+                                  ...prev,
+                                  recommendations: prev.recommendations.map(r => r.id === rec.id ? { ...r, impact: impVal } : r)
+                                }));
+                              }}
+                              className="w-full px-2 py-1 bg-white border border-slate-200 text-xs font-semibold text-slate-700 rounded-lg"
+                            >
+                              <option value="High">Tinggi (High)</option>
+                              <option value="Medium">Sedang (Medium)</option>
+                              <option value="Low">Rendah (Low)</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-[9.5px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Alokasi Biaya (Rp Juta)</label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="range"
+                              min="10"
+                              max="1500"
+                              step="10"
+                              value={rec.cost}
+                              onChange={(e) => {
+                                const costVal = parseInt(e.target.value);
+                                setChatBIState(prev => ({
+                                  ...prev,
+                                  recommendations: prev.recommendations.map(r => r.id === rec.id ? { ...r, cost: costVal } : r)
+                                }));
+                              }}
+                              className="flex-1 accent-cyan-600 h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                            />
+                            <span className="text-[11px] font-bold text-slate-600 font-mono w-14 text-right">{rec.cost} Jt</span>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-[9.5px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Deskripsi Lengkap Tindakan</label>
+                          <textarea
+                            value={rec.description}
+                            rows={3}
+                            onChange={(e) => {
+                              const descVal = e.target.value;
+                              setChatBIState(prev => ({
+                                ...prev,
+                                recommendations: prev.recommendations.map(r => r.id === rec.id ? { ...r, description: descVal } : r)
+                              }));
+                            }}
+                            className="w-full px-2.5 py-1.5 bg-white border border-slate-200 text-[11px] leading-relaxed text-slate-600 rounded-lg focus:outline-cyan-500"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="pt-2">
+                    <button
+                      onClick={() => {
+                        const newId = `rec-${Date.now()}`;
+                        setChatBIState(prev => ({
+                          ...prev,
+                          recommendations: [
+                            ...prev.recommendations,
+                            {
+                              id: newId,
+                              title: "Program Tambahan Baru",
+                              category: "Operasional",
+                              description: "Deskripsi program strategis tambahan yang dipetakan dari asisten logistik PRAMA Advisor.",
+                              impact: "Medium",
+                              cost: 200
+                            }
+                          ]
+                        }));
+                      }}
+                      className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-black rounded-lg transition tracking-wide cursor-pointer"
+                    >
+                      + Tambah Rekomendasi Program Strategis
+                    </button>
+                  </div>
+                </div>
+
+                {/* 5. IMPLEMENTATION TIMELINE PLANNER */}
+                <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+                  <h4 className="text-[12px] font-black text-slate-800 uppercase tracking-wider">
+                    Roadmap & Milestone Tahapan Implementasi Lapangan
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    {chatBIState.timeline.map((step, idx) => (
+                      <div key={idx} className="border border-slate-200 rounded-xl p-3.5 bg-slate-50 relative flex flex-col justify-between">
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center">
+                            <span className="text-[8.5px] font-mono font-black text-cyan-600 tracking-wider">TAHAPAN #{idx + 1}</span>
+                            <input
+                              type="text"
+                              value={step.duration}
+                              onChange={(e) => {
+                                const durVal = e.target.value;
+                                setChatBIState(prev => ({
+                                  ...prev,
+                                  timeline: prev.timeline.map((item, i) => i === idx ? { ...item, duration: durVal } : item)
+                                }));
+                              }}
+                              className="px-1.5 py-0.5 bg-white text-[9px] font-mono font-bold text-indigo-700 bg-indigo-50 border border-indigo-150 rounded text-center w-20"
+                            />
+                          </div>
+
+                          <div>
+                            <span className="text-[9.5px] font-extrabold text-slate-400 uppercase leading-none block">Fase Program</span>
+                            <input
+                              type="text"
+                              value={step.phase}
+                              onChange={(e) => {
+                                const phVal = e.target.value;
+                                setChatBIState(prev => ({
+                                  ...prev,
+                                  timeline: prev.timeline.map((item, i) => i === idx ? { ...item, phase: phVal } : item)
+                                }));
+                              }}
+                              className="mt-1 w-full px-1.5 py-1 bg-white border border-slate-200 text-xs font-bold text-slate-800 rounded-md"
+                            />
+                          </div>
+
+                          <div>
+                            <span className="text-[9.5px] font-extrabold text-slate-400 uppercase leading-none block">Aktivitas Utama</span>
+                            <textarea
+                              value={step.task}
+                              rows={3}
+                              onChange={(e) => {
+                                const taskVal = e.target.value;
+                                setChatBIState(prev => ({
+                                  ...prev,
+                                  timeline: prev.timeline.map((item, i) => i === idx ? { ...item, task: taskVal } : item)
+                                }));
+                              }}
+                              className="mt-1 w-full px-1.5 py-1 bg-white border border-slate-200 text-[10.5px] text-slate-600 rounded-md animate-none"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="pt-2 border-t border-slate-200/50 mt-3">
+                          <span className="text-[8px] font-extrabold text-slate-400 uppercase">Milestone / Luaran</span>
+                          <input
+                            type="text"
+                            value={step.deliverable}
+                            onChange={(e) => {
+                              const delVal = e.target.value;
+                              setChatBIState(prev => ({
+                                ...prev,
+                                timeline: prev.timeline.map((item, i) => i === idx ? { ...item, deliverable: delVal } : item)
+                              }));
+                            }}
+                            className="mt-1 w-full px-1.5 py-1 bg-white border border-slate-200 text-[10.5px] font-bold text-emerald-700 rounded-md"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="bg-slate-900 border-t border-slate-800 text-[9.5px] text-slate-500 text-center py-2.5 font-mono select-none">
+                PT PANCARAN GROUP COGNITIVE BUSINESS INTELLIGENCE SYSTEM &bull; GENERATIVE CLIENT-SIDE DASHBOARD
               </div>
             </div>
           ) : (
@@ -3524,41 +4423,41 @@ ${lastMsgText}`;
                     };
 
                     return (
-                      <div className="flex-1 flex flex-col md:flex-row bg-white text-slate-800 relative">
+                      <div className="w-full h-full flex flex-col md:flex-row bg-white text-slate-800 relative overflow-hidden">
                         {/* Solid Top Accent Green Bar */}
-                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-[#00D285]" />
+                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-[#00D285] z-10" />
 
                         {/* Left half: Content & Bullets */}
-                        <div className="flex-1 flex flex-col justify-between p-6 sm:p-8 md:w-7/12 relative">
-                          <div className="space-y-3 pt-2">
+                        <div className="w-full md:w-7/12 h-full flex flex-col justify-between p-6 sm:p-8 md:p-10 relative overflow-hidden z-10">
+                          <div className="space-y-3 pt-2 shrink-0">
                             {/* Header row */}
-                            <div className="text-[9px] font-mono font-bold text-slate-400 uppercase tracking-wider flex justify-between items-center w-full pb-1">
+                            <div className="text-[9px] font-mono font-bold text-slate-400 uppercase tracking-wider flex justify-between items-center w-full pb-1 shrink-0">
                               <span>{pptPreview.fileName.toUpperCase()}</span>
                               <span className="text-[#00D285] font-extrabold">SEKTOR: {(activeDivision || "UMUM").toUpperCase() + " & BD"}</span>
                             </div>
                             
-                            <div className="h-[1px] bg-slate-100 w-full" />
+                            <div className="h-[1px] bg-slate-100 w-full shrink-0" />
 
-                            <div className="text-[10px] font-bold text-[#00D285] font-mono uppercase tracking-widest pt-1">
+                            <div className="text-[10px] font-bold text-[#00D285] font-mono uppercase tracking-widest pt-1 shrink-0">
                               KAJIAN STRATEGIS: BAB {activeSlideIndex}
                             </div>
                             
-                            <h2 className="text-slate-900 font-extrabold text-lg sm:text-xl md:text-[22px] leading-tight select-text">
+                            <h2 className="text-slate-900 font-extrabold text-lg sm:text-xl md:text-[22px] leading-tight select-text shrink-0">
                               {currentSlide?.title}
                             </h2>
                             
-                            <p className="text-xs text-slate-500 font-medium leading-relaxed pb-1 select-text">
+                            <p className="text-xs text-slate-500 font-medium leading-relaxed pb-1 select-text shrink-0">
                               {introPara.replace(/\*\*/g, "")}
                             </p>
 
-                            <div className="space-y-2">
+                            <div className="space-y-2 shrink-0">
                               {bPoints.map((bulletText, bIdx) => {
                                 const bulletClean = cleanLead(bulletText);
                                 if (!bulletClean) return null;
                                 return (
-                                  <div key={bIdx} className="flex gap-2.5 items-start pl-0.5">
+                                  <div key={bIdx} className="flex gap-2.5 items-start pl-0.5 shrink-0">
                                     <span className="text-[#00D285] mt-1 shrink-0 font-extrabold select-none text-[10px] sm:text-sm">•</span>
-                                    <p className="text-[11px] sm:text-xs text-slate-600 font-medium leading-relaxed select-text">
+                                    <p className="text-[11px] sm:text-xs text-slate-600 font-medium leading-relaxed select-text shrink-0">
                                       {formatBulletText(bulletClean)}
                                     </p>
                                   </div>
@@ -3568,47 +4467,78 @@ ${lastMsgText}`;
                           </div>
 
                           {/* Footer row */}
-                          <div className="text-[8px] font-mono font-bold text-slate-400 border-t border-slate-100 pt-2.5 w-full flex justify-between items-center mt-4">
+                          <div className="text-[8px] font-mono font-bold text-slate-400 border-t border-slate-100 pt-2.5 w-full flex justify-between items-center mt-4 shrink-0">
                             <span>PANCARAN GROUP &bull; CONFIDENTIAL DOCUMENTATION</span>
-                            <span className="text-slate-700 font-bold uppercase">HALAMAN {activeSlideIndex + 1} DARI {pptPreview.slides.length + 2}</span>
+                            <span className="text-slate-700 font-bold uppercase w-max tracking-wide">HALAMAN {activeSlideIndex + 1} DARI {pptPreview.slides.length + 2}</span>
                           </div>
                         </div>
 
                         {/* Right half: Photo Frame */}
-                        <div className="flex-1 md:w-5/12 bg-slate-50 relative min-h-[150px] md:min-h-0 overflow-hidden flex flex-col justify-center items-center p-6">
+                        <div className="w-full md:w-5/12 h-full bg-slate-50 relative overflow-hidden flex flex-col justify-center items-center p-6 border-l border-slate-100">
                           <div className="w-full h-full flex flex-col justify-center items-center gap-2">
                             {/* Photo framed with green border */}
                             <div className="w-full h-[85%] border-2 border-[#00D285] p-1 bg-white shadow-md relative overflow-hidden rounded-md flex items-center justify-center">
-                              {currentSlide?.imageUrl ? (
+                              {currentSlide?.imageUrl && !slideImageErrors[activeSlideIndex] ? (
                                 <img
                                   src={currentSlide.imageUrl}
                                   alt="Slide context"
                                   className="w-full h-full object-cover rounded-xs"
                                   referrerPolicy="no-referrer"
-                                  onError={(e) => {
-                                    // Fallback to proxy route if direct browser load fails
-                                    const currentSrc = e.currentTarget.src;
-                                    if (currentSlide.imageUrl && !currentSrc.includes("/api/proxy-image-raw")) {
-                                      e.currentTarget.src = `/api/proxy-image-raw?url=${encodeURIComponent(currentSlide.imageUrl)}`;
-                                    } else {
-                                      // If both direct and proxy fail, show clean SVG template
-                                      e.currentTarget.style.display = 'none';
-                                      const parent = e.currentTarget.parentElement;
-                                      if (parent) {
-                                        const textFallback = parent.querySelector('.fallback-txt');
-                                        if (textFallback) textFallback.classList.remove('hidden');
-                                      }
-                                    }
+                                  onError={() => {
+                                    setSlideImageErrors(prev => ({ ...prev, [activeSlideIndex]: true }));
                                   }}
                                 />
-                              ) : null}
-                              <div className="fallback-txt hidden flex flex-col items-center justify-center text-center p-4">
-                                <Presentation className="h-10 w-10 text-slate-300 mb-2 animate-pulse" />
-                                <span className="text-[10px] font-bold text-slate-400 font-mono">PRAMA DIAGRAM</span>
-                              </div>
+                              ) : (
+                                <div className="w-full h-full bg-slate-900 text-cyan-400 p-4 rounded flex flex-col justify-between font-mono text-[9px] relative overflow-hidden select-none">
+                                  {/* Modern tech grid backdrop */}
+                                  <div className="absolute inset-0 bg-[linear-gradient(rgba(6,21,43,0.85)_1px,transparent_1px),linear-gradient(90deg,rgba(6,21,43,0.85)_1px,transparent_1px)] bg-[size:10px_10px] opacity-20 pointer-events-none" />
+                                  
+                                  <div className="flex justify-between items-center border-b border-cyan-800/40 pb-1.5 z-10 shrink-0">
+                                    <span className="text-[8px] font-extrabold text-[#00D285] animate-pulse">● PRAMA ENGINE ACTIVE</span>
+                                    <span className="text-[7.5px] text-cyan-500 font-semibold font-mono">REV. 04A</span>
+                                  </div>
+                                  
+                                  <div className="flex-1 flex flex-col justify-center gap-2.5 my-2 z-10 w-full">
+                                    {/* Visual Nodes */}
+                                    <div className="flex justify-between items-center px-1 w-full shrink-0">
+                                      <div className="p-1 px-2 rounded border border-cyan-500/30 bg-cyan-950/40 text-center flex flex-col items-center">
+                                        <span className="text-cyan-400 font-extrabold text-[8px]">INPUT</span>
+                                        <span className="text-slate-400 text-[7px] font-sans">Data Source</span>
+                                      </div>
+                                      <div className="h-px bg-cyan-500/20 flex-1 mx-1 border-t border-dashed border-cyan-500/40" />
+                                      <div className="p-1.5 px-3 rounded-full border-2 border-[#00D285] bg-emerald-950/40 text-center flex flex-col items-center animate-pulse">
+                                        <span className="text-[#00D285] font-extrabold text-[9px] tracking-wide">PRAMA AI</span>
+                                        <span className="text-slate-300 text-[6.5px] font-sans">Core Analysis</span>
+                                      </div>
+                                      <div className="h-px bg-cyan-500/20 flex-1 mx-1 border-t border-dashed border-cyan-500/40" />
+                                      <div className="p-1 px-2 rounded border border-cyan-500/30 bg-cyan-950/40 text-center flex flex-col items-center">
+                                        <span className="text-cyan-400 font-extrabold text-[8px]">OUTPUT</span>
+                                        <span className="text-slate-400 text-[7px] font-sans">Dashboard</span>
+                                      </div>
+                                    </div>
+
+                                    {/* Metric Bar */}
+                                    <div className="bg-slate-950/60 border border-slate-800 rounded p-1.5 flex justify-between items-center w-full shrink-0">
+                                      <div className="flex flex-col text-left">
+                                        <span className="text-[7px] text-slate-500 font-sans uppercase">OPTIMASI SISTEM</span>
+                                        <span className="text-[9px] text-white font-extrabold font-mono tracking-normal leading-none max-w-[130px] truncate">PT PANCARAN GROUP</span>
+                                      </div>
+                                      <div className="text-right">
+                                        <span className="text-[10px] text-[#00D285] font-extrabold font-mono">+44.9%</span>
+                                        <span className="text-[6.5px] text-slate-400 font-sans block leading-none">EFFICIENCY INDEX</span>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="border-t border-cyan-800/40 pt-1.5 flex justify-between text-[7px] text-slate-500 z-10 shrink-0">
+                                    <span>SYSTEM LOCK: BI-PRAMA v4</span>
+                                    <span>CONFIDENTIAL</span>
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                            <span className="text-[8px] text-slate-400 italic font-bold tracking-wide text-center">
-                              Ilustrasi: {currentSlide?.title} di Pancaran Group
+                            <span className="text-[8px] text-slate-400 italic font-bold tracking-wide text-center uppercase shrink-0">
+                              ILUSTRASI STRATEGIS: {currentSlide?.title ? currentSlide.title.slice(0, 30) : "PRAMA ANALISA"}...
                             </span>
                           </div>
                         </div>
@@ -3710,14 +4640,13 @@ ${lastMsgText}`;
                   onClick={() => setPptPreview(null)}
                   className="px-6 py-2.5 text-xs font-black text-slate-600 hover:text-slate-800 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-full transition cursor-pointer"
                 >
-                  Tutup Slide Show
+                  Tutup Slideshow
                 </button>
               </div>
             </div>
           </div>
         </div>
       )}
-
     </div>
   );
 }

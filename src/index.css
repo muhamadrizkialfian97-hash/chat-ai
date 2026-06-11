@@ -75,26 +75,36 @@
 
 /* Video Background Hero Section styling */
 .video-container {
-  position: relative;
+  position: fixed;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100vh; /* 100% dari tinggi layar browser */
-  background-color: #0f172a;
+  background-color: #070d19;
   overflow: hidden;
+  z-index: 50;
+}
+
+/* Modern dark vignette overlay to ensure high readability of text and buttons */
+.video-container::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(15, 23, 42, 0.35) 0%, rgba(12, 17, 30, 0.8) 100%);
+  z-index: 0;
+  pointer-events: none;
 }
 
 /* Membuat video memenuhi layar dan berada di paling belakang */
 #bg-video {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  min-width: 100%;
-  min-height: 100%;
-  width: auto;
-  height: auto;
-  transform: translate(-50%, -50%);
-  object-fit: cover; /* Memastikan video terpotong rapi tanpa distorsi */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Memastikan video memenuhi seluruh layar tanpa distorsi */
   z-index: -1; /* Menempatkan video di paling belakang */
-  opacity: 0.55; /* Dimmed untuk meningkatkan keterbacaan teks */
+  opacity: 0.65; /* Dimmed untuk meningkatkan keterbacaan teks */
 }
 
 /* Mengatur posisi teks/tombol menu persis di tengah layar */
@@ -158,4 +168,29 @@
 .btn-mulai:active {
   transform: translateY(1px);
 }
+
+/* Global Reset for click elements to remove default browser double border/rect/box focus outline */
+*, *:focus, *:active, *:focus-within, *:focus-visible {
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+input:focus, 
+input:active,
+input:focus-visible,
+button:focus, 
+button:active, 
+button:focus-visible,
+select:focus, 
+select:active, 
+select:focus-visible,
+textarea:focus, 
+textarea:active,
+textarea:focus-visible,
+[role="button"]:focus,
+[role="button"]:active {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 

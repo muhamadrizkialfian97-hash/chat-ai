@@ -63,7 +63,13 @@ export default function Navbar({
         
         {/* Brand & Left Navigation */}
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl overflow-hidden bg-slate-50 border border-slate-200 shadow-md">
+          <a
+            href="https://aistudio.google.com/apps/d4e73b8b-0ce8-482c-838c-fcfa6d09b5b3?showAssistant=true&showPreview=true"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex h-10 w-10 items-center justify-center rounded-xl overflow-hidden bg-slate-50 border border-slate-200 shadow-md transition hover:scale-105 active:scale-95"
+            title="Buka Google AI Studio Workspace"
+          >
             <img 
               id="prama-header-logo"
               src={pramaLogo} 
@@ -71,7 +77,7 @@ export default function Navbar({
               className="h-full w-full object-cover"
               referrerPolicy="no-referrer"
             />
-          </div>
+          </a>
           <div>
             <div className="flex items-center gap-2">
               <h1 className="font-display font-extrabold text-base leading-none tracking-tight text-slate-900 md:text-lg">
@@ -82,18 +88,6 @@ export default function Navbar({
               PROJECT MANAGEMENT ANALITIC
             </span>
           </div>
-
-          {/* Dashboard PM Shortcut Button */}
-          <button 
-            id="nav-project-dashboard"
-            onClick={() => {
-              if (onNavigateToView) onNavigateToView("project_dashboard");
-            }}
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10.5px] font-extrabold text-white bg-indigo-600 hover:bg-indigo-700 hover:scale-[1.02] shadow-sm border border-indigo-500 transition ml-4 cursor-pointer"
-          >
-            <LayoutDashboard className="h-3.5 w-3.5 shrink-0 text-indigo-200" />
-            <span>Dashboard PM</span>
-          </button>
 
           {/* Division Breadcrumb */}
           {activeDivision && (

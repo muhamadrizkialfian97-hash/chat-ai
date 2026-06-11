@@ -209,7 +209,13 @@ export default function ChatPanel({
             </button>
           )}
 
-          <div className="relative flex h-10 w-10 items-center justify-center rounded-full overflow-hidden border border-slate-200 bg-slate-50 shadow-3sm shrink-0">
+          <a
+            href="https://aistudio.google.com/apps/d4e73b8b-0ce8-482c-838c-fcfa6d09b5b3?showAssistant=true&showPreview=true"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="relative flex h-10 w-10 items-center justify-center rounded-full overflow-hidden border border-slate-200 bg-slate-50 shadow-3sm shrink-0 transition hover:scale-105"
+            title="Buka Google AI Studio Workspace"
+          >
             <img 
               src={pramaLogo} 
               alt="PRAMA Advisor" 
@@ -217,7 +223,7 @@ export default function ChatPanel({
               referrerPolicy="no-referrer"
             />
             <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white animate-pulse" />
-          </div>
+          </a>
           <div>
             <span className="block font-sans font-extrabold text-slate-900 text-sm tracking-tight">PRAMA Strategic AI Advisor</span>
             <div className="flex items-center gap-1.5 text-[10px] text-emerald-600 font-bold uppercase tracking-wider">

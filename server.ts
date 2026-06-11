@@ -415,6 +415,18 @@ app.get("/api/proxy-image-raw", async (req, res) => {
   }
 });
 
+// Serve any mp4 files directly from the project root
+app.get("/*.mp4", (req, res) => {
+  const filename = path.basename(req.path);
+  const filePath = path.join(process.cwd(), filename);
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      console.warn(`Could not serve videofile ${filename} from root, falling back`);
+      res.status(404).send("Video file not found");
+    }
+  });
+});
+
 // Setup Node HTTP Server wrapped around Express
 const server = http.createServer(app);
 

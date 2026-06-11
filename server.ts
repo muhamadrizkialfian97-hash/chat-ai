@@ -131,6 +131,25 @@ Kunci API Gemini yang dikonfigurasi tidak dikenali atau tidak sah menurut sistem
 3. Anda bisa mendapatkan kunci baru secara cepat di [Google AI Studio](https://aistudio.google.com/) secara gratis.`;
   }
 
+  // 4. Permission Denied (403)
+  if (
+    code === 403 ||
+    status === "PERMISSION_DENIED" ||
+    lowercaseMsg.includes("permission_denied") ||
+    lowercaseMsg.includes("not have permission") ||
+    lowercaseOriginal.includes("permission_denied") ||
+    lowercaseOriginal.includes("not have permission")
+  ) {
+    return `⚠️ **Kunci API Tidak Memiliki Izin Akses (PERMISSION_DENIED / HTTP 403)**
+
+Kunci API Gemini yang digunakan saat ini tidak memiliki izin akses atau dibatasi oleh kebijakan Google Cloud/AI Studio.
+
+### 💡 Solusi Cepat untuk Melanjutkan Sesi:
+1. Silakan klik tombol **KONEKSI (BROWSER)** di panel bagian atas chat.
+2. Gunakan **Gemini API Key pribadi** Anda sendiri dari Google AI Studio. Sangat mudah didapat secara gratis di [Google AI Studio](https://aistudio.google.com/).
+3. Pengaturan ini aman karena disimpan langsung di dalam browser lokal Anda dan tidak dikirimkan ke server luar. Setelah dimasukkan, Anda tinggal mengirim kembali pesan Anda!`;
+  }
+
   return `⚠️ **Terjadi Hambatan saat Menghubungi Gemini AI**
 
 **Penyebab Teknis:** ${messageText || originalMsg}
@@ -259,11 +278,140 @@ app.post("/api/chat", async (req, res) => {
       status = 503;
     } else if (friendlyError.includes("API_KEY_INVALID") || friendlyError.includes("400")) {
       status = 400;
+    } else if (friendlyError.includes("PERMISSION_DENIED") || friendlyError.includes("403")) {
+      status = 403;
     }
 
     res.status(status).json({
       error: friendlyError
     });
+  }
+});
+
+// Helper function to robustly fetch external images with a retry strategy
+async function fetchImageWithRetry(imageUrl: string): Promise<Response> {
+  const userAgents = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
+    "" // No User-Agent header fallback
+  ];
+
+  let lastError: any = null;
+  for (const ua of userAgents) {
+    try {
+      const headers: Record<string, string> = {
+        "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*"
+      };
+      if (ua) {
+        headers["User-Agent"] = ua;
+      }
+      
+      const signal = (AbortSignal as any).timeout ? (AbortSignal as any).timeout(8000) : undefined;
+      const response = await fetch(imageUrl, { headers, signal });
+      if (response.ok) {
+        return response;
+      }
+      lastError = new Error(`HTTP status ${response.status} (${response.statusText})`);
+    } catch (err: any) {
+      lastError = err;
+    }
+  }
+  throw lastError || new Error("Failed to fetch image after multiple attempts.");
+}
+
+// REST endpoint to proxy external images (e.g. Unsplash) to bypass CORS issues in PowerPoint export
+app.get("/api/proxy-image", async (req, res) => {
+  try {
+    const imageUrl = req.query.url;
+    if (!imageUrl || typeof imageUrl !== "string") {
+      res.status(400).json({ error: "URL query parameter is required." });
+      return;
+    }
+
+    // Security check to prevent arbitrary SSRF
+    const isAllowedDomain = imageUrl.startsWith("https://images.unsplash.com/") || 
+                            imageUrl.startsWith("https://picsum.photos/") || 
+                            imageUrl.startsWith("https://fastly.picsum.photos/");
+    if (!isAllowedDomain) {
+      res.status(400).json({ error: "Only Unsplash and Picsum image URLs are allowed." });
+      return;
+    }
+
+    const response = await fetchImageWithRetry(imageUrl);
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const contentType = response.headers.get("content-type") || "image/jpeg";
+    const base64 = `data:${contentType};base64,${buffer.toString("base64")}`;
+
+    res.json({ base64 });
+  } catch (err: any) {
+    console.error("Proxy image error:", err.message);
+    res.status(500).json({ error: "Failed to load image through proxy." });
+  }
+});
+
+// REST endpoint to proxy raw binary stream of external images
+app.get("/api/proxy-image-raw", async (req, res) => {
+  try {
+    const imageUrl = req.query.url;
+    if (!imageUrl || typeof imageUrl !== "string") {
+      res.status(400).send("URL parameter is required.");
+      return;
+    }
+
+    // Security check to prevent arbitrary SSRF
+    const isAllowedDomain = imageUrl.startsWith("https://images.unsplash.com/") || 
+                            imageUrl.startsWith("https://picsum.photos/") || 
+                            imageUrl.startsWith("https://fastly.picsum.photos/");
+    if (!isAllowedDomain) {
+      res.status(400).send("Only Unsplash and Picsum image URLs are allowed.");
+      return;
+    }
+
+    const response = await fetchImageWithRetry(imageUrl);
+    const contentType = response.headers.get("content-type") || "image/jpeg";
+    res.setHeader("Content-Type", contentType);
+    res.setHeader("Cache-Control", "public, max-age=86400"); // Cache for 1 day
+
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    res.send(buffer);
+  } catch (err: any) {
+    console.error("Proxy raw image error:", err.message);
+    
+    // Respond with a gorgeous corporate light flowchart SVG instead of a dark box
+    const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
+  <rect width="800" height="500" fill="#F8FAFC" />
+  <rect x="15" y="15" width="770" height="470" fill="none" stroke="#E2E8F0" stroke-width="2" stroke-dasharray="10, 5" rx="8" />
+  
+  <!-- Flowchart nodes background illustration -->
+  <g stroke="#CBD5E1" stroke-width="1.5">
+    <line x1="200" y1="250" x2="400" y2="250" />
+    <line x1="400" y1="250" x2="600" y2="250" />
+    <line x1="400" y1="150" x2="400" y2="250" />
+    <line x1="400" y1="250" x2="400" y2="350" />
+  </g>
+  
+  <!-- Nodes -->
+  <circle cx="200" cy="250" r="30" fill="#E2E8F0" stroke="#94A3B8" stroke-width="2" />
+  <circle cx="400" cy="250" r="45" fill="#ECFDF5" stroke="#00D285" stroke-width="3" />
+  <circle cx="600" cy="250" r="30" fill="#E2E8F0" stroke="#94A3B8" stroke-width="2" />
+  <circle cx="400" cy="150" r="30" fill="#EFF6FF" stroke="#3B82F6" stroke-width="2" />
+  <circle cx="400" cy="350" r="30" fill="#FFFBEB" stroke="#F59E0B" stroke-width="2" />
+  
+  <!-- Node text labels -->
+  <text x="200" y="254" font-family="sans-serif" font-size="10" font-weight="bold" fill="#475569" text-anchor="middle">SUPPLY</text>
+  <text x="400" y="254" font-family="sans-serif" font-size="11" font-weight="bold" fill="#065F46" text-anchor="middle">OPTIMIZE</text>
+  <text x="600" y="254" font-family="sans-serif" font-size="10" font-weight="bold" fill="#475569" text-anchor="middle">DEMAND</text>
+  <text x="400" y="154" font-family="sans-serif" font-size="10" font-weight="bold" fill="#1E40AF" text-anchor="middle">PRE-OPS</text>
+  <text x="400" y="354" font-family="sans-serif" font-size="10" font-weight="bold" fill="#78350F" text-anchor="middle">POST-OPS</text>
+  
+  <text x="400" y="440" font-family="monospace, sans-serif" font-size="13" fill="#64748B" font-weight="bold" text-anchor="middle" letter-spacing="4">PRAMA DIAGRAM SYSTEM</text>
+  <text x="400" y="460" font-family="sans-serif" font-size="11" fill="#94A3B8" text-anchor="middle">Visualisasi Rencana Aksi &amp; Kerangka Kerja Layanan</text>
+</svg>`;
+
+    res.setHeader("Content-Type", "image/svg+xml");
+    res.send(fallbackSvg);
   }
 });
 

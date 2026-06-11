@@ -3,7 +3,7 @@ import { ChatMessage, SavedFile } from "../types";
 import { Send, FileText, Globe, CircleAlert, Cpu, Eye, EyeOff, Settings, Sparkles, Download, Printer, ArrowLeft, LogOut, Bell, HardDrive, Users, CheckCircle, X, Search } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { exportToWord, exportToPDF, downloadPDFDirect } from "../utils/documentExporter";
-import pramaLogo from "../assets/images/prama_logo_1780452149937.png";
+const pramaLogo = "https://lh3.googleusercontent.com/d/1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X";
 
 interface ChatPanelProps {
   messages: ChatMessage[];

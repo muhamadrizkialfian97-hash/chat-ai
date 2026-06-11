@@ -101,6 +101,25 @@ Kunci API Gemini yang dikonfigurasi tidak dikenali atau tidak sah menurut sistem
 3. Anda bisa mendapatkan kunci baru secara cepat di [Google AI Studio](https://aistudio.google.com/) secara gratis.`;
   }
 
+  // 4. Permission Denied (403)
+  if (
+    code === 403 ||
+    status === "PERMISSION_DENIED" ||
+    lowercaseMsg.includes("permission_denied") ||
+    lowercaseMsg.includes("not have permission") ||
+    lowercaseOriginal.includes("permission_denied") ||
+    lowercaseOriginal.includes("not have permission")
+  ) {
+    return `⚠️ **Kunci API Tidak Memiliki Izin Akses (PERMISSION_DENIED / HTTP 403)**
+
+Kunci API Gemini yang digunakan saat ini tidak memiliki izin akses atau dibatasi oleh kebijakan Google Cloud/AI Studio.
+
+### 💡 Solusi Cepat untuk Melanjutkan Sesi:
+1. Silakan klik tombol **KONEKSI (BROWSER)** di panel bagian atas chat.
+2. Gunakan **Gemini API Key pribadi** Anda sendiri dari Google AI Studio. Sangat mudah didapat secara gratis di [Google AI Studio](https://aistudio.google.com/).
+3. Pengaturan ini aman karena disimpan langsung di dalam browser lokal Anda dan tidak dikirimkan ke server luar. Setelah dimasukkan, Anda tinggal mengirim kembali pesan Anda!`;
+  }
+
   return `⚠️ **Terjadi Hambatan saat Menghubungi Gemini AI**
 
 **Penyebab Teknis:** ${messageText || originalMsg}
@@ -273,6 +292,8 @@ Gaya Bahasa & Aturan Format Jawaban Terstruktur (SANGAT PENTING):
       status = 503;
     } else if (friendlyError.includes("API_KEY_INVALID") || friendlyError.includes("400")) {
       status = 400;
+    } else if (friendlyError.includes("PERMISSION_DENIED") || friendlyError.includes("403")) {
+      status = 403;
     }
 
     return res.status(status).json({

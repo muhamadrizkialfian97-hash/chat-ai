@@ -748,30 +748,12 @@ export async function exportToPPTX(
   divisionName: string
 ) {
   const pptx = new pptxgen();
-  pptx.layout = "LAYOUT_16x9";
+  // Set layout to "LAYOUT_WIDE" (13.33" x 7.5") to match widescreen presentation standards
+  pptx.layout = "LAYOUT_WIDE";
 
   const totalSlidesCount = slides.length + 2; // +1 Cover, +1 Thank you
 
-  // 1. Helper function: Pre-fetch Unsplash image as base64 data-URI
-  const getBase64FromUrl = async (url: string): Promise<string> => {
-    if (!url) return "";
-    try {
-      const response = await fetch(url);
-      if (!response.ok) throw new Error("Fetch response status not OK");
-      const blob = await response.blob();
-      return new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.onerror = () => reject(new Error("FileReader failed"));
-        reader.readAsDataURL(blob);
-      });
-    } catch (err) {
-      console.warn("Using fallback image generator because fetch failed for:", url, err);
-      return "";
-    }
-  };
-
-  // 2. Helper function: Generate a beautiful corporate-branded fallback PNG using dynamic canvas
+  // Helper function: Generate a beautiful corporate-branded fallback PNG using dynamic canvas
   const generateFallbackPng = (slideTitleText: string): string => {
     try {
       const canvas = document.createElement("canvas");
@@ -781,8 +763,8 @@ export async function exportToPPTX(
       if (ctx) {
         // Gradient background
         const grad = ctx.createLinearGradient(0, 0, 800, 500);
-        grad.addColorStop(0, "#0B1528"); // Deep Slate Board
-        grad.addColorStop(1, "#112240");
+        grad.addColorStop(0, "#0F172A"); // Modern elegant slate/charcoal
+        grad.addColorStop(1, "#1E293B");
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, 800, 500);
 
@@ -830,27 +812,26 @@ export async function exportToPPTX(
       console.error("Canvas image fallback generation error:", e);
     }
     // absolute minimum 1x1 base64 png fallback
-    return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mPcWw8AAf8Bf5GofbYAAAAASUVORK5CYII=";
+    return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mPcWw9AAf8Bf5GofbYAAAAASUVORK5CYII=";
   };
 
-  // Pre-load all slide images to base64 synchronously/concurrently
-  const loadedBase64Images = await Promise.all(
-    slides.map(async (slideData) => {
-      if (slideData.imageUrl) {
-        const base64 = await getBase64FromUrl(slideData.imageUrl);
-        return base64;
-      }
-      return "";
-    })
-  );
+  // 3. Format and clean titles to display elegantly (no snake_case or double "Kajian" / "Presentasi")
+  const displayTitle = title
+    .replace(/^KAJIAN STRATEGIS KOMPREHENSIF:\s*/i, "")
+    .replace(/^Presentasi_Kajian_/gi, "")
+    .replace(/^Presentasi\s+Kajian\s+/gi, "")
+    .replace(/^Presentasi\s+/gi, "")
+    .replace(/^Kajian\s+/gi, "")
+    .trim();
 
-  // 3. Format and clean titles to display elegantly (no snake_case or double "Kajian")
-  const displayTitle = title.replace("KAJIAN STRATEGIS KOMPREHENSIF: ", "").trim();
   const cleanDisplayTitle = displayTitle
     .replace(/_+/g, " ")
     .replace(/Presentasi Kajian Kajian/gi, "Presentasi Kajian")
     .replace(/Kajian Kajian/gi, "Kajian")
     .replace(/Presentasi Presentasi/gi, "Presentasi")
+    .replace(/Presentasi Kajian/gi, "")
+    .replace(/Presentasi/gi, "")
+    .replace(/Kajian/gi, "")
     .replace(/\s+/g, " ")
     .trim();
 
@@ -885,8 +866,8 @@ export async function exportToPPTX(
     x: 0.8,
     y: 1.4,
     w: 11.73,
-    h: 2.2,
-    fontSize: 30, // Big and readable
+    h: 1.8,
+    fontSize: 22, // Elegant corporate-sized display heading
     bold: true,
     color: "FFFFFF",
     fontFace: "Arial",
@@ -896,10 +877,10 @@ export async function exportToPPTX(
   // Subtitle
   openingSlide.addText(`Kajian Komprehensif Skema Strategis & Operasional ${cleanDisplayTitle} PT Pancaran Group Berdasarkan Rekomendasi PRAMA AI Advisor`, {
     x: 0.8,
-    y: 4.0,
+    y: 3.4,
     w: 11.73,
     h: 0.8,
-    fontSize: 13, // Perfectly readable subtitle size
+    fontSize: 11.5, // Perfectly scaled subtitle
     color: "94A3B8",
     fontFace: "Arial"
   });
@@ -907,10 +888,10 @@ export async function exportToPPTX(
   // Bottom left metadata stamp
   openingSlide.addText(`PROYEK: ${cleanDisplayTitle.toUpperCase()}\nUNIT DIREKTORAT: ${(divisionName || "UMUM").toUpperCase() + " & BUSINESS DEVELOPMENT"}\nKLASIFIKASI: TERBATAS / INTERNAL PT PANCARAN GROUP`, {
     x: 0.8,
-    y: 5.4,
+    y: 4.8,
     w: 11.73,
     h: 1.1,
-    fontSize: 10.5,
+    fontSize: 10,
     bold: true,
     color: "00D285",
     fontFace: "Arial"
@@ -919,7 +900,8 @@ export async function exportToPPTX(
   openingSlide.addNotes(`Selamat pagi/siang dan salam sejahtera bapak dan ibu sekalian. Slide pembuka ini menjelaskan judul dan pilar utama kajian proyek strategis PRAMA untuk unit kerja ${divisionName}.`);
 
   // 5. Content Slides (Slide 2 to N-1)
-  slides.forEach((slideData, idx) => {
+  for (let idx = 0; idx < slides.length; idx++) {
+    const slideData = slides[idx];
     const slide = pptx.addSlide();
     slide.background = { color: "FFFFFF" }; // White Background
 
@@ -968,10 +950,10 @@ export async function exportToPPTX(
     // Chapter category label (e.g. KAJIAN STRATEGIS: BAB X)
     slide.addText(`KAJIAN STRATEGIS: BAB ${idx + 1}`, {
       x: 0.8,
-      y: 0.68,
+      y: 0.65,
       w: 11.73,
       h: 0.25,
-      fontSize: 11,
+      fontSize: 10,
       color: "00D285",
       bold: true,
       fontFace: "Arial",
@@ -980,66 +962,205 @@ export async function exportToPPTX(
 
     const cleanSlideTitle = slideData.title.replace(/_+/g, " ").trim();
 
-    // Slide Body Main Title - Use valign top with size 24 for excellent visibility
+    // Slide Body Main Title - Use elegant, compact display sizing
     slide.addText(cleanSlideTitle, {
       x: 0.8,
-      y: 0.95,
+      y: 0.85,
       w: 11.73,
-      h: 0.7,
-      fontSize: 24, // Great widescreen size
+      h: 0.5,
+      fontSize: 16, // Proportional Title sizing
       color: "0F172A",
       bold: true,
       fontFace: "Arial",
       valign: "middle"
     });
 
+    const cleanLead = (txt: string) => {
+      if (!txt) return "";
+      return txt.trim().replace(/^[-*•\s+]+/g, "").trim();
+    };
+
     // Left Column logic - extract first bullet as intro paragraph
     let introPara = "Kajian komprehensif implementasi strategi, tata kelola, dan operasional guna mengoptimalkan kinerja proyek.";
     let bulletPoints = slideData.bullets;
     if (slideData.bullets && slideData.bullets.length > 0) {
       if (slideData.bullets.length >= 3) {
-        introPara = slideData.bullets[0];
+        introPara = cleanLead(slideData.bullets[0]);
         bulletPoints = slideData.bullets.slice(1);
+      } else {
+        bulletPoints = slideData.bullets;
       }
     }
 
     const contentWidth = 5.8;
+    const bulletList = bulletPoints.slice(0, 4);
 
-    // Paragraph Summary Block - lowered, height 1.2, size 12.5 for readable prose
-    slide.addText(cleanPDFMarkdown(introPara), {
+    // Build exactly ONE unified, fully editable text box to containing the intro paragraph and bullets
+    // This allows slide text and numbers to be cleanly typed or revised in PowerPoint without overlapping boxes.
+    let unifiedText = cleanPDFMarkdown(introPara) + "\n\n";
+    bulletList.forEach((bullet) => {
+      const cleanB = cleanLead(bullet);
+      if (cleanB) {
+        unifiedText += "•  " + cleanPDFMarkdown(cleanB) + "\n\n";
+      }
+    });
+
+    slide.addText(unifiedText.trim(), {
       x: 0.8,
-      y: 1.85,
+      y: 1.55,
       w: contentWidth,
-      h: 1.2,
-      fontSize: 12.5,
+      h: 4.5,
+      fontSize: 10.5,
       color: "475569",
       fontFace: "Arial",
-      valign: "top"
+      valign: "top",
+      lineSpacing: 1.2
     });
 
-    // Bullet List Options - constraint item count to max 4 items to ensure ZERO page overflow at the bottom
-    const bulletList = bulletPoints.slice(0, 4);
-    const formattedBullets = bulletList.map((bullet) => ({
-      text: cleanPDFMarkdown(bullet),
-      options: { bullet: true, fontSize: 11.5, color: "334155", fontFace: "Arial" }
-    }));
+    // Helper inside to perform hybrid client-side and server-side image fetch to base64 conversion.
+    // Extremely robust: uses client-side direct fetch & Canvas caching first to bypass any server network limitations,
+    // then falls back to backend proxy, and lastly renders a beautiful light-themed corporate diagram fallback.
+    const getImageBase64WithFallback = async (imageUrl: string, slideTitleText: string): Promise<string> => {
+      // Direct high-speed client-side fetch (bypasses server sandbox restrictions completely)
+      try {
+        const fetchRes = await fetch(imageUrl, { mode: "cors" });
+        if (fetchRes.ok) {
+          const blob = await fetchRes.blob();
+          const base64: string = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = () => resolve("");
+            reader.readAsDataURL(blob);
+          });
+          if (base64) return base64;
+        }
+      } catch (e) {
+        console.warn("Client-side direct fetch failed for image:", imageUrl, e);
+      }
 
-    // Add bullet box - starts at y: 3.15, height 3.4 (completely safe from 6.7 footer boundary)
-    slide.addText(formattedBullets, {
-      x: 0.8,
-      y: 3.15,
-      w: contentWidth,
-      h: 3.4,
-      valign: "top"
-    });
+      // Live Image element drawing to canvas (resolves local browser caching, fully supports CORS since Unsplash/Picsum CDNs allow *)
+      try {
+        const base64: string = await new Promise((resolve) => {
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = () => {
+            try {
+              const canvas = document.createElement("canvas");
+              canvas.width = img.naturalWidth || img.width || 800;
+              canvas.height = img.naturalHeight || img.height || 500;
+              const ctx = canvas.getContext("2d");
+              if (ctx) {
+                ctx.drawImage(img, 0, 0);
+                resolve(canvas.toDataURL("image/jpeg"));
+                return;
+              }
+            } catch (canvasErr) {
+              console.error("Canvas rendering from image failed:", canvasErr);
+            }
+            resolve("");
+          };
+          img.onerror = () => resolve("");
+          img.src = imageUrl;
+        });
+        if (base64) return base64;
+      } catch (e) {
+        console.warn("Client-side Image rendering failed for:", imageUrl, e);
+      }
 
-    // Right Column logic - Solid picture container utilizing preloaded safe Base64 or Canvas fallback
-    const finalImageBase64 = loadedBase64Images[idx] || generateFallbackPng(cleanSlideTitle);
+      // Server-side proxy backup (CORS bypassed via Node backend)
+      try {
+        const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(imageUrl)}`;
+        const res = await fetch(proxyUrl);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.base64) {
+            return data.base64;
+          }
+        }
+      } catch (err) {
+        console.error("Server image proxy fetch failed for:", imageUrl, err);
+      }
 
+      // Elegant off-white custom light corporate diagram template fallback (Never black!)
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = 800;
+        canvas.height = 500;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          // Warm elegant light off-white gradient background
+          const grad = ctx.createLinearGradient(0, 0, 800, 500);
+          grad.addColorStop(0, "#F8FAFC");
+          grad.addColorStop(1, "#F1F5F9");
+          ctx.fillStyle = grad;
+          ctx.fillRect(0, 0, 800, 500);
+
+          // Vivid corporate green outline frame
+          ctx.strokeStyle = "#00D285";
+          ctx.lineWidth = 4;
+          ctx.strokeRect(15, 15, 770, 470);
+
+          // High status clean watermark
+          ctx.fillStyle = "rgba(0, 210, 133, 0.08)";
+          ctx.font = "italic bold 52px Arial";
+          ctx.textAlign = "center";
+          ctx.fillText("PRAMA ADVISOR", 400, 260);
+
+          // Heading Slide Topic label
+          ctx.fillStyle = "#0F172A";
+          ctx.font = "bold 20px Arial";
+          ctx.textAlign = "center";
+          
+          const words = slideTitleText.replace(/_+/g, " ").toUpperCase().split(" ");
+          let line = "";
+          let yPos = 200;
+          for (let n = 0; n < words.length; n++) {
+            const testLine = line + words[n] + " ";
+            const metrics = ctx.measureText(testLine);
+            if (metrics.width > 600 && n > 0) {
+              ctx.fillText(line, 400, yPos);
+              line = words[n] + " ";
+              yPos += 32;
+            } else {
+              line = testLine;
+            }
+          }
+          ctx.fillText(line, 400, yPos);
+
+          ctx.fillStyle = "#00D285";
+          ctx.font = "bold 13px Arial";
+          ctx.fillText("PT PANCARAN GROUP • STRATEGIC ADVISORY", 400, 420);
+
+          return canvas.toDataURL("image/png");
+        }
+      } catch (canvasErr) {
+        console.error("Canvas drawing failed:", canvasErr);
+      }
+
+      // Ultimate emergency absolute 1x1 white fallback
+      return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP89f8AAuEB979f1jUAAAAASUVORK5CYII=";
+    };
+
+    // Load base64 with multi-layered fallback strategy and clean for PPTX format requirements
+    let rawBase64 = "";
+    if (slideData.imageUrl) {
+      rawBase64 = await getImageBase64WithFallback(slideData.imageUrl, cleanSlideTitle);
+    } else {
+      // Use fallback template right away
+      rawBase64 = await getImageBase64WithFallback("", cleanSlideTitle);
+    }
+
+    // Clean data URL scheme if is there so pptxgenjs parses it perfectly as image data
+    let pptxBase64Data = rawBase64;
+    if (pptxBase64Data.startsWith("data:")) {
+      pptxBase64Data = pptxBase64Data.substring(5); // Stripping 'data:' prefix to match pptxgenjs expectations
+    }
+
+    // Insert Image into the PowerPoint Slide Frame
     slide.addImage({
-      data: finalImageBase64,
+      data: pptxBase64Data,
       x: 7.2,
-      y: 1.85,
+      y: 1.55,
       w: 5.3,
       h: 3.5,
     });
@@ -1047,20 +1168,20 @@ export async function exportToPPTX(
     // Draw bright green border around picture frame
     slide.addShape("rect", {
       x: 7.15,
-      y: 1.80,
+      y: 1.50,
       w: 5.4,
       h: 3.6,
       fill: { color: "none" },
-      line: { color: "00D285", width: 2 }
+      line: { color: "00D285", width: 1.5 }
     });
 
     // Figure caption label
     slide.addText(`Ilustrasi: ${cleanSlideTitle} di Pancaran Group`, {
       x: 7.2,
-      y: 5.5,
+      y: 5.2,
       w: 5.3,
-      h: 0.5,
-      fontSize: 11,
+      h: 0.45,
+      fontSize: 9,
       italic: true,
       color: "64748B",
       align: "center",
@@ -1105,7 +1226,7 @@ export async function exportToPPTX(
     if (slideData.speakerNotes) {
       slide.addNotes(slideData.speakerNotes);
     }
-  });
+  }
 
   // 6. Last Slide (Slide 17) - Elegant Dark Theme "TERIMA KASIH"
   const closingSlide = pptx.addSlide();
@@ -1126,8 +1247,8 @@ export async function exportToPPTX(
     x: 1.0,
     y: 2.2,
     w: 11.33,
-    h: 1.2,
-    fontSize: 48, // Bold and prominent
+    h: 1.0,
+    fontSize: 36, // Scaled down for high-end corporate presentation elegance
     bold: true,
     color: "FFFFFF",
     align: "center",
@@ -1137,10 +1258,10 @@ export async function exportToPPTX(
   // Green Subtitle
   closingSlide.addText("Sistem Dokumentasi Strategis & Operasional Terintegrasi", {
     x: 1.0,
-    y: 3.6,
+    y: 3.4,
     w: 11.33,
     h: 0.6,
-    fontSize: 16,
+    fontSize: 14, // Proportional subtitle sizing
     bold: true,
     color: "00D285",
     align: "center",

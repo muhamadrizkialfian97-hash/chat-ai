@@ -73,3 +73,89 @@
   display: none;
 }
 
+/* Video Background Hero Section styling */
+.video-container {
+  position: relative;
+  width: 100%;
+  height: 100vh; /* 100% dari tinggi layar browser */
+  background-color: #0f172a;
+  overflow: hidden;
+}
+
+/* Membuat video memenuhi layar dan berada di paling belakang */
+#bg-video {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  min-width: 100%;
+  min-height: 100%;
+  width: auto;
+  height: auto;
+  transform: translate(-50%, -50%);
+  object-fit: cover; /* Memastikan video terpotong rapi tanpa distorsi */
+  z-index: -1; /* Menempatkan video di paling belakang */
+  opacity: 0.55; /* Dimmed untuk meningkatkan keterbacaan teks */
+}
+
+/* Mengatur posisi teks/tombol menu persis di tengah layar */
+.menu-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: white;
+  z-index: 1; /* Memastikan menu berada di atas video */
+  width: 90%;
+  max-width: 650px;
+  padding: 1.5rem;
+}
+
+.menu-content h1 {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 4rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin-bottom: 0.75rem;
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+}
+
+.menu-content p {
+  font-size: 1.4rem;
+  font-weight: 500;
+  color: #f1f5f9;
+  letter-spacing: 0.05em;
+  margin-bottom: 2.25rem;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+/* Tombol Mulai Jelajah AI yang estetik & interaktif */
+.btn-mulai {
+  padding: 12px 30px;
+  font-size: 18px;
+  font-weight: 700;
+  background-color: #0056b3; /* Warna biru senada dengan tema logistik */
+  background-image: linear-gradient(135deg, #0056b3, #00D285); /* Tambahkan sentuhan gradien premium */
+  color: white;
+  border: none;
+  border-radius: 9999px; /* Tombol melengkung elegan sesuai aslinya */
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 10px 25px -5px rgba(0, 86, 179, 0.4), 0 8px 10px -6px rgba(0, 210, 133, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  display: inline-block;
+}
+
+.btn-mulai:hover {
+  background-color: #003d82;
+  transform: translateY(-2px);
+  box-shadow: 0 20px 35px -10px rgba(0, 86, 179, 0.6), 0 12px 15px -8px rgba(0, 210, 133, 0.5);
+  filter: brightness(1.1);
+}
+
+.btn-mulai:active {
+  transform: translateY(1px);
+}
+

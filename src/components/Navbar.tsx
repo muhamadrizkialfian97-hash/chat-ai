@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { auth } from "../firebase";
 import { signOut, User } from "firebase/auth";
-import { Database, LogOut, Briefcase, ChevronRight, Bell, HardDrive, Users, CheckCircle, Info } from "lucide-react";
+import { Database, LogOut, Briefcase, ChevronRight, Bell, HardDrive, Users, CheckCircle, Info, LayoutDashboard } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import pramaLogo from "../assets/images/prama_logo_1780452149937.png";
+const pramaLogo = "https://lh3.googleusercontent.com/d/1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X";
 
 interface NavbarProps {
   user: User | null;
@@ -14,7 +14,7 @@ interface NavbarProps {
   onLogout?: () => void;
   pendingRequestsCount?: number;
   filesCount?: number;
-  onNavigateToView?: (view: "divisions" | "saved_docs" | "approval_requests") => void;
+  onNavigateToView?: (view: "divisions" | "saved_docs" | "approval_requests" | "project_dashboard") => void;
 }
 
 export default function Navbar({ 
@@ -82,6 +82,18 @@ export default function Navbar({
               PROJECT MANAGEMENT ANALITIC
             </span>
           </div>
+
+          {/* Dashboard PM Shortcut Button */}
+          <button 
+            id="nav-project-dashboard"
+            onClick={() => {
+              if (onNavigateToView) onNavigateToView("project_dashboard");
+            }}
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10.5px] font-extrabold text-white bg-indigo-600 hover:bg-indigo-700 hover:scale-[1.02] shadow-sm border border-indigo-500 transition ml-4 cursor-pointer"
+          >
+            <LayoutDashboard className="h-3.5 w-3.5 shrink-0 text-indigo-200" />
+            <span>Dashboard PM</span>
+          </button>
 
           {/* Division Breadcrumb */}
           {activeDivision && (

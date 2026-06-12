@@ -11,7 +11,8 @@ import {
   orderBy,
   serverTimestamp,
 } from "firebase/firestore";
-import { db, handleFirestoreError, OperationType } from "./firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { db, storage, handleFirestoreError, OperationType } from "./firebase";
 import { ChatMessage, SavedFile } from "./types";
 import { generateLocalSmartResponse, cleanChatMessages } from "./utils/localAssistant";
 import { exportToWord, exportToPPTX, extractProjectTitle, downloadPDFDirect } from "./utils/documentExporter";
@@ -335,6 +336,41 @@ export default function App() {
     };
   }, []);
 
+  // Synchronize background settings across ALL deploys (Local, Vercel, GitHub) via Firestore settings doc
+  useEffect(() => {
+    const settingsDocRef = doc(db, "settings", "lobby_background");
+    const unsubscribe = onSnapshot(settingsDocRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        console.log("Firestore background settings updated:", data);
+        if (data.bgType) {
+          setHeroBgType(data.bgType);
+        }
+        if (data.videoUrl) {
+          setVideoSrc(data.videoUrl);
+        }
+        if (data.imageUrl) {
+          setImageSrc(data.imageUrl);
+        }
+      }
+    }, (error) => {
+      console.warn("Background Firestore listener error (expected if offline):", error);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const changeBgTypeInFirestore = async (type: "video" | "image") => {
+    try {
+      const settingsDocRef = doc(db, "settings", "lobby_background");
+      await setDoc(settingsDocRef, {
+        bgType: type,
+        lastUpdated: serverTimestamp()
+      }, { merge: true });
+    } catch (err) {
+      console.warn("Gagal sinkronisasi tipe background ke Firestore:", err);
+    }
+  };
+
   const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -346,33 +382,62 @@ export default function App() {
 
     try {
       await saveCustomBackgroundVideo(file);
-      if (customVideoUrl) {
+      if (customVideoUrl && !customVideoUrl.startsWith("http")) {
         URL.revokeObjectURL(customVideoUrl);
       }
       const newUrl = URL.createObjectURL(file);
       setCustomVideoUrl(newUrl);
 
-      // Upload directly to AI Studio workspace backend /public/custom-video.mp4
-      console.log("Uploading custom video to AI Studio backend workspace...");
-      await fetch("/api/upload-video-sync", {
-        method: "POST",
-        headers: { "Content-Type": "video/mp4" },
-        body: file,
-      });
-      console.log("Custom video upload and workspace sync complete.");
+      // Upload directly to AI Studio workspace backend /public/custom-video.mp4 for fallback
+      try {
+        await fetch("/api/upload-video-sync", {
+          method: "POST",
+          headers: { "Content-Type": "video/mp4" },
+          body: file,
+        });
+      } catch (err) {
+        console.warn("Express server sync fallback error:", err);
+      }
+
+      // ULTIMATE SOURCE OF TRUTH: Upload directly to Firebase Storage bucket!
+      console.log("Uploading custom video to Firebase Storage...");
+      const storageRef = ref(storage, "backgrounds/lobby_video.mp4");
+      const uploadResult = await uploadBytes(storageRef, file);
+      const downloadUrl = await getDownloadURL(uploadResult.ref);
+      console.log("Uploaded successfully! Download URL:", downloadUrl);
+
+      // Update background document in Firestore
+      const settingsDocRef = doc(db, "settings", "lobby_background");
+      await setDoc(settingsDocRef, {
+        bgType: "video",
+        videoUrl: downloadUrl,
+        lastUpdated: serverTimestamp()
+      }, { merge: true });
+
+      alert("Video latar belakang berhasil diunggah ke Cloud Storage! Video akan otomatis sinkron & muncul di Vercel/GitHub.");
     } catch (err) {
-      console.error("Gagal menyimpan video:", err);
-      alert("Gagal menyimpan video kustom.");
+      console.error("Gagal menyimpan video ke Firebase Storage:", err);
+      alert("Gagal mengunggah video ke Cloud Server. Silakan coba kembali.");
     }
   };
 
   const handleResetVideo = async () => {
     try {
       await clearCustomBackgroundVideo();
-      if (customVideoUrl) {
+      if (customVideoUrl && !customVideoUrl.startsWith("http")) {
         URL.revokeObjectURL(customVideoUrl);
-        setCustomVideoUrl(null);
       }
+      setCustomVideoUrl(null);
+      setVideoSrc("/custom-video.mp4");
+
+      // Reset in Firestore
+      const settingsDocRef = doc(db, "settings", "lobby_background");
+      await setDoc(settingsDocRef, {
+        videoUrl: "",
+        lastUpdated: serverTimestamp()
+      }, { merge: true });
+
+      alert("Video latar belakang direset ke default.");
     } catch (err) {
       console.error("Gagal menghapus video:", err);
     }
@@ -389,33 +454,62 @@ export default function App() {
 
     try {
       await saveCustomBackgroundImage(file);
-      if (customImageUrl) {
+      if (customImageUrl && !customImageUrl.startsWith("http")) {
         URL.revokeObjectURL(customImageUrl);
       }
       const newUrl = URL.createObjectURL(file);
       setCustomImageUrl(newUrl);
 
-      // Upload directly to AI Studio workspace backend /public/custom-image.png
-      console.log("Uploading custom image to AI Studio backend workspace...");
-      await fetch("/api/upload-image-sync", {
-        method: "POST",
-        headers: { "Content-Type": "image/png" },
-        body: file,
-      });
-      console.log("Custom image upload and workspace sync complete.");
+      // Upload directly to AI Studio workspace backend /public/custom-image.png for fallback
+      try {
+        await fetch("/api/upload-image-sync", {
+          method: "POST",
+          headers: { "Content-Type": "image/png" },
+          body: file,
+        });
+      } catch (err) {
+        console.warn("Express server sync fallback error:", err);
+      }
+
+      // ULTIMATE SOURCE OF TRUTH: Upload directly to Firebase Storage bucket!
+      console.log("Uploading custom image to Firebase Storage...");
+      const storageRef = ref(storage, "backgrounds/lobby_image.png");
+      const uploadResult = await uploadBytes(storageRef, file);
+      const downloadUrl = await getDownloadURL(uploadResult.ref);
+      console.log("Uploaded successfully! Download URL:", downloadUrl);
+
+      // Update background document in Firestore
+      const settingsDocRef = doc(db, "settings", "lobby_background");
+      await setDoc(settingsDocRef, {
+        bgType: "image",
+        imageUrl: downloadUrl,
+        lastUpdated: serverTimestamp()
+      }, { merge: true });
+
+      alert("Foto latar belakang berhasil diunggah ke Cloud Storage! Foto akan otomatis sinkron & muncul di Vercel/GitHub.");
     } catch (err) {
-      console.error("Gagal menyimpan foto:", err);
-      alert("Gagal menyimpan foto kustom.");
+      console.error("Gagal menyimpan foto ke Firebase Storage:", err);
+      alert("Gagal mengunggah foto ke Cloud Server. Silakan coba kembali.");
     }
   };
 
   const handleResetImage = async () => {
     try {
       await clearCustomBackgroundImage();
-      if (customImageUrl) {
+      if (customImageUrl && !customImageUrl.startsWith("http")) {
         URL.revokeObjectURL(customImageUrl);
-        setCustomImageUrl(null);
       }
+      setCustomImageUrl(null);
+      setImageSrc("https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8");
+
+      // Reset in Firestore
+      const settingsDocRef = doc(db, "settings", "lobby_background");
+      await setDoc(settingsDocRef, {
+        imageUrl: "",
+        lastUpdated: serverTimestamp()
+      }, { merge: true });
+
+      alert("Foto latar belakang direset ke default.");
     } catch (err) {
       console.error("Gagal menghapus foto:", err);
     }
@@ -2331,6 +2425,7 @@ ${lastMsgText}`;
                 onClick={() => {
                   setHeroBgType("video");
                   localStorage.setItem("prama_hero_bg_type", "video");
+                  changeBgTypeInFirestore("video");
                 }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black tracking-wide transition duration-200 cursor-pointer ${
                   heroBgType === "video"
@@ -2346,6 +2441,7 @@ ${lastMsgText}`;
                 onClick={() => {
                   setHeroBgType("image");
                   localStorage.setItem("prama_hero_bg_type", "image");
+                  changeBgTypeInFirestore("image");
                 }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black tracking-wide transition duration-200 cursor-pointer ${
                   heroBgType === "image"
@@ -2517,6 +2613,7 @@ ${lastMsgText}`;
                 onClick={() => {
                   setHeroBgType("video");
                   localStorage.setItem("prama_hero_bg_type", "video");
+                  changeBgTypeInFirestore("video");
                 }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black tracking-wide transition duration-200 cursor-pointer ${
                   heroBgType === "video"
@@ -2532,6 +2629,7 @@ ${lastMsgText}`;
                 onClick={() => {
                   setHeroBgType("image");
                   localStorage.setItem("prama_hero_bg_type", "image");
+                  changeBgTypeInFirestore("image");
                 }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black tracking-wide transition duration-200 cursor-pointer ${
                   heroBgType === "image"

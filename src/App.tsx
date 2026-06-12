@@ -2123,7 +2123,7 @@ ${lastMsgText}`;
           id="bg-video"
           key={customVideoUrl || "default"}
           referrerPolicy="no-referrer"
-          className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 animate-fade-in"
+          className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 animate-fade-in scale-[1.08] origin-center"
           src={customVideoUrl || "https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk"}
           style={{ zIndex: -1, opacity: 0.65 }}
         >
@@ -2162,7 +2162,7 @@ ${lastMsgText}`;
             playsInline 
             key={customVideoUrl || "auth-default"}
             referrerPolicy="no-referrer"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover scale-[1.08] origin-center"
             src={customVideoUrl || "https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk"}
           >
             <source src={customVideoUrl || "https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk"} type="video/mp4" />
@@ -2170,6 +2170,20 @@ ${lastMsgText}`;
           {/* Elegant Dark/Blur Overlay to focus and elevate contrast */}
           <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-sm" />
         </div>
+
+        {/* Small floating Back Button on the top left */}
+        <button
+          type="button"
+          id="btn-back-to-video"
+          onClick={() => {
+            setShowHeroLanding(true);
+            sessionStorage.removeItem("prama_hero_dismissed");
+          }}
+          className="absolute top-4 left-4 z-[999] flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/60 backdrop-blur-md border border-white/10 text-slate-300 hover:text-white transition duration-200 shadow-md select-none text-xs font-semibold cursor-pointer"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          <span>Kembali ke Lobi</span>
+        </button>
 
         {/* Auth Card wrapper with elevated relative z-index */}
         <div className="relative z-10 w-full max-w-4xl bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl overflow-hidden grid grid-cols-1 md:grid-cols-2 border border-white/20">

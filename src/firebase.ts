@@ -1,22 +1,25 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
+import { initializeFirestore, persistentLocalCache, doc, getDocFromServer } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
 
-// CRITICAL: Connect firestore with custom database id if provided matching workspace schema
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+// CRITICAL: Initialize firestore with persistent local cache to prevent offline connection failures
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({})
+}, firebaseConfig.firestoreDatabaseId);
+
 export const auth = getAuth(app);
 
 // Test connection on boot according to skill guidelines
 async function testConnection() {
   try {
     await getDocFromServer(doc(db, 'test', 'connection'));
+    console.log("Firestore connection test: SUCCESS");
   } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.error("Please check your Firebase configuration.");
-    }
+    // Gracefully handle any connection/offline fail on boot without polluting console as fatal
+    console.debug("Firestore test connection status: Offline or Transient (" + (error instanceof Error ? error.message : String(error)) + ")");
   }
 }
 testConnection();
@@ -49,6 +52,14 @@ export interface FirestoreErrorInfo {
 }
 
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const isPermissionError = 
+    (error && typeof error === 'object' && 'code' in error && (error as any).code === 'permission-denied') ||
+    (error instanceof Error && (
+      error.message.toLowerCase().includes('permission') || 
+      error.message.toLowerCase().includes('insufficient') ||
+      error.message.toLowerCase().includes('denied')
+    ));
+
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
     authInfo: {
@@ -66,6 +77,11 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
     path
   };
   
-  console.error('Firestore Error details: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+  if (isPermissionError) {
+    console.error('Firestore Permission Error details: ', JSON.stringify(errInfo));
+    throw new Error(JSON.stringify(errInfo));
+  } else {
+    // Just log as a warning or info but DO NOT throw, to prevent crashing the offline application
+    console.warn('Firestore Connection/Transient warning (non-blocking offline fallback): ', JSON.stringify(errInfo));
+  }
 }

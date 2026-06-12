@@ -187,13 +187,13 @@ export default function App() {
   });
 
   const [customVideoUrl, setCustomVideoUrl] = useState<string | null>(null);
-  const [videoSrc, setVideoSrc] = useState<string>("/custom-video.mp4");
+  const [videoSrc, setVideoSrc] = useState<string>("https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk");
 
   useEffect(() => {
     if (customVideoUrl) {
       setVideoSrc(customVideoUrl);
     } else {
-      setVideoSrc("/custom-video.mp4");
+      setVideoSrc("https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk");
     }
   }, [customVideoUrl]);
 
@@ -2057,29 +2057,6 @@ ${lastMsgText}`;
     }
   };
 
-  // Handles Google Login pop-up
-  const handleGoogleLogin = async () => {
-    setAuthError("");
-    try {
-      const mockUid = "virt-goog-" + Math.random().toString(36).substring(2, 10);
-      const mockGoogleUser = {
-        uid: mockUid,
-        id: mockUid,
-        fullName: "Staf PRAMA (Google SSO)",
-        displayName: "Staf PRAMA (Google SSO)",
-        email: "staf.google@prama.net",
-        status: "approved",
-        updatedAt: Date.now()
-      };
-      
-      setUser(mockGoogleUser);
-      setCollabUsername(mockGoogleUser.fullName);
-    } catch (err: any) {
-      console.error(err);
-      setAuthError("Gagal autentikasi Google.");
-    }
-  };
-
   // Handles Guest simulation
   const handleGuestLogin = () => {
     const dummyName = fullName.trim() || `Staf Tamu #${Math.floor(Math.random() * 800) + 100}`;
@@ -2187,72 +2164,6 @@ ${lastMsgText}`;
           />
         )}
 
-        {/* Floating background configuration panel (Top Right) */}
-        <div className="absolute top-4 right-4 z-[999] flex flex-col sm:flex-row items-center gap-2 bg-slate-900/60 backdrop-blur-md rounded-2xl p-1.5 border border-white/10 shadow-lg select-none">
-          <span className="text-[10px] font-bold text-slate-300 font-mono tracking-wider pl-2.5 pr-1.5 uppercase">
-            Media Latar
-          </span>
-          <div className="flex bg-slate-950/40 rounded-xl p-0.5 gap-0.5">
-            <button
-              type="button"
-              onClick={() => {
-                setHeroBgType("video");
-                localStorage.setItem("prama_hero_bg_type", "video");
-              }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black tracking-wide transition duration-200 cursor-pointer ${
-                heroBgType === "video"
-                  ? "bg-indigo-600 text-white shadow-md border border-indigo-500/25"
-                  : "text-slate-400 hover:text-white hover:bg-white/5"
-              }`}
-            >
-              <Video className="h-3.5 w-3.5 shrink-0" />
-              <span>Video</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setHeroBgType("image");
-                localStorage.setItem("prama_hero_bg_type", "image");
-              }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black tracking-wide transition duration-200 cursor-pointer ${
-                heroBgType === "image"
-                  ? "bg-indigo-600 text-white shadow-md border border-indigo-500/25"
-                  : "text-slate-400 hover:text-white hover:bg-white/5"
-              }`}
-            >
-              <Image className="h-3.5 w-3.5 shrink-0" />
-              <span>Foto</span>
-            </button>
-          </div>
-
-          <div className="h-4 w-[1px] bg-white/10 hidden sm:block mx-1" />
-
-          {/* Upload Button */}
-          <div className="flex items-center gap-1 bg-slate-950/20 rounded-xl p-0.5">
-            <label className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-slate-300 hover:text-white hover:bg-white/5 transition cursor-pointer">
-              <Upload className="h-3 w-3 shrink-0 text-sky-400" />
-              <span>Unggah MP4</span>
-              <input
-                type="file"
-                accept="video/mp4,video/x-m4v,video/*"
-                onChange={handleVideoUpload}
-                className="hidden"
-              />
-            </label>
-
-            {customVideoUrl && (
-              <button
-                type="button"
-                onClick={handleResetVideo}
-                title="Kembalikan Video Default"
-                className="flex items-center justify-center p-1.5 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition cursor-pointer"
-              >
-                <Trash2 className="h-3 w-3" />
-              </button>
-            )}
-          </div>
-        </div>
-
         <div className="menu-content" id="landing-menu-content">
           <h1>Pancaran Group</h1>
           <p>Solusi Logistik Masa Depan</p>
@@ -2307,72 +2218,6 @@ ${lastMsgText}`;
           )}
           {/* Elegant Dark/Blur Overlay to focus and elevate contrast */}
           <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-sm" />
-        </div>
-
-        {/* Floating background configuration panel (Top Right) */}
-        <div className="absolute top-4 right-4 z-[999] flex flex-col sm:flex-row items-center gap-2 bg-slate-900/60 backdrop-blur-md rounded-2xl p-1.5 border border-white/10 shadow-lg select-none">
-          <span className="text-[10px] font-bold text-slate-300 font-mono tracking-wider pl-2.5 pr-1.5 uppercase">
-            Media Latar
-          </span>
-          <div className="flex bg-slate-950/40 rounded-xl p-0.5 gap-0.5">
-            <button
-              type="button"
-              onClick={() => {
-                setHeroBgType("video");
-                localStorage.setItem("prama_hero_bg_type", "video");
-              }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black tracking-wide transition duration-200 cursor-pointer ${
-                heroBgType === "video"
-                  ? "bg-indigo-600 text-white shadow-md border border-indigo-500/25"
-                  : "text-slate-400 hover:text-white hover:bg-white/5"
-              }`}
-            >
-              <Video className="h-3.5 w-3.5 shrink-0" />
-              <span>Video</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setHeroBgType("image");
-                localStorage.setItem("prama_hero_bg_type", "image");
-              }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black tracking-wide transition duration-200 cursor-pointer ${
-                heroBgType === "image"
-                  ? "bg-indigo-600 text-white shadow-md border border-indigo-500/25"
-                  : "text-slate-400 hover:text-white hover:bg-white/5"
-              }`}
-            >
-              <Image className="h-3.5 w-3.5 shrink-0" />
-              <span>Foto</span>
-            </button>
-          </div>
-
-          <div className="h-4 w-[1px] bg-white/10 hidden sm:block mx-1" />
-
-          {/* Upload Button */}
-          <div className="flex items-center gap-1 bg-slate-950/20 rounded-xl p-0.5">
-            <label className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-slate-300 hover:text-white hover:bg-white/5 transition cursor-pointer">
-              <Upload className="h-3 w-3 shrink-0 text-sky-400" />
-              <span>Unggah MP4</span>
-              <input
-                type="file"
-                accept="video/mp4,video/x-m4v,video/*"
-                onChange={handleVideoUpload}
-                className="hidden"
-              />
-            </label>
-
-            {customVideoUrl && (
-              <button
-                type="button"
-                onClick={handleResetVideo}
-                title="Kembalikan Video Default"
-                className="flex items-center justify-center p-1.5 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition cursor-pointer"
-              >
-                <Trash2 className="h-3 w-3" />
-              </button>
-            )}
-          </div>
         </div>
 
         {/* Small floating Back Button on the top left */}
@@ -2483,7 +2328,7 @@ ${lastMsgText}`;
 
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider font-mono">
-                  Alamat Email Korporat
+                  Alamat Email
                 </label>
                 <div className="relative flex items-center bg-slate-100/60 rounded-xl overflow-hidden px-3 border border-slate-200 focus-within:border-indigo-500 transition shadow-2sm">
                   <Mail className="h-4 w-4 text-slate-400 mr-2 shrink-0 font-bold" />
@@ -2491,7 +2336,7 @@ ${lastMsgText}`;
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="email@pancaran-group.co.id"
+                    placeholder="Masukkan Alamat Email..."
                     className="w-full bg-transparent border-none text-xs text-slate-800 font-bold focus:outline-none focus:ring-0 py-2.5"
                   />
                 </div>
@@ -2815,23 +2660,121 @@ ${lastMsgText}`;
                     </button>
                   </div>
                 ) : (
-                  <div>
+                  <div className="space-y-6">
+                    {/* NEW SECTION: LOBBY BACKGROUND SETTINGS */}
+                    <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+                      <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 font-bold border border-indigo-100 text-xs">
+                          ⚙️
+                        </div>
+                        <div>
+                          <h4 className="font-display font-black text-xs text-slate-850 uppercase tracking-wider leading-none">
+                            Pengaturan Media Latar Belakang Lobi
+                          </h4>
+                          <p className="text-[9px] text-slate-400 font-mono mt-1 font-bold uppercase">
+                            UNGGAH & ATUR WALLPAPER / VIDEO LATAR LOBI UTAMA PORTAL
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Selector Tipe Latar */}
+                        <div className="flex flex-col justify-between bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-3sm gap-3">
+                          <div className="space-y-1">
+                            <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest block font-mono">TIPE MEDIA LATAR</span>
+                            <span className="text-[11px] text-slate-500 font-medium leading-relaxed block">Pilih jenis background lobi yang ingin Anda aktifkan saat ini</span>
+                          </div>
+                          <div className="flex bg-slate-200/60 rounded-xl p-1 gap-1 w-full shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setHeroBgType("video");
+                                localStorage.setItem("prama_hero_bg_type", "video");
+                              }}
+                              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-black tracking-wide transition duration-200 cursor-pointer ${
+                                heroBgType === "video"
+                                  ? "bg-slate-900 text-white shadow"
+                                  : "text-slate-500 hover:text-slate-800"
+                              }`}
+                            >
+                              <Video className="h-3.5 w-3.5 shrink-0" />
+                              <span>Latar Video (.MP4)</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setHeroBgType("image");
+                                localStorage.setItem("prama_hero_bg_type", "image");
+                              }}
+                              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-black tracking-wide transition duration-200 cursor-pointer ${
+                                heroBgType === "image"
+                                  ? "bg-slate-900 text-white shadow"
+                                  : "text-slate-500 hover:text-slate-800"
+                              }`}
+                            >
+                              <Image className="h-3.5 w-3.5 shrink-0" />
+                              <span>Latar Foto (.JPG)</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Upload Video Kustom */}
+                        <div className="flex flex-col justify-between bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-3sm gap-3">
+                          <div className="space-y-1">
+                            <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest block font-mono">UNGGAH VIDEO KUSTOM</span>
+                            <span className="text-[11px] text-slate-500 font-medium leading-relaxed block text-indigo-900">
+                              {customVideoUrl 
+                                ? "✅ Video Kustom Aktif di Browser. Video akan disinkronisasikan ke Vercel agar tersimpan permanen." 
+                                : "Gunakan video pemandangan logistik kustom untuk mempercantik layar lobi."}
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 shrink-0">
+                            <label className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black bg-indigo-600 text-white hover:bg-indigo-505 active:scale-97 transition shadow-md cursor-pointer border border-indigo-500">
+                              <Upload className="h-4 w-4 shrink-0 text-indigo-200" />
+                              <span>Unggah Video (.MP4)</span>
+                              <input
+                                type="file"
+                                accept="video/mp4,video/x-m4v,video/*"
+                                onChange={handleVideoUpload}
+                                className="hidden"
+                              />
+                            </label>
+
+                            {customVideoUrl && (
+                              <button
+                                type="button"
+                                onClick={handleResetVideo}
+                                title="Kembalikan Video Default Bawaan"
+                                className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 hover:bg-red-100 text-red-650 text-red-600 transition active:scale-95 cursor-pointer border border-red-100 shrink-0"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="w-full h-[1px] bg-slate-200 my-1" />
+
+                    {/* Pending Requests Header & list */}
                     {pendingRequests.length === 0 ? (
-                      <div className="text-center py-16 flex flex-col items-center justify-center">
-                        <div className="h-16 w-16 bg-emerald-50 text-emerald-600 border border-emerald-105 border-emerald-100 rounded-full flex items-center justify-center mb-4 shadow-sm text-2xl">
+                      <div className="text-center py-12 flex flex-col items-center justify-center bg-white rounded-2xl border border-slate-200 shadow-3sm p-6">
+                        <div className="h-12 w-12 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-full flex items-center justify-center mb-3 shadow-inner text-lg">
                           ✨
                         </div>
-                        <h4 className="font-display font-extrabold text-slate-800 text-sm">
-                          Semua Permohonan Selesai Diproses
+                        <h4 className="font-display font-extrabold text-slate-800 text-xs uppercase tracking-wide">
+                          Antrean Otorisasi Bersih
                         </h4>
-                        <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto leading-relaxed font-semibold">
-                          Tidak ada draf pendaftaran pending saat ini. Semua staf atau karyawan baru PRAMA yang terdaftar telah diaktivasi.
+                        <p className="text-[11px] text-slate-500 mt-1 max-w-sm mx-auto font-medium leading-relaxed">
+                          Tidak ada staf baru yang menunggu persetujuan. Semua permohonan masuk telah diselesaikan secara tuntas.
                         </p>
                       </div>
                     ) : (
-                      <div className="space-y-4">
-                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs text-amber-805 text-amber-800 leading-relaxed font-bold">
-                          💡 Sebagai administrator PRAMA Advisor, tindak lanjuti setiap permohonan pendaftaran di bawah ini untuk memberikan akses penulisan, penyimpanan dokumen cloud, dan analitis model asisten.
+                      <div className="space-y-3">
+                        <div className="bg-amber-50/50 border border-amber-200 rounded-xl p-4 text-xs text-amber-800 leading-relaxed font-semibold">
+                          💡 Sebagai administrator, tinjau permohonan pendaftaran di bawah ini untuk mengizinkan staf baru mengakses portal analitik internal PRAMA.
                         </div>
                         <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
                           <div className="divide-y divide-slate-100">
@@ -2839,21 +2782,21 @@ ${lastMsgText}`;
                               <div key={req.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition hover:bg-slate-50/50">
                                 <div className="min-w-0">
                                   <div className="flex items-center gap-2">
-                                    <p className="text-xs font-black text-slate-850 text-slate-800 tracking-wide">
+                                    <p className="text-xs font-black text-slate-800 tracking-wide">
                                       {req.fullName || "Staf PRAMA"}
                                     </p>
                                     <span className="font-mono text-[8px] font-extrabold tracking-wider bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-100 uppercase">
                                       Kandidat Staf
                                     </span>
                                   </div>
-                                  <p className="text-[11px] text-slate-505 text-slate-503 text-slate-500 font-bold font-mono mt-1">
+                                  <p className="text-[11px] text-slate-500 font-bold font-mono mt-1">
                                     Email: <span className="text-indigo-600 font-extrabold">{req.email || "No Email"}</span>
                                   </p>
                                 </div>
                                 <div className="flex gap-2 shrink-0">
                                   <button
                                     onClick={() => handleApproveRequest(req.id)}
-                                    className="bg-emerald-650 bg-emerald-600 hover:bg-emerald-500 active:scale-97 text-white text-[10.5px] font-black px-4 py-2 rounded-xl shadow-md transition cursor-pointer"
+                                    className="bg-emerald-600 hover:bg-emerald-500 active:scale-97 text-white text-[10.5px] font-black px-4 py-2 rounded-xl shadow-md transition cursor-pointer"
                                   >
                                     Terima Akun
                                   </button>

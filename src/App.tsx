@@ -182,6 +182,10 @@ export default function App() {
 
 
 
+  const [heroBgType, setHeroBgType] = useState<"video" | "image">(() => {
+    return (localStorage.getItem("prama_hero_bg_type") as "video" | "image") || "video";
+  });
+
   const [customVideoUrl, setCustomVideoUrl] = useState<string | null>(null);
   const [videoSrc, setVideoSrc] = useState<string>("/custom-video.mp4");
 
@@ -2152,26 +2156,102 @@ ${lastMsgText}`;
   if (showHeroLanding) {
     return (
       <div className="video-container" id="landing-hero-container">
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          id="bg-video"
-          key={videoSrc || "default"}
-          referrerPolicy="no-referrer"
-          className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 animate-fade-in scale-[1.08] origin-center"
-          src={videoSrc || "https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk"}
-          style={{ zIndex: -1, opacity: 0.65 }}
-          onError={() => {
-            if (videoSrc !== "https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk") {
-              console.warn("Setting fallback Google Drive video stream on error...");
-              setVideoSrc("https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk");
-            }
-          }}
-        >
-          <source src={videoSrc || "https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk"} type="video/mp4" />
-        </video>
+        {heroBgType === "video" ? (
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            id="bg-video"
+            key={videoSrc || "default"}
+            referrerPolicy="no-referrer"
+            className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 animate-fade-in scale-[1.08] origin-center"
+            src={videoSrc || "https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk"}
+            style={{ zIndex: -1, opacity: 0.65 }}
+            onError={() => {
+              if (videoSrc !== "https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk") {
+                console.warn("Setting fallback Google Drive video stream on error...");
+                setVideoSrc("https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk");
+              }
+            }}
+          >
+            <source src={videoSrc || "https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk"} type="video/mp4" />
+          </video>
+        ) : (
+          <img 
+            src="https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8" 
+            alt="Pancaran Group Background" 
+            referrerPolicy="no-referrer"
+            className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 animate-fade-in scale-[1.08] origin-center"
+            style={{ zIndex: -1, opacity: 0.65 }}
+          />
+        )}
+
+        {/* Floating background configuration panel (Top Right) */}
+        <div className="absolute top-4 right-4 z-[999] flex flex-col sm:flex-row items-center gap-2 bg-slate-900/60 backdrop-blur-md rounded-2xl p-1.5 border border-white/10 shadow-lg select-none">
+          <span className="text-[10px] font-bold text-slate-300 font-mono tracking-wider pl-2.5 pr-1.5 uppercase">
+            Media Latar
+          </span>
+          <div className="flex bg-slate-950/40 rounded-xl p-0.5 gap-0.5">
+            <button
+              type="button"
+              onClick={() => {
+                setHeroBgType("video");
+                localStorage.setItem("prama_hero_bg_type", "video");
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black tracking-wide transition duration-200 cursor-pointer ${
+                heroBgType === "video"
+                  ? "bg-indigo-600 text-white shadow-md border border-indigo-500/25"
+                  : "text-slate-400 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              <Video className="h-3.5 w-3.5 shrink-0" />
+              <span>Video</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setHeroBgType("image");
+                localStorage.setItem("prama_hero_bg_type", "image");
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black tracking-wide transition duration-200 cursor-pointer ${
+                heroBgType === "image"
+                  ? "bg-indigo-600 text-white shadow-md border border-indigo-500/25"
+                  : "text-slate-400 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              <Image className="h-3.5 w-3.5 shrink-0" />
+              <span>Foto</span>
+            </button>
+          </div>
+
+          <div className="h-4 w-[1px] bg-white/10 hidden sm:block mx-1" />
+
+          {/* Upload Button */}
+          <div className="flex items-center gap-1 bg-slate-950/20 rounded-xl p-0.5">
+            <label className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-slate-300 hover:text-white hover:bg-white/5 transition cursor-pointer">
+              <Upload className="h-3 w-3 shrink-0 text-sky-400" />
+              <span>Unggah MP4</span>
+              <input
+                type="file"
+                accept="video/mp4,video/x-m4v,video/*"
+                onChange={handleVideoUpload}
+                className="hidden"
+              />
+            </label>
+
+            {customVideoUrl && (
+              <button
+                type="button"
+                onClick={handleResetVideo}
+                title="Kembalikan Video Default"
+                className="flex items-center justify-center p-1.5 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition cursor-pointer"
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
+            )}
+          </div>
+        </div>
 
         <div className="menu-content" id="landing-menu-content">
           <h1>Pancaran Group</h1>
@@ -2198,26 +2278,101 @@ ${lastMsgText}`;
       <div className="relative min-h-screen flex items-center justify-center px-4 py-12 font-sans overflow-hidden">
         {/* Brand Background Image or Video */}
         <div className="absolute inset-0 z-0">
-          <video 
-            autoPlay 
-            muted 
-            loop 
-            playsInline 
-            key={videoSrc || "auth-default"}
-            referrerPolicy="no-referrer"
-            className="w-full h-full object-cover scale-[1.08] origin-center"
-            src={videoSrc || "https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk"}
-            onError={() => {
-              if (videoSrc !== "https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk") {
-                console.warn("Setting fallback Google Drive video stream on error for auth background...");
-                setVideoSrc("https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk");
-              }
-            }}
-          >
-            <source src={videoSrc || "https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk"} type="video/mp4" />
-          </video>
+          {heroBgType === "video" ? (
+            <video 
+              autoPlay 
+              muted 
+              loop 
+              playsInline 
+              key={videoSrc || "auth-default"}
+              referrerPolicy="no-referrer"
+              className="w-full h-full object-cover scale-[1.08] origin-center"
+              src={videoSrc || "https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk"}
+              onError={() => {
+                if (videoSrc !== "https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk") {
+                  console.warn("Setting fallback Google Drive video stream on error for auth background...");
+                  setVideoSrc("https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk");
+                }
+              }}
+            >
+              <source src={videoSrc || "https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk"} type="video/mp4" />
+            </video>
+          ) : (
+            <img 
+              src="https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8" 
+              alt="Pancaran Group Background" 
+              referrerPolicy="no-referrer"
+              className="w-full h-full object-cover scale-[1.08] origin-center"
+            />
+          )}
           {/* Elegant Dark/Blur Overlay to focus and elevate contrast */}
           <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-sm" />
+        </div>
+
+        {/* Floating background configuration panel (Top Right) */}
+        <div className="absolute top-4 right-4 z-[999] flex flex-col sm:flex-row items-center gap-2 bg-slate-900/60 backdrop-blur-md rounded-2xl p-1.5 border border-white/10 shadow-lg select-none">
+          <span className="text-[10px] font-bold text-slate-300 font-mono tracking-wider pl-2.5 pr-1.5 uppercase">
+            Media Latar
+          </span>
+          <div className="flex bg-slate-950/40 rounded-xl p-0.5 gap-0.5">
+            <button
+              type="button"
+              onClick={() => {
+                setHeroBgType("video");
+                localStorage.setItem("prama_hero_bg_type", "video");
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black tracking-wide transition duration-200 cursor-pointer ${
+                heroBgType === "video"
+                  ? "bg-indigo-600 text-white shadow-md border border-indigo-500/25"
+                  : "text-slate-400 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              <Video className="h-3.5 w-3.5 shrink-0" />
+              <span>Video</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setHeroBgType("image");
+                localStorage.setItem("prama_hero_bg_type", "image");
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black tracking-wide transition duration-200 cursor-pointer ${
+                heroBgType === "image"
+                  ? "bg-indigo-600 text-white shadow-md border border-indigo-500/25"
+                  : "text-slate-400 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              <Image className="h-3.5 w-3.5 shrink-0" />
+              <span>Foto</span>
+            </button>
+          </div>
+
+          <div className="h-4 w-[1px] bg-white/10 hidden sm:block mx-1" />
+
+          {/* Upload Button */}
+          <div className="flex items-center gap-1 bg-slate-950/20 rounded-xl p-0.5">
+            <label className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-slate-300 hover:text-white hover:bg-white/5 transition cursor-pointer">
+              <Upload className="h-3 w-3 shrink-0 text-sky-400" />
+              <span>Unggah MP4</span>
+              <input
+                type="file"
+                accept="video/mp4,video/x-m4v,video/*"
+                onChange={handleVideoUpload}
+                className="hidden"
+              />
+            </label>
+
+            {customVideoUrl && (
+              <button
+                type="button"
+                onClick={handleResetVideo}
+                title="Kembalikan Video Default"
+                className="flex items-center justify-center p-1.5 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition cursor-pointer"
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Small floating Back Button on the top left */}

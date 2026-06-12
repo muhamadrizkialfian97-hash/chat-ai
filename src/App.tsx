@@ -221,8 +221,10 @@ export default function App() {
 
 
   const [heroBgType, setHeroBgType] = useState<"video" | "image">(() => {
-    return (localStorage.getItem("prama_hero_bg_type") as "video" | "image") || "video";
+    return (localStorage.getItem("prama_hero_bg_type") as "video" | "image") || "image";
   });
+
+  const [isBgSettingsCollapsed, setIsBgSettingsCollapsed] = useState<boolean>(true);
 
   const [customVideoUrl, setCustomVideoUrl] = useState<string | null>(null);
   const [videoSrc, setVideoSrc] = useState<string>("/custom-video.mp4");
@@ -2308,96 +2310,120 @@ ${lastMsgText}`;
         )}
 
         {/* Floating background configuration panel (Top Right) */}
-        <div className="absolute top-4 right-4 z-[999] flex flex-col sm:flex-row items-center gap-2 bg-slate-900/60 backdrop-blur-md rounded-2xl p-1.5 border border-white/10 shadow-lg select-none">
-          <span className="text-[10px] font-bold text-slate-300 font-mono tracking-wider pl-2.5 pr-1.5 uppercase">
-            Media Latar
-          </span>
-          <div className="flex bg-slate-950/40 rounded-xl p-0.5 gap-0.5">
+        {isBgSettingsCollapsed ? (
+          <button
+            type="button"
+            onClick={() => setIsBgSettingsCollapsed(false)}
+            title="Pengaturan Latar Belakang"
+            className="absolute top-4 right-4 z-[999] flex items-center gap-1.5 bg-slate-900/60 backdrop-blur-md hover:bg-slate-900/80 text-slate-300 hover:text-white px-2.5 py-1.5 rounded-xl border border-white/10 shadow-md transition duration-200 cursor-pointer text-[11px] font-bold uppercase tracking-wider select-none animate-bounce-subtle"
+          >
+            <Settings className="h-3.5 w-3.5 text-indigo-400" />
+            <span>Atur Latar</span>
+          </button>
+        ) : (
+          <div className="absolute top-4 right-4 z-[999] flex flex-col sm:flex-row items-center gap-2 bg-slate-900/80 backdrop-blur-md rounded-2xl p-1.5 border border-white/20 shadow-xl select-none animate-fade-in">
+            <span className="text-[10px] font-bold text-slate-300 font-mono tracking-wider pl-2.5 pr-1.5 uppercase">
+              Media Latar
+            </span>
+            <div className="flex bg-slate-950/40 rounded-xl p-0.5 gap-0.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setHeroBgType("video");
+                  localStorage.setItem("prama_hero_bg_type", "video");
+                }}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black tracking-wide transition duration-200 cursor-pointer ${
+                  heroBgType === "video"
+                    ? "bg-indigo-600 text-white shadow-md border border-indigo-500/25"
+                    : "text-slate-400 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                <Video className="h-3.5 w-3.5 shrink-0" />
+                <span>Video</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setHeroBgType("image");
+                  localStorage.setItem("prama_hero_bg_type", "image");
+                }}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black tracking-wide transition duration-200 cursor-pointer ${
+                  heroBgType === "image"
+                    ? "bg-indigo-600 text-white shadow-md border border-indigo-500/25"
+                    : "text-slate-400 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                <Image className="h-3.5 w-3.5 shrink-0" />
+                <span>Foto</span>
+              </button>
+            </div>
+
+            <div className="h-4 w-[1px] bg-white/10 hidden sm:block mx-1" />
+
+            {/* Conditional Upload button based on selected media type */}
+            {heroBgType === "video" ? (
+              <div className="flex items-center gap-1 bg-slate-950/20 rounded-xl p-0.5">
+                <label className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-slate-300 hover:text-white hover:bg-white/5 transition cursor-pointer">
+                  <Upload className="h-3 w-3 shrink-0 text-sky-450" />
+                  <span>Unggah MP4</span>
+                  <input
+                    type="file"
+                    accept="video/mp4,video/x-m4v,video/*"
+                    onChange={handleVideoUpload}
+                    className="hidden"
+                  />
+                </label>
+
+                {customVideoUrl && (
+                  <button
+                    type="button"
+                    onClick={handleResetVideo}
+                    title="Kembalikan Video Default Bawaan"
+                    className="flex items-center justify-center p-1.5 rounded-lg text-rose-450 hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center gap-1 bg-slate-950/20 rounded-xl p-0.5">
+                <label className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-slate-300 hover:text-white hover:bg-white/5 transition cursor-pointer">
+                  <Upload className="h-3 w-3 shrink-0 text-sky-450" />
+                  <span>Unggah Foto</span>
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                </label>
+
+                {customImageUrl && (
+                  <button
+                    type="button"
+                    onClick={handleResetImage}
+                    title="Kembalikan Foto Default Bawaan"
+                    className="flex items-center justify-center p-1.5 rounded-lg text-rose-450 hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+            )}
+
+            <div className="h-4 w-[1px] bg-white/15 hidden sm:block mx-1" />
+
+            {/* Collapse Trigger Button */}
             <button
               type="button"
-              onClick={() => {
-                setHeroBgType("video");
-                localStorage.setItem("prama_hero_bg_type", "video");
-              }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black tracking-wide transition duration-200 cursor-pointer ${
-                heroBgType === "video"
-                  ? "bg-indigo-600 text-white shadow-md border border-indigo-500/25"
-                  : "text-slate-400 hover:text-white hover:bg-white/5"
-              }`}
+              onClick={() => setIsBgSettingsCollapsed(true)}
+              title="Sembunyikan Pengaturan"
+              className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition duration-200 cursor-pointer"
             >
-              <Video className="h-3.5 w-3.5 shrink-0" />
-              <span>Video</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setHeroBgType("image");
-                localStorage.setItem("prama_hero_bg_type", "image");
-              }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black tracking-wide transition duration-200 cursor-pointer ${
-                heroBgType === "image"
-                  ? "bg-indigo-600 text-white shadow-md border border-indigo-500/25"
-                  : "text-slate-400 hover:text-white hover:bg-white/5"
-              }`}
-            >
-              <Image className="h-3.5 w-3.5 shrink-0" />
-              <span>Foto</span>
+              <X className="h-3.5 w-3.5" />
             </button>
           </div>
-
-          <div className="h-4 w-[1px] bg-white/10 hidden sm:block mx-1" />
-
-          {/* Conditional Upload button based on selected media type */}
-          {heroBgType === "video" ? (
-            <div className="flex items-center gap-1 bg-slate-950/20 rounded-xl p-0.5">
-              <label className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-slate-300 hover:text-white hover:bg-white/5 transition cursor-pointer">
-                <Upload className="h-3 w-3 shrink-0 text-sky-400" />
-                <span>Unggah MP4</span>
-                <input
-                  type="file"
-                  accept="video/mp4,video/x-m4v,video/*"
-                  onChange={handleVideoUpload}
-                  className="hidden"
-                />
-              </label>
-
-              {customVideoUrl && (
-                <button
-                  type="button"
-                  onClick={handleResetVideo}
-                  title="Kembalikan Video Default Bawaan"
-                  className="flex items-center justify-center p-1.5 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition cursor-pointer"
-                >
-                  <Trash2 className="h-3 w-3" />
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className="flex items-center gap-1 bg-slate-950/20 rounded-xl p-0.5">
-              <label className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-slate-300 hover:text-white hover:bg-white/5 transition cursor-pointer">
-                <Upload className="h-3 w-3 shrink-0 text-sky-400" />
-                <span>Unggah Foto</span>
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg,image/jpg"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-              </label>
-
-              {customImageUrl && (
-                <button
-                  type="button"
-                  onClick={handleResetImage}
-                  title="Kembalikan Foto Default Bawaan"
-                  className="flex items-center justify-center p-1.5 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition cursor-pointer"
-                >
-                  <Trash2 className="h-3 w-3" />
-                </button>
-              )}
-            </div>
-          )}
-        </div>
+        )}
 
         <div className="menu-content" id="landing-menu-content">
           <h1>Pancaran Group</h1>
@@ -2470,96 +2496,120 @@ ${lastMsgText}`;
         </button>
 
         {/* Floating background configuration panel (Top Right) */}
-        <div className="absolute top-4 right-4 z-[999] flex flex-col sm:flex-row items-center gap-2 bg-slate-900/60 backdrop-blur-md rounded-2xl p-1.5 border border-white/10 shadow-lg select-none">
-          <span className="text-[10px] font-bold text-slate-300 font-mono tracking-wider pl-2.5 pr-1.5 uppercase">
-            Media Latar
-          </span>
-          <div className="flex bg-slate-950/40 rounded-xl p-0.5 gap-0.5">
+        {isBgSettingsCollapsed ? (
+          <button
+            type="button"
+            onClick={() => setIsBgSettingsCollapsed(false)}
+            title="Pengaturan Latar Belakang"
+            className="absolute top-4 right-4 z-[999] flex items-center gap-1.5 bg-slate-900/60 backdrop-blur-md hover:bg-slate-900/80 text-slate-300 hover:text-white px-2.5 py-1.5 rounded-xl border border-white/10 shadow-md transition duration-200 cursor-pointer text-[11px] font-bold uppercase tracking-wider select-none animate-bounce-subtle"
+          >
+            <Settings className="h-3.5 w-3.5 text-indigo-400" />
+            <span>Atur Latar</span>
+          </button>
+        ) : (
+          <div className="absolute top-4 right-4 z-[999] flex flex-col sm:flex-row items-center gap-2 bg-slate-900/80 backdrop-blur-md rounded-2xl p-1.5 border border-white/20 shadow-xl select-none animate-fade-in">
+            <span className="text-[10px] font-bold text-slate-300 font-mono tracking-wider pl-2.5 pr-1.5 uppercase">
+              Media Latar
+            </span>
+            <div className="flex bg-slate-950/40 rounded-xl p-0.5 gap-0.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setHeroBgType("video");
+                  localStorage.setItem("prama_hero_bg_type", "video");
+                }}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black tracking-wide transition duration-200 cursor-pointer ${
+                  heroBgType === "video"
+                    ? "bg-indigo-600 text-white shadow-md border border-indigo-500/25"
+                    : "text-slate-400 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                <Video className="h-3.5 w-3.5 shrink-0" />
+                <span>Video</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setHeroBgType("image");
+                  localStorage.setItem("prama_hero_bg_type", "image");
+                }}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black tracking-wide transition duration-200 cursor-pointer ${
+                  heroBgType === "image"
+                    ? "bg-indigo-600 text-white shadow-md border border-indigo-500/25"
+                    : "text-slate-400 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                <Image className="h-3.5 w-3.5 shrink-0" />
+                <span>Foto</span>
+              </button>
+            </div>
+
+            <div className="h-4 w-[1px] bg-white/10 hidden sm:block mx-1" />
+
+            {/* Conditional Upload button based on selected media type */}
+            {heroBgType === "video" ? (
+              <div className="flex items-center gap-1 bg-slate-950/20 rounded-xl p-0.5">
+                <label className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-slate-300 hover:text-white hover:bg-white/5 transition cursor-pointer">
+                  <Upload className="h-3 w-3 shrink-0 text-sky-450" />
+                  <span>Unggah MP4</span>
+                  <input
+                    type="file"
+                    accept="video/mp4,video/x-m4v,video/*"
+                    onChange={handleVideoUpload}
+                    className="hidden"
+                  />
+                </label>
+
+                {customVideoUrl && (
+                  <button
+                    type="button"
+                    onClick={handleResetVideo}
+                    title="Kembalikan Video Default Bawaan"
+                    className="flex items-center justify-center p-1.5 rounded-lg text-rose-450 hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center gap-1 bg-slate-950/20 rounded-xl p-0.5">
+                <label className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-slate-300 hover:text-white hover:bg-white/5 transition cursor-pointer">
+                  <Upload className="h-3 w-3 shrink-0 text-sky-450" />
+                  <span>Unggah Foto</span>
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                </label>
+
+                {customImageUrl && (
+                  <button
+                    type="button"
+                    onClick={handleResetImage}
+                    title="Kembalikan Foto Default Bawaan"
+                    className="flex items-center justify-center p-1.5 rounded-lg text-rose-450 hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+            )}
+
+            <div className="h-4 w-[1px] bg-white/15 hidden sm:block mx-1" />
+
+            {/* Collapse Trigger Button */}
             <button
               type="button"
-              onClick={() => {
-                setHeroBgType("video");
-                localStorage.setItem("prama_hero_bg_type", "video");
-              }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black tracking-wide transition duration-200 cursor-pointer ${
-                heroBgType === "video"
-                  ? "bg-indigo-600 text-white shadow-md border border-indigo-500/25"
-                  : "text-slate-400 hover:text-white hover:bg-white/5"
-              }`}
+              onClick={() => setIsBgSettingsCollapsed(true)}
+              title="Sembunyikan Pengaturan"
+              className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition duration-200 cursor-pointer"
             >
-              <Video className="h-3.5 w-3.5 shrink-0" />
-              <span>Video</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setHeroBgType("image");
-                localStorage.setItem("prama_hero_bg_type", "image");
-              }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black tracking-wide transition duration-200 cursor-pointer ${
-                heroBgType === "image"
-                  ? "bg-indigo-600 text-white shadow-md border border-indigo-500/25"
-                  : "text-slate-400 hover:text-white hover:bg-white/5"
-              }`}
-            >
-              <Image className="h-3.5 w-3.5 shrink-0" />
-              <span>Foto</span>
+              <X className="h-3.5 w-3.5" />
             </button>
           </div>
-
-          <div className="h-4 w-[1px] bg-white/10 hidden sm:block mx-1" />
-
-          {/* Conditional Upload button based on selected media type */}
-          {heroBgType === "video" ? (
-            <div className="flex items-center gap-1 bg-slate-950/20 rounded-xl p-0.5">
-              <label className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-slate-300 hover:text-white hover:bg-white/5 transition cursor-pointer">
-                <Upload className="h-3 w-3 shrink-0 text-sky-400" />
-                <span>Unggah MP4</span>
-                <input
-                  type="file"
-                  accept="video/mp4,video/x-m4v,video/*"
-                  onChange={handleVideoUpload}
-                  className="hidden"
-                />
-              </label>
-
-              {customVideoUrl && (
-                <button
-                  type="button"
-                  onClick={handleResetVideo}
-                  title="Kembalikan Video Default Bawaan"
-                  className="flex items-center justify-center p-1.5 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition cursor-pointer"
-                >
-                  <Trash2 className="h-3 w-3" />
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className="flex items-center gap-1 bg-slate-950/20 rounded-xl p-0.5">
-              <label className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-slate-300 hover:text-white hover:bg-white/5 transition cursor-pointer">
-                <Upload className="h-3 w-3 shrink-0 text-sky-400" />
-                <span>Unggah Foto</span>
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg,image/jpg"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-              </label>
-
-              {customImageUrl && (
-                <button
-                  type="button"
-                  onClick={handleResetImage}
-                  title="Kembalikan Foto Default Bawaan"
-                  className="flex items-center justify-center p-1.5 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition cursor-pointer"
-                >
-                  <Trash2 className="h-3 w-3" />
-                </button>
-              )}
-            </div>
-          )}
-        </div>
+        )}
 
         {/* Auth Card wrapper with elevated relative z-index */}
         <div className="relative z-10 w-full max-w-4xl bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl overflow-hidden grid grid-cols-1 md:grid-cols-2 border border-white/20">

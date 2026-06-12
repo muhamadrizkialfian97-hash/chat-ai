@@ -187,13 +187,13 @@ export default function App() {
   });
 
   const [customVideoUrl, setCustomVideoUrl] = useState<string | null>(null);
-  const [videoSrc, setVideoSrc] = useState<string>("https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk");
+  const [videoSrc, setVideoSrc] = useState<string>("/custom-video.mp4");
 
   useEffect(() => {
     if (customVideoUrl) {
       setVideoSrc(customVideoUrl);
     } else {
-      setVideoSrc("https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk");
+      setVideoSrc("/custom-video.mp4");
     }
   }, [customVideoUrl]);
 
@@ -2143,16 +2143,16 @@ ${lastMsgText}`;
             key={videoSrc || "default"}
             referrerPolicy="no-referrer"
             className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 animate-fade-in scale-[1.08] origin-center"
-            src={videoSrc || "https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk"}
+            src={videoSrc || "/custom-video.mp4"}
             style={{ zIndex: -1, opacity: 0.65 }}
             onError={() => {
-              if (videoSrc !== "https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk") {
-                console.warn("Setting fallback Google Drive video stream on error...");
-                setVideoSrc("https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk");
+              if (videoSrc !== "/custom-video.mp4") {
+                console.warn("Setting fallback local video stream on error...");
+                setVideoSrc("/custom-video.mp4");
               }
             }}
           >
-            <source src={videoSrc || "https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk"} type="video/mp4" />
+            <source src={videoSrc || "/custom-video.mp4"} type="video/mp4" />
           </video>
         ) : (
           <img 
@@ -2198,15 +2198,15 @@ ${lastMsgText}`;
               key={videoSrc || "auth-default"}
               referrerPolicy="no-referrer"
               className="w-full h-full object-cover scale-[1.08] origin-center"
-              src={videoSrc || "https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk"}
+              src={videoSrc || "/custom-video.mp4"}
               onError={() => {
-                if (videoSrc !== "https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk") {
-                  console.warn("Setting fallback Google Drive video stream on error for auth background...");
-                  setVideoSrc("https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk");
+                if (videoSrc !== "/custom-video.mp4") {
+                  console.warn("Setting fallback video stream on error for auth background...");
+                  setVideoSrc("/custom-video.mp4");
                 }
               }}
             >
-              <source src={videoSrc || "https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk"} type="video/mp4" />
+              <source src={videoSrc || "/custom-video.mp4"} type="video/mp4" />
             </video>
           ) : (
             <img 

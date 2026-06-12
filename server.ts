@@ -1,5 +1,6 @@
 import express from "express";
 import path from "path";
+import fs from "fs";
 import dotenv from "dotenv";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
@@ -157,6 +158,40 @@ Kunci API Gemini yang digunakan saat ini tidak memiliki izin akses atau dibatasi
 ### 💡 Rekomendasi Solusi:
 Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masukkan **Gemini API Key pribadi** Anda. Menggunakan kunci pribadi membebaskan sesi Anda dari kendala batas penggunaan server bersama.`;
 }
+
+// Check if custom video has been synced from the browser
+app.get("/api/check-video-sync", (req, res) => {
+  const publicPath = path.join(process.cwd(), "public", "custom-video.mp4");
+  const exists = fs.existsSync(publicPath);
+  res.json({ exists });
+});
+
+// Sync binary data directly into the public directory of the workspace
+app.post("/api/upload-video-sync", (req, res) => {
+  try {
+    const publicDir = path.join(process.cwd(), "public");
+    if (!fs.existsSync(publicDir)) {
+      fs.mkdirSync(publicDir, { recursive: true });
+    }
+    const publicPath = path.join(publicDir, "custom-video.mp4");
+    
+    const writeStream = fs.createWriteStream(publicPath);
+    req.pipe(writeStream);
+    
+    writeStream.on("finish", () => {
+      console.log("Successfully saved synchronized background video to workspace:", publicPath);
+      res.json({ success: true, message: "Video synced to workspace files." });
+    });
+    
+    writeStream.on("error", (err) => {
+      console.error("Error writing synchronized video file:", err);
+      res.status(500).json({ error: "Failed to write video file." });
+    });
+  } catch (err: any) {
+    console.error("Upload sync error:", err);
+    res.status(500).json({ error: err.message || "Failed to sync video file." });
+  }
+});
 
 // REST endpoint for chat
 app.post("/api/chat", async (req, res) => {

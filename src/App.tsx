@@ -183,17 +183,54 @@ export default function App() {
 
 
   const [customVideoUrl, setCustomVideoUrl] = useState<string | null>(null);
+  const [videoSrc, setVideoSrc] = useState<string>("/custom-video.mp4");
+
+  useEffect(() => {
+    if (customVideoUrl) {
+      setVideoSrc(customVideoUrl);
+    } else {
+      setVideoSrc("/custom-video.mp4");
+    }
+  }, [customVideoUrl]);
 
   useEffect(() => {
     let activeUrl: string | null = null;
-    getCustomBackgroundVideo().then((cachedBlob) => {
+    
+    // First, play user's uploaded cache from local IndexedDB if they have it
+    getCustomBackgroundVideo().then(async (cachedBlob) => {
       if (cachedBlob) {
         activeUrl = URL.createObjectURL(cachedBlob);
         setCustomVideoUrl(activeUrl);
+        
+        // AUTO-SYNC TO WORKSPACE SERVER:
+        // Automatically upload browser-uploaded video to development container's /public/custom-video.mp4
+        // so it persists, and gets bundled statically with Vercel deployment!
+        const isDevApp = window.location.hostname.includes("localhost") || 
+                          window.location.hostname.includes("run.app");
+        if (isDevApp) {
+          try {
+            const checkRes = await fetch("/api/check-video-sync");
+            if (checkRes.ok) {
+              const checkData = await checkRes.json();
+              if (!checkData.exists) {
+                console.log("Auto-synchronizing browser background video back to workspace files...");
+                await fetch("/api/upload-video-sync", {
+                  method: "POST",
+                  headers: { "Content-Type": "video/mp4" },
+                  body: cachedBlob
+                });
+                console.log("Auto-sync completed! Video is now a persistent public file inside the workspace.");
+              }
+            }
+          } catch (syncErr) {
+            console.warn("Background auto-sync failed (harmless during local-only dev runs):", syncErr);
+          }
+        }
       }
     }).catch(err => {
       console.error("Gagal memuat video kustom:", err);
     });
+    
     return () => {
       if (activeUrl) {
         URL.revokeObjectURL(activeUrl);
@@ -2121,13 +2158,19 @@ ${lastMsgText}`;
           loop
           playsInline
           id="bg-video"
-          key={customVideoUrl || "default"}
+          key={videoSrc || "default"}
           referrerPolicy="no-referrer"
           className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 animate-fade-in scale-[1.08] origin-center"
-          src={customVideoUrl || "https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk"}
+          src={videoSrc || "https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk"}
           style={{ zIndex: -1, opacity: 0.65 }}
+          onError={() => {
+            if (videoSrc !== "https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk") {
+              console.warn("Setting fallback Google Drive video stream on error...");
+              setVideoSrc("https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk");
+            }
+          }}
         >
-          <source src={customVideoUrl || "https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk"} type="video/mp4" />
+          <source src={videoSrc || "https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk"} type="video/mp4" />
         </video>
 
         <div className="menu-content" id="landing-menu-content">
@@ -2160,12 +2203,18 @@ ${lastMsgText}`;
             muted 
             loop 
             playsInline 
-            key={customVideoUrl || "auth-default"}
+            key={videoSrc || "auth-default"}
             referrerPolicy="no-referrer"
             className="w-full h-full object-cover scale-[1.08] origin-center"
-            src={customVideoUrl || "https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk"}
+            src={videoSrc || "https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk"}
+            onError={() => {
+              if (videoSrc !== "https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk") {
+                console.warn("Setting fallback Google Drive video stream on error for auth background...");
+                setVideoSrc("https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk");
+              }
+            }}
           >
-            <source src={customVideoUrl || "https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk"} type="video/mp4" />
+            <source src={videoSrc || "https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk"} type="video/mp4" />
           </video>
           {/* Elegant Dark/Blur Overlay to focus and elevate contrast */}
           <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-sm" />

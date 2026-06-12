@@ -349,6 +349,15 @@ export default function App() {
       }
       const newUrl = URL.createObjectURL(file);
       setCustomVideoUrl(newUrl);
+
+      // Upload directly to AI Studio workspace backend /public/custom-video.mp4
+      console.log("Uploading custom video to AI Studio backend workspace...");
+      await fetch("/api/upload-video-sync", {
+        method: "POST",
+        headers: { "Content-Type": "video/mp4" },
+        body: file,
+      });
+      console.log("Custom video upload and workspace sync complete.");
     } catch (err) {
       console.error("Gagal menyimpan video:", err);
       alert("Gagal menyimpan video kustom.");
@@ -383,6 +392,15 @@ export default function App() {
       }
       const newUrl = URL.createObjectURL(file);
       setCustomImageUrl(newUrl);
+
+      // Upload directly to AI Studio workspace backend /public/custom-image.png
+      console.log("Uploading custom image to AI Studio backend workspace...");
+      await fetch("/api/upload-image-sync", {
+        method: "POST",
+        headers: { "Content-Type": "image/png" },
+        body: file,
+      });
+      console.log("Custom image upload and workspace sync complete.");
     } catch (err) {
       console.error("Gagal menyimpan foto:", err);
       alert("Gagal menyimpan foto kustom.");

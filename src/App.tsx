@@ -150,6 +150,44 @@ export const clearCustomBackgroundVideo = async (): Promise<void> => {
   });
 };
 
+export const saveCustomBackgroundImage = async (file: File): Promise<void> => {
+  const db = await getMediaDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction("media-store", "readwrite");
+    const store = transaction.objectStore("media-store");
+    const request = store.put(file, "custom-image");
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+};
+
+export const getCustomBackgroundImage = async (): Promise<Blob | null> => {
+  try {
+    const db = await getMediaDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction("media-store", "readonly");
+      const store = transaction.objectStore("media-store");
+      const request = store.get("custom-image");
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+  } catch (err) {
+    console.error("Gagal memuat foto kustom dari IndexedDB", err);
+    return null;
+  }
+};
+
+export const clearCustomBackgroundImage = async (): Promise<void> => {
+  const db = await getMediaDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction("media-store", "readwrite");
+    const store = transaction.objectStore("media-store");
+    const request = store.delete("custom-image");
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+};
+
 // Division profiles matching real Pancaran Group Logistics & Audit operations
 const divisions = [
   {
@@ -189,6 +227,9 @@ export default function App() {
   const [customVideoUrl, setCustomVideoUrl] = useState<string | null>(null);
   const [videoSrc, setVideoSrc] = useState<string>("/custom-video.mp4");
 
+  const [customImageUrl, setCustomImageUrl] = useState<string | null>(null);
+  const [imageSrc, setImageSrc] = useState<string>("https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8");
+
   useEffect(() => {
     if (customVideoUrl) {
       setVideoSrc(customVideoUrl);
@@ -196,6 +237,14 @@ export default function App() {
       setVideoSrc("/custom-video.mp4");
     }
   }, [customVideoUrl]);
+
+  useEffect(() => {
+    if (customImageUrl) {
+      setImageSrc(customImageUrl);
+    } else {
+      setImageSrc("https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8");
+    }
+  }, [customImageUrl]);
 
   useEffect(() => {
     let activeUrl: string | null = null;
@@ -242,6 +291,48 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    let activeImgUrl: string | null = null;
+    
+    getCustomBackgroundImage().then(async (cachedBlob) => {
+      if (cachedBlob) {
+        activeImgUrl = URL.createObjectURL(cachedBlob);
+        setCustomImageUrl(activeImgUrl);
+        
+        // AUTO-SYNC TO WORKSPACE SERVER:
+        const isDevApp = window.location.hostname.includes("localhost") || 
+                          window.location.hostname.includes("run.app");
+        if (isDevApp) {
+          try {
+            const checkRes = await fetch("/api/check-image-sync");
+            if (checkRes.ok) {
+              const checkData = await checkRes.json();
+              if (!checkData.exists) {
+                console.log("Auto-synchronizing browser background image back to workspace files...");
+                await fetch("/api/upload-image-sync", {
+                  method: "POST",
+                  headers: { "Content-Type": "image/png" },
+                  body: cachedBlob
+                });
+                console.log("Auto-sync completed! Image is now a persistent public file inside the workspace.");
+              }
+            }
+          } catch (syncErr) {
+            console.warn("Background auto-sync failed for image:", syncErr);
+          }
+        }
+      }
+    }).catch(err => {
+      console.error("Gagal memuat foto kustom:", err);
+    });
+    
+    return () => {
+      if (activeImgUrl) {
+        URL.revokeObjectURL(activeImgUrl);
+      }
+    };
+  }, []);
+
   const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -273,6 +364,40 @@ export default function App() {
       }
     } catch (err) {
       console.error("Gagal menghapus video:", err);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 15 * 1024 * 1024) {
+      alert("Ukuran file gambar terlalu besar. Batas maksimal yang diperbolehkan adalah 15MB.");
+      return;
+    }
+
+    try {
+      await saveCustomBackgroundImage(file);
+      if (customImageUrl) {
+        URL.revokeObjectURL(customImageUrl);
+      }
+      const newUrl = URL.createObjectURL(file);
+      setCustomImageUrl(newUrl);
+    } catch (err) {
+      console.error("Gagal menyimpan foto:", err);
+      alert("Gagal menyimpan foto kustom.");
+    }
+  };
+
+  const handleResetImage = async () => {
+    try {
+      await clearCustomBackgroundImage();
+      if (customImageUrl) {
+        URL.revokeObjectURL(customImageUrl);
+        setCustomImageUrl(null);
+      }
+    } catch (err) {
+      console.error("Gagal menghapus foto:", err);
     }
   };
 
@@ -2156,13 +2281,105 @@ ${lastMsgText}`;
           </video>
         ) : (
           <img 
-            src="https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8" 
+            src={imageSrc || "https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8"} 
             alt="Pancaran Group Background" 
             referrerPolicy="no-referrer"
             className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 animate-fade-in scale-[1.08] origin-center"
             style={{ zIndex: -1, opacity: 0.65 }}
           />
         )}
+
+        {/* Floating background configuration panel (Top Right) */}
+        <div className="absolute top-4 right-4 z-[999] flex flex-col sm:flex-row items-center gap-2 bg-slate-900/60 backdrop-blur-md rounded-2xl p-1.5 border border-white/10 shadow-lg select-none">
+          <span className="text-[10px] font-bold text-slate-300 font-mono tracking-wider pl-2.5 pr-1.5 uppercase">
+            Media Latar
+          </span>
+          <div className="flex bg-slate-950/40 rounded-xl p-0.5 gap-0.5">
+            <button
+              type="button"
+              onClick={() => {
+                setHeroBgType("video");
+                localStorage.setItem("prama_hero_bg_type", "video");
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black tracking-wide transition duration-200 cursor-pointer ${
+                heroBgType === "video"
+                  ? "bg-indigo-600 text-white shadow-md border border-indigo-500/25"
+                  : "text-slate-400 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              <Video className="h-3.5 w-3.5 shrink-0" />
+              <span>Video</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setHeroBgType("image");
+                localStorage.setItem("prama_hero_bg_type", "image");
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black tracking-wide transition duration-200 cursor-pointer ${
+                heroBgType === "image"
+                  ? "bg-indigo-600 text-white shadow-md border border-indigo-500/25"
+                  : "text-slate-400 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              <Image className="h-3.5 w-3.5 shrink-0" />
+              <span>Foto</span>
+            </button>
+          </div>
+
+          <div className="h-4 w-[1px] bg-white/10 hidden sm:block mx-1" />
+
+          {/* Conditional Upload button based on selected media type */}
+          {heroBgType === "video" ? (
+            <div className="flex items-center gap-1 bg-slate-950/20 rounded-xl p-0.5">
+              <label className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-slate-300 hover:text-white hover:bg-white/5 transition cursor-pointer">
+                <Upload className="h-3 w-3 shrink-0 text-sky-400" />
+                <span>Unggah MP4</span>
+                <input
+                  type="file"
+                  accept="video/mp4,video/x-m4v,video/*"
+                  onChange={handleVideoUpload}
+                  className="hidden"
+                />
+              </label>
+
+              {customVideoUrl && (
+                <button
+                  type="button"
+                  onClick={handleResetVideo}
+                  title="Kembalikan Video Default Bawaan"
+                  className="flex items-center justify-center p-1.5 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition cursor-pointer"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-1 bg-slate-950/20 rounded-xl p-0.5">
+              <label className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-slate-300 hover:text-white hover:bg-white/5 transition cursor-pointer">
+                <Upload className="h-3 w-3 shrink-0 text-sky-400" />
+                <span>Unggah Foto</span>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+              </label>
+
+              {customImageUrl && (
+                <button
+                  type="button"
+                  onClick={handleResetImage}
+                  title="Kembalikan Foto Default Bawaan"
+                  className="flex items-center justify-center p-1.5 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition cursor-pointer"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+          )}
+        </div>
 
         <div className="menu-content" id="landing-menu-content">
           <h1>Pancaran Group</h1>
@@ -2210,7 +2427,7 @@ ${lastMsgText}`;
             </video>
           ) : (
             <img 
-              src="https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8" 
+              src={imageSrc || "https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8"} 
               alt="Pancaran Group Background" 
               referrerPolicy="no-referrer"
               className="w-full h-full object-cover scale-[1.08] origin-center"
@@ -2233,6 +2450,98 @@ ${lastMsgText}`;
           <ArrowLeft className="h-3.5 w-3.5" />
           <span>Kembali ke Lobi</span>
         </button>
+
+        {/* Floating background configuration panel (Top Right) */}
+        <div className="absolute top-4 right-4 z-[999] flex flex-col sm:flex-row items-center gap-2 bg-slate-900/60 backdrop-blur-md rounded-2xl p-1.5 border border-white/10 shadow-lg select-none">
+          <span className="text-[10px] font-bold text-slate-300 font-mono tracking-wider pl-2.5 pr-1.5 uppercase">
+            Media Latar
+          </span>
+          <div className="flex bg-slate-950/40 rounded-xl p-0.5 gap-0.5">
+            <button
+              type="button"
+              onClick={() => {
+                setHeroBgType("video");
+                localStorage.setItem("prama_hero_bg_type", "video");
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black tracking-wide transition duration-200 cursor-pointer ${
+                heroBgType === "video"
+                  ? "bg-indigo-600 text-white shadow-md border border-indigo-500/25"
+                  : "text-slate-400 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              <Video className="h-3.5 w-3.5 shrink-0" />
+              <span>Video</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setHeroBgType("image");
+                localStorage.setItem("prama_hero_bg_type", "image");
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black tracking-wide transition duration-200 cursor-pointer ${
+                heroBgType === "image"
+                  ? "bg-indigo-600 text-white shadow-md border border-indigo-500/25"
+                  : "text-slate-400 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              <Image className="h-3.5 w-3.5 shrink-0" />
+              <span>Foto</span>
+            </button>
+          </div>
+
+          <div className="h-4 w-[1px] bg-white/10 hidden sm:block mx-1" />
+
+          {/* Conditional Upload button based on selected media type */}
+          {heroBgType === "video" ? (
+            <div className="flex items-center gap-1 bg-slate-950/20 rounded-xl p-0.5">
+              <label className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-slate-300 hover:text-white hover:bg-white/5 transition cursor-pointer">
+                <Upload className="h-3 w-3 shrink-0 text-sky-400" />
+                <span>Unggah MP4</span>
+                <input
+                  type="file"
+                  accept="video/mp4,video/x-m4v,video/*"
+                  onChange={handleVideoUpload}
+                  className="hidden"
+                />
+              </label>
+
+              {customVideoUrl && (
+                <button
+                  type="button"
+                  onClick={handleResetVideo}
+                  title="Kembalikan Video Default Bawaan"
+                  className="flex items-center justify-center p-1.5 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition cursor-pointer"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-1 bg-slate-950/20 rounded-xl p-0.5">
+              <label className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-slate-300 hover:text-white hover:bg-white/5 transition cursor-pointer">
+                <Upload className="h-3 w-3 shrink-0 text-sky-400" />
+                <span>Unggah Foto</span>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+              </label>
+
+              {customImageUrl && (
+                <button
+                  type="button"
+                  onClick={handleResetImage}
+                  title="Kembalikan Foto Default Bawaan"
+                  className="flex items-center justify-center p-1.5 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition cursor-pointer"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Auth Card wrapper with elevated relative z-index */}
         <div className="relative z-10 w-full max-w-4xl bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl overflow-hidden grid grid-cols-1 md:grid-cols-2 border border-white/20">
@@ -2718,41 +3027,78 @@ ${lastMsgText}`;
                           </div>
                         </div>
 
-                        {/* Upload Video Kustom */}
-                        <div className="flex flex-col justify-between bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-3sm gap-3">
-                          <div className="space-y-1">
-                            <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest block font-mono">UNGGAH VIDEO KUSTOM</span>
-                            <span className="text-[11px] text-slate-500 font-medium leading-relaxed block text-indigo-900">
-                              {customVideoUrl 
-                                ? "✅ Video Kustom Aktif di Browser. Video akan disinkronisasikan ke Vercel agar tersimpan permanen." 
-                                : "Gunakan video pemandangan logistik kustom untuk mempercantik layar lobi."}
-                            </span>
-                          </div>
-                          
-                          <div className="flex items-center gap-2 shrink-0">
-                            <label className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black bg-indigo-600 text-white hover:bg-indigo-505 active:scale-97 transition shadow-md cursor-pointer border border-indigo-500">
-                              <Upload className="h-4 w-4 shrink-0 text-indigo-200" />
-                              <span>Unggah Video (.MP4)</span>
-                              <input
-                                type="file"
-                                accept="video/mp4,video/x-m4v,video/*"
-                                onChange={handleVideoUpload}
-                                className="hidden"
-                              />
-                            </label>
+                        {/* Conditional Upload Panel based on background type */}
+                        {heroBgType === "video" ? (
+                          <div className="flex flex-col justify-between bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-3sm gap-3 animate-fade-in">
+                            <div className="space-y-1">
+                              <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest block font-mono">UNGGAH VIDEO (.MP4)</span>
+                              <span className="text-[11px] text-slate-505 leading-relaxed block text-indigo-900 font-medium">
+                                {customVideoUrl 
+                                  ? "✅ Video kustom aktif. File disinkronisasi ke server agar tersimpan permanen di Vercel." 
+                                  : "Gunakan video pemandangan logistik kustom (.MP4, maks. 80MB) untuk lobi utama."}
+                              </span>
+                            </div>
+                            
+                            <div className="flex items-center gap-2 shrink-0">
+                              <label className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black bg-indigo-600 text-white hover:bg-indigo-500 active:scale-97 transition shadow-md cursor-pointer border border-indigo-500">
+                                <Upload className="h-4 w-4 shrink-0 text-indigo-200" />
+                                <span>Unggah Video (.MP4)</span>
+                                <input
+                                  type="file"
+                                  accept="video/mp4,video/x-m4v,video/*"
+                                  onChange={handleVideoUpload}
+                                  className="hidden"
+                                />
+                              </label>
 
-                            {customVideoUrl && (
-                              <button
-                                type="button"
-                                onClick={handleResetVideo}
-                                title="Kembalikan Video Default Bawaan"
-                                className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 hover:bg-red-100 text-red-650 text-red-600 transition active:scale-95 cursor-pointer border border-red-100 shrink-0"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
-                            )}
+                              {customVideoUrl && (
+                                <button
+                                  type="button"
+                                  onClick={handleResetVideo}
+                                  title="Kembalikan Video Default Bawaan"
+                                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 hover:bg-red-100 text-red-650 text-red-600 transition active:scale-95 cursor-pointer border border-red-100 shrink-0"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              )}
+                            </div>
                           </div>
-                        </div>
+                        ) : (
+                          <div className="flex flex-col justify-between bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-3sm gap-3 animate-fade-in">
+                            <div className="space-y-1">
+                              <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest block font-mono">UNGGAH FOTO (.JPG / .PNG)</span>
+                              <span className="text-[11px] text-slate-550 leading-relaxed block text-indigo-900 font-medium">
+                                {customImageUrl 
+                                  ? "✅ Foto kustom aktif. File disinkronisasi ke server agar tersimpan permanen di Vercel." 
+                                  : "Gunakan foto wallpaper custom (.JPG / .PNG, maks. 15MB) untuk lobi utama."}
+                              </span>
+                            </div>
+                            
+                            <div className="flex items-center gap-2 shrink-0">
+                              <label className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black bg-sky-600 text-white hover:bg-sky-550 active:scale-97 transition shadow-md cursor-pointer border border-sky-500 animate-pulse">
+                                <Upload className="h-4 w-4 shrink-0 text-sky-100" />
+                                <span>Unggah Foto</span>
+                                <input
+                                  type="file"
+                                  accept="image/png,image/jpeg,image/jpg"
+                                  onChange={handleImageUpload}
+                                  className="hidden"
+                                />
+                              </label>
+
+                              {customImageUrl && (
+                                <button
+                                  type="button"
+                                  onClick={handleResetImage}
+                                  title="Kembalikan Foto Default Bawaan"
+                                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 hover:bg-red-100 text-red-650 text-red-650 text-red-600 transition active:scale-95 cursor-pointer border border-red-100 shrink-0"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
 

@@ -193,6 +193,40 @@ app.post("/api/upload-video-sync", (req, res) => {
   }
 });
 
+// Check if custom image has been synced from the browser
+app.get("/api/check-image-sync", (req, res) => {
+  const publicPath = path.join(process.cwd(), "public", "custom-image.png");
+  const exists = fs.existsSync(publicPath);
+  res.json({ exists });
+});
+
+// Sync binary data directly into the public directory of the workspace for images
+app.post("/api/upload-image-sync", (req, res) => {
+  try {
+    const publicDir = path.join(process.cwd(), "public");
+    if (!fs.existsSync(publicDir)) {
+      fs.mkdirSync(publicDir, { recursive: true });
+    }
+    const publicPath = path.join(publicDir, "custom-image.png");
+    
+    const writeStream = fs.createWriteStream(publicPath);
+    req.pipe(writeStream);
+    
+    writeStream.on("finish", () => {
+      console.log("Successfully saved synchronized background image to workspace:", publicPath);
+      res.json({ success: true, message: "Image synced to workspace files." });
+    });
+    
+    writeStream.on("error", (err) => {
+      console.error("Error writing synchronized image file:", err);
+      res.status(500).json({ error: "Failed to write image file." });
+    });
+  } catch (err: any) {
+    console.error("Upload image sync error:", err);
+    res.status(500).json({ error: err.message || "Failed to sync image file." });
+  }
+});
+
 // REST endpoint for chat
 app.post("/api/chat", async (req, res) => {
   try {

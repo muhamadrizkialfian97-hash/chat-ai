@@ -58,6 +58,10 @@ import {
   HardDrive,
   MessageSquare,
   ArrowRight,
+  Video,
+  Image,
+  Upload,
+  Trash2,
   BookOpen,
   Cpu,
   Eye,
@@ -93,6 +97,59 @@ import {
   Cell
 } from "recharts";
 
+// Simple IndexedDB wrapper for storing local custom background videos
+const getMediaDB = (): Promise<IDBDatabase> => {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open("PramaCustomMediaDB", 1);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains("media-store")) {
+        db.createObjectStore("media-store");
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+};
+
+export const saveCustomBackgroundVideo = async (file: File): Promise<void> => {
+  const db = await getMediaDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction("media-store", "readwrite");
+    const store = transaction.objectStore("media-store");
+    const request = store.put(file, "custom-video");
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+};
+
+export const getCustomBackgroundVideo = async (): Promise<Blob | null> => {
+  try {
+    const db = await getMediaDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction("media-store", "readonly");
+      const store = transaction.objectStore("media-store");
+      const request = store.get("custom-video");
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+  } catch (err) {
+    console.error("Gagal memuat video kustom dari IndexedDB", err);
+    return null;
+  }
+};
+
+export const clearCustomBackgroundVideo = async (): Promise<void> => {
+  const db = await getMediaDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction("media-store", "readwrite");
+    const store = transaction.objectStore("media-store");
+    const request = store.delete("custom-video");
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+};
+
 // Division profiles matching real Pancaran Group Logistics & Audit operations
 const divisions = [
   {
@@ -122,6 +179,61 @@ export default function App() {
     }
     return sessionStorage.getItem("prama_hero_dismissed") !== "true";
   });
+
+
+
+  const [customVideoUrl, setCustomVideoUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let activeUrl: string | null = null;
+    getCustomBackgroundVideo().then((cachedBlob) => {
+      if (cachedBlob) {
+        activeUrl = URL.createObjectURL(cachedBlob);
+        setCustomVideoUrl(activeUrl);
+      }
+    }).catch(err => {
+      console.error("Gagal memuat video kustom:", err);
+    });
+    return () => {
+      if (activeUrl) {
+        URL.revokeObjectURL(activeUrl);
+      }
+    };
+  }, []);
+
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 80 * 1024 * 1024) {
+      alert("Ukuran file terlalu besar. Batas maksimal yang diperbolehkan adalah 80MB.");
+      return;
+    }
+
+    try {
+      await saveCustomBackgroundVideo(file);
+      if (customVideoUrl) {
+        URL.revokeObjectURL(customVideoUrl);
+      }
+      const newUrl = URL.createObjectURL(file);
+      setCustomVideoUrl(newUrl);
+    } catch (err) {
+      console.error("Gagal menyimpan video:", err);
+      alert("Gagal menyimpan video kustom.");
+    }
+  };
+
+  const handleResetVideo = async () => {
+    try {
+      await clearCustomBackgroundVideo();
+      if (customVideoUrl) {
+        URL.revokeObjectURL(customVideoUrl);
+        setCustomVideoUrl(null);
+      }
+    } catch (err) {
+      console.error("Gagal menghapus video:", err);
+    }
+  };
 
   // Auth form states
   const [authTab, setAuthTab] = useState<"login" | "register">("login");
@@ -2003,12 +2115,20 @@ ${lastMsgText}`;
   if (showHeroLanding) {
     return (
       <div className="video-container" id="landing-hero-container">
-        <img 
-          src="https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8" 
-          alt="Pancaran Group Background" 
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          id="bg-video"
+          key={customVideoUrl || "default"}
           referrerPolicy="no-referrer"
           className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 animate-fade-in"
-        />
+          src={customVideoUrl || "https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk"}
+          style={{ zIndex: -1, opacity: 0.65 }}
+        >
+          <source src={customVideoUrl || "https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk"} type="video/mp4" />
+        </video>
 
         <div className="menu-content" id="landing-menu-content">
           <h1>Pancaran Group</h1>
@@ -2029,18 +2149,24 @@ ${lastMsgText}`;
     );
   }
 
-  // Render 2: Authentic Screen (Login & Register Form) - Theme: Light & Elegant with Brand Background Image
+  // Render 2: Authentic Screen (Login & Register Form) - Theme: Light & Elegant with Brand Background Video/Image option
   if (!activeUser) {
     return (
       <div className="relative min-h-screen flex items-center justify-center px-4 py-12 font-sans overflow-hidden">
-        {/* Brand Background Image */}
+        {/* Brand Background Image or Video */}
         <div className="absolute inset-0 z-0">
-          <img 
-            src="https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8" 
-            alt="Pancaran Group Background" 
+          <video 
+            autoPlay 
+            muted 
+            loop 
+            playsInline 
+            key={customVideoUrl || "auth-default"}
             referrerPolicy="no-referrer"
             className="w-full h-full object-cover"
-          />
+            src={customVideoUrl || "https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk"}
+          >
+            <source src={customVideoUrl || "https://lh3.googleusercontent.com/d/1njJIUPDKo650VlaZFS4_XUaiFoJ7-GKk"} type="video/mp4" />
+          </video>
           {/* Elegant Dark/Blur Overlay to focus and elevate contrast */}
           <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-sm" />
         </div>

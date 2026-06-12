@@ -237,7 +237,12 @@ export default function App() {
     if (customVideoUrl) {
       setVideoSrc(customVideoUrl);
     } else {
-      setVideoSrc("/custom-video.mp4");
+      setVideoSrc((prev) => {
+        if (prev && (prev.includes("firebasestorage") || prev.startsWith("blob:"))) {
+          return prev;
+        }
+        return "/custom-video.mp4";
+      });
     }
   }, [customVideoUrl]);
 
@@ -245,7 +250,12 @@ export default function App() {
     if (customImageUrl) {
       setImageSrc(customImageUrl);
     } else {
-      setImageSrc("https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8");
+      setImageSrc((prev) => {
+        if (prev && (prev.includes("firebasestorage") || prev.startsWith("blob:"))) {
+          return prev;
+        }
+        return "https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8";
+      });
     }
   }, [customImageUrl]);
 
@@ -2470,7 +2480,7 @@ ${lastMsgText}`;
                   />
                 </label>
 
-                {customVideoUrl && (
+                {(customVideoUrl || (videoSrc && videoSrc.includes("firebasestorage"))) && (
                   <button
                     type="button"
                     onClick={handleResetVideo}
@@ -2494,7 +2504,7 @@ ${lastMsgText}`;
                   />
                 </label>
 
-                {customImageUrl && (
+                {(customImageUrl || (imageSrc && imageSrc.includes("firebasestorage"))) && (
                   <button
                     type="button"
                     onClick={handleResetImage}
@@ -2658,7 +2668,7 @@ ${lastMsgText}`;
                   />
                 </label>
 
-                {customVideoUrl && (
+                {(customVideoUrl || (videoSrc && videoSrc.includes("firebasestorage"))) && (
                   <button
                     type="button"
                     onClick={handleResetVideo}
@@ -2682,7 +2692,7 @@ ${lastMsgText}`;
                   />
                 </label>
 
-                {customImageUrl && (
+                {(customImageUrl || (imageSrc && imageSrc.includes("firebasestorage"))) && (
                   <button
                     type="button"
                     onClick={handleResetImage}

@@ -1314,7 +1314,8 @@ export async function exportToPPTX(
       h: 0.25,
       fontSize: 10,
       color: "94A3B8",
-      fontFace: "Arial"
+      fontFace: "Arial",
+      wrap: true
     });
 
     // Header Right-hand side (Increased margins so it NEVER wraps and clips)
@@ -1327,7 +1328,8 @@ export async function exportToPPTX(
       color: "00D285",
       bold: true,
       align: "right",
-      fontFace: "Arial"
+      fontFace: "Arial",
+      wrap: true
     });
 
     // Thin grey divider below header
@@ -1349,7 +1351,8 @@ export async function exportToPPTX(
       color: "00D285",
       bold: true,
       fontFace: "Arial",
-      valign: "top"
+      valign: "top",
+      wrap: true
     });
 
     const cleanSlideTitle = slideData.title.replace(/_+/g, " ").trim();
@@ -1364,7 +1367,8 @@ export async function exportToPPTX(
       color: "0F172A",
       bold: true,
       fontFace: "Arial",
-      valign: "middle"
+      valign: "middle",
+      wrap: true
     });
 
     const cleanLead = (txt: string) => {
@@ -1406,7 +1410,8 @@ export async function exportToPPTX(
       color: "475569",
       fontFace: "Arial",
       valign: "top",
-      lineSpacing: 1.2
+      wrap: true
+      // Removed bugged lineSpacing of 1.2 points which caused lines of text to stack/overlap on top of each other
     });
 
     // Helper inside to perform hybrid client-side and server-side image fetch to base64 conversion.
@@ -1542,15 +1547,18 @@ export async function exportToPPTX(
       rawBase64 = await getImageBase64WithFallback("", cleanSlideTitle);
     }
 
-    // Clean data URL scheme if is there so pptxgenjs parses it perfectly as image data
+    // Strip the MIME type prefix from the data URL so that pptxgenjs receives purely raw, clean Base64 characters in the 'data' parameter
     let pptxBase64Data = rawBase64;
-    if (pptxBase64Data.startsWith("data:")) {
-      pptxBase64Data = pptxBase64Data.substring(5); // Stripping 'data:' prefix to match pptxgenjs expectations
+    let cleanBase64 = pptxBase64Data;
+    if (cleanBase64.includes(";base64,")) {
+      cleanBase64 = cleanBase64.split(";base64,")[1];
+    } else if (cleanBase64.startsWith("data:")) {
+      cleanBase64 = cleanBase64.substring(cleanBase64.indexOf(",") + 1);
     }
 
     // Insert Image into the PowerPoint Slide Frame
     slide.addImage({
-      data: pptxBase64Data,
+      data: cleanBase64,
       x: 7.2,
       y: 1.55,
       w: 5.3,
@@ -1577,7 +1585,8 @@ export async function exportToPPTX(
       italic: true,
       color: "64748B",
       align: "center",
-      fontFace: "Arial"
+      fontFace: "Arial",
+      wrap: true
     });
 
     // Thin grey footer line

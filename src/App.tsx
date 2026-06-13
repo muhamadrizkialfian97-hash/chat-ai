@@ -228,7 +228,12 @@ export default function App() {
   const [isBgSettingsCollapsed, setIsBgSettingsCollapsed] = useState<boolean>(true);
 
   const [customVideoUrl, setCustomVideoUrl] = useState<string | null>(null);
-  const [videoSrc, setVideoSrc] = useState<string>("/custom-video.mp4");
+  const [videoSrc, setVideoSrc] = useState<string>(() => {
+    const isVercelHost = window.location.hostname.includes("vercel.app");
+    return isVercelHost 
+      ? "https://assets.mixkit.co/videos/preview/mixkit-truck-driving-on-a-highway-at-night-42289-large.mp4" 
+      : "/custom-video.mp4";
+  });
 
   const [customImageUrl, setCustomImageUrl] = useState<string | null>(null);
   const [imageSrc, setImageSrc] = useState<string>("https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8");
@@ -258,10 +263,13 @@ export default function App() {
       setVideoSrc(customVideoUrl);
     } else {
       setVideoSrc((prev) => {
-        if (prev && (prev.includes("firebasestorage") || prev.startsWith("blob:"))) {
+        if (prev && (prev.includes("firebasestorage") || prev.startsWith("blob:") || prev.startsWith("http"))) {
           return prev;
         }
-        return "/custom-video.mp4";
+        const isVercelHost = window.location.hostname.includes("vercel.app");
+        return isVercelHost 
+          ? "https://assets.mixkit.co/videos/preview/mixkit-truck-driving-on-a-highway-at-night-42289-large.mp4" 
+          : "/custom-video.mp4";
       });
     }
   }, [customVideoUrl]);
@@ -381,7 +389,10 @@ export default function App() {
         if (data.videoUrl) {
           setVideoSrc(data.videoUrl);
         } else {
-          setVideoSrc("/custom-video.mp4");
+          const isVercelHost = window.location.hostname.includes("vercel.app");
+          setVideoSrc(isVercelHost 
+            ? "https://assets.mixkit.co/videos/preview/mixkit-truck-driving-on-a-highway-at-night-42289-large.mp4" 
+            : "/custom-video.mp4");
         }
         if (data.imageUrl) {
           setImageSrc(data.imageUrl);
@@ -389,10 +400,13 @@ export default function App() {
           setImageSrc("https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8");
         }
       } else {
-        // Seed default in Firestore as "video" with "/custom-video.mp4" for maximum auto-consistency
+        // Seed default in Firestore as "video" with intelligent default for maximum auto-consistency
+        const isVercelHost = window.location.hostname.includes("vercel.app");
         setDoc(settingsDocRef, {
           bgType: "video",
-          videoUrl: "/custom-video.mp4",
+          videoUrl: isVercelHost 
+            ? "https://assets.mixkit.co/videos/preview/mixkit-truck-driving-on-a-highway-at-night-42289-large.mp4" 
+            : "/custom-video.mp4",
           imageUrl: "https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8",
           lastUpdated: serverTimestamp()
         }, { merge: true }).catch((err) => {
@@ -2429,16 +2443,17 @@ ${lastMsgText}`;
             key={videoSrc || "default"}
             referrerPolicy="no-referrer"
             className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 animate-fade-in scale-[1.08] origin-center"
-            src={videoSrc || "/custom-video.mp4"}
+            src={videoSrc}
             style={{ zIndex: -1, opacity: 0.65 }}
             onError={() => {
-              if (videoSrc !== "/custom-video.mp4") {
-                console.warn("Setting fallback local video stream on error...");
-                setVideoSrc("/custom-video.mp4");
+              const fallbackUrl = "https://assets.mixkit.co/videos/preview/mixkit-truck-driving-on-a-highway-at-night-42289-large.mp4";
+              if (videoSrc !== fallbackUrl) {
+                console.warn("Lobby video failed to load. Falling back to high-quality cloud logistics video...");
+                setVideoSrc(fallbackUrl);
               }
             }}
           >
-            <source src={videoSrc || "/custom-video.mp4"} type="video/mp4" />
+            <source src={videoSrc} type="video/mp4" />
           </video>
         ) : (
           <img 
@@ -2603,15 +2618,16 @@ ${lastMsgText}`;
               key={videoSrc || "auth-default"}
               referrerPolicy="no-referrer"
               className="w-full h-full object-cover scale-[1.08] origin-center"
-              src={videoSrc || "/custom-video.mp4"}
+              src={videoSrc}
               onError={() => {
-                if (videoSrc !== "/custom-video.mp4") {
+                const fallbackUrl = "https://assets.mixkit.co/videos/preview/mixkit-truck-driving-on-a-highway-at-night-42289-large.mp4";
+                if (videoSrc !== fallbackUrl) {
                   console.warn("Setting fallback video stream on error for auth background...");
-                  setVideoSrc("/custom-video.mp4");
+                  setVideoSrc(fallbackUrl);
                 }
               }}
             >
-              <source src={videoSrc || "/custom-video.mp4"} type="video/mp4" />
+              <source src={videoSrc} type="video/mp4" />
             </video>
           ) : (
             <img 

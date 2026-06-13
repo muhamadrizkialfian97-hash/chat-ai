@@ -1237,7 +1237,8 @@ export async function exportToPPTX(
     y: 0.3,
     w: 12.73,
     h: 6.9,
-    fill: { color: "none" },
+    // pptxgenjs treats omitted fill property as completely transparent/no fill.
+    // Specifying fill: { color: "none" } was evaluated as an invalid hex color and defaulted to solid black color.
     line: { color: "00D285", width: 1.5 }
   });
 
@@ -1418,9 +1419,18 @@ export async function exportToPPTX(
     // Extremely robust: uses client-side direct fetch & Canvas caching first to bypass any server network limitations,
     // then falls back to backend proxy, and lastly renders a beautiful light-themed corporate diagram fallback.
     const getImageBase64WithFallback = async (imageUrl: string, slideTitleText: string): Promise<string> => {
+      // Append a cache-buster query parameter to bypass the browser's disk cache.
+      // This is necessary because Chrome/Safari cache the image when it is displayed in standard <img> tags (without CORS headers).
+      // Requesting it again with crossOrigin="anonymous" or fetch() CORS mode will fail with a CORS error unless cache is bypassed.
+      let corsImageUrl = imageUrl;
+      if (imageUrl && imageUrl.includes("unsplash.com")) {
+        const separator = imageUrl.includes("?") ? "&" : "?";
+        corsImageUrl = `${imageUrl}${separator}cors=true&ts=${Date.now()}`;
+      }
+
       // Direct high-speed client-side fetch (bypasses server sandbox restrictions completely)
       try {
-        const fetchRes = await fetch(imageUrl, { mode: "cors" });
+        const fetchRes = await fetch(corsImageUrl, { mode: "cors" });
         if (fetchRes.ok) {
           const blob = await fetchRes.blob();
           const base64: string = await new Promise((resolve) => {
@@ -1432,7 +1442,7 @@ export async function exportToPPTX(
           if (base64) return base64;
         }
       } catch (e) {
-        console.warn("Client-side direct fetch failed for image:", imageUrl, e);
+        console.warn("Client-side direct fetch failed for image:", corsImageUrl, e);
       }
 
       // Live Image element drawing to canvas (resolves local browser caching, fully supports CORS since Unsplash/Picsum CDNs allow *)
@@ -1457,11 +1467,11 @@ export async function exportToPPTX(
             resolve("");
           };
           img.onerror = () => resolve("");
-          img.src = imageUrl;
+          img.src = corsImageUrl;
         });
         if (base64) return base64;
       } catch (e) {
-        console.warn("Client-side Image rendering failed for:", imageUrl, e);
+        console.warn("Client-side Image rendering failed for:", corsImageUrl, e);
       }
 
       // Server-side proxy backup (CORS bypassed via Node backend)
@@ -1547,18 +1557,16 @@ export async function exportToPPTX(
       rawBase64 = await getImageBase64WithFallback("", cleanSlideTitle);
     }
 
-    // Strip the MIME type prefix from the data URL so that pptxgenjs receives purely raw, clean Base64 characters in the 'data' parameter
+    // Pptxgenjs expects base64 data to have a MIME header like 'image/png;base64,iVBORw...' or 'image/jpeg;base64,...'
+    // but without the leading 'data:' schema prefix. Let's process it correctly:
     let pptxBase64Data = rawBase64;
-    let cleanBase64 = pptxBase64Data;
-    if (cleanBase64.includes(";base64,")) {
-      cleanBase64 = cleanBase64.split(";base64,")[1];
-    } else if (cleanBase64.startsWith("data:")) {
-      cleanBase64 = cleanBase64.substring(cleanBase64.indexOf(",") + 1);
+    if (pptxBase64Data.startsWith("data:")) {
+      pptxBase64Data = pptxBase64Data.substring(5); // Stripping 'data:' prefix to match pptxgenjs's exact expectation (e.g., 'image/jpeg;base64,...')
     }
 
     // Insert Image into the PowerPoint Slide Frame
     slide.addImage({
-      data: cleanBase64,
+      data: pptxBase64Data,
       x: 7.2,
       y: 1.55,
       w: 5.3,
@@ -1571,7 +1579,7 @@ export async function exportToPPTX(
       y: 1.50,
       w: 5.4,
       h: 3.6,
-      fill: { color: "none" },
+      // Omit fill to keep the shape outline transparent/unfilled. This prevents it from overlaying solid black on top of the image.
       line: { color: "00D285", width: 1.5 }
     });
 
@@ -1639,7 +1647,7 @@ export async function exportToPPTX(
     y: 0.3,
     w: 12.73,
     h: 6.9,
-    fill: { color: "none" },
+    // Omit fill to keep the shape outline transparent/unfilled
     line: { color: "00D285", width: 1.5 }
   });
 

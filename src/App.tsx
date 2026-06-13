@@ -222,7 +222,7 @@ export default function App() {
 
 
   const [heroBgType, setHeroBgType] = useState<"video" | "image">(() => {
-    return (localStorage.getItem("prama_hero_bg_type") as "video" | "image") || "video";
+    return (localStorage.getItem("prama_hero_bg_type") as "video" | "image") || "image";
   });
 
   const [isBgSettingsCollapsed, setIsBgSettingsCollapsed] = useState<boolean>(true);
@@ -384,7 +384,7 @@ export default function App() {
         if (data.bgType) {
           setHeroBgType(data.bgType);
         } else {
-          setHeroBgType("video");
+          setHeroBgType("image");
         }
         if (data.videoUrl) {
           setVideoSrc(data.videoUrl);
@@ -400,10 +400,10 @@ export default function App() {
           setImageSrc("https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8");
         }
       } else {
-        // Seed default in Firestore as "video" with intelligent default for maximum auto-consistency
+        // Seed default in Firestore as "image" with intelligent default for maximum auto-consistency
         const isVercelHost = window.location.hostname.includes("vercel.app");
         setDoc(settingsDocRef, {
-          bgType: "video",
+          bgType: "image",
           videoUrl: isVercelHost 
             ? "https://assets.mixkit.co/videos/preview/mixkit-truck-driving-on-a-highway-at-night-42289-large.mp4" 
             : "/custom-video.mp4",

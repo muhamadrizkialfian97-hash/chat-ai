@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   collection,
   doc,
@@ -222,7 +222,7 @@ export default function App() {
 
 
   const [heroBgType, setHeroBgType] = useState<"video" | "image">(() => {
-    return (localStorage.getItem("prama_hero_bg_type") as "video" | "image") || "image";
+    return (localStorage.getItem("prama_hero_bg_type") as "video" | "image") || "video";
   });
 
   const [isBgSettingsCollapsed, setIsBgSettingsCollapsed] = useState<boolean>(true);
@@ -232,6 +232,26 @@ export default function App() {
 
   const [customImageUrl, setCustomImageUrl] = useState<string | null>(null);
   const [imageSrc, setImageSrc] = useState<string>("https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8");
+
+  const landingVideoRef = useRef<HTMLVideoElement>(null);
+  const authVideoRef = useRef<HTMLVideoElement>(null);
+
+  // Force autoplay under modern browser autoplay policies (Chrome, Safari, Firefox, Edge, and iOS/Android)
+  useEffect(() => {
+    if (heroBgType === "video") {
+      if (showHeroLanding && landingVideoRef.current) {
+        landingVideoRef.current.muted = true;
+        landingVideoRef.current.play().catch((playErr) => {
+          console.log("Landing video automatic playback started or pending user interaction:", playErr);
+        });
+      } else if (!showHeroLanding && !user && authVideoRef.current) {
+        authVideoRef.current.muted = true;
+        authVideoRef.current.play().catch((playErr) => {
+          console.log("Auth video automatic playback started or pending user interaction:", playErr);
+        });
+      }
+    }
+  }, [heroBgType, videoSrc, showHeroLanding, user]);
 
   useEffect(() => {
     if (customVideoUrl) {
@@ -355,13 +375,29 @@ export default function App() {
         console.log("Firestore background settings updated:", data);
         if (data.bgType) {
           setHeroBgType(data.bgType);
+        } else {
+          setHeroBgType("video");
         }
         if (data.videoUrl) {
           setVideoSrc(data.videoUrl);
+        } else {
+          setVideoSrc("/custom-video.mp4");
         }
         if (data.imageUrl) {
           setImageSrc(data.imageUrl);
+        } else {
+          setImageSrc("https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8");
         }
+      } else {
+        // Seed default in Firestore as "video" with "/custom-video.mp4" for maximum auto-consistency
+        setDoc(settingsDocRef, {
+          bgType: "video",
+          videoUrl: "/custom-video.mp4",
+          imageUrl: "https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8",
+          lastUpdated: serverTimestamp()
+        }, { merge: true }).catch((err) => {
+          console.warn("Seeding default lobby background failed:", err);
+        });
       }
     }, (error) => {
       console.warn("Background Firestore listener error (expected if offline):", error);
@@ -2384,6 +2420,7 @@ ${lastMsgText}`;
       <div className="video-container" id="landing-hero-container">
         {heroBgType === "video" ? (
           <video
+            ref={landingVideoRef}
             autoPlay
             muted
             loop
@@ -2558,6 +2595,7 @@ ${lastMsgText}`;
         <div className="absolute inset-0 z-0">
           {heroBgType === "video" ? (
             <video 
+              ref={authVideoRef}
               autoPlay 
               muted 
               loop 

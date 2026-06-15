@@ -235,12 +235,7 @@ export default function App() {
   const [isBgSettingsCollapsed, setIsBgSettingsCollapsed] = useState<boolean>(true);
 
   const [customVideoUrl, setCustomVideoUrl] = useState<string | null>(null);
-  const [videoSrc, setVideoSrc] = useState<string>(() => {
-    const isVercelHost = window.location.hostname.includes("vercel.app");
-    return isVercelHost 
-      ? "https://assets.mixkit.co/videos/preview/mixkit-delivery-truck-on-the-road-33158-large.mp4" 
-      : "/custom-video.mp4";
-  });
+  const [videoSrc, setVideoSrc] = useState<string>("/custom-video.mp4");
 
   const [customImageUrl, setCustomImageUrl] = useState<string | null>(null);
   const [imageSrc, setImageSrc] = useState<string>("https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8");
@@ -273,10 +268,7 @@ export default function App() {
         if (prev && (prev.includes("firebasestorage") || prev.startsWith("blob:") || prev.startsWith("http"))) {
           return prev;
         }
-        const isVercelHost = window.location.hostname.includes("vercel.app");
-        return isVercelHost 
-          ? "https://assets.mixkit.co/videos/preview/mixkit-delivery-truck-on-the-road-33158-large.mp4" 
-          : "/custom-video.mp4";
+        return "/custom-video.mp4";
       });
     }
   }, [customVideoUrl]);
@@ -396,10 +388,7 @@ export default function App() {
         if (data.videoUrl) {
           setVideoSrc(data.videoUrl);
         } else {
-          const isVercelHost = window.location.hostname.includes("vercel.app");
-          setVideoSrc(isVercelHost 
-            ? "https://assets.mixkit.co/videos/preview/mixkit-delivery-truck-on-the-road-33158-large.mp4" 
-            : "/custom-video.mp4");
+          setVideoSrc("/custom-video.mp4");
         }
         if (data.imageUrl) {
           setImageSrc(data.imageUrl);
@@ -408,12 +397,9 @@ export default function App() {
         }
       } else {
         // Seed default in Firestore as "video" with intelligent default for maximum auto-consistency
-        const isVercelHost = window.location.hostname.includes("vercel.app");
         setDoc(settingsDocRef, {
           bgType: "video",
-          videoUrl: isVercelHost 
-            ? "https://assets.mixkit.co/videos/preview/mixkit-delivery-truck-on-the-road-33158-large.mp4" 
-            : "/custom-video.mp4",
+          videoUrl: "/custom-video.mp4",
           imageUrl: "https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8",
           lastUpdated: serverTimestamp()
         }, { merge: true }).catch((err) => {
@@ -2654,9 +2640,9 @@ ${lastMsgText}`;
             className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 animate-fade-in scale-[1.08] origin-center"
             style={{ zIndex: -1, opacity: 0.65 }}
             onError={() => {
-              const fallbackUrl = "https://assets.mixkit.co/videos/preview/mixkit-delivery-truck-on-the-road-33158-large.mp4";
+              const fallbackUrl = "/custom-video.mp4";
               if (videoSrc !== fallbackUrl) {
-                console.warn("Lobby video failed to load. Falling back to high-quality cloud logistics video...");
+                console.warn("Lobby video failed to load. Falling back to default custom video...");
                 setVideoSrc(fallbackUrl);
               }
             }}
@@ -2710,7 +2696,7 @@ ${lastMsgText}`;
               referrerPolicy="no-referrer"
               className="w-full h-full object-cover scale-[1.08] origin-center"
               onError={() => {
-                const fallbackUrl = "https://assets.mixkit.co/videos/preview/mixkit-delivery-truck-on-the-road-33158-large.mp4";
+                const fallbackUrl = "/custom-video.mp4";
                 if (videoSrc !== fallbackUrl) {
                   console.warn("Setting fallback video stream on error for auth background...");
                   setVideoSrc(fallbackUrl);

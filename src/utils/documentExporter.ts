@@ -292,12 +292,12 @@ export function exportToWord(title: string, text: string, divisionName: string) 
   function generateWordInfographic(docText: string, docTitle: string, divName: string): string {
     try {
       const canvas = document.createElement("canvas");
-      // Compact size so that it stays completely intact when embedding in MS Word as A4
       canvas.width = 800;
-      canvas.height = 420;
+      canvas.height = 1140;
       const ctx = canvas.getContext("2d");
       if (!ctx) return "";
 
+      const { headings, stats } = extractKeyHeadingsAndStats(docText);
       const cat = getCategoryFromTitle(docTitle);
 
       // Safe roundrect draw utility
@@ -319,380 +319,836 @@ export function exportToWord(title: string, text: string, divisionName: string) 
         }
       };
 
-      // Theme assignments based on category, clean & professional
+      // Determine palette themes dynamically matching the burnout poster style
       let themePrimary = "#1e3a8a"; // Default deep navy
       let themeAccent = "#10b981";  // Default green
       let themeSecondary = "#0284c7"; // Default sky blue
       let themeGlow = "#f0fdf4"; // Default mint backdrop
       let alertColor = "#8b5cf6"; // Default purple
+      let complianceTag = "100% SECURE REGISTERED";
 
-      if (cat.id === "forestry") {
-        themePrimary = "#064e3b";
-        themeAccent = "#10b981";
-        themeSecondary = "#047857";
-        themeGlow = "#f0fdf4";
-        alertColor = "#b45308";
-      } else if (cat.id === "demography") {
-        themePrimary = "#1e40af";
-        themeAccent = "#0ea5e9";
-        themeSecondary = "#f59e0b";
-        themeGlow = "#eff6ff";
-        alertColor = "#ef4444";
-      } else if (cat.id === "logistics") {
-        themePrimary = "#0f172a";
-        themeAccent = "#0ea5e9";
-        themeSecondary = "#2563eb";
-        themeGlow = "#f0f9ff";
-        alertColor = "#d97706";
-      } else if (cat.id === "tech") {
-        themePrimary = "#1e1b4b";
-        themeAccent = "#06b6d4";
-        themeSecondary = "#4f46e5";
-        themeGlow = "#f5f3ff";
-        alertColor = "#dc2626";
-      } else if (cat.id === "finance") {
-        themePrimary = "#1e1b4b";
-        themeAccent = "#d97706";
-        themeSecondary = "#2563eb";
-        themeGlow = "#fffbeb";
-        alertColor = "#16a34a";
-      } else if (cat.id === "risk") {
-        themePrimary = "#111827";
-        themeAccent = "#e11d48";
-        themeSecondary = "#7c3aed";
-        themeGlow = "#fff5f5";
-        alertColor = "#ea580c";
-      } else {
-        themePrimary = "#1e293b";
-        themeAccent = "#0d9488";
-        themeSecondary = "#0284c7";
-        themeGlow = "#f0fdfa";
-        alertColor = "#6366f1";
+      // Dynamically extract some facts from text to customize poster output
+      let locationName = "DESA BANGSALSARI";
+      const geoRaw = docText.match(/(?:desa|kabupaten|kecamatan|kelurahan|daerah)\s+([A-Za-z]+)/i);
+      if (geoRaw) {
+        locationName = geoRaw[0].toUpperCase();
       }
 
-      // Fill light clean gradient background
-      const bgGrad = ctx.createLinearGradient(0, 0, 0, 420);
+      let parsedRt = "76";
+      let parsedRw = "36";
+      const rtMatch = docText.match(/rt\s*[:\s]*\s*(\d+)/i) || docText.match(/(\d+)\s*rt/i);
+      const rwMatch = docText.match(/rw\s*[:\s]*\s*(\d+)/i) || docText.match(/(\d+)\s*rw/i);
+      if (rtMatch) parsedRt = rtMatch[1];
+      if (rwMatch) parsedRw = rwMatch[1];
+
+      let parsedPoverty = "5,48%";
+      const povMatch = docText.match(/(\d+[,.]\d+)\s*%/);
+      if (povMatch) parsedPoverty = povMatch[1] + "%";
+
+      if (cat.id === "forestry") {
+        themePrimary = "#064e3b"; // Forest green
+        themeAccent = "#10b981";  // Emerald green
+        themeSecondary = "#047857"; // Medium green
+        themeGlow = "#f0fdf4"; // Minty teal
+        alertColor = "#b45308"; // Amber wood
+        complianceTag = "100% CARGO & ESG SECURE";
+      } else if (cat.id === "demography") {
+        themePrimary = "#1e40af"; // Royal Blue Like Poster
+        themeAccent = "#0ea5e9";  // Sky Blue
+        themeSecondary = "#f59e0b"; // Golden Amber Accent
+        themeGlow = "#eff6ff"; // Soft blue canvas glow
+        alertColor = "#ef4444"; // Red for poverty highlight
+        complianceTag = "100% REGIONAL CENSUS REPORT";
+      } else if (cat.id === "logistics") {
+        themePrimary = "#0f172a"; // Slate dark
+        themeAccent = "#0ea5e9";  // Sky blue
+        themeSecondary = "#2563eb"; // Deep blue
+        themeGlow = "#f0f9ff"; // Soft blue sky
+        alertColor = "#d97706"; // Safety orange
+        complianceTag = "100% ROUTE OPTIMIZED";
+      } else if (cat.id === "tech") {
+        themePrimary = "#1e1b4b"; // Deep tech indigo
+        themeAccent = "#06b6d4";  // Cyan
+        themeSecondary = "#4f46e5"; // Indigo
+        themeGlow = "#f5f3ff"; // Lavender
+        alertColor = "#dc2626"; // Alert red
+        complianceTag = "SYSTEM API CONNECTED";
+      } else if (cat.id === "finance") {
+        themePrimary = "#1e1b4b";
+        themeAccent = "#d97706";  // Amber gold
+        themeSecondary = "#2563eb";
+        themeGlow = "#fffbeb"; // Soft yellow cream
+        alertColor = "#16a34a";
+        complianceTag = "AUDITED ROI CERTIFIED";
+      } else if (cat.id === "risk") {
+        themePrimary = "#111827";
+        themeAccent = "#e11d48";  // Crimson rose
+        themeSecondary = "#7c3aed";
+        themeGlow = "#fff5f5"; // Rose pastel tint
+        alertColor = "#ea580c";
+        complianceTag = "LOW RISK COMPLIANT";
+      } else {
+        themePrimary = "#1e293b";
+        themeAccent = "#0d9488";  // Teal
+        themeSecondary = "#0284c7";
+        themeGlow = "#f0fdfa"; // Soft clean teal-mint
+        alertColor = "#6366f1";
+        complianceTag = "PRAMA VERIFIED INTERNAL";
+      }
+
+      // Title contents adaptions
+      let title1 = "HAMBATAN BISNIS MENUMPUK?";
+      let title2 = "ATASI DENGAN PRAMA SYSTEM!";
+      let descText = "Ketimpangan koordinasi antar sektor dan minimnya akurasi telemetri intelijen dalam mengevaluasi metrik kinerja kelayakan utama.";
+      let statWord = "2 DARI 5 METRIK UTAMA";
+      let statParagraph = "memerlukan tinjauan ulang prioritas strategis guna menekan inefisiensi pengerjaan lintas unit kerja.";
+
+      if (cat.id === "forestry") {
+        title1 = "CONGESTI LOGISTIK HUTAN?";
+        title2 = "KELOLA DENGAN LESTARI!";
+        descText = "Inkonsistensi armada dan kelalaian monitoring kelestarian ESG rute tanam menghambat kelancaran operasional PT Pancaran Group.";
+        statWord = "2 DARI 5 DRIVER TRUK";
+        statParagraph = "mengalami keterlambatan pengiriman tong kayu akibat koordinasi rute tanam industri yang belum tersinkronisasi sempurna.";
+      } else if (cat.id === "demography") {
+        title1 = "DATA KEPENDUDUKAN KELAYAKAN?";
+        title2 = `ANALISA WILAYAH ${locationName}`;
+        descText = `Analisis dispersi demografi daerah, pemetaan sebaran kelompok umur dan kepadatan, serta pemenuhan sarana pemberdayaan kesejahteraan sosial secara merata.`;
+        statWord = `${parsedRt} RT & ${parsedRw} RW TERPETAKAN`;
+        statParagraph = `memerlukan audit dan restrukturisasi periodik yang presisi guna mengurangi inefisiensi penyaluran program sosial bagi kesejahteraan warga setempat.`;
+      } else if (cat.id === "logistics") {
+        title1 = "OPERASIONAL RUTE BOROS?";
+        title2 = "ATASI DENGAN EFISIEN!";
+        descText = "Ketidakefisienan alokasi armada dan muatan kosong balik yang berpotensi memicu lonjakan Capex/Opex transportasi komprehensif.";
+        statWord = "2 DARI 5 ARMADA JALAN";
+        statParagraph = "beroperasi dengan kapasitas muatan di bawah 65% yang menyebabkan pemborosan biaya solar operasional yang signifikan.";
+      } else if (cat.id === "tech") {
+        title1 = "SISTEM SERING DOWN?";
+        title2 = "OPTIMALKAN DENGAN DEVOPS!";
+        descText = "Kerentanan latensi sinkronisasi API dan tumpang tindih mutasi basis data internal operasional menghambat uptime PT Pancaran Group.";
+        statWord = "2 DARI 5 KONEKSI SYSTEM API";
+        statParagraph = "gagal merespon di bawah batas latency 250ms pada jam sibuk pengiriman data muatan operasional real-time.";
+      } else if (cat.id === "finance") {
+        title1 = "BOCOR DEVIASI ANGGARAN?";
+        title2 = "ATASI DENGAN PRESISI!";
+        descText = "Eskalasi deviasi Capex/Opex serta melesetnya proyeksi margin operasional akibat keterlambatan penyelesaian payback period.";
+        statWord = "2 DARI 5 POS ANGGARAN UTAMA";
+        statParagraph = "mengalami pembengkakan opex di atas toleransi deviasi 15% dari estimasi blueprint awal komite.";
+      } else if (cat.id === "risk") {
+        title1 = "ANCAMAN KRISIS OPERASIONAL?";
+        title2 = "AMANKAN DENGAN PATUH!";
+        descText = "Kurangnya kesiapan rencana darurat penanganan hambatan jalan ekstrem berpotensi memicu kerugian maksimal operasional korporat.";
+        statWord = "2 DARI 5 EMERGENCY SCENARIO";
+        statParagraph = "tidak memiliki prosedur taktis simulasi lapangan yang terdokumentasi rapi untuk mengatasi krisis jalan.";
+      }
+
+      // Grid items parameters defining the 6 Circles
+      interface ParameterItem {
+        title: string;
+        subtitle: string;
+        icon: string;
+        color: string;
+      }
+      let paramItems: ParameterItem[] = [
+        { title: "Efisiensi Kerja", subtitle: "95% Efektif", icon: "gear", color: "#3b82f6" },
+        { title: "Performa Tim", subtitle: "Sinergi Sektoral", icon: "chart", color: "#10b981" },
+        { title: "Sikap Terlatih", subtitle: "Integritas Tinggi", icon: "shield", color: "#6366f1" },
+        { title: "Fokus Solutif", subtitle: "Kerjasama Kuat", icon: "star", color: "#eab308" },
+        { title: "Bebas Hambatan", subtitle: "Mitigasi Aktif", icon: "lightning", color: "#f97316" },
+        { title: "Sinergi Bisnis", subtitle: "PRAMA Verified", icon: "leaf", color: "#059669" }
+      ];
+
+      if (cat.id === "forestry") {
+        paramItems = [
+          { title: "Kesiapan Lahan", subtitle: "Level Terjaga", icon: "leaf", color: "#10b981" },
+          { title: "Sertifikasi FSC", subtitle: "98% Patuh", icon: "star", color: "#eab308" },
+          { title: "Serapan Karbon", subtitle: "+87% Surplus", icon: "cloud", color: "#0ea5e9" },
+          { title: "Rute Tanam", subtitle: "Optimasi S-Curve", icon: "gear", color: "#6366f1" },
+          { title: "Kapasitas Truk", subtitle: "Maksimal 60T", icon: "chart", color: "#a855f7" },
+          { title: "Kelestarian ESG", subtitle: "Peringkat Hijau", icon: "shield", color: "#065f46" }
+        ];
+      } else if (cat.id === "demography") {
+        paramItems = [
+          { title: "Profil Wilayah", subtitle: `RT/RW: ${parsedRt}/${parsedRw}`, icon: "target", color: "#1e40af" },
+          { title: "Total Penduduk", subtitle: "Terpetakan Akurat", icon: "chart", color: "#10b981" },
+          { title: "Tingkat Kemiskinan", subtitle: `${parsedPoverty} Terkendali`, icon: "alert", color: "#ef4444" },
+          { title: "Struktur Kerja", subtitle: "Sektor Dominan", icon: "gear", color: "#eab308" },
+          { title: "Sarana Belajar", subtitle: "Fasilitas Cukup", icon: "shield", color: "#6366f1" },
+          { title: "Sinergi KKM", subtitle: "PRAMA Verified", icon: "leaf", color: "#0ea5e9" }
+        ];
+      } else if (cat.id === "logistics") {
+        paramItems = [
+          { title: "Uptime Armada", subtitle: "95% Operational", icon: "lightning", color: "#eab308" },
+          { title: "Biaya Solar", subtitle: "Minus 12% Hemat", icon: "fuel", color: "#f43f5e" },
+          { title: "Kapasitas Rute", subtitle: "Optimal Terjaga", icon: "chart", color: "#10b981" },
+          { title: "Akurasi Waktu", subtitle: "Deviasi <5 Menit", icon: "target", color: "#0284c7" },
+          { title: "Awas Hambatan", subtitle: "Respon Kilat", icon: "alert", color: "#f97316" },
+          { title: "Kesehatan Supir", subtitle: "Sertifikat Aktif", icon: "shield", color: "#3b82f6" }
+        ];
+      } else if (cat.id === "tech") {
+        paramItems = [
+          { title: "Latency API", subtitle: "<180ms Stabil", icon: "lightning", color: "#0ea5e9" },
+          { title: "Throughput Data", subtitle: "Otomatis Scaled", icon: "arrows", color: "#6366f1" },
+          { title: "Enkripsi Data", subtitle: "AES-256 Aman", icon: "shield", color: "#10b981" },
+          { title: "Mutasi DB", subtitle: "Sinkron Cepat", icon: "db", color: "#3b82f6" },
+          { title: "Beban Server", subtitle: "Load Balance", icon: "gear", color: "#a855f7" },
+          { title: "Uptime Sistem", subtitle: "99.99% Hebat", icon: "star", color: "#eab308" }
+        ];
+      } else if (cat.id === "finance") {
+        paramItems = [
+          { title: "Net Margin", subtitle: "Surplus +18%", icon: "chart", color: "#10b981" },
+          { title: "Perputaran Capex", subtitle: "Optimasi Aset", icon: "coins", color: "#eab308" },
+          { title: "Kontrol Inflasi", subtitle: "Toleransi Rendah", icon: "alert", color: "#f43f5e" },
+          { title: "Payback Period", subtitle: "2.4 Tahun Selesai", icon: "target", color: "#3b82f6" },
+          { title: "Arus Kas Net", subtitle: "Audit Verified", icon: "shield", color: "#0ea5e9" },
+          { title: "Alokasi Pajak", subtitle: "Compliance 100%", icon: "star", color: "#6366f1" }
+        ];
+      } else if (cat.id === "risk") {
+        paramItems = [
+          { title: "Prevensi Aktif", subtitle: "Sangat Siaga", icon: "shield", color: "#10b981" },
+          { title: "Waspada Alarm", subtitle: "Uptime 100%", icon: "lightning", color: "#eab308" },
+          { title: "Sertifikasi Hukum", subtitle: "Sesuai Regulasi", icon: "gavel", color: "#b45309" },
+          { title: "Sisa Kerugian", subtitle: "Deviasi <5%", icon: "alert", color: "#f43f5e" },
+          { title: "Recovery Rate", subtitle: "Tangani Cepat", icon: "arrows", color: "#0ea5e9" },
+          { title: "Skor Pengawasan", subtitle: "Audit Gold Medal", icon: "target", color: "#3b82f6" }
+        ];
+      }
+
+      // Warning details for Section 4
+      let warningTitle = "FAKTOR RESIKO & KESELAMATAN SEKTOR OPERASIONAL";
+      let bullet1 = "✦ Ketiadaan manual book mitigasi krisis lapangan yang terstandarisasi";
+      let bullet2 = "✦ Lonjakan biaya bahan bakar solar di luar rancangan budget komite";
+      let bullet3 = "✦ Konflik ketersediaan alokasi dan kelayakan unit truk pada jam puncak";
+
+      if (cat.id === "forestry") {
+        warningTitle = "KERENTANAN UTAMA HUTAN INDUSTRI & LOGISTIK ESG";
+        bullet1 = "✦ Cuaca hujan ekstrem melumpuhkan sistem pengangkutan balok kayu harian";
+        bullet2 = "✦ Kemacetan antrean truk logistik akibat rute pemuatan tanam tak sinkron";
+        bullet3 = "✦ Kerentanan tumpang tindih kepatuhan regulasi zonasi daerah lindung";
+      } else if (cat.id === "demography") {
+        warningTitle = "FAKTOR UTAMA KERENTANAN GEODEMOGRAFIS";
+        bullet1 = "✦ Kesenjangan sarana pendidikan untuk mendukung penuntasan wajib belajar";
+        bullet2 = "✦ Keterbatasan akses pembiayaan modal kerja di sektor pertanian/pedagang kecil";
+        bullet3 = "✦ Kerawanan jaring pengaman sosial pada klaster keluarga miskin ekstrem";
+      } else if (cat.id === "logistics") {
+        warningTitle = "RISIKO UTAMA TRANSPORTASI EKSPEDISI";
+        bullet1 = "✦ Kemacetan lalu lintas parah pada jalur arteri rute logistik utama";
+        bullet2 = "✦ Fluktuasi tajam harga solar industri non-subsidi memangkas margin opex";
+        bullet3 = "✦ Insiden kerusakan mesin armada truk tua tanpa bengkel tanggap darurat";
+      } else if (cat.id === "tech") {
+        warningTitle = "KERAWANAN ARSITEKTUR INTEGRASI DATA DIGITAL";
+        bullet1 = "✦ Latensi tinggi sinkronisasi API data muatan operasional real-time";
+        bullet2 = "✦ Kegagalan failover otomatis server ketika trafik transaksi memuncak";
+        bullet3 = "✦ Celah sinkronisasi data yang berisiko pada mutasi basis data internal";
+      } else if (cat.id === "finance") {
+        warningTitle = "FAKTOR PEMICU DEVIASI ANGGARAN & MARGIN";
+        bullet1 = "✦ Sengkarut pembengkakan opex akibat penanganan insiden darurat armada";
+        bullet2 = "✦ Melesetnya estimasi break-even payback period modal kerja utama";
+        bullet3 = "✦ Kenaikan suku bunga pembiayaan capex kontainer truk baru";
+      } else if (cat.id === "risk") {
+        warningTitle = "KERAWANAN COMPLIANCE & SAFETY PENGIRIMAN";
+        bullet1 = "✦ Kebocoran prosedur operasional standar K3 kru lapangan di rute ekstrem";
+        bullet2 = "✦ Sanksi administratif akibat kelambatan perpanjangan uji KIR unit logistik";
+        bullet3 = "✦ Hambatan koordinasi penanganan jika terjadi kecelakaan tak terduga";
+      }
+
+      // 1. Fill beautiful pastel minty background
+      const bgGrad = ctx.createLinearGradient(0, 0, 0, 1140);
       bgGrad.addColorStop(0, "#ffffff");
-      bgGrad.addColorStop(0.3, themeGlow);
-      bgGrad.addColorStop(0.7, themeGlow);
+      bgGrad.addColorStop(0.15, themeGlow);
+      bgGrad.addColorStop(0.85, themeGlow);
       bgGrad.addColorStop(1, "#ffffff");
       ctx.fillStyle = bgGrad;
-      ctx.fillRect(0, 0, 800, 420);
+      ctx.fillRect(0, 0, 800, 1140);
 
-      // Subtle abstract grid lines for blueprint aesthetic
+      // Subtle abstract grid vectors for administrative blueprints
       ctx.strokeStyle = "rgba(148, 163, 184, 0.12)";
       ctx.lineWidth = 1;
       for (let x = 40; x < 800; x += 40) {
-        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 420); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, 1140);
+        ctx.stroke();
       }
-      for (let y = 40; y < 420; y += 40) {
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(800, y); ctx.stroke();
+      for (let y = 40; y < 1140; y += 40) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(800, y);
+        ctx.stroke();
       }
 
-      // Double elegant borders
+      // 2. Poster Borders & Margins
       ctx.strokeStyle = themePrimary;
-      ctx.lineWidth = 6;
-      ctx.strokeRect(3, 3, 794, 414);
+      ctx.lineWidth = 10;
+      ctx.strokeRect(5, 5, 790, 1130);
 
       ctx.strokeStyle = themeAccent;
-      ctx.lineWidth = 1.2;
-      ctx.strokeRect(10, 10, 780, 400);
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(15, 15, 770, 1110);
 
-      // Drawing inline glyph vectors dynamically based on icons
+      // 3. HEADER BANNER
+      drawRoundRect(30, 30, 740, 95, 16);
+      ctx.fillStyle = themePrimary;
+      ctx.fill();
+
+      // Top PRAMA System Tag
+      ctx.fillStyle = themeAccent;
+      ctx.font = "bold 10px 'Segoe UI', Arial, sans-serif";
+      ctx.fillText(`✦ PRAMA COGNITIVE BUSINESS ADVISOR • METRIK BLUEPRINT [${complianceTag}]`, 48, 55);
+
+      // Main header text matching presentation theme
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = "bold 20px 'Segoe UI', Arial, sans-serif";
+      ctx.fillText(`${title1} ${title2}`, 48, 80);
+
+      ctx.fillStyle = "#38bdf8";
+      ctx.font = "bold 12px monospace";
+      ctx.fillText(`UNIT KERJA: ${divName.toUpperCase()} DIVISION • PT PANCARAN GROUP INTERNAL RAHASIA`, 48, 105);
+
+      // 4. SECTION 1: APA ITU... ?
+      // Header for Section 1
+      ctx.fillStyle = themePrimary;
+      ctx.font = "bold 15px 'Segoe UI', Arial, sans-serif";
+      ctx.fillText(cat.id === "demography" ? "I. PROFIL & DESKRIPSI WILAYAH" : "I. APA ITU BURNOUT OPERASIONAL?", 35, 150);
+
+      // Soft container box
+      drawRoundRect(30, 162, 740, 135, 16);
+      ctx.fillStyle = "#ffffff";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.25)";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Draw the beautiful sticker character representing the auditor/advisor!
+      const cx = 95;
+      const cy = 227;
+      
+      // Face background circle
+      ctx.beginPath();
+      ctx.arc(cx, cy, 46, 0, 2 * Math.PI);
+      ctx.fillStyle = "#fee2e2"; // Soft rose glow
+      ctx.fill();
+      ctx.strokeStyle = "#fda4af";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Character Head & hair
+      ctx.beginPath();
+      ctx.arc(cx, cy - 8, 20, 0, 2 * Math.PI);
+      ctx.fillStyle = "#ffedd5"; // Skin tone
+      ctx.fill();
+
+      // Cute hair loops
+      ctx.fillStyle = "#1e293b"; // Dark charcoal hair
+      ctx.beginPath();
+      ctx.arc(cx - 10, cy - 18, 11, 0, Math.PI * 2);
+      ctx.arc(cx + 10, cy - 18, 11, 0, Math.PI * 2);
+      ctx.arc(cx, cy - 24, 14, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Eye dots
+      ctx.fillStyle = "#1e293b";
+      ctx.beginPath();
+      ctx.arc(cx - 7, cy - 8, 2.5, 0, Math.PI * 2);
+      ctx.arc(cx + 7, cy - 8, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Smiling mouth
+      ctx.strokeStyle = "#e11d48";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(cx, cy - 2, 6, 0, Math.PI);
+      ctx.stroke();
+
+      // Tiny circular glasses
+      ctx.strokeStyle = "#475569";
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.arc(cx - 7, cy - 8, 5, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(cx + 7, cy - 8, 5, 0, Math.PI * 2);
+      ctx.stroke();
+      // Glasses bridge
+      ctx.beginPath();
+      ctx.moveTo(cx - 2, cy - 8);
+      ctx.lineTo(cx + 2, cy - 8);
+      ctx.stroke();
+
+      // Hand and small checkboard
+      ctx.fillStyle = "#3b82f6";
+      ctx.fillRect(cx - 30, cy + 12, 16, 22); // mini folder
+      ctx.fillStyle = "#facc15";
+      ctx.beginPath();
+      ctx.arc(cx + 26, cy + 14, 6, 0, Math.PI * 2); // mini gold coin / badge
+      ctx.fill();
+
+      // Sparkle stars highlighting Prama Cognitive AI sticker look
+      const drawSparkle = (sx: number, sy: number) => {
+        ctx.fillStyle = "#fbbf24";
+        ctx.beginPath();
+        ctx.moveTo(sx, sy - 6);
+        ctx.lineTo(sx + 2, sy - 2);
+        ctx.lineTo(sx + 6, sy);
+        ctx.lineTo(sx + 2, sy + 2);
+        ctx.lineTo(sx, sy + 6);
+        ctx.lineTo(sx - 2, sy + 2);
+        ctx.lineTo(sx - 6, sy);
+        ctx.lineTo(sx - 2, sy - 2);
+        ctx.closePath();
+        ctx.fill();
+      };
+      drawSparkle(cx - 34, cy - 26);
+      drawSparkle(cx + 36, cy - 14);
+
+      // Draw Speech Bubble pointing to the character
+      drawRoundRect(165, 175, 580, 110, 14);
+      ctx.fillStyle = "#f8fafc";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.25)";
+      ctx.stroke();
+
+      // Speech bubble pointer arrow pointing back to character arc coordinate
+      ctx.fillStyle = "#f8fafc";
+      ctx.beginPath();
+      ctx.moveTo(165, 218);
+      ctx.lineTo(152, 227);
+      ctx.lineTo(165, 236);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.25)";
+      ctx.beginPath();
+      ctx.moveTo(165, 218);
+      ctx.lineTo(152, 227);
+      ctx.lineTo(165, 236);
+      ctx.stroke();
+      // redraw bubble left vertical edge over the triangle inner area to clean connection line
+      ctx.strokeStyle = "#f8fafc";
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(166, 219);
+      ctx.lineTo(166, 235);
+      ctx.stroke();
+      ctx.lineWidth = 1;
+
+      // Render Speech Bubble text definition
+      ctx.fillStyle = "#334155";
+      ctx.font = "bold 13px 'Segoe UI', Arial, sans-serif";
+      ctx.fillText(cat.id === "demography" ? "REKOMENDASI ADVISOR GEODEMOGRAFIS:" : "PANDANGAN STRATEGIS ADVISOR:", 185, 202);
+
+      ctx.fillStyle = "#475569";
+      ctx.font = "normal 11.5px 'Segoe UI', Arial, sans-serif";
+      
+      // Word wrapping for longer definitions dynamically based on categories
+      const pText = descText;
+      const wrapText = (txt: string, maxW: number) => {
+        const words = txt.split(" ");
+        const lines: string[] = [];
+        let currLine = "";
+        for (let w of words) {
+          let testLine = currLine ? currLine + " " + w : w;
+          if (ctx.measureText(testLine).width > maxW) {
+            lines.push(currLine);
+            currLine = w;
+          } else {
+            currLine = testLine;
+          }
+        }
+        if (currLine) lines.push(currLine);
+        return lines;
+      };
+
+      const wrapped = wrapText(pText, 540);
+      wrapped.forEach((line, lineIdx) => {
+        ctx.fillText(line, 185, 224 + (lineIdx * 17));
+      });
+
+      // 5. SECTION 2: TAHUKAH KAMU?
+      ctx.fillStyle = themePrimary;
+      ctx.font = "bold 14px 'Segoe UI', Arial, sans-serif";
+      ctx.fillText(cat.id === "demography" ? "II. DATA SEBARAN PENDUDUK" : "II. TAHUKAH KAMU?", 35, 325);
+
+      // Fact container card
+      drawRoundRect(30, 335, 740, 75, 14);
+      ctx.fillStyle = "#ffffff";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.25)";
+      ctx.stroke();
+
+      // Draw 5 human/user silhouettes like in the workout burnout poster
+      const drawUserSilhouette = (shX: number, shY: number, isActive: boolean) => {
+        ctx.fillStyle = isActive ? themeAccent : "#cbd5e1";
+        
+        // Head
+        ctx.beginPath();
+        ctx.arc(shX, shY - 14, 7, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Shoulders/Body rounded arc
+        ctx.beginPath();
+        ctx.ellipse ? ctx.ellipse(shX, shY, 10, 8, 0, Math.PI, Math.PI * 2) : ctx.arc(shX, shY, 10, Math.PI, Math.PI * 2);
+        ctx.fill();
+      };
+
+      // Draw 5 users, highlighting 2 of them representing "2 dari 5"
+      for (let i = 0; i < 5; i++) {
+        drawUserSilhouette(65 + (i * 26), 382, i < 2);
+      }
+
+      // Statistics values beside silhouettes
+      ctx.fillStyle = "#ef4444";
+      ctx.font = "black 14px 'Segoe UI', Arial, sans-serif";
+      ctx.fillText(statWord, 210, 362);
+
+      ctx.fillStyle = "#475569";
+      ctx.font = "normal 11.5px 'Segoe UI', Arial, sans-serif";
+      const wrappedStat = wrapText(statParagraph, 510);
+      wrappedStat.forEach((line, idx) => {
+        ctx.fillText(line, 210, 379 + (idx * 16));
+      });
+
+      // 6. SECTION 3: KENALI GEJALANYA / INDIKATOR
+      ctx.fillStyle = themePrimary;
+      ctx.font = "bold 14px 'Segoe UI', Arial, sans-serif";
+      ctx.fillText(cat.id === "demography" ? "III. METRIK SEKTOR KEPENDUDUKAN & LAYANAN SOSIAL" : "III. KENALI GEJALANYA! (METRIK INDIKATOR UTAMA SEKTOR)", 35, 435);
+
+      // Curved indicator subheader card
+      drawRoundRect(30, 445, 740, 30, 8);
+      ctx.fillStyle = themePrimary;
+      ctx.fill();
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 10px monospace";
+      ctx.fillText(cat.id === "demography" ? "✦ MONITORING PARAMETER GEODEMOGRAFI TERPADU PRAMA SECARA REAL-TIME" : "✦ PEMANTAUAN PARAMETER INTELLIGENCE PRAMA SEKTORAL SECARA REAL-TIME", 45, 464);
+
+      // Draw Grid container for 6 circles (y: 490 to 760)
+      drawRoundRect(30, 485, 740, 275, 16);
+      ctx.fillStyle = "#ffffff";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.25)";
+      ctx.stroke();
+
+      // Rendering 6 circular badges in 2 rows x 3 columns
+      // Columns: cx = 155, cx = 400, cx = 645
+      // Rows: cy = 545, cy = 665
+      const gridCols = [155, 400, 645];
+      const gridRows = [545, 665];
+
+      // Drawing inline glyph vectors dynamically based on icons names
       const drawGlyphIcon = (ix: number, iy: number, type: string, color: string) => {
         ctx.save();
         if (type === "leaf") {
           ctx.beginPath();
-          ctx.moveTo(ix - 10, iy + 10);
-          ctx.quadraticCurveTo(ix - 12, iy - 8, ix + 8, iy - 8);
-          ctx.quadraticCurveTo(ix + 12, iy + 8, ix - 10, iy + 10);
+          ctx.moveTo(ix - 12, iy + 12);
+          ctx.quadraticCurveTo(ix - 14, iy - 10, ix + 10, iy - 10);
+          ctx.quadraticCurveTo(ix + 14, iy + 10, ix - 12, iy + 12);
           ctx.fillStyle = color;
           ctx.fill();
           ctx.beginPath();
-          ctx.moveTo(ix - 10, iy + 10);
-          ctx.lineTo(ix + 8, iy - 8);
+          ctx.moveTo(ix - 12, iy + 12);
+          ctx.lineTo(ix + 10, iy - 10);
           ctx.strokeStyle = "#ffffff";
-          ctx.lineWidth = 1.5;
+          ctx.lineWidth = 2;
           ctx.stroke();
         } else if (type === "star") {
           ctx.beginPath();
           for (let i = 0; i < 5; i++) {
             const angle = (i * 2 * Math.PI / 5) - Math.PI / 2;
-            ctx.lineTo(ix + 9 * Math.cos(angle), iy + 9 * Math.sin(angle));
+            ctx.lineTo(ix + 11 * Math.cos(angle), iy + 11 * Math.sin(angle));
             const nextAngle = ((i + 0.5) * 2 * Math.PI / 5) - Math.PI / 2;
-            ctx.lineTo(ix + 4 * Math.cos(nextAngle), iy + 4 * Math.sin(nextAngle));
+            ctx.lineTo(ix + 5 * Math.cos(nextAngle), iy + 5 * Math.sin(nextAngle));
           }
           ctx.closePath();
           ctx.fillStyle = color;
           ctx.fill();
         } else if (type === "cloud") {
           ctx.beginPath();
-          ctx.arc(ix - 4, iy + 2, 5, Math.PI * 0.5, Math.PI * 1.5);
-          ctx.arc(ix, iy - 3, 7, Math.PI, Math.PI * 2);
-          ctx.arc(ix + 5, iy + 2, 5, Math.PI * 1.5, Math.PI * 0.5);
+          ctx.arc(ix - 5, iy + 3, 6, Math.PI * 0.5, Math.PI * 1.5);
+          ctx.arc(ix, iy - 4, 8, Math.PI, Math.PI * 2);
+          ctx.arc(ix + 6, iy + 3, 6, Math.PI * 1.5, Math.PI * 0.5);
           ctx.closePath();
           ctx.fillStyle = color;
           ctx.fill();
         } else if (type === "lightning") {
           ctx.beginPath();
-          ctx.moveTo(ix + 2, iy - 10);
-          ctx.lineTo(ix - 6, iy + 1);
+          ctx.moveTo(ix + 3, iy - 12);
+          ctx.lineTo(ix - 7, iy + 1);
           ctx.lineTo(ix - 1, iy + 1);
-          ctx.lineTo(ix - 3, iy + 10);
-          ctx.lineTo(ix + 6, iy - 1);
+          ctx.lineTo(ix - 4, iy + 12);
+          ctx.lineTo(ix + 7, iy - 1);
           ctx.lineTo(ix + 1, iy - 1);
           ctx.closePath();
           ctx.fillStyle = color;
           ctx.fill();
         } else if (type === "fuel") {
           ctx.beginPath();
-          ctx.moveTo(ix, iy - 10);
-          ctx.quadraticCurveTo(ix + 8, iy, ix, iy + 10);
-          ctx.quadraticCurveTo(ix - 8, iy, ix, iy - 10);
+          ctx.moveTo(ix, iy - 12);
+          ctx.quadraticCurveTo(ix + 10, iy, ix, iy + 12);
+          ctx.quadraticCurveTo(ix - 10, iy, ix, iy - 12);
           ctx.closePath();
           ctx.fillStyle = color;
           ctx.fill();
         } else if (type === "alert") {
           ctx.beginPath();
-          ctx.moveTo(ix, iy - 10);
-          ctx.lineTo(ix + 10, iy + 6);
-          ctx.lineTo(ix - 10, iy + 6);
+          ctx.moveTo(ix, iy - 12);
+          ctx.lineTo(ix + 12, iy + 8);
+          ctx.lineTo(ix - 12, iy + 8);
           ctx.closePath();
           ctx.fillStyle = color;
           ctx.fill();
           ctx.fillStyle = "#ffffff";
-          ctx.font = "bold 9px Arial";
+          ctx.font = "bold 11px Arial";
           ctx.textAlign = "center";
-          ctx.fillText("!", ix, iy + 4);
+          ctx.fillText("!", ix, iy + 6);
         } else if (type === "shield") {
           ctx.beginPath();
-          ctx.moveTo(ix, iy - 9);
-          ctx.quadraticCurveTo(ix + 8, iy - 9, ix + 8, iy);
-          ctx.quadraticCurveTo(ix + 8, iy + 6, ix, iy + 10);
-          ctx.quadraticCurveTo(ix - 8, iy + 6, ix - 8, iy);
-          ctx.quadraticCurveTo(ix - 8, iy - 9, ix, iy - 9);
+          ctx.moveTo(ix, iy - 11);
+          ctx.quadraticCurveTo(ix + 9, iy - 11, ix + 9, iy);
+          ctx.quadraticCurveTo(ix + 9, iy + 8, ix, iy + 12);
+          ctx.quadraticCurveTo(ix - 9, iy + 8, ix - 9, iy);
+          ctx.quadraticCurveTo(ix - 9, iy - 11, ix, iy - 11);
           ctx.closePath();
           ctx.fillStyle = color;
           ctx.fill();
+        } else if (type === "gavel") {
+          ctx.translate(ix, iy);
+          ctx.rotate(-Math.PI / 4);
+          ctx.fillStyle = color;
+          ctx.fillRect(-10, -5, 20, 10);
+          ctx.fillRect(-2, 5, 4, 12);
         } else if (type === "target") {
           ctx.beginPath();
-          ctx.arc(ix, iy, 9, 0, 2 * Math.PI);
+          ctx.arc(ix, iy, 11, 0, 2 * Math.PI);
           ctx.strokeStyle = color;
-          ctx.lineWidth = 2;
+          ctx.lineWidth = 2.5;
           ctx.stroke();
           ctx.beginPath();
-          ctx.arc(ix, iy, 4, 0, 2 * Math.PI);
+          ctx.arc(ix, iy, 5, 0, 2 * Math.PI);
           ctx.fillStyle = color;
+          ctx.fill();
+        } else if (type === "arrows") {
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(ix - 10, iy - 4); ctx.lineTo(ix + 4, iy - 4); ctx.lineTo(ix + 1, iy - 8);
+          ctx.moveTo(ix - 10, iy - 4); ctx.lineTo(ix + 1, iy - 4); ctx.lineTo(ix + 1, iy);
+          ctx.moveTo(ix + 10, iy + 4); ctx.lineTo(ix - 4, iy + 4); ctx.lineTo(ix - 1, iy + 8);
+          ctx.moveTo(ix + 10, iy + 4); ctx.lineTo(ix - 1, iy + 4); ctx.lineTo(ix - 1, iy);
+          ctx.stroke();
+        } else if (type === "db") {
+          ctx.fillStyle = color;
+          ctx.fillRect(ix - 8, iy - 5, 16, 12);
+          ctx.fillStyle = "rgba(255,255,255,0.4)";
+          ctx.fillRect(ix - 6, iy - 3, 12, 2);
+          ctx.fillRect(ix - 6, iy + 1, 12, 2);
+          ctx.fillRect(ix - 6, iy + 5, 12, 2);
+        } else if (type === "coins") {
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          ctx.arc(ix - 3, iy + 3, 7, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(ix + 3, iy - 3, 7, 0, Math.PI * 2);
           ctx.fill();
         } else if (type === "gear") {
           ctx.fillStyle = color;
           ctx.beginPath();
-          ctx.arc(ix, iy, 9, 0, 2 * Math.PI);
+          ctx.arc(ix, iy, 10, 0, 2 * Math.PI);
           ctx.fill();
           ctx.beginPath();
-          ctx.arc(ix, iy, 4, 0, 2 * Math.PI);
+          ctx.arc(ix, iy, 5, 0, 2 * Math.PI);
           ctx.fillStyle = "#ffffff";
           ctx.fill();
         } else {
+          // default bar chart
           ctx.fillStyle = color;
-          ctx.fillRect(ix - 8, iy + 1, 4, 7);
-          ctx.fillRect(ix - 1, iy - 3, 4, 11);
-          ctx.fillRect(ix + 6, iy - 7, 4, 15);
+          ctx.fillRect(ix - 10, iy + 2, 5, 8);
+          ctx.fillRect(ix - 2, iy - 3, 5, 13);
+          ctx.fillRect(ix + 6, iy - 8, 5, 18);
         }
         ctx.restore();
       };
 
-      // Determine the 6 Metric items and labels (Shortened, NO lists/paragraphs)
-      const displayMetrics = cat.id === "forestry" ? [
-        { title: "Lahan", icon: "leaf", color: "#10b981" },
-        { title: "Sertifikat", icon: "star", color: "#eab308" },
-        { title: "Karbon", icon: "cloud", color: "#0ea5e9" },
-        { title: "Rute", icon: "gear", color: "#6366f1" },
-        { title: "Kargo", icon: "chart", color: "#a855f7" },
-        { title: "ESG", icon: "shield", color: "#065f46" }
-      ] : cat.id === "demography" ? [
-        { title: "Profil", icon: "target", color: "#1e40af" },
-        { title: "Sensus", icon: "chart", color: "#10b981" },
-        { title: "Sosial", icon: "alert", color: "#ef4444" },
-        { title: "Sektor", icon: "gear", color: "#eab308" },
-        { title: "Fasilitas", icon: "shield", color: "#6366f1" },
-        { title: "KKM", icon: "leaf", color: "#0ea5e9" }
-      ] : cat.id === "logistics" ? [
-        { title: "Armada", icon: "lightning", color: "#eab308" },
-        { title: "Solar", icon: "fuel", color: "#f43f5e" },
-        { title: "Kapasitas", icon: "chart", color: "#10b981" },
-        { title: "Akurasi", icon: "target", color: "#0284c7" },
-        { title: "Mitigasi", icon: "alert", color: "#f97316" },
-        { title: "Sopir", icon: "shield", color: "#3b82f6" }
-      ] : cat.id === "tech" ? [
-        { title: "API Latency", icon: "lightning", color: "#0ea5e9" },
-        { title: "Throughput", icon: "target", color: "#6366f1" },
-        { title: "Enkripsi", icon: "shield", color: "#10b981" },
-        { title: "Database", icon: "chart", color: "#3b82f6" },
-        { title: "Server", icon: "gear", color: "#a855f7" },
-        { title: "Uptime", icon: "star", color: "#eab308" }
-      ] : cat.id === "finance" ? [
-        { title: "Margin", icon: "chart", color: "#10b981" },
-        { title: "Capex", icon: "star", color: "#eab308" },
-        { title: "Opex", icon: "alert", color: "#f43f5e" },
-        { title: "Payback", icon: "target", color: "#3b82f6" },
-        { title: "Audit", icon: "shield", color: "#0ea5e9" },
-        { title: "Tax", icon: "star", color: "#6366f1" }
-      ] : cat.id === "risk" ? [
-        { title: "Prevensi", icon: "shield", color: "#10b981" },
-        { title: "Alarm", icon: "lightning", color: "#eab308" },
-        { title: "Regulasi", icon: "gavel", color: "#b45309" },
-        { title: "Deviasi", icon: "alert", color: "#f43f5e" },
-        { title: "Recovery", icon: "gear", color: "#0ea5e9" },
-        { title: "Audit", icon: "target", color: "#3b82f6" }
-      ] : [
-        { title: "Efisiensi", icon: "gear", color: "#3b82f6" },
-        { title: "Sinergi", icon: "chart", color: "#10b981" },
-        { title: "Sikap", icon: "shield", color: "#6366f1" },
-        { title: "Fokus", icon: "star", color: "#eab308" },
-        { title: "Mitigasi", icon: "lightning", color: "#f97316" },
-        { title: "Prama", icon: "leaf", color: "#059669" }
-      ];
-
-      // LEFT COLUMN: Metrics Matrix (Grid layout)
-      // Height 280, width 320. Centered on x: 190.
-      drawRoundRect(30, 40, 340, 275, 14);
-      ctx.fillStyle = "#ffffff";
-      ctx.fill();
-      ctx.strokeStyle = "rgba(148, 163, 184, 0.25)";
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-
-      // Matrix header line
-      ctx.fillStyle = themePrimary;
-      ctx.font = "bold 13px 'Segoe UI', Arial, sans-serif";
-      ctx.fillText(cat.id === "demography" ? "METRIK SEKTOR KEPENDUDUKAN" : "VALUASI METRIK SEKTOR UTAMA", 45, 68);
-
-      const gridCols = [100, 200, 300];
-      const gridRows = [140, 240];
-
-      displayMetrics.forEach((item, idx) => {
+      paramItems.forEach((item, idx) => {
         const rIdx = Math.floor(idx / 3);
         const cIdx = idx % 3;
         const imX = gridCols[cIdx];
         const imY = gridRows[rIdx];
 
-        // Themed backdrop glow circles
+        // Soft circle outline
         ctx.beginPath();
-        ctx.arc(imX, imY, 24, 0, Math.PI * 2);
-        ctx.fillStyle = themeGlow;
+        ctx.arc(imX, imY, 36, 0, Math.PI * 2);
+        ctx.fillStyle = themeGlow; // themed background glow circle
         ctx.fill();
         ctx.strokeStyle = item.color;
-        ctx.lineWidth = 1.2;
+        ctx.lineWidth = 1.5;
         ctx.stroke();
 
-        // Icon rendering
+        // Draw geometric high-fidelity indicator icons inside
         drawGlyphIcon(imX, imY, item.icon, item.color);
 
-        // Name
+        // Circle inner white border to separate lines
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(imX, imY, 32, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Labels under indicator circles
         ctx.fillStyle = "#1e293b";
         ctx.font = "bold 11px 'Segoe UI', Arial, sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText(item.title, imX, imY + 41);
-        ctx.textAlign = "left"; // reset
+        ctx.fillText(item.title, imX, imY + 54);
+
+        ctx.fillStyle = item.color;
+        ctx.font = "bold 10px monospace";
+        ctx.fillText(item.subtitle, imX, imY + 68);
+        ctx.textAlign = "left"; // restore alignment
       });
 
-      // RIGHT COLUMN: Beautiful interconnected pipeline of PANCA Pillars (Star / Flow Network)
-      drawRoundRect(400, 40, 370, 275, 14);
-      ctx.fillStyle = "#ffffff";
+      // 7. SECTION 4: RISIKO UTAMA / PENYEBAB UTAMA
+      ctx.fillStyle = themePrimary;
+      ctx.font = "bold 14px 'Segoe UI', Arial, sans-serif";
+      ctx.fillText(cat.id === "demography" ? "IV. ANALISA KERAWANAN SOSIAL & KEMISKINAN EKSTREM" : "IV. PENYEBAB & RISIKO OPERASIONAL UTAMA", 35, 785);
+
+      // Warning Card Container matching the exclamation poster section
+      drawRoundRect(30, 795, 740, 115, 16);
+      ctx.fillStyle = "#fef3c7"; // Warm amber/yellow background
       ctx.fill();
-      ctx.strokeStyle = "rgba(148, 163, 184, 0.25)";
+      ctx.strokeStyle = "#fde047";
       ctx.lineWidth = 1.5;
       ctx.stroke();
 
-      ctx.fillStyle = themePrimary;
-      ctx.font = "bold 13px 'Segoe UI', Arial, sans-serif";
-      ctx.fillText("ALUR INTEGRASI PILAR P-A-N-C-A", 420, 68);
+      // Big yellow exclamation warning sign
+      const wx = 85;
+      const wy = 852;
+      ctx.beginPath();
+      ctx.moveTo(wx, wy - 30);
+      ctx.lineTo(wx + 34, wy + 24);
+      ctx.lineTo(wx - 34, wy + 24);
+      ctx.closePath();
+      ctx.fillStyle = "#f59e0b"; // Big warning orange
+      ctx.fill();
+      ctx.strokeStyle = "#d97706";
+      ctx.lineWidth = 2;
+      ctx.stroke();
 
-      // We draw 5 pillars "P" "A" "N" "C" "A". 
-      // Center of loop is (585, 175)
-      const cx = 585;
-      const cy = 175;
-      const radius = 70;
-      const angles = [
-        -Math.PI / 2, // P (top)
-        -Math.PI / 2 + (2 * Math.PI / 5), // A
-        -Math.PI / 2 + (4 * Math.PI / 5), // N
-        -Math.PI / 2 + (6 * Math.PI / 5), // C
-        -Math.PI / 2 + (8 * Math.PI / 5)  // A
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 28px 'Segoe UI', Arial, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("!", wx, wy + 14);
+      ctx.textAlign = "left";
+
+      // Advisory warning title
+      ctx.fillStyle = "#9a3412";
+      ctx.font = "bold 12px 'Segoe UI', Arial, sans-serif";
+      ctx.fillText(warningTitle, 140, 818);
+
+      // 3 Warning checklist items
+      ctx.fillStyle = "#7c2d12";
+      ctx.font = "semibold 11px 'Segoe UI', Arial, sans-serif";
+      ctx.fillText(bullet1, 140, 842);
+      ctx.fillText(bullet2, 140, 864);
+      ctx.fillText(bullet3, 140, 886);
+
+      // 8. SECTION 5: KUNCI STRATEGIS: P-A-N-C-A PILLARS
+      ctx.fillStyle = themePrimary;
+      ctx.font = "bold 14px 'Segoe UI', Arial, sans-serif";
+      ctx.fillText(cat.id === "demography" ? "V. PENDEKATAN SOSIAL DENGAN PILAR P-A-N-C-A PT PANCARAN GROUP" : "V. CEGAH DENGAN PILAR P-A-N-C-A PT PANCARAN GROUP", 35, 935);
+
+      // Custom acronym letters: S-E-H-A-T equivalents for PT Pancaran
+      const pancaPillars = cat.id === "demography" ? [
+        { letter: "P", label: "Pemetaan", desc: "Pemetaan Klaster Wilayah", color: "#f43f5e" },
+        { letter: "A", label: "Akurasi", desc: "Akurasi Data Demografi", color: "#6366f1" },
+        { letter: "N", label: "Nilai", desc: "Nilai Pemberdayaan Sosial", color: "#eab308" },
+        { letter: "C", label: "Cepat", desc: "Cepat Salur Bantuan", color: "#10b981" },
+        { letter: "A", label: "Alokasi", desc: "Alokasi Anggaran Daerah", color: "#f97316" }
+      ] : [
+        { letter: "P", label: "Proteksi", desc: "Proteksi Kelayakan Unit", color: "#f43f5e" },
+        { letter: "A", label: "Akurasi", desc: "Akurasi Rute Navigasi", color: "#6366f1" },
+        { letter: "N", label: "Nilai", desc: "Nilai ESG Kelestarian", color: "#eab308" },
+        { letter: "C", label: "Cepat", desc: "Cepat Tanggap Mitigasi", color: "#10b981" },
+        { letter: "A", label: "Alokasi", desc: "Alokasi Budget Presisi", color: "#f97316" }
       ];
 
-      const pancaLetters = ["P", "A", "N", "C", "A"];
-      const pancaColors = ["#f43f5e", "#6366f1", "#eab308", "#10b981", "#f97316"];
-      const pancaLabels = cat.id === "demography" 
-        ? ["Pemetaan", "Akurasi", "Nilai", "Cepat", "Alokasi"]
-        : ["Proteksi", "Akurasi", "Nilai", "Cepat", "Alokasi"];
+      const pXPositions = [90, 228, 366, 504, 642];
+      const pYCenter = 975;
 
-      // Draw beautiful loop connector circles/lines with thick track arrow elements
-      ctx.strokeStyle = "rgba(148, 163, 184, 0.25)";
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-      ctx.stroke();
+      pancaPillars.forEach((p, idx) => {
+        const px = pXPositions[idx];
+        const py = pYCenter;
 
-      // Clean dash highlight or ticks
-      ctx.strokeStyle = themeAccent;
-      ctx.lineWidth = 1.5;
-      ctx.setLineDash([4, 4]);
-      ctx.beginPath();
-      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.setLineDash([]); // Reset
-
-      // Render the 5 nodes
-      angles.forEach((angle, idx) => {
-        const nx = cx + radius * Math.cos(angle);
-        const ny = cy + radius * Math.sin(angle);
-
-        // Circle node backdrop
-        ctx.beginPath();
-        ctx.arc(nx, ny, 16, 0, Math.PI * 2);
-        ctx.fillStyle = pancaColors[idx];
+        // Clean white folder container behind letter
+        drawRoundRect(px - 58, py - 20, 116, 125, 12);
+        ctx.fillStyle = "#ffffff";
         ctx.fill();
-        ctx.strokeStyle = "#ffffff";
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = "rgba(148,163,184,0.2)";
         ctx.stroke();
 
-        // Letters
+        // Acronym letter circle badge
+        ctx.beginPath();
+        ctx.arc(px, py + 12, 22, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.fill();
+
+        // White inner ring decoration
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(px, py + 12, 18, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // The bold acronym letter
         ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 13px monospace";
+        ctx.font = "bold 20px 'Segoe UI', Arial, sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText(pancaLetters[idx], nx, ny + 5);
+        ctx.fillText(p.letter, px, py + 19);
 
-        // Labels placed radially or nicely offset
-        // Offset outwards from the circle
-        const ox = cx + (radius + 28) * Math.cos(angle);
-        const oy = cy + (radius + 28) * Math.sin(angle) + 3;
+        // Pillar name tag
+        ctx.fillStyle = p.color;
+        ctx.font = "bold 11px monospace";
+        ctx.fillText(p.label.toUpperCase(), px, py + 52);
 
-        ctx.fillStyle = "#334155";
-        ctx.font = "bold 9.5px 'Segoe UI', Arial, sans-serif";
-        ctx.fillText(pancaLabels[idx], ox, oy);
+        // Explanation description
+        ctx.fillStyle = "#475569";
+        ctx.font = "normal 8.5px 'Segoe UI', Arial, sans-serif";
+        
+        // Wrap description vertically on small card
+        const wrappedDesc = wrapText(p.desc, 90);
+        wrappedDesc.forEach((line, lineIdx) => {
+          ctx.fillText(line, px, py + 72 + (lineIdx * 11));
+        });
+        
         ctx.textAlign = "left"; // reset
       });
 
-      // DRAW BOTTOM FOOTER INFO STRIP
-      drawRoundRect(30, 335, 740, 48, 10);
-      ctx.fillStyle = themePrimary;
-      ctx.fill();
+      // 9. FOOTER STATS & BARCODE SYSTEM
+      ctx.fillStyle = "#f1f5f9";
+      ctx.fillRect(15, 1098, 770, 27);
 
-      // Footer branding text
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 9.5px monospace";
-      ctx.fillText("✦ PRAMA COGNITIVE BUSINESS ADVISOR MAP • VERIFIED ENTERPRISE MODEL • S-A-F-E BLUEPRINT", 48, 363);
-
-      // Clean barcode
-      ctx.fillStyle = themeAccent;
-      const barcodeWidths = [1, 2, 4, 1, 3, 1, 2, 3, 1, 4, 2, 1, 3, 2, 4];
-      let bx = 650;
+      // Subtle thin barcode
+      ctx.fillStyle = "#475569";
+      const barcodeWidths = [1, 3, 1, 2, 4, 1, 3, 2, 1, 4, 2, 1, 3, 1, 2, 4, 1, 3, 2];
+      let bx = 35;
       for (let bw of barcodeWidths) {
-        ctx.fillRect(bx, 351, bw, 16);
+        ctx.fillRect(bx, 1104, bw, 15);
         bx += bw + 1.2;
       }
+
+      ctx.fillStyle = "#64748b";
+      ctx.font = "bold 7.5px monospace";
+      ctx.fillText("*PRAMA-SYNCHRONIZED-MAP*", 35, 1121);
+
+      ctx.fillStyle = "#475569";
+      ctx.font = "bold 9px 'Segoe UI', Arial, sans-serif";
+      ctx.fillText("TI & PROYEK METRIK UTAMA PT PANCARAN GROUP • PRAMA SYSTEM COMPREHENSIVE INFOGRAPHIC", 145, 1114);
+
+      ctx.fillStyle = themeAccent;
+      ctx.font = "bold 11px Arial";
+      ctx.textAlign = "right";
+      ctx.fillText("PRAMA CERTIFIED", 765, 1111);
+
+      ctx.fillStyle = "#64748b";
+      ctx.font = "normal 7.5px monospace";
+      ctx.fillText(`COGNITIVE VERIFICATION ID: PRM-WORD-COMPLIANT-${cat.id.toUpperCase()}`, 765, 1121);
 
       return canvas.toDataURL("image/png");
     } catch (err) {
@@ -808,7 +1264,7 @@ export function exportToWord(title: string, text: string, divisionName: string) 
 
         ${infographicUrl ? `
         <div style="text-align: center; margin-top: 15pt; margin-bottom: 25pt; page-break-inside: avoid;">
-          <img src="${infographicUrl}" width="600" style="width: 6.25in; max-width: 100%; height: auto; border: 1px solid #cbd5e1; border-radius: 6px; display: block; margin: 0 auto;" alt="Peta Visual Strategis PRAMA" />
+          <img src="${infographicUrl}" width="600" height="390" style="width: 6.25in; height: 4.06in; max-width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; display: block; margin: 0 auto;" alt="Peta Visual Strategis PRAMA" />
           <p style="font-size: 8.5pt; color: #64748b; font-style: italic; text-align: center; margin-top: 6pt; font-family: 'Segoe UI', Arial, sans-serif;">
             Gambar 1.0: Peta Visual Strategis Terpadu PT Pancaran Group - Hasil Evaluasi Cognitive AI PRAMA
           </p>

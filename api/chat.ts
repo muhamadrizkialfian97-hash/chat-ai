@@ -154,7 +154,13 @@ export default async function handler(req: any, res: any) {
       return res.status(400).json({ error: "Message is required and must be a string." });
     }
 
-    const apiKey = customApiKey || process.env.GEMINI_API_KEY || "AQ.Ab8RN6J18XhfT7OD0MR1jvDqtfQbcWD8pdIVctyDE0ZrRF2GrA";
+    let apiKey = (customApiKey || "").trim();
+    if ((apiKey.startsWith('"') && apiKey.endsWith('"')) || (apiKey.startsWith("'") && apiKey.endsWith("'"))) {
+      apiKey = apiKey.substring(1, apiKey.length - 1).trim();
+    }
+    if (!apiKey) {
+      apiKey = (process.env.GEMINI_API_KEY || "").trim();
+    }
     const ai = new GoogleGenAI({
       apiKey,
       httpOptions: {
@@ -218,6 +224,8 @@ Gaya Bahasa & Aturan Format Jawaban Terstruktur (SANGAT PENTING):
       "gemini-flash-latest",
       "gemini-3.1-flash-lite",
       "gemini-2.5-flash",
+      "gemini-2.5-pro",
+      "gemini-3.1-pro-preview"
     ];
 
     let response: any = null;
@@ -296,7 +304,9 @@ Gaya Bahasa & Aturan Format Jawaban Terstruktur (SANGAT PENTING):
       status = 403;
     }
 
-    return res.status(status).json({
+    return res.status(200).json({
+      isError: true,
+      statusCode: status,
       error: friendlyError
     });
   }

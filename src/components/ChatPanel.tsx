@@ -91,7 +91,7 @@ export default function ChatPanel({
 
   const handleSaveLocalKey = (e: React.FormEvent) => {
     e.preventDefault();
-    const finalKey = localKeyInput.trim() || "AQ.Ab8RN6J18XhfT7OD0MR1jvDqtfQbcWD8pdIVctyDE0ZrRF2GrA";
+    const finalKey = localKeyInput.trim();
     setLocalKeyInput(finalKey);
     setClientApiKey(finalKey);
     setIsSaved(true);
@@ -516,14 +516,14 @@ export default function ChatPanel({
                     <button
                       type="button"
                       onClick={() => {
-                        setLocalKeyInput("AQ.Ab8RN6J18XhfT7OD0MR1jvDqtfQbcWD8pdIVctyDE0ZrRF2GrA");
-                        setClientApiKey("AQ.Ab8RN6J18XhfT7OD0MR1jvDqtfQbcWD8pdIVctyDE0ZrRF2GrA");
+                        setLocalKeyInput("");
+                        setClientApiKey("");
                         setIsSaved(true);
                         setTimeout(() => setIsSaved(false), 4400);
                       }}
                       className="flex-grow sm:flex-grow-0 h-10 rounded-xl bg-slate-150 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3 py-2.5 border border-slate-200 transition shrink-0 cursor-pointer text-center"
                     >
-                      Reset Default
+                      Reset Default / Kosongkan
                     </button>
                   </div>
                 </form>

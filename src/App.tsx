@@ -229,7 +229,7 @@ export default function App() {
 
 
   const [heroBgType, setHeroBgType] = useState<"video" | "image">(() => {
-    return (localStorage.getItem("prama_hero_bg_type") as "video" | "image") || "image";
+    return (localStorage.getItem("prama_hero_bg_type") as "video" | "image") || "video";
   });
 
   const [isBgSettingsCollapsed, setIsBgSettingsCollapsed] = useState<boolean>(true);
@@ -238,7 +238,7 @@ export default function App() {
   const [videoSrc, setVideoSrc] = useState<string>(() => {
     const isVercelHost = window.location.hostname.includes("vercel.app");
     return isVercelHost 
-      ? "https://assets.mixkit.co/videos/preview/mixkit-truck-driving-on-a-highway-at-night-42289-large.mp4" 
+      ? "https://assets.mixkit.co/videos/preview/mixkit-delivery-truck-on-the-road-33158-large.mp4" 
       : "/custom-video.mp4";
   });
 
@@ -275,7 +275,7 @@ export default function App() {
         }
         const isVercelHost = window.location.hostname.includes("vercel.app");
         return isVercelHost 
-          ? "https://assets.mixkit.co/videos/preview/mixkit-truck-driving-on-a-highway-at-night-42289-large.mp4" 
+          ? "https://assets.mixkit.co/videos/preview/mixkit-delivery-truck-on-the-road-33158-large.mp4" 
           : "/custom-video.mp4";
       });
     }
@@ -391,14 +391,14 @@ export default function App() {
         if (data.bgType) {
           setHeroBgType(data.bgType);
         } else {
-          setHeroBgType("image");
+          setHeroBgType("video");
         }
         if (data.videoUrl) {
           setVideoSrc(data.videoUrl);
         } else {
           const isVercelHost = window.location.hostname.includes("vercel.app");
           setVideoSrc(isVercelHost 
-            ? "https://assets.mixkit.co/videos/preview/mixkit-truck-driving-on-a-highway-at-night-42289-large.mp4" 
+            ? "https://assets.mixkit.co/videos/preview/mixkit-delivery-truck-on-the-road-33158-large.mp4" 
             : "/custom-video.mp4");
         }
         if (data.imageUrl) {
@@ -407,12 +407,12 @@ export default function App() {
           setImageSrc("https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8");
         }
       } else {
-        // Seed default in Firestore as "image" with intelligent default for maximum auto-consistency
+        // Seed default in Firestore as "video" with intelligent default for maximum auto-consistency
         const isVercelHost = window.location.hostname.includes("vercel.app");
         setDoc(settingsDocRef, {
-          bgType: "image",
+          bgType: "video",
           videoUrl: isVercelHost 
-            ? "https://assets.mixkit.co/videos/preview/mixkit-truck-driving-on-a-highway-at-night-42289-large.mp4" 
+            ? "https://assets.mixkit.co/videos/preview/mixkit-delivery-truck-on-the-road-33158-large.mp4" 
             : "/custom-video.mp4",
           imageUrl: "https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8",
           lastUpdated: serverTimestamp()
@@ -784,18 +784,18 @@ export default function App() {
     () => (localStorage.getItem("workspace_api_mode") as "proxy" | "client") || "proxy"
   );
   const [clientApiKey, setClientApiKey] = useState(() => {
-    const defaultKey = "AQ.Ab8RN6J18XhfT7OD0MR1jvDqtfQbcWD8pdIVctyDE0ZrRF2GrA";
-    const isNewSession = !sessionStorage.getItem("workspace_session_initialized");
-    
-    if (isNewSession) {
-      sessionStorage.setItem("workspace_session_initialized", "true");
-      localStorage.setItem("workspace_client_api_key", defaultKey);
-      return defaultKey;
+    let key = localStorage.getItem("workspace_client_api_key") || "";
+    key = key.trim();
+    if ((key.startsWith('"') && key.endsWith('"')) || (key.startsWith("'") && key.endsWith("'"))) {
+      key = key.substring(1, key.length - 1).trim();
     }
-
-    const key = localStorage.getItem("workspace_client_api_key");
-    if (!key || key === "AIzaSyDzh6235z1Nd3BFTLREBk3AWBfQ2lpsjxo" || key === "AIzaSyDDxMrdwc1s4TdTGxAghVtHaTQ1iGhDnGM") {
-      return defaultKey;
+    if (
+      !key || 
+      key === "AIzaSyDzh6235z1Nd3BFTLREBk3AWBfQ2lpsjxo" || 
+      key === "AIzaSyDDxMrdwc1s4TdTGxAghVtHaTQ1iGhDnGM" || 
+      key === "AQ.Ab8RN6J18XhfT7OD0MR1jvDqtfQbcWD8pdIVctyDE0ZrRF2GrA"
+    ) {
+      return "";
     }
     return key;
   });
@@ -807,27 +807,6 @@ export default function App() {
 
   // Tab selector inside main dashboard
   const [dashboardView, setDashboardView] = useState<"divisions" | "saved_docs" | "approval_requests" | "project_dashboard" | "chat_intelligence">("divisions");
-
-  // State and handlers for the enterprise hub banner image
-  const [hubBannerImage, setHubBannerImage] = useState<string | null>(() => {
-    return localStorage.getItem("prama_hub_banner_image") || "https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8";
-  });
-  const [isBannerDragging, setIsBannerDragging] = useState(false);
-
-  const handleBannerUpload = (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const dataUrl = e.target?.result as string;
-      if (dataUrl) {
-        setHubBannerImage(dataUrl);
-        localStorage.setItem("prama_hub_banner_image", dataUrl);
-      }
-    };
-    reader.readAsDataURL(file);
-  };
 
   // Chat Intelligence Custom BI parameters
   const [chatBIState, setChatBIState] = useState<ChatIntelligenceState>(defaultChatIntelligence);
@@ -1574,10 +1553,20 @@ ${focusText}`;
           })).filter((source: any) => source.uri && source.title);
         } else {
           const responseText = await res.text();
+          let parsedData: any = null;
+          let isErrorResponse = !res.ok;
+          try {
+            parsedData = JSON.parse(responseText);
+            if (parsedData && (parsedData.isError || parsedData.error)) {
+              isErrorResponse = true;
+            }
+          } catch (e) {
+            // ignore
+          }
           
-          if (!res.ok) {
-            // Check if we can fallback to clientApiKey if the proxy returned an API error (e.g., leaked key or quota issue)
-            if (clientApiKey && (responseText.includes("leaked") || responseText.includes("RESOURCE_EXHAUSTED") || res.status === 400 || res.status === 429)) {
+          if (isErrorResponse) {
+            // Check if we can fallback to clientApiKey if the proxy returned an API error (e.g., leaked key, PERMISSION_DENIED, or quota issue)
+            if (clientApiKey) {
               const aiBrowser = new GoogleGenAI({ apiKey: clientApiKey });
               const formattedContents = chatMessages.slice(-6).map((msg: any) => ({
                 role: msg.role === "user" ? "user" : "model",
@@ -1597,7 +1586,9 @@ ${focusText}`;
                 "gemini-3.5-flash",
                 "gemini-flash-latest",
                 "gemini-3.1-flash-lite",
-                "gemini-2.5-flash"
+                "gemini-2.5-flash",
+                "gemini-2.5-pro",
+                "gemini-3.1-pro-preview"
               ];
               let response = null;
               let lastClientError = null;
@@ -1625,28 +1616,24 @@ ${focusText}`;
               })).filter((source: any) => source.uri && source.title);
             } else {
               let errorMsg = "Gagal memperoleh respons asisten.";
-              try {
-                const errObj = JSON.parse(responseText);
-                if (errObj && typeof errObj === "object") {
-                  if (errObj.error && typeof errObj.error === "object") {
-                    errorMsg = errObj.error.message || JSON.stringify(errObj.error);
-                  } else if (typeof errObj.error === "string") {
-                    errorMsg = errObj.error;
-                  } else if (errObj.message) {
-                    errorMsg = errObj.message;
-                  } else {
-                    errorMsg = JSON.stringify(errObj);
-                  }
+              const errObj = parsedData;
+              if (errObj && typeof errObj === "object") {
+                if (errObj.error && typeof errObj.error === "object") {
+                  errorMsg = errObj.error.message || JSON.stringify(errObj.error);
+                } else if (typeof errObj.error === "string") {
+                  errorMsg = errObj.error;
+                } else if (errObj.message) {
+                  errorMsg = errObj.message;
                 } else {
-                  errorMsg = responseText || errorMsg;
+                  errorMsg = JSON.stringify(errObj);
                 }
-              } catch {
+              } else {
                 errorMsg = responseText || errorMsg;
               }
               throw new Error(errorMsg);
             }
           } else {
-            const answerData = JSON.parse(responseText);
+            const answerData = parsedData || JSON.parse(responseText);
             mainAnswerText = answerData.text;
             searchSources = answerData.sources || [];
           }
@@ -2055,10 +2042,51 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
         }
         throw new Error("Gagal menghubungi server proxy.");
       }
-      if (!res.ok) {
+      const responseText = await res.text();
+      let parsedData: any = null;
+      let isErrorResponse = !res.ok;
+      try {
+        parsedData = JSON.parse(responseText);
+        if (parsedData && (parsedData.isError || parsedData.error)) {
+          isErrorResponse = true;
+        }
+      } catch (e) {
+        // ignore
+      }
+
+      if (isErrorResponse) {
+        if (clientApiKey) {
+          const aiBrowser = new GoogleGenAI({ apiKey: clientApiKey });
+          const clientModelsToTry = [
+            "gemini-3.5-flash",
+            "gemini-flash-latest",
+            "gemini-3.1-flash-lite",
+            "gemini-2.5-flash",
+            "gemini-2.5-pro",
+            "gemini-3.1-pro-preview"
+          ];
+          let response = null;
+          for (const modelName of clientModelsToTry) {
+            try {
+              response = await aiBrowser.models.generateContent({
+                model: modelName,
+                contents: [{ role: "user", parts: [{ text: customQuery }] }],
+                config: {
+                  systemInstruction: systemInstructionOverride || getDivisionSystemInstruction(activeDivision || ""),
+                }
+              });
+              if (response) break;
+            } catch (err) {
+              // ignore
+            }
+          }
+          if (response) {
+            return response.text || "";
+          }
+        }
         throw new Error("Gagal memperoleh respons dari server.");
       }
-      const data = await res.json();
+      const data = parsedData || JSON.parse(responseText);
       return data.text || "";
     }
   };
@@ -2619,14 +2647,14 @@ ${lastMsgText}`;
             muted
             loop
             playsInline
+            preload="auto"
             id="bg-video"
             key={videoSrc || "default"}
             referrerPolicy="no-referrer"
             className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 animate-fade-in scale-[1.08] origin-center"
-            src={videoSrc}
             style={{ zIndex: -1, opacity: 0.65 }}
             onError={() => {
-              const fallbackUrl = "https://assets.mixkit.co/videos/preview/mixkit-truck-driving-on-a-highway-at-night-42289-large.mp4";
+              const fallbackUrl = "https://assets.mixkit.co/videos/preview/mixkit-delivery-truck-on-the-road-33158-large.mp4";
               if (videoSrc !== fallbackUrl) {
                 console.warn("Lobby video failed to load. Falling back to high-quality cloud logistics video...");
                 setVideoSrc(fallbackUrl);
@@ -2643,124 +2671,6 @@ ${lastMsgText}`;
             className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 animate-fade-in scale-[1.08] origin-center"
             style={{ zIndex: -1, opacity: 0.65 }}
           />
-        )}
-
-        {/* Floating background configuration panel (Top Right) */}
-        {isBgSettingsCollapsed ? (
-          <button
-            type="button"
-            onClick={() => setIsBgSettingsCollapsed(false)}
-            title="Pengaturan Latar Belakang"
-            className="absolute top-4 right-4 z-[999] flex items-center gap-1.5 bg-slate-900/60 backdrop-blur-md hover:bg-slate-900/80 text-slate-300 hover:text-white px-2.5 py-1.5 rounded-xl border border-white/10 shadow-md transition duration-200 cursor-pointer text-[11px] font-bold uppercase tracking-wider select-none animate-bounce-subtle"
-          >
-            <Settings className="h-3.5 w-3.5 text-indigo-400" />
-            <span>Atur Latar</span>
-          </button>
-        ) : (
-          <div className="absolute top-4 right-4 z-[999] flex flex-col sm:flex-row items-center gap-2 bg-slate-900/80 backdrop-blur-md rounded-2xl p-1.5 border border-white/20 shadow-xl select-none animate-fade-in">
-            <span className="text-[10px] font-bold text-slate-300 font-mono tracking-wider pl-2.5 pr-1.5 uppercase">
-              Media Latar
-            </span>
-            <div className="flex bg-slate-950/40 rounded-xl p-0.5 gap-0.5">
-              <button
-                type="button"
-                onClick={() => {
-                  setHeroBgType("video");
-                  localStorage.setItem("prama_hero_bg_type", "video");
-                  changeBgTypeInFirestore("video");
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black tracking-wide transition duration-200 cursor-pointer ${
-                  heroBgType === "video"
-                    ? "bg-indigo-600 text-white shadow-md border border-indigo-500/25"
-                    : "text-slate-400 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                <Video className="h-3.5 w-3.5 shrink-0" />
-                <span>Video</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setHeroBgType("image");
-                  localStorage.setItem("prama_hero_bg_type", "image");
-                  changeBgTypeInFirestore("image");
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black tracking-wide transition duration-200 cursor-pointer ${
-                  heroBgType === "image"
-                    ? "bg-indigo-600 text-white shadow-md border border-indigo-500/25"
-                    : "text-slate-400 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                <Image className="h-3.5 w-3.5 shrink-0" />
-                <span>Foto</span>
-              </button>
-            </div>
-
-            <div className="h-4 w-[1px] bg-white/10 hidden sm:block mx-1" />
-
-            {/* Conditional Upload button based on selected media type */}
-            {heroBgType === "video" ? (
-              <div className="flex items-center gap-1 bg-slate-950/20 rounded-xl p-0.5">
-                <label className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-slate-300 hover:text-white hover:bg-white/5 transition cursor-pointer">
-                  <Upload className="h-3 w-3 shrink-0 text-sky-450" />
-                  <span>Unggah MP4</span>
-                  <input
-                    type="file"
-                    accept="video/mp4,video/x-m4v,video/*"
-                    onChange={handleVideoUpload}
-                    className="hidden"
-                  />
-                </label>
-
-                {(customVideoUrl || (videoSrc && videoSrc.includes("firebasestorage"))) && (
-                  <button
-                    type="button"
-                    onClick={handleResetVideo}
-                    title="Kembalikan Video Default Bawaan"
-                    className="flex items-center justify-center p-1.5 rounded-lg text-rose-450 hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div className="flex items-center gap-1 bg-slate-950/20 rounded-xl p-0.5">
-                <label className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-slate-300 hover:text-white hover:bg-white/5 transition cursor-pointer">
-                  <Upload className="h-3 w-3 shrink-0 text-sky-450" />
-                  <span>Unggah Foto</span>
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg,image/jpg"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-                </label>
-
-                {(customImageUrl || (imageSrc && imageSrc.includes("firebasestorage"))) && (
-                  <button
-                    type="button"
-                    onClick={handleResetImage}
-                    title="Kembalikan Foto Default Bawaan"
-                    className="flex items-center justify-center p-1.5 rounded-lg text-rose-450 hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </button>
-                )}
-              </div>
-            )}
-
-            <div className="h-4 w-[1px] bg-white/15 hidden sm:block mx-1" />
-
-            {/* Collapse Trigger Button */}
-            <button
-              type="button"
-              onClick={() => setIsBgSettingsCollapsed(true)}
-              title="Sembunyikan Pengaturan"
-              className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition duration-200 cursor-pointer"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          </div>
         )}
 
         <div className="menu-content" id="landing-menu-content">
@@ -2795,12 +2705,12 @@ ${lastMsgText}`;
               muted 
               loop 
               playsInline 
+              preload="auto"
               key={videoSrc || "auth-default"}
               referrerPolicy="no-referrer"
               className="w-full h-full object-cover scale-[1.08] origin-center"
-              src={videoSrc}
               onError={() => {
-                const fallbackUrl = "https://assets.mixkit.co/videos/preview/mixkit-truck-driving-on-a-highway-at-night-42289-large.mp4";
+                const fallbackUrl = "https://assets.mixkit.co/videos/preview/mixkit-delivery-truck-on-the-road-33158-large.mp4";
                 if (videoSrc !== fallbackUrl) {
                   console.warn("Setting fallback video stream on error for auth background...");
                   setVideoSrc(fallbackUrl);
@@ -2835,123 +2745,7 @@ ${lastMsgText}`;
           <span>Kembali ke Lobi</span>
         </button>
 
-        {/* Floating background configuration panel (Top Right) */}
-        {isBgSettingsCollapsed ? (
-          <button
-            type="button"
-            onClick={() => setIsBgSettingsCollapsed(false)}
-            title="Pengaturan Latar Belakang"
-            className="absolute top-4 right-4 z-[999] flex items-center gap-1.5 bg-slate-900/60 backdrop-blur-md hover:bg-slate-900/80 text-slate-300 hover:text-white px-2.5 py-1.5 rounded-xl border border-white/10 shadow-md transition duration-200 cursor-pointer text-[11px] font-bold uppercase tracking-wider select-none animate-bounce-subtle"
-          >
-            <Settings className="h-3.5 w-3.5 text-indigo-400" />
-            <span>Atur Latar</span>
-          </button>
-        ) : (
-          <div className="absolute top-4 right-4 z-[999] flex flex-col sm:flex-row items-center gap-2 bg-slate-900/80 backdrop-blur-md rounded-2xl p-1.5 border border-white/20 shadow-xl select-none animate-fade-in">
-            <span className="text-[10px] font-bold text-slate-300 font-mono tracking-wider pl-2.5 pr-1.5 uppercase">
-              Media Latar
-            </span>
-            <div className="flex bg-slate-950/40 rounded-xl p-0.5 gap-0.5">
-              <button
-                type="button"
-                onClick={() => {
-                  setHeroBgType("video");
-                  localStorage.setItem("prama_hero_bg_type", "video");
-                  changeBgTypeInFirestore("video");
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black tracking-wide transition duration-200 cursor-pointer ${
-                  heroBgType === "video"
-                    ? "bg-indigo-600 text-white shadow-md border border-indigo-500/25"
-                    : "text-slate-400 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                <Video className="h-3.5 w-3.5 shrink-0" />
-                <span>Video</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setHeroBgType("image");
-                  localStorage.setItem("prama_hero_bg_type", "image");
-                  changeBgTypeInFirestore("image");
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black tracking-wide transition duration-200 cursor-pointer ${
-                  heroBgType === "image"
-                    ? "bg-indigo-600 text-white shadow-md border border-indigo-500/25"
-                    : "text-slate-400 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                <Image className="h-3.5 w-3.5 shrink-0" />
-                <span>Foto</span>
-              </button>
-            </div>
 
-            <div className="h-4 w-[1px] bg-white/10 hidden sm:block mx-1" />
-
-            {/* Conditional Upload button based on selected media type */}
-            {heroBgType === "video" ? (
-              <div className="flex items-center gap-1 bg-slate-950/20 rounded-xl p-0.5">
-                <label className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-slate-300 hover:text-white hover:bg-white/5 transition cursor-pointer">
-                  <Upload className="h-3 w-3 shrink-0 text-sky-450" />
-                  <span>Unggah MP4</span>
-                  <input
-                    type="file"
-                    accept="video/mp4,video/x-m4v,video/*"
-                    onChange={handleVideoUpload}
-                    className="hidden"
-                  />
-                </label>
-
-                {(customVideoUrl || (videoSrc && videoSrc.includes("firebasestorage"))) && (
-                  <button
-                    type="button"
-                    onClick={handleResetVideo}
-                    title="Kembalikan Video Default Bawaan"
-                    className="flex items-center justify-center p-1.5 rounded-lg text-rose-450 hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div className="flex items-center gap-1 bg-slate-950/20 rounded-xl p-0.5">
-                <label className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-slate-300 hover:text-white hover:bg-white/5 transition cursor-pointer">
-                  <Upload className="h-3 w-3 shrink-0 text-sky-450" />
-                  <span>Unggah Foto</span>
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg,image/jpg"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-                </label>
-
-                {(customImageUrl || (imageSrc && imageSrc.includes("firebasestorage"))) && (
-                  <button
-                    type="button"
-                    onClick={handleResetImage}
-                    title="Kembalikan Foto Default Bawaan"
-                    className="flex items-center justify-center p-1.5 rounded-lg text-rose-450 hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </button>
-                )}
-              </div>
-            )}
-
-            <div className="h-4 w-[1px] bg-white/15 hidden sm:block mx-1" />
-
-            {/* Collapse Trigger Button */}
-            <button
-              type="button"
-              onClick={() => setIsBgSettingsCollapsed(true)}
-              title="Sembunyikan Pengaturan"
-              className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition duration-200 cursor-pointer"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        )}
 
         {/* Auth Card wrapper with elevated relative z-index */}
         <div className="relative z-10 w-full max-w-4xl bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl overflow-hidden grid grid-cols-1 md:grid-cols-2 border border-white/20">
@@ -3257,106 +3051,6 @@ ${lastMsgText}`;
 
         {/* Division selector Body */}
         <div className="max-w-7xl mx-auto px-4 py-11 text-center flex-grow flex flex-col justify-center">
-
-          {/* ----------------- ENTERPRISE BANNER BOX ----------------- */}
-          <div className="max-w-5xl mx-auto w-full mb-8 relative">
-            <div
-              className={`w-full h-36 md:h-44 rounded-[1.5rem] md:rounded-[2rem] border-2 border-dashed overflow-hidden relative transition-all duration-300 flex flex-col items-center justify-center cursor-pointer ${
-                hubBannerImage 
-                  ? "border-transparent bg-slate-900 shadow-xl" 
-                  : isBannerDragging 
-                  ? "border-indigo-500 bg-indigo-50/50 scale-[1.01]" 
-                  : "border-slate-300 hover:border-slate-400 bg-white shadow-sm"
-              }`}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setIsBannerDragging(true);
-              }}
-              onDragLeave={() => setIsBannerDragging(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setIsBannerDragging(false);
-                const file = e.dataTransfer.files?.[0];
-                if (file) handleBannerUpload(file);
-              }}
-              onClick={() => {
-                document.getElementById("hidden-banner-input")?.click();
-              }}
-              title="Seret & letakkan gambar atau klik untuk mengunggah"
-              id="enterprise-banner-clickable"
-            >
-              {hubBannerImage ? (
-                <>
-                  <img
-                    src={hubBannerImage}
-                    alt="Corporate Banner"
-                    className="w-full h-full object-cover rounded-[1.5rem] md:rounded-[2rem]"
-                    referrerPolicy="no-referrer"
-                    id="enterprise-uploaded-banner-img"
-                  />
-                  {/* Hover Overlay */}
-                  <div className="absolute inset-0 bg-slate-950/40 opacity-0 hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-3 rounded-[1.5rem] md:rounded-[2rem]">
-                    <button 
-                      type="button"
-                      className="px-4 py-2 bg-white/95 text-slate-900 hover:bg-white font-semibold text-xs rounded-xl shadow-lg flex items-center gap-2 transition-transform active:scale-95"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        document.getElementById("hidden-banner-input")?.click();
-                      }}
-                      id="btn-change-banner"
-                    >
-                      <span>🔄</span> Ganti Gambar Banner
-                    </button>
-                    <button 
-                      type="button"
-                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold text-xs rounded-xl shadow-lg flex items-center gap-2 transition-transform active:scale-95"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setHubBannerImage(null);
-                        localStorage.removeItem("prama_hub_banner_image");
-                      }}
-                      id="btn-reset-banner"
-                    >
-                      <span>🗑️</span> Hapus
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <div className="p-6 md:p-8 flex flex-col md:flex-row items-center gap-5 text-left max-w-3xl">
-                  {/* Left Blueprint Art */}
-                  <div className="hidden sm:flex h-14 w-14 shrink-0 items-center justify-center rounded-[1.25rem] bg-indigo-50 border border-indigo-100 text-indigo-600 shadow-sm">
-                    <svg className="w-7 h-7 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  {/* Text details */}
-                  <div className="flex-1 text-center md:text-left">
-                    <h4 className="font-display font-black text-slate-800 text-sm md:text-base leading-snug">
-                      UNGGAH GAMBAR HEADER KONTEN KORPORAT
-                    </h4>
-                    <p className="text-xs text-slate-500 font-medium mt-1 leading-relaxed">
-                      Seret & letakkan berkas gambar di sini, atau klik untuk memilih gambar resmi Direktorat Enterprise (Dimensi ideal: 1200 x 200 piksel).
-                    </p>
-                  </div>
-                  {/* Button trigger */}
-                  <span className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-sm tracking-wide transition-all uppercase whitespace-nowrap">
-                    Pilih Berkas
-                  </span>
-                </div>
-              )}
-              
-              <input
-                id="hidden-banner-input"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleBannerUpload(file);
-                }}
-              />
-            </div>
-          </div>
           
           <div className="mb-8 block">
             <span className="font-mono text-[10px] font-extrabold pb-1 bg-indigo-50 border border-indigo-100 text-indigo-700 px-3 py-1 rounded-full uppercase tracking-widest inline-block">
@@ -5103,8 +4797,12 @@ ${lastMsgText}`;
               }}
               clientApiKey={clientApiKey}
               setClientApiKey={(key) => {
-                setClientApiKey(key);
-                localStorage.setItem("workspace_client_api_key", key);
+                let cleanedKey = (key || "").trim();
+                if ((cleanedKey.startsWith('"') && cleanedKey.endsWith('"')) || (cleanedKey.startsWith("'") && cleanedKey.endsWith("'"))) {
+                  cleanedKey = cleanedKey.substring(1, cleanedKey.length - 1).trim();
+                }
+                setClientApiKey(cleanedKey);
+                localStorage.setItem("workspace_client_api_key", cleanedKey);
               }}
               activeDivision={activeDivision}
               onTyping={handleTyping}

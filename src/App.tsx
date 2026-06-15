@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   collection,
   doc,
@@ -239,6 +239,25 @@ export default function App() {
 
   const [customImageUrl, setCustomImageUrl] = useState<string | null>(null);
   const [imageSrc, setImageSrc] = useState<string>("https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8");
+
+  const slideshowImages = useMemo(() => {
+    return [
+      "https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8",
+      "https://lh3.googleusercontent.com/d/1nSoJB2pwraTTxpz_AdyLUsPE7ofF2bff",
+      "https://lh3.googleusercontent.com/d/1jMchFR980yIMX2HGoGAWT3DjTkAm4Cyo",
+      "https://lh3.googleusercontent.com/d/18BXAcvgkENCAyNpgOvdekd3HE1JfCILc"
+    ];
+  }, []);
+
+  const [slideshowIndex, setSlideshowIndex] = useState<number>(0);
+
+  useEffect(() => {
+    if (heroBgType !== "image") return;
+    const interval = setInterval(() => {
+      setSlideshowIndex((prev) => (prev + 1) % slideshowImages.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [heroBgType, slideshowImages]);
 
   const landingVideoRef = useRef<HTMLVideoElement>(null);
   const authVideoRef = useRef<HTMLVideoElement>(null);
@@ -809,6 +828,105 @@ export default function App() {
     });
     return initial;
   });
+
+  // Customized states for Article mode, Web Previews, PowerPoint Presenter Voice and Workflows
+  const [workspaceViewState, setWorkspaceViewState] = useState<"editor" | "article" | "workflow">("editor");
+  const [webDocPreview, setWebDocPreview] = useState<"none" | "word" | "ppt">("none");
+  const [projectPptSlideIndex, setProjectPptSlideIndex] = useState<number>(0);
+  const [isSpeechPresenterActive, setIsSpeechPresenterActive] = useState<boolean>(false);
+  const [isPlayingSpeech, setIsPlayingSpeech] = useState<boolean>(false);
+  const [speechRate, setSpeechRate] = useState<number>(1.1);
+  const [autoNextPPT, setAutoNextPPT] = useState<boolean>(true);
+  const [countdownTransition, setCountdownTransition] = useState<number>(0);
+  const [activeWorkflowNode, setActiveWorkflowNode] = useState<number | null>(null);
+
+  // TTS Narration function for PowerPoint Slide Presenter Mode
+  const speakProjectPptSlide = () => {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel(); // Stop any pending speech
+
+    let textToSpeak = "";
+    if (projectPptSlideIndex === 0) {
+      // Cover Page
+      textToSpeak = `Selamat datang di Presentasi Kajian Strategis Proyek: ${dashboardProjectTitle}. Kami akan memaparkan empat belas pilar utama analisis proposal dan manajemen proyek terpadu secara langsung. Mari kita tinjau pilar demi pilar demi kesuksesan operasional Pancaran Group.`;
+    } else if (projectPptSlideIndex === 15) {
+      // Closing
+      textToSpeak = `Demikian pemaparan seluruh empat belas pilar strategis dari Prama Advisor Intelligent Assistant. Terima kasih yang sebesar-besarnya atas perhatian dan waktu Bapak Ibu sekalian. Semoga rencana transisi dan ekspedisi Pancaran Group berjalan sukses. Sampai jumpa.`;
+    } else {
+      // Pillars 1 to 14
+      const sec = defaultDashboardSections[projectPptSlideIndex - 1];
+      const docVal = dashboardSectionsState[sec.number] || sec.defaultContent;
+      
+      // Clean contents for voice reader
+      const cleanedLines = docVal.split("\n")
+        .map(l => l.trim())
+        .filter(l => l.length > 0 && !l.startsWith("###"))
+        .map(l => l.replace(/\*\*/g, "").replace(/^\*\s*/, "").replace(/^-\s*/, ""));
+      
+      const summarySpeech = cleanedLines.slice(0, 3).join(". ");
+      textToSpeak = `Pilar ke ${sec.number}: ${sec.title}. ${sec.shortDesc}. Beberapa poin penting formulasi adalah sebagai berikut. ${summarySpeech}. Evaluasi kepatuhan pilar ini dinyatakan aman dan setara standar internal.`;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
+    utterance.lang = "id-ID";
+    utterance.rate = speechRate;
+    
+    utterance.onstart = () => {
+      setIsPlayingSpeech(true);
+      setCountdownTransition(0);
+    };
+
+    utterance.onend = () => {
+      setIsPlayingSpeech(false);
+      if (autoNextPPT && projectPptSlideIndex < 15) {
+        setCountdownTransition(3);
+      }
+    };
+
+    utterance.onerror = () => {
+      setIsPlayingSpeech(false);
+    };
+
+    window.speechSynthesis.speak(utterance);
+  };
+
+  // PowerPoint Auto-Next countdown logic
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (countdownTransition > 0) {
+      timer = setTimeout(() => {
+        setCountdownTransition((prev) => {
+          if (prev <= 1) {
+            const nextIdx = projectPptSlideIndex + 1;
+            if (nextIdx <= 15) {
+              setProjectPptSlideIndex(nextIdx);
+            }
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [countdownTransition, projectPptSlideIndex]);
+
+  // Voice narration triggers based on slide index and presenter active state
+  useEffect(() => {
+    if (isSpeechPresenterActive) {
+      speakProjectPptSlide();
+    } else {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+      setIsPlayingSpeech(false);
+      setCountdownTransition(0);
+    }
+    return () => {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, [projectPptSlideIndex, isSpeechPresenterActive, speechRate, autoNextPPT]);
 
   // Sidebar search & collections states
   const [searchMessagesQuery, setSearchMessagesQuery] = useState("");
@@ -2650,21 +2768,80 @@ ${lastMsgText}`;
             <source src={videoSrc} type="video/mp4" />
           </video>
         ) : (
-          <img 
-            src={imageSrc || "https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8"} 
-            alt="Pancaran Group Background" 
-            referrerPolicy="no-referrer"
-            className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 animate-fade-in scale-[1.08] origin-center"
-            style={{ zIndex: -1, opacity: 0.65 }}
-          />
+          slideshowImages.map((src, idx) => (
+            <img 
+              key={src}
+              src={src} 
+              alt={`Pancaran Group Background ${idx + 1}`} 
+              referrerPolicy="no-referrer"
+              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 scale-[1.08] origin-center`}
+              style={{ zIndex: -1, opacity: idx === slideshowIndex ? 0.65 : 0 }}
+            />
+          ))
+        )}
+
+        {heroBgType === "image" && (
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex gap-2">
+            {slideshowImages.map((_, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => setSlideshowIndex(idx)}
+                className={`h-1.5 transition-all duration-300 rounded-full cursor-pointer ${
+                  idx === slideshowIndex ? "w-8 bg-emerald-400" : "w-1.5 bg-white/40 hover:bg-white/70"
+                }`}
+                title={`Slide ${idx + 1}`}
+              />
+            ))}
+          </div>
         )}
 
         <div className="menu-content" id="landing-menu-content">
           <h1>Pancaran Group</h1>
-          <p>Solusi Logistik Masa Depan</p>
+          <p className="mb-6">Solusi Logistik Masa Depan</p>
+
+          {/* Selector Tipe Latar (Video atau Foto) */}
+          <div className="flex flex-col items-center gap-1.5 mb-8">
+            <span className="text-[10px] uppercase font-mono font-black tracking-widest text-slate-300 opacity-80 select-none">
+              Pilihan Media Latar Belakang:
+            </span>
+            <div className="flex bg-slate-950/60 backdrop-blur-md border border-white/10 rounded-2xl p-1 gap-1 w-64 shadow-xl">
+              <button
+                type="button"
+                onClick={() => {
+                  setHeroBgType("video");
+                  localStorage.setItem("prama_hero_bg_type", "video");
+                }}
+                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black tracking-wide transition duration-300 cursor-pointer ${
+                  heroBgType === "video"
+                    ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <Video className="h-3.5 w-3.5 shrink-0" />
+                <span>Video Latar</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setHeroBgType("image");
+                  localStorage.setItem("prama_hero_bg_type", "image");
+                }}
+                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black tracking-wide transition duration-300 cursor-pointer ${
+                  heroBgType === "image"
+                    ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <Image className="h-3.5 w-3.5 shrink-0" />
+                <span>Foto Latar</span>
+              </button>
+            </div>
+          </div>
+
           <button 
             type="button"
-            className="btn-mulai font-bold" 
+            className="btn-mulai font-bold mt-2" 
             id="btn-mulai-jelajah"
             onClick={() => {
               setShowHeroLanding(false);
@@ -2706,12 +2883,16 @@ ${lastMsgText}`;
               <source src={videoSrc} type="video/mp4" />
             </video>
           ) : (
-            <img 
-              src={imageSrc || "https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8"} 
-              alt="Pancaran Group Background" 
-              referrerPolicy="no-referrer"
-              className="w-full h-full object-cover scale-[1.08] origin-center"
-            />
+            slideshowImages.map((src, idx) => (
+              <img 
+                key={src}
+                src={src} 
+                alt={`Pancaran Group Background ${idx + 1}`} 
+                referrerPolicy="no-referrer"
+                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 scale-[1.08] origin-center`}
+                style={{ opacity: idx === slideshowIndex ? 1 : 0 }}
+              />
+            ))
           )}
           {/* Elegant Dark/Blur Overlay to focus and elevate contrast */}
           <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-sm" />
@@ -2730,6 +2911,40 @@ ${lastMsgText}`;
           <ArrowLeft className="h-3.5 w-3.5" />
           <span>Kembali ke Lobi</span>
         </button>
+
+        {/* Floating Background Selector on the top right */}
+        <div className="absolute top-4 right-4 z-[999] flex bg-slate-900/60 backdrop-blur-md border border-white/10 rounded-xl p-1 gap-1 shadow-md text-xs select-none">
+          <button
+            type="button"
+            onClick={() => {
+              setHeroBgType("video");
+              localStorage.setItem("prama_hero_bg_type", "video");
+            }}
+            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10.5px] font-black transition duration-200 cursor-pointer ${
+              heroBgType === "video"
+                ? "bg-indigo-650 text-white shadow"
+                : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            <Video className="h-3 w-3 shrink-0" />
+            <span>VIDEO</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setHeroBgType("image");
+              localStorage.setItem("prama_hero_bg_type", "image");
+            }}
+            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10.5px] font-black transition duration-200 cursor-pointer ${
+              heroBgType === "image"
+                ? "bg-indigo-650 text-white shadow"
+                : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            <Image className="h-3 w-3 shrink-0" />
+            <span>FOTO</span>
+          </button>
+        </div>
 
 
 
@@ -3406,35 +3621,56 @@ ${lastMsgText}`;
                   </div>
                 </div>
 
-                {/* Combined Export Buttons */}
-                <div className="flex flex-wrap sm:flex-nowrap gap-3 shrink-0 pt-2 lg:pt-0">
-                  {/* Word Full Export */}
-                  <button
-                    onClick={() => {
-                      exportAllSectionsToWord(dashboardProjectTitle, dashboardSectionsState);
-                    }}
-                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white text-[11px] font-black rounded-xl px-4 py-3 shadow-md transition-all cursor-pointer hover:shadow-lg hover:-translate-y-0.5 border border-indigo-550 border-indigo-500"
-                  >
-                    <FileText className="h-4 w-4 shrink-0 text-indigo-200" />
-                    <div className="text-left">
-                      <span className="block text-[8px] text-indigo-300 font-extrabold tracking-wider leading-none uppercase">DOKUMEN PENUH</span>
-                      <span className="block leading-snug mt-0.5">Unduh WORD Lengkap</span>
-                    </div>
-                  </button>
+                {/* Combined Export Buttons & Web Viewers */}
+                <div className="flex flex-wrap gap-2 shrink-0 pt-2 lg:pt-0">
+                  {/* WORD Controls block */}
+                  <div className="flex items-center gap-1.5 bg-indigo-50/60 p-1.5 rounded-2xl border border-indigo-100">
+                    <button
+                      type="button"
+                      onClick={() => setWebDocPreview("word")}
+                      className="flex items-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[10px] font-black rounded-xl px-3 py-2.5 transition shadow-sm cursor-pointer border border-indigo-200"
+                      title="Buka Pratinjau WORD Interaktif di Web"
+                    >
+                      <Eye className="h-3.5 w-3.5 text-indigo-500" />
+                      <span>Pratinjau Word</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        exportAllSectionsToWord(dashboardProjectTitle, dashboardSectionsState);
+                      }}
+                      className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black rounded-xl px-3.5 py-2.5 transition shadow-md cursor-pointer"
+                      title="Unduh file Word hasil kompilasi"
+                    >
+                      <FileText className="h-3.5 w-3.5 text-indigo-100" />
+                      <span>Unduh Word</span>
+                    </button>
+                  </div>
 
-                  {/* PPT Full Export */}
-                  <button
-                    onClick={async () => {
-                      await exportAllSectionsToPPTX(dashboardProjectTitle, dashboardSectionsState);
-                    }}
-                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-700 active:scale-[0.98] text-white text-[11px] font-black rounded-xl px-4 py-3 shadow-md transition-all cursor-pointer hover:shadow-lg hover:-translate-y-0.5 border border-sky-550 border-sky-500"
-                  >
-                    <Presentation className="h-4 w-4 shrink-0 text-sky-200" />
-                    <div className="text-left">
-                      <span className="block text-[8px] text-sky-300 font-extrabold tracking-wider leading-none uppercase">SLIDE PRESENTASI</span>
-                      <span className="block leading-snug mt-0.5">Unduh PPTX Lengkap</span>
-                    </div>
-                  </button>
+                  {/* PPT Controls block */}
+                  <div className="flex items-center gap-1.5 bg-sky-50/60 p-1.5 rounded-2xl border border-sky-100">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setWebDocPreview("ppt");
+                        setActiveSlideIndex(0);
+                      }}
+                      className="flex items-center gap-1.5 bg-sky-50 hover:bg-sky-100 text-sky-700 text-[10px] font-black rounded-xl px-3 py-2.5 transition shadow-sm cursor-pointer border border-sky-200"
+                      title="Pratinjau Slide Presentasi PPT & Aktifkan Fitur Suara Narasi"
+                    >
+                      <Eye className="h-3.5 w-3.5 text-sky-500" />
+                      <span>Pratinjau PPT</span>
+                    </button>
+                    <button
+                      onClick={async () => {
+                        await exportAllSectionsToPPTX(dashboardProjectTitle, dashboardSectionsState);
+                      }}
+                      className="flex items-center gap-1.5 bg-sky-600 hover:bg-sky-700 text-white text-[10px] font-black rounded-xl px-3.5 py-2.5 transition shadow-md cursor-pointer"
+                      title="Unduh file PowerPoint"
+                    >
+                      <Presentation className="h-3.5 w-3.5 text-sky-100" />
+                      <span>Unduh PPTX</span>
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -3543,26 +3779,309 @@ ${lastMsgText}`;
                           </div>
                         </div>
 
+                        {/* Tab Switcher for Editor vs Article View vs Workflow Skema */}
+                        <div className="flex border-b border-slate-200 gap-1.5 shrink-0 overflow-x-auto select-none bg-slate-100 p-1.5 rounded-2xl">
+                          <button
+                            type="button"
+                            onClick={() => setWorkspaceViewState("editor")}
+                            className={`flex items-center gap-1.5 px-3.5 py-2.5 text-[10.5px] font-black rounded-xl transition ${
+                              workspaceViewState === "editor"
+                                ? "bg-white text-slate-800 border border-slate-200 shadow-sm"
+                                : "text-slate-500 hover:bg-slate-200 hover:text-slate-700"
+                            }`}
+                          >
+                            <SquarePen className="h-3.5 w-3.5 text-indigo-505" />
+                            <span>✏️ Formulasi Draf (Editor)</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setWorkspaceViewState("article")}
+                            className={`flex items-center gap-1.5 px-3.5 py-2.5 text-[10.5px] font-black rounded-xl transition ${
+                              workspaceViewState === "article"
+                                ? "bg-white text-emerald-800 border border-slate-200 shadow-sm"
+                                : "text-slate-500 hover:bg-slate-200 hover:text-emerald-700"
+                            }`}
+                          >
+                            <BookOpen className="h-3.5 w-3.5 text-emerald-550" />
+                            <span>📰 Elegansi Artikel (Tipografi)</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setWorkspaceViewState("workflow")}
+                            className={`flex items-center gap-1.5 px-3.5 py-2.5 text-[10.5px] font-black rounded-xl transition ${
+                              workspaceViewState === "workflow"
+                                ? "bg-white text-indigo-850 border border-slate-200 shadow-sm"
+                                : "text-slate-500 hover:bg-slate-200 hover:text-indigo-800"
+                            }`}
+                          >
+                            <Grid className="h-3.5 w-3.5 text-indigo-500" />
+                            <span>📊 Skema Alur Workflow {activeSec.number === 5 ? "(Pilar 5 Struktur)" : ""}</span>
+                          </button>
+                        </div>
+
                         {/* Editor Canvas Block */}
                         <div className="flex-grow grid grid-cols-1 xl:grid-cols-12 gap-5 min-h-0">
-                          {/* Live Text Area Editor */}
-                          <div className="xl:col-span-8 flex flex-col min-h-[300px]">
-                            <div className="flex items-center justify-between px-3.5 py-2 bg-slate-800 rounded-t-xl text-white text-[9.5px] font-bold font-mono tracking-widest shrink-0">
-                              <span>WORKSPACE EDITOR PRAMA ADVISOR</span>
-                              <span className="text-emerald-400">BAHASA INDONESIA</span>
+                          {/* Conditional Workspace View */}
+                          {workspaceViewState === "editor" ? (
+                            /* Live Text Area Editor */
+                            <div className="xl:col-span-8 flex flex-col min-h-[300px]">
+                              <div className="flex items-center justify-between px-3.5 py-2 bg-slate-800 rounded-t-xl text-white text-[9.5px] font-bold font-mono tracking-widest shrink-0">
+                                <span>WORKSPACE EDITOR PRAMA ADVISOR</span>
+                                <span className="text-emerald-400">BAHASA INDONESIA</span>
+                              </div>
+                              <textarea
+                                value={val}
+                                onChange={(e) => {
+                                  setDashboardSectionsState(prev => ({
+                                    ...prev,
+                                    [activeDashboardSection]: e.target.value
+                                  }));
+                                }}
+                                className="w-full h-full min-h-[250px] p-4 text-xs font-mono bg-slate-900 text-slate-100 rounded-b-xl border border-slate-800 outline-none leading-relaxed resize-none shadow-inner"
+                                placeholder="Ketik draf di sini..."
+                              />
                             </div>
-                            <textarea
-                              value={val}
-                              onChange={(e) => {
-                                setDashboardSectionsState(prev => ({
-                                  ...prev,
-                                  [activeDashboardSection]: e.target.value
-                                }));
-                              }}
-                              className="w-full h-full min-h-[250px] p-4 text-xs font-mono bg-slate-900 text-slate-100 rounded-b-xl border border-slate-800 outline-none leading-relaxed resize-none shadow-inner"
-                              placeholder="Ketik formulasi draf baru di sini..."
-                            />
-                          </div>
+                          ) : workspaceViewState === "article" ? (
+                            /* Classic Typography Article Layout Viewer */
+                            <div className="xl:col-span-8 bg-white border border-slate-205 border-slate-200 rounded-2xl p-6 md:p-8 flex flex-col overflow-y-auto max-h-[500px] shadow-sm relative text-left">
+                              {/* Glowing Reading progress top handle */}
+                              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-indigo-500 rounded-t-2xl" />
+
+                              <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-5 shrink-0">
+                                <div className="flex items-center gap-2 text-[9.5px] font-bold text-slate-400 font-mono">
+                                  <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded leading-none">BACAAN KELAYAKAN</span>
+                                  <span>•</span>
+                                  <span>ESTIMASI: ~{Math.max(1, Math.round(val.split(/\s+/).length / 140))} MENIT</span>
+                                  <span>•</span>
+                                  <span>{val.split(/\s+/).length} KATA</span>
+                                </div>
+                                <button 
+                                  type="button" 
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(val);
+                                    alert("Salin isi artikel pilar berhasil diduplikasi!");
+                                  }}
+                                  className="text-[9.5px] font-black text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2.5 py-1 rounded-lg transition-all cursor-pointer"
+                                >
+                                  Salin Teks Artikel
+                                </button>
+                              </div>
+
+                              {/* Typography content wrapper */}
+                              <div className="flex-grow">
+                                <div className="mb-5">
+                                  <span className="text-[9px] font-mono font-black tracking-widest text-emerald-600 uppercase block mb-1">PRAMA MITRA EXCLUSIVE DOSSIER</span>
+                                  <h2 className="text-xl md:text-2xl font-black text-slate-800 uppercase tracking-tight font-display">{activeSec.title}</h2>
+                                  <div className="flex items-center gap-2.5 mt-2.5">
+                                    <div className="h-6 w-6 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-[10px] text-white font-serif">P</div>
+                                    <div className="text-[11px] font-bold text-slate-500">
+                                      Oleh <span className="text-slate-800 font-bold">PRAMA Strategic Advisor Team</span> • Diperbarui {new Date().toLocaleDateString("id-ID", { year: "numeric", month: "long" })}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="prose prose-sm max-w-none text-slate-700 leading-relaxed font-sans mt-4">
+                                  {(() => {
+                                    const paragraphs = val.split("\n").map(p => p.trim()).filter(Boolean);
+                                    let isFirstParagraph = true;
+                                    return paragraphs.map((textLine, sIdx) => {
+                                      if (textLine.startsWith("###")) {
+                                        return (
+                                          <h4 key={sIdx} className="text-[13px] font-black text-indigo-900 border-b border-indigo-100 pb-1 mt-5 mb-2 uppercase tracking-wide">
+                                            {textLine.replace(/^###\s*/, "")}
+                                          </h4>
+                                        );
+                                      }
+                                      if (textLine.startsWith("* ") || textLine.startsWith("- ")) {
+                                        return (
+                                          <div key={sIdx} className="flex gap-2 items-start pl-4 py-1.5 border-l-2 border-emerald-500 bg-slate-50 rounded-r-lg my-1.5 font-sans">
+                                            <span className="text-emerald-500 font-bold text-[10px] select-none">✓</span>
+                                            <p className="text-[11px] font-bold text-slate-600 m-0 animate-none">
+                                              {textLine.replace(/^[\*\-]\s*/, "").replace(/\*\*/g, "")}
+                                            </p>
+                                          </div>
+                                        );
+                                      }
+
+                                      const strippedLine = textLine.replace(/\*\*/g, "");
+                                      // Apply beautiful drop caps for aesthetic purposes
+                                      if (isFirstParagraph && strippedLine.length > 30) {
+                                        isFirstParagraph = false;
+                                        const cap = strippedLine.charAt(0);
+                                        const tail = strippedLine.slice(1);
+                                        return (
+                                          <p key={sIdx} className="text-[11.5px] text-slate-600 leading-relaxed font-semibold my-3 text-justify font-sans">
+                                            <span className="float-left text-3xl font-serif font-black text-indigo-700 mr-2 mt-0.5 leading-none uppercase">{cap}</span>
+                                            {tail}
+                                          </p>
+                                        );
+                                      }
+
+                                      return (
+                                        <p key={sIdx} className={`text-[11.5px] leading-relaxed text-slate-650 ${textLine.startsWith("**") ? "font-black text-indigo-950 mt-4 border-l-2 border-indigo-200 pl-2" : "font-semibold"} my-2.5 text-justify font-sans`}>
+                                          {strippedLine}
+                                        </p>
+                                      );
+                                    });
+                                  })()}
+                                </div>
+                              </div>
+
+                              {/* Approved electronic seal watermark */}
+                              <div className="mt-6 pt-5 border-t border-slate-100 flex flex-wrap justify-between items-center gap-4 bg-slate-50 p-4 rounded-xl shrink-0 select-none">
+                                <div>
+                                  <span className="text-[8px] font-black text-slate-400 font-mono uppercase tracking-wider block leading-none mb-1">CLASSIFIED MATURITY LEVEL</span>
+                                  <span className="text-[10px] font-black text-rose-600 font-mono bg-rose-50 border border-rose-100 rounded px-2 py-0.5">RAHASIA / TERBATAS KORPORAT</span>
+                                </div>
+                                <div className="text-right flex items-center gap-1.5 font-mono text-[8.5px] font-bold text-slate-400">
+                                  <div>
+                                    <div>PRAMA VERIFICATION SYSTEM</div>
+                                    <div className="text-emerald-600 text-[9px] font-black uppercase">✓ APPROVED TO PUBLIC DISPATCH</div>
+                                  </div>
+                                  <div className="h-8 w-8 rounded bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 text-[13px] font-bold">★</div>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            /* Live Interactive Workflow Diagram Scheme */
+                            <div className="xl:col-span-8 flex flex-col bg-slate-900 border border-slate-800 rounded-2xl p-5 min-h-[300px] text-white relative overflow-hidden select-none text-left">
+                              {/* Ambient style background animation */}
+                              <style>{`
+                                @keyframes dash {
+                                  to {
+                                    stroke-dashoffset: -100;
+                                  }
+                                }
+                              `}</style>
+                              <div className="absolute inset-x-0 inset-y-0 opacity-15 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:16px_16px]" />
+                              
+                              <div className="flex items-center justify-between z-10 border-b border-slate-800 pb-3 mb-4 shrink-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="block h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                                  <span className="font-mono text-[9px] font-black uppercase tracking-widest text-emerald-400">
+                                    CLOSED-LOOP LOGISTICS PROCESS CHART {activeSec.number === 5 ? "(STRUKTUR NILAI)" : "(PILAR ALUR)"}
+                                  </span>
+                                </div>
+                                
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    let nodeIdx = 1;
+                                    const interval = setInterval(() => {
+                                      setActiveWorkflowNode(nodeIdx);
+                                      nodeIdx = (nodeIdx % 5) + 1;
+                                    }, 2000);
+                                    
+                                    alert("Memulai simulasi tracking digital aktif! Setiap gate akan berpindah otomatis.");
+                                    
+                                    setTimeout(() => {
+                                      clearInterval(interval);
+                                      setActiveWorkflowNode(null);
+                                    }, 10000);
+                                  }}
+                                  className="px-2.5 py-1 bg-gradient-to-r from-emerald-600 to-indigo-600 rounded-lg text-[9px] font-mono uppercase tracking-wider text-white font-black shadow-sm transition active:scale-95 cursor-pointer border-none"
+                                >
+                                  SIMULASIKAN ALUR 🚀
+                                </button>
+                              </div>
+
+                              {/* Elegant Node SVG Layout */}
+                              <div className="flex-grow flex flex-col items-center justify-center p-4 relative min-h-[220px] z-10 overflow-x-auto w-full">
+                                <svg className="absolute w-[90%] h-12 left-[5%] top-1/2 -translate-y-1/2 pointer-events-none z-0" style={{ minWidth: "480px" }}>
+                                  <line x1="10%" y1="50%" x2="90%" y2="50%" stroke="#1e293b" strokeWidth="6" strokeLinecap="round" />
+                                  <line 
+                                    x1="10%" y1="50%" x2="90%" y2="50%" 
+                                    stroke="url(#workflowGlowGradient)" strokeWidth="3" 
+                                    strokeLinecap="round" strokeDasharray="14 18"
+                                    style={{ animation: "dash 4s linear infinite" }}
+                                  />
+                                  <defs>
+                                    <linearGradient id="workflowGlowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                      <stop offset="0%" stopColor="#10b981" />
+                                      <stop offset="50%" stopColor="#3b82f6" />
+                                      <stop offset="100%" stopColor="#ec4899" />
+                                    </linearGradient>
+                                  </defs>
+                                </svg>
+
+                                <div className="flex items-center justify-between w-full relative z-10 gap-2 max-w-4xl" style={{ minWidth: "480px" }}>
+                                  {[
+                                    { id: 1, label: "Client Site", code: "ORIGIN", desc: "Pengepakan ISO & Manifest", icon: "🏢", status: "TERVERIFIKASI" },
+                                    { id: 2, label: "Digital Inspect", code: "HSE-GATE", desc: "Verifikasi RFID & Segel GPS", icon: "🛡️", status: "DISEGEL DIGITAL" },
+                                    { id: 3, label: "Logistics Fleet", code: "ARMADA", desc: "GPS IoT Real-time Speed Monitoring", icon: "🚚", status: "DIJALAN (RUTE)" },
+                                    { id: 4, label: "WIM weighing", code: "TIMBANG", desc: "Timbang Otomatis & Festronik", icon: "⚖", status: "ANTRIAN GERBANG" },
+                                    { id: 5, label: "Licensed Proc", code: "DEST-END", desc: "Insinerasi & Manifes Selesai", icon: "♻", status: "SELESAI OPERASI" }
+                                  ].map((node) => {
+                                    const isSelected = activeWorkflowNode === node.id || (!activeWorkflowNode && node.id === 1);
+                                    return (
+                                      <div 
+                                        key={node.id} 
+                                        onClick={() => setActiveWorkflowNode(node.id)}
+                                        className="flex flex-col items-center cursor-pointer transition-all duration-300"
+                                      >
+                                        <div className={`relative h-12 w-12 rounded-xl flex items-center justify-center border transition-all ${
+                                          isSelected 
+                                            ? "bg-slate-950 border-emerald-400 ring-4 ring-emerald-950/80 scale-110 shadow-lg" 
+                                            : "bg-slate-950/80 border-slate-800 hover:border-slate-700"
+                                        }`}>
+                                          {isSelected && (
+                                            <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                                              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+                                            </span>
+                                          )}
+                                          <span className="text-lg">{node.icon}</span>
+                                        </div>
+
+                                        <div className="text-center mt-2">
+                                          <p className={`text-[9.5px] font-black tracking-wide leading-none ${isSelected ? "text-emerald-400" : "text-slate-350"}`}>
+                                            {node.label}
+                                          </p>
+                                          <p className="text-[7px] font-black font-mono text-slate-500 tracking-wider">
+                                            {node.code}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+
+                              {/* Footer Detail Panel */}
+                              {(() => {
+                                const selectedDetail = [
+                                  { id: 1, label: "Situs Origin Pengirim (Client Site)", code: "ORIGIN", detail: "Klien mengemas dan menyortir limbah B3 sesuai regulasi UN Class/ISO. Manifest Festronik diisi secara elektronik di awal.", SLA: "SLA Kembalian Kontainer: <2 Jam", keyHSE: "Risiko Tumpahan: Sangat Kecil" },
+                                  { id: 2, label: "HSE Gate (Digital Inspection)", code: "HSE-GATE", detail: "Pengecekan manifes jalan dan KIR. Pintu kargo disegel segel elektronik, scan QR-code FESTRONIK terpadu dilepas.", SLA: "SLA Inspeksi Gate: 15 Menit", keyHSE: "Indikator Kunci: RFID & Driver OK" },
+                                  { id: 3, label: "Logistics Fleet (Transit)", code: "ARMADA", detail: "Armada Vacuum Truck/Multi-Axle Box logistik melewati rute yang disetujui. GPS IoT melacak parameter kecapatan & koordinat secara langsung.", SLA: "SLA Kecepatan Rute: 100% Sesuai Rute Kemenhub", keyHSE: "Kunci HSE: Pembatas Kecepatan 60kmh" },
+                                  { id: 4, label: "Weigh-In-Motion Gate", code: "TIMBANG", detail: "Timbangan berat otomatis otomatis. Apabila berat muatan terverifikasi aman, pelunasan jembatan timbang di-push ke server.", SLA: "SLA Timbang Jalan: Real-time API", keyHSE: "Kunci HSE: Toleransi Penyimpangan < 0.5%" },
+                                  { id: 5, label: "Fasilitas Pengolah Akhir (Licensed Destination)", code: "DEST-END", detail: "Pemusnahan atau insinerasi ramah lingkungan oleh mitra berbadan hukum resmi. Manifes Festronik di-closed bersatus 'Selesai'.", SLA: "SLA Manifes Pelaporan: <24 Jam", keyHSE: "Risiko Emisi: Zero Discharge & Standard AMDAL" }
+                                ].find(n => n.id === (activeWorkflowNode || 1));
+
+                                return (
+                                  <div className="mt-4 pt-3 border-t border-slate-800 bg-slate-950/60 p-3 rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-3 z-10 relative">
+                                    <div className="max-w-md font-sans">
+                                      <span className="text-[7.5px] font-black bg-indigo-950 text-indigo-400 border border-indigo-900 leading-none px-1.5 py-0.5 rounded uppercase tracking-wider font-mono">
+                                        DETIL GATE OPERASI: {selectedDetail?.code}
+                                      </span>
+                                      <h5 className="font-extrabold text-[11px] text-slate-100 mt-1 uppercase font-display">
+                                        {selectedDetail?.label}
+                                      </h5>
+                                      <p className="text-[10px] text-slate-400 leading-normal mt-1 font-semibold">
+                                        {selectedDetail?.detail}
+                                      </p>
+                                    </div>
+                                    <div className="text-left md:text-right text-slate-400 font-mono text-[8px] font-extrabold flex flex-col gap-0.5 shrink-0">
+                                      <div className="text-emerald-400">{selectedDetail?.SLA}</div>
+                                      <div className="text-pink-400">{selectedDetail?.keyHSE}</div>
+                                      <div>INTEGRAL PRAMA ADVISOR</div>
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          )}
 
                           {/* Interactive Preview & Guidelines Container */}
                           <div className="xl:col-span-4 flex flex-col gap-4">
@@ -3615,9 +4134,429 @@ ${lastMsgText}`;
               </div>
 
               {/* Footer detail */}
-              <div className="bg-slate-900 border-t border-slate-800 text-[9.5px] text-slate-500 text-center py-2.5 font-mono select-none">
+              <div className="bg-slate-900 border-t border-slate-800 text-[9.5px] text-slate-500 text-center py-2.5 font-mono select-none text-center">
                 PT PANCARAN GROUP LOGISTICS SERVICES INTEGRATED CLOUD SYSTEM &bull; PRAMA ADVISOR v1.5
               </div>
+
+              {/* 📄 WORD LIVE WEB DOCUMENT SIMULATOR PREVIEW OVERLAY */}
+              {webDocPreview === "word" && (
+                <div className="fixed inset-0 wrongs-scrollbar z-50 overflow-y-auto bg-slate-950/95 backdrop-blur-md flex items-start justify-center p-4">
+                  <div className="bg-slate-850 rounded-3xl w-full max-w-5xl border border-slate-800 shadow-2xl flex flex-col my-8 overflow-hidden max-h-[90vh]">
+                    {/* Header control toolbar */}
+                    <div className="bg-slate-950 px-6 py-4 border-b border-slate-850 flex flex-wrap items-center justify-between gap-4 shrink-0 shadow-lg text-white">
+                      <div className="flex items-center gap-3">
+                        <div className="h-9 w-9 bg-indigo-950 border border-indigo-800 rounded-xl flex items-center justify-center text-lg font-semibold shadow">
+                          📄
+                        </div>
+                        <div className="text-left">
+                          <h3 className="text-[12px] font-black uppercase tracking-wider text-white leading-none">Web Document Viewer</h3>
+                          <p className="text-[10px] text-slate-450 font-bold font-mono mt-1">Live MS Word A4 layout simulator</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => exportAllSectionsToWord(dashboardProjectTitle, dashboardSectionsState)}
+                          className="bg-indigo-600 hover:bg-indigo-550 text-white text-[10.5px] font-black px-4 py-2.5 rounded-xl flex items-center gap-1.5 shadow-md transition cursor-pointer"
+                        >
+                          <Download className="h-3.5 w-3.5" />
+                          <span>Unduh File Word (.doc)</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setWebDocPreview("none")}
+                          className="bg-slate-800 hover:bg-slate-705 text-slate-300 hover:text-white text-[10.5px] font-black px-4 py-2.5 rounded-xl transition cursor-pointer border border-slate-700"
+                        >
+                          Tutup Pratinjau ✕
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Document feed viewport simulating actual printed sheets */}
+                    <div className="flex-grow overflow-y-auto p-6 md:p-12 space-y-8 bg-slate-900 scrollbar-thin flex flex-col items-center">
+                      {/* PAGE 1: Corporate Cover Page */}
+                      <div className="bg-white border border-slate-200 rounded-lg shadow-2xl w-full md:w-[210mm] min-h-[297mm] p-16 flex flex-col justify-between text-slate-800 font-sans relative aspect-[1/1.414] text-left">
+                        <div className="absolute top-0 left-0 right-0 h-4 bg-indigo-650 rounded-t-lg" />
+                        
+                        {/* Cover Header */}
+                        <div className="flex justify-between items-center text-[9px] uppercase font-mono font-black tracking-widest text-indigo-655">
+                          <span>PANCARAN GROUP ENTERPRISE SERVICES</span>
+                          <span>CONFIDENTIAL / INTERNAL USE ONLY</span>
+                        </div>
+
+                        {/* Cover Middle block with elegant styling */}
+                        <div className="my-auto text-left border-l-4 border-emerald-500 pl-8 py-6">
+                          <span className="text-[10px] font-mono tracking-widest font-black uppercase text-indigo-600 block mb-2">INTEGRATED FEASIBILITY STUDY</span>
+                          <h1 className="text-3xl md:text-4xl font-black text-slate-900 leading-tight uppercase font-display tracking-tight leading-none mb-2">
+                            14 PILAR UTAMA ANALYSIS PROPOSAL & PM
+                          </h1>
+                          <p className="text-slate-500 font-bold font-mono text-[10px] mt-1.5 uppercase tracking-wide">
+                            Sistem Formulasi & Analisis Kompherensif Proposal Strategis
+                          </p>
+                          
+                          <div className="h-px bg-slate-200 my-8 w-1/2" />
+                          
+                          <span className="text-[9px] text-slate-400 font-black block font-mono">PROYEK KAJIAN / TARGET EKSPEDISI</span>
+                          <div className="text-lg md:text-xl font-black text-slate-800 uppercase mt-1 leading-normal font-sans">
+                            {dashboardProjectTitle || "Kajian Strategis: Forestry Management Transportation"}
+                          </div>
+                        </div>
+
+                        {/* Cover Footer */}
+                        <div className="border-t border-slate-200 pt-8 flex justify-between items-end text-xs text-slate-550 font-semibold font-mono">
+                          <div className="text-left">
+                            <div>DITERBITKAN OLEH:</div>
+                            <div className="text-slate-850 font-extrabold text-[11px]">PRAMA Cognitive Advisor System</div>
+                            <div className="text-[10px] text-slate-450 mt-1">{new Date().toLocaleDateString("id-ID", { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
+                          </div>
+                          <div className="text-right">
+                            <div>DIVISI JURNAL PM:</div>
+                            <div className="text-indigo-650 font-extrabold text-[11px]">PT Pancaran Group Logistics</div>
+                            <div className="text-[10px] text-slate-450 mt-1">STATUS: APPROVED FOR EXPORT</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* PAGE 2: Table of Contents */}
+                      <div className="bg-white border border-slate-200 rounded-lg shadow-2xl w-full md:w-[210mm] min-h-[297mm] p-16 flex flex-col justify-between text-slate-800 font-sans relative aspect-[1/1.414] text-left">
+                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-indigo-650 rounded-t-lg" />
+                        <div className="text-slate-450 text-[9px] uppercase tracking-wider font-mono">Daftar Isi Komprehensif • PRAMA Report</div>
+                        <div className="my-auto">
+                          <h2 className="text-xl md:text-2xl font-black text-indigo-900 border-b-2 border-slate-100 pb-2 mb-8 uppercase tracking-wide">DAFTAR ISI KAJIAN FORMULASI JURNAL PM</h2>
+                          
+                          <div className="space-y-4">
+                            {defaultDashboardSections.map((sec, i) => (
+                              <div key={sec.number} className="flex justify-between items-center text-xs">
+                                <span className="font-bold text-slate-850">{sec.number}. {sec.title}</span>
+                                <div className="flex-grow border-b border-spacing-2 border-dashed border-slate-300 mx-3" />
+                                <span className="font-mono font-extrabold text-indigo-700">Halaman {i + 3}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="text-right text-[10px] font-mono text-slate-450 border-t pt-4">Halaman 2 dari 16</div>
+                      </div>
+
+                      {/* PAGES 3-16: Core Sections */}
+                      {defaultDashboardSections.map((sec, index) => {
+                        const docVal = dashboardSectionsState[sec.number] || sec.defaultContent;
+                        return (
+                          <div key={sec.number} className="bg-white border border-slate-200 rounded-lg shadow-2xl w-full md:w-[210mm] min-h-[297mm] p-16 flex flex-col justify-between text-slate-800 font-sans relative aspect-[1/1.414] text-left">
+                            <div className="absolute top-0 left-0 right-0 h-1 bg-indigo-650 rounded-t-lg" />
+                            
+                            {/* Running head */}
+                            <div className="flex justify-between items-center text-[10px] font-mono font-bold text-slate-450 border-b border-slate-100 pb-2 mb-6 uppercase">
+                              <span>KAJIAN COMPREHENSIVE JURNAL PM: #{sec.number}</span>
+                              <span>PANCARAN GROUP • PRAMA ADVISOR</span>
+                            </div>
+
+                            {/* Content Section */}
+                            <div className="flex-grow text-left">
+                              <span className="text-[9px] font-mono font-extrabold tracking-widest bg-violet-100 text-violet-700 px-2.5 py-0.5 rounded uppercase border border-violet-150">BAGIAN {sec.number} DARI 14 PILAR</span>
+                              <h2 className="text-lg md:text-xl font-extrabold text-indigo-900 uppercase border-b-2 border-slate-100 pb-2 mt-2 mb-4 leading-normal font-sans">
+                                {sec.title}
+                              </h2>
+                              <div className="prose prose-sm text-slate-650 leading-relaxed font-semibold text-xs space-y-3 font-sans">
+                                {docVal.split("\n").map((line, lidx) => {
+                                  const trimLine = line.trim();
+                                  if (!trimLine) return null;
+                                  if (trimLine.startsWith("###")) {
+                                    return <h4 key={lidx} className="text-[12px] font-black text-slate-800 border-b border-slate-100 pb-1 mt-4">{trimLine.replace(/^###\s*/, "")}</h4>;
+                                  }
+                                  if (trimLine.startsWith("* ") || trimLine.startsWith("- ")) {
+                                    return (
+                                      <div key={lidx} className="pl-4 border-l-2 border-emerald-500 py-0.5 my-1 text-slate-600 font-sans">
+                                        ✓ {trimLine.replace(/^[\*\-]\s*/, "").replace(/\*\*/g, "")}
+                                      </div>
+                                    );
+                                  }
+                                  return <p key={lidx} className="text-justify my-1.5 font-sans">{trimLine.replace(/\*\*/g, "")}</p>;
+                                })}
+                              </div>
+                            </div>
+
+                            {/* Running Foot */}
+                            <div className="flex justify-between items-center text-[10px] font-mono text-slate-450 border-t border-slate-100 pt-4 mt-8">
+                              <span>KERAHASIAAN: SANGAT INTRA-KORPORAT</span>
+                              <span>Halaman {index + 3} dari 16</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 🎬 PPT WORKSPACE PRESENTATION MODE & VOICE OVERLAY */}
+              {webDocPreview === "ppt" && (
+                <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col justify-between text-white font-sans text-left">
+                  {/* Top Panel Control bar */}
+                  <div className="bg-slate-900 px-6 py-4 border-b border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shrink-0 shadow-xl">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl select-none">🎬</span>
+                      <div className="text-left">
+                        <span className="text-[9px] block font-black uppercase tracking-widest text-sky-400 font-mono leading-none">Presentasi Jurnal Prama</span>
+                        <span className="text-[12px] font-black uppercase text-white tracking-tight mt-1 truncate max-w-sm block">{dashboardProjectTitle}</span>
+                      </div>
+                    </div>
+
+                    {/* Speaking State details */}
+                    {isSpeechPresenterActive && (
+                      <div className="flex items-center gap-2 bg-sky-950 border border-sky-800 rounded-xl px-3.5 py-1.5">
+                        <div className={`h-2.5 w-2.5 rounded-full ${isPlayingSpeech ? "bg-emerald-400 animate-pulse" : "bg-slate-550"} shrink-0`} />
+                        <span className="text-[10px] font-black font-mono tracking-wide text-sky-200">
+                          {isPlayingSpeech ? "ASISTEN SEDANG BERBICARA..." : "ASISTEN SELESAI PAPARAN"}
+                        </span>
+
+                        {countdownTransition > 0 && (
+                          <span className="text-[10px] font-black font-mono text-pink-400 ml-2 animate-pulse">
+                            AUTO-NEXT BERIKUTNYA DALAM: {countdownTransition}S
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Controller Action set */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const active = !isSpeechPresenterActive;
+                          setIsSpeechPresenterActive(active);
+                          if (active) {
+                            setProjectPptSlideIndex(0);
+                            // trigger immediate speak
+                            setTimeout(() => {
+                              speakProjectPptSlide();
+                            }, 450);
+                          } else {
+                            if ('speechSynthesis' in window) {
+                              window.speechSynthesis.cancel();
+                            }
+                            setIsPlayingSpeech(false);
+                            setCountdownTransition(0);
+                          }
+                        }}
+                        className={`text-[10.5px] font-black px-3.5 py-2.5 rounded-xl border transition cursor-pointer ${
+                          isSpeechPresenterActive 
+                            ? "bg-rose-600 text-white border-rose-500 hover:bg-rose-700" 
+                            : "bg-sky-650 text-white border-sky-500 hover:bg-sky-700"
+                        }`}
+                      >
+                        {isSpeechPresenterActive ? "🛑 Matikan Suara Asisten" : "🔊 Aktifkan Suara Asisten (TTS)"}
+                      </button>
+
+                      {/* Pitch control setting */}
+                      <div className="flex items-center gap-1.5 bg-slate-850 px-2.5 py-1.5 rounded-xl border border-slate-700">
+                        <span className="text-[9px] font-black font-mono text-slate-400 leading-none">SPEED:</span>
+                        <select 
+                          value={speechRate}
+                          onChange={(e) => setSpeechRate(parseFloat(e.target.value))}
+                          className="bg-transparent text-white font-mono text-[10.5px] font-black outline-none border-none py-0.5 cursor-pointer"
+                        >
+                          <option value="0.9" className="bg-slate-900">Slow (0.9x)</option>
+                          <option value="1.1" className="bg-slate-900">Normal (1.1x)</option>
+                          <option value="1.3" className="bg-slate-900">Fast (1.3x)</option>
+                          <option value="1.5" className="bg-slate-900">Rapid (1.5x)</option>
+                        </select>
+                      </div>
+
+                      {/* Auto-Next controller checkbox */}
+                      <label className="flex items-center gap-1.5 bg-slate-850 px-3 py-2.5 rounded-xl text-[10px] font-black font-mono text-slate-300 border border-slate-700 cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          checked={autoNextPPT} 
+                          onChange={(e) => setAutoNextPPT(e.target.checked)}
+                          className="rounded border-slate-700 p-1 accent-indigo-600"
+                        />
+                        <span>AUTO-NEXT</span>
+                      </label>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setWebDocPreview("none");
+                          setIsSpeechPresenterActive(false);
+                          if ('speechSynthesis' in window) {
+                            window.speechSynthesis.cancel();
+                          }
+                        }}
+                        className="bg-slate-800 hover:bg-slate-705 text-slate-300 hover:text-white text-[10.5px] font-black px-4 py-2.5 rounded-xl border border-slate-700 cursor-pointer"
+                      >
+                        ✕ Keluar
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Main Body deck layout split internally */}
+                  <div className="flex-grow flex flex-col lg:flex-row min-h-0 bg-slate-900">
+                    {/* THUMBNAILS LEFT DRAWER PANEL */}
+                    <div className="w-full lg:w-64 border-r border-slate-850 overflow-y-auto max-h-[150px] lg:max-h-full p-4 space-y-2 shrink-0 bg-slate-950">
+                      <span className="block text-[8.5px] font-black text-slate-500 uppercase tracking-widest font-mono mb-3">
+                        Daftar Slide Dek Presentasi
+                      </span>
+                      <div className="grid grid-cols-4 lg:grid-cols-1 gap-2">
+                        {[...Array(16)].map((_, i) => {
+                          const isActive = projectPptSlideIndex === i;
+                          return (
+                            <div
+                              key={i}
+                              onClick={() => {
+                                setProjectPptSlideIndex(i);
+                                setCountdownTransition(0);
+                              }}
+                              className={`p-2 rounded-xl border transition text-left cursor-pointer ${
+                                isActive 
+                                  ? "bg-sky-950/60 border-sky-500 ring-2 ring-sky-900/40" 
+                                  : "bg-slate-900/60 border-slate-850 hover:border-slate-700"
+                              }`}
+                            >
+                              <div className="flex items-center gap-1.5 mb-1 text-left">
+                                <span className="text-[10px] font-black font-mono text-sky-400">#{i + 1}</span>
+                                <span className="text-[9px] font-bold text-slate-300 truncate tracking-tight font-sans">
+                                  {i === 0 ? "Cover Utama" : i === 15 ? "Slide Penutup" : `Pilar ${i}`}
+                                </span>
+                              </div>
+                              <div className="h-10 bg-slate-950 rounded border border-slate-850/65 flex items-center justify-center text-[10px] text-slate-600 font-mono">
+                                {i === 0 ? "🏢 COVER" : i === 15 ? "★ AKHIR" : `📊 PILAR ${i}`}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* PRESENTATION CONTAINER (aspect ratio focused) */}
+                    <div className="flex-grow flex items-center justify-center p-6 md:p-12 overflow-hidden bg-gradient-to-br from-slate-900 to-slate-950 relative">
+                      <div className="aspect-[16/9] w-full max-w-4xl bg-white text-slate-800 rounded-3xl p-8 md:p-14 shadow-2xl flex flex-col justify-between border-4 border-slate-850 relative">
+                        {/* Embedded slide progress indicator */}
+                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-slate-100 rounded-t-xl overflow-hidden">
+                          <div 
+                            className="h-full bg-gradient-to-r from-sky-400 to-indigo-600 transition-all duration-305"
+                            style={{ width: `${((projectPptSlideIndex + 1) / 16) * 100}%` }}
+                          />
+                        </div>
+
+                        {projectPptSlideIndex === 0 ? (
+                          /* Slide 0: Executive Cover page */
+                          <div className="my-auto text-left border-l-4 border-sky-500 pl-8 py-4">
+                            <span className="text-[10px] font-mono tracking-widest font-black text-sky-650 block mb-2 uppercase select-none">14 STRATEGIC ANALYSIS PILARS DECK</span>
+                            <h1 className="text-2xl md:text-5xl font-black text-slate-900 uppercase leading-none tracking-tight font-display mb-2 text-slate-850">
+                              STUDI KELAYAKAN KOMPREHENSIF
+                            </h1>
+                            <p className="text-slate-505 text-xs mt-3 uppercase font-mono font-bold">
+                              Mitra Prama Advisor & PT Pancaran Group
+                            </p>
+                            <div className="h-px bg-slate-200 my-6 md:my-8 w-1/3" />
+                            <span className="text-[9px] font-black text-slate-400 block font-mono">PROYEK KAJIAN / TARGET EKSPEDISI</span>
+                            <span className="text-xs md:text-sm font-extrabold text-slate-800 uppercase block mt-1 leading-snug font-sans">
+                              {dashboardProjectTitle || "Kajian Strategis: Forestry Management Transportation"}
+                            </span>
+                          </div>
+                        ) : projectPptSlideIndex === 15 ? (
+                          /* Slide 15: Thank You Closing */
+                          <div className="my-auto text-center flex flex-col items-center">
+                            <span className="text-3xl animate-bounce mb-3 select-none font-sans">★</span>
+                            <span className="text-[10px] font-mono font-black tracking-widest text-emerald-655 uppercase block mb-1">PRESENTASI SELESAI</span>
+                            <h2 className="text-3xl md:text-5xl font-black text-slate-900 uppercase tracking-tight font-sans">TERIMA KASIH</h2>
+                            <p className="text-slate-505 text-xs font-bold font-mono mt-3 uppercase tracking-wider">
+                              Semoga Rencana Transisi & Ekspedisi Sukses Bersama
+                            </p>
+                            <div className="h-1 bg-gradient-to-r from-sky-500 to-indigo-505 w-32 mt-6 rounded-full" />
+                          </div>
+                        ) : (
+                          /* Slides 1-14: Core Pillars specifications */
+                          (() => {
+                            const sec = defaultDashboardSections[projectPptSlideIndex - 1];
+                            const slideVal = dashboardSectionsState[sec.number] || sec.defaultContent;
+                            return (
+                              <div className="flex-grow flex flex-col justify-between text-left h-full">
+                                {/* Slide Title block */}
+                                <div>
+                                  <div className="flex items-center gap-2 mb-2 shrink-0">
+                                    <span className="text-[9px] font-mono font-black text-white bg-slate-900 border border-slate-700 px-2 py-0.5 rounded leading-none">
+                                      SLIDE PILAR #{sec.number}
+                                    </span>
+                                    <span className="text-[9px] font-bold text-slate-400 font-mono tracking-tight leading-none">
+                                      PT PANCARAN GROUP LOGISTICS
+                                    </span>
+                                  </div>
+                                  
+                                  <h2 className="text-lg md:text-xl font-black text-indigo-900 uppercase leading-snug tracking-tight mt-1.5 font-sans">
+                                    {sec.title}
+                                  </h2>
+                                  <p className="text-[11px] text-slate-500 mt-1 font-bold leading-normal">
+                                    {sec.shortDesc}
+                                  </p>
+                                </div>
+
+                                {/* Middle Bullet lists */}
+                                <div className="my-3 flex-grow overflow-y-auto max-h-[140px] md:max-h-[220px] pr-2 scrollbar-thin text-left">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    {slideVal.split("\n")
+                                      .map(l => l.trim())
+                                      .filter(l => l.length > 0 && !l.startsWith("###"))
+                                      .slice(0, 4)
+                                      .map((bullet, bIdx) => (
+                                        <div key={bIdx} className="bg-slate-50 border border-slate-100 rounded-2xl p-3 flex gap-2.5 items-start font-sans shadow-sm">
+                                          <span className="text-sky-500 font-black text-[11px] shrink-0 mt-0.5 font-sans">✓</span>
+                                          <p className="text-[10px] md:text-[11px] font-bold text-slate-650 m-0 leading-normal text-left font-sans">
+                                            {bullet.replace(/^\*\s*/, "").replace(/^-\s*/, "").replace(/\*\*/g, "")}
+                                          </p>
+                                        </div>
+                                      ))}
+                                  </div>
+                                </div>
+
+                                {/* Running footprint */}
+                                <div className="border-t border-slate-100 pt-3 flex justify-between items-center text-[9px] font-mono text-slate-400 shrink-0 select-none">
+                                  <span>PRAMA COGNITIVE ASSISTANT SLIDESHOW</span>
+                                  <span>Halaman {projectPptSlideIndex + 1} dari 16</span>
+                                </div>
+                              </div>
+                            );
+                          })()
+                        )}
+
+                        {/* Left & Right quick touch keys inside slide container */}
+                        <div className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center justify-center shrink-0">
+                          <button 
+                            type="button"
+                            disabled={projectPptSlideIndex === 0}
+                            onClick={() => {
+                              setProjectPptSlideIndex(prev => Math.max(0, prev - 1));
+                              setCountdownTransition(0);
+                            }}
+                            className="h-10 w-10 rounded-full bg-slate-900/5 hover:bg-slate-900/10 text-slate-650 flex items-center justify-center cursor-pointer transition border border-transparent disabled:opacity-25"
+                          >
+                            ◀
+                          </button>
+                        </div>
+                        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center shrink-0">
+                          <button 
+                            type="button"
+                            disabled={projectPptSlideIndex === 15}
+                            onClick={() => {
+                              setProjectPptSlideIndex(prev => Math.min(15, prev + 1));
+                              setCountdownTransition(0);
+                            }}
+                            className="h-10 w-10 rounded-full bg-slate-900/5 hover:bg-slate-900/10 text-slate-650 flex items-center justify-center cursor-pointer transition border border-transparent disabled:opacity-25"
+                          >
+                            ▶
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Bottom simple footer status bar */}
+                  <div className="bg-slate-900 border-t border-slate-800 text-[9.5px] text-slate-500 text-center py-2.5 font-mono select-none">
+                    ASISTEN KOGNITIF & PRESENTASI SUARA MANDIRI &bull; TEXT-TO-SPEECH INDONESIAN ENGINE &bull; PT PANCARAN GROUP
+                  </div>
+                </div>
+              )}
             </div>
           ) : dashboardView === "chat_intelligence" ? (
             <div className="max-w-6xl mx-auto text-left bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden w-full min-h-[680px] flex flex-col transition-all duration-300">

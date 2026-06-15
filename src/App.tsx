@@ -213,6 +213,25 @@ const divisions = [
   }
 ];
 
+const slideImagesList = [
+  "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80", // Slide 0 Cover
+  "https://images.unsplash.com/photo-1521898284481-a5ec348cb555?auto=format&fit=crop&w=800&q=80", // Pillar 1 Global/Nat
+  "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80", // Pillar 2 Market Opportunity
+  "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=800&q=80", // Pillar 3 Financial
+  "https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=800&q=80", // Pillar 4 Supply & Demand
+  "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=800&q=80", // Pillar 5 Structure
+  "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80", // Pillar 6 Organization
+  "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=800&q=80", // Pillar 7 Transition Model
+  "https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=800&q=80", // Pillar 8 Go To Market
+  "https://images.unsplash.com/photo-1590486803833-1c5dc8ddd4c8?auto=format&fit=crop&w=800&q=80", // Pillar 9 HSSE
+  "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80", // Pillar 10 Fleet
+  "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80", // Pillar 11 IT Digital
+  "https://images.unsplash.com/photo-1512428559087-560fa5ceab42?auto=format&fit=crop&w=800&q=80", // Pillar 12 Partnership
+  "https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&w=800&q=80", // Pillar 13 Roadmap
+  "https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=800&q=80", // Pillar 14 Sustainability
+  "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=800&q=80", // Slide 15 Ending
+];
+
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [guestUser, setGuestUser] = useState<{ uid: string; email: string; displayName: string } | null>(null);
@@ -1407,6 +1426,9 @@ export default function App() {
 
     return `System Role: Anda adalah PRAMA (Project Management Analitic), sebuah AI Agent Konsultan Project Management senior sejati. Tugas Anda adalah membantu menganalisis dan memberikan strategi project management komprehensif.
 
+PROYEK SAAT INI YANG SEDANG DIANALISIS: "${dashboardProjectTitle || 'Kajian Strategis: Forestry Management Transportation'}".
+Catatan Penting: Pengguna dapat meminta Anda untuk mengganti judul proyek aktif dengan mengirim instruksi chat langsung, misalnya: "ganti proyek ke Logistik Minyak Bumi" atau "ubah project ke Ekspansi Bisnis Cargo". Jika Anda mendeteksi permintaan ini, beri tahu pengguna dengan senang hati bahwa Anda telah mendeteksi permintaan ganti proyek dan siap menganalisis pilar proyek baru tersebut!
+
 Persona, Fokus & Karakter (SANGAT PENTING):
 1. Anda adalah PRAMA (Project Management Analitic), penasihat bisnis strategis dan konsultan project management senior yang ahli dalam tata kelola komersial, operasional, logistik, dan finansial.
 2. Anda harus ramah, hangat, empati tinggi, asyik diajak berbicara dua arah, dan menyajikan penjelasan lewat gaya bercerita (storytelling) yang mengalir indah. Sapa pengguna sebagai partner setara.
@@ -1472,12 +1494,30 @@ ${focusText}`;
   ) => {
     if (chatLoading) return;
 
+    // Detect project-change intent
+    let extractedProjectName = "";
+    let isProjectChangeTriggered = false;
+    const changeProjectRegex = /(?:ganti|ubah|set|buka|ganti judul|pindah|ganti nama)\s*(?:proyek|project|kajian)?\s*(?:ke|to|jadi|menjadi)\s*([^\n]+)/i;
+    const match = text.match(changeProjectRegex);
+    if (match && match[1].trim()) {
+      extractedProjectName = match[1].trim().replace(/\*+/g, "").trim();
+      isProjectChangeTriggered = true;
+      setDashboardProjectTitle(extractedProjectName);
+    }
+
+    // Dynamic title injection
+    const updatedProjectTitle = isProjectChangeTriggered ? extractedProjectName : dashboardProjectTitle;
+
     const divisionPromptHeader = activeDivision 
       ? `\n\n[SISTEM INTENSI INTERNAL DIVISI: ${getDivisionSystemInstruction(activeDivision)}]`
-      : "";
+      : `\n\n[PROYEK MEMILIKI JUDUL: "${updatedProjectTitle}"]`;
 
     // Build the query message payload
     let finalQuery = text + divisionPromptHeader;
+    if (isProjectChangeTriggered) {
+      finalQuery = `[NOTIFIKASI SISTEM: PENGGUNA BARUSAN MEMINTA MENGUBAH PROYEK AKTIF KE "${extractedProjectName}". SISTEM TELAH BERHASIL MENGUBAH JUDUL PROYEK AKTIF DI LAYER FRONTEND RE-RENDER MENJADI "${extractedProjectName}". SEBAGAI ASISTEN KAIDAH PRAMA, SAMBUT DAN KONFIRMASIKAN PADA DESKRIPSI JAWABAN ANDA DENGAN PENUH SEMANGAT BAHWA ANDA SUDAH MENGUBAH PROYEK KE "${extractedProjectName}" DAN MULAI ANALISIS 15 PILAR KAJIAN JURNAL UNTUK STRATEGI INI!]\n\n` + finalQuery;
+    }
+
     if (referencedFile) {
       finalQuery = `Pertanyaan saya merujuk pada file dokumen "${referencedFile.name}" dengan isi sebagai berikut:\n\`\`\`\n${referencedFile.content}\n\`\`\`\n\nPertanyaan/Permintaan saya:\n${text}${divisionPromptHeader}`;
     }
@@ -4464,79 +4504,152 @@ ${lastMsgText}`;
                         {/* Embedded slide progress indicator */}
                         <div className="absolute top-0 left-0 right-0 h-1.5 bg-slate-100 rounded-t-xl overflow-hidden">
                           <div 
-                            className="h-full bg-gradient-to-r from-sky-400 to-indigo-600 transition-all duration-305"
-                            style={{ width: `${((projectPptSlideIndex + 1) / 16) * 100}%` }}
+                            className="h-full bg-gradient-to-r from-sky-400 to-indigo-600 transition-all duration-300"
+                            style={{ width: `${((projectPptSlideIndex + 1) / 16) * 105}%` }}
                           />
                         </div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (isPlayingSpeech) {
+                              if ('speechSynthesis' in window) {
+                                window.speechSynthesis.cancel();
+                              }
+                              setIsPlayingSpeech(false);
+                            } else {
+                              speakProjectPptSlide();
+                            }
+                          }}
+                          className={`absolute top-4 right-4 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[10px] font-mono font-black transition duration-200 shadow-sm cursor-pointer ${
+                            isPlayingSpeech 
+                              ? "bg-rose-50 border-rose-200 text-rose-600 animate-pulse hover:bg-rose-100" 
+                              : "bg-emerald-50 border-emerald-200 text-emerald-600 hover:bg-emerald-100"
+                          }`}
+                        >
+                          {isPlayingSpeech ? (
+                            <>
+                              <span className="flex h-2 w-2 relative shrink-0">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-455 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                              </span>
+                              <span>HENTIKAN SUARA</span>
+                            </>
+                          ) : (
+                            <>
+                              <Volume2 className="h-3 w-3 shrink-0 text-emerald-600" />
+                              <span>PUTAR PENJELASAN (PLAY)</span>
+                            </>
+                          )}
+                        </button>
 
                         {projectPptSlideIndex === 0 ? (
-                          /* Slide 0: Executive Cover page */
-                          <div className="my-auto text-left border-l-4 border-sky-500 pl-8 py-4">
-                            <span className="text-[10px] font-mono tracking-widest font-black text-sky-650 block mb-2 uppercase select-none">14 STRATEGIC ANALYSIS PILARS DECK</span>
-                            <h1 className="text-2xl md:text-5xl font-black text-slate-900 uppercase leading-none tracking-tight font-display mb-2 text-slate-850">
-                              STUDI KELAYAKAN KOMPREHENSIF
-                            </h1>
-                            <p className="text-slate-505 text-xs mt-3 uppercase font-mono font-bold">
-                              Mitra Prama Advisor & PT Pancaran Group
-                            </p>
-                            <div className="h-px bg-slate-200 my-6 md:my-8 w-1/3" />
-                            <span className="text-[9px] font-black text-slate-400 block font-mono">PROYEK KAJIAN / TARGET EKSPEDISI</span>
-                            <span className="text-xs md:text-sm font-extrabold text-slate-800 uppercase block mt-1 leading-snug font-sans">
-                              {dashboardProjectTitle || "Kajian Strategis: Forestry Management Transportation"}
-                            </span>
+                          /* Slide 0: Executive Cover page with image side-by-side */
+                          <div className="flex-grow flex flex-col md:flex-row gap-6 items-center">
+                            <div className="flex-1 text-left border-l-4 border-sky-500 pl-6 py-2">
+                              <span className="text-[10px] font-mono tracking-widest font-black text-sky-650 block mb-2 uppercase select-none">14 STRATEGIC ANALYSIS PILARS DECK</span>
+                              <h1 className="text-xl md:text-3xl lg:text-4xl font-black text-slate-900 uppercase leading-tight tracking-tight font-display mb-2 text-slate-850">
+                                STUDI KELAYAKAN KOMPREHENSIF
+                              </h1>
+                              <p className="text-slate-500 text-xs mt-3 uppercase font-mono font-bold">
+                                Mitra Prama Advisor & PT Pancaran Group
+                              </p>
+                              <div className="h-px bg-slate-200 my-4 w-1/3" />
+                              <span className="text-[9px] font-black text-slate-400 block font-mono">PROYEK KAJIAN / TARGET EKSPEDISI</span>
+                              <span className="text-xs md:text-sm font-extrabold text-slate-800 uppercase block mt-1 leading-snug font-sans">
+                                {dashboardProjectTitle || "Kajian Strategis: Forestry Management Transportation"}
+                              </span>
+                            </div>
+                            <div className="w-full md:w-5/12 h-40 md:h-60 rounded-2xl overflow-hidden shadow-lg border border-slate-100 flex-shrink-0">
+                              <img 
+                                src={slideImagesList[0]} 
+                                alt="Slide Cover" 
+                                className="w-full h-full object-cover" 
+                                referrerPolicy="no-referrer"
+                              />
+                            </div>
                           </div>
                         ) : projectPptSlideIndex === 15 ? (
-                          /* Slide 15: Thank You Closing */
-                          <div className="my-auto text-center flex flex-col items-center">
-                            <span className="text-3xl animate-bounce mb-3 select-none font-sans">★</span>
-                            <span className="text-[10px] font-mono font-black tracking-widest text-emerald-655 uppercase block mb-1">PRESENTASI SELESAI</span>
-                            <h2 className="text-3xl md:text-5xl font-black text-slate-900 uppercase tracking-tight font-sans">TERIMA KASIH</h2>
-                            <p className="text-slate-505 text-xs font-bold font-mono mt-3 uppercase tracking-wider">
-                              Semoga Rencana Transisi & Ekspedisi Sukses Bersama
-                            </p>
-                            <div className="h-1 bg-gradient-to-r from-sky-500 to-indigo-505 w-32 mt-6 rounded-full" />
+                          /* Slide 15: Thank You Closing with image side-by-side */
+                          <div className="flex-grow flex flex-col md:flex-row gap-6 items-center justify-between">
+                            <div className="flex-1 text-left">
+                              <span className="text-2xl animate-bounce mb-2 select-none font-sans block">★</span>
+                              <span className="text-[10px] font-mono font-black tracking-widest text-emerald-655 uppercase block mb-1">PRESENTASI SELESAI</span>
+                              <h2 className="text-2xl md:text-4xl font-black text-slate-900 uppercase tracking-tight font-sans">TERIMA KASIH</h2>
+                              <p className="text-slate-505 text-xs font-bold font-mono mt-3 uppercase tracking-wider">
+                                Semoga Rencana Transisi & Ekspedisi Sukses Bersama
+                              </p>
+                              <div className="h-1 bg-gradient-to-r from-sky-500 to-indigo-505 w-32 mt-4 rounded-full" />
+                            </div>
+                            <div className="w-full md:w-5/12 h-40 md:h-60 rounded-2xl overflow-hidden shadow-lg border border-slate-100 flex-shrink-0">
+                              <img 
+                                src={slideImagesList[15]} 
+                                alt="Ending Slide" 
+                                className="w-full h-full object-cover" 
+                                referrerPolicy="no-referrer"
+                              />
+                            </div>
                           </div>
                         ) : (
-                          /* Slides 1-14: Core Pillars specifications */
+                          /* Slides 1-14: Core Pillars specifications with side-by-side images */
                           (() => {
                             const sec = defaultDashboardSections[projectPptSlideIndex - 1];
                             const slideVal = dashboardSectionsState[sec.number] || sec.defaultContent;
                             return (
                               <div className="flex-grow flex flex-col justify-between text-left h-full">
-                                {/* Slide Title block */}
-                                <div>
-                                  <div className="flex items-center gap-2 mb-2 shrink-0">
-                                    <span className="text-[9px] font-mono font-black text-white bg-slate-900 border border-slate-700 px-2 py-0.5 rounded leading-none">
-                                      SLIDE PILAR #{sec.number}
-                                    </span>
-                                    <span className="text-[9px] font-bold text-slate-400 font-mono tracking-tight leading-none">
-                                      PT PANCARAN GROUP LOGISTICS
-                                    </span>
-                                  </div>
-                                  
-                                  <h2 className="text-lg md:text-xl font-black text-indigo-900 uppercase leading-snug tracking-tight mt-1.5 font-sans">
-                                    {sec.title}
-                                  </h2>
-                                  <p className="text-[11px] text-slate-500 mt-1 font-bold leading-normal">
-                                    {sec.shortDesc}
-                                  </p>
-                                </div>
+                                {/* Slide Content with Image Side-by-side */}
+                                <div className="flex-grow flex flex-col md:flex-row gap-6 md:items-stretch min-h-0">
+                                  {/* Left side: Slide Title & bullet lists */}
+                                  <div className="flex-1 flex flex-col justify-between">
+                                    <div>
+                                      <div className="flex items-center gap-2 mb-2 shrink-0">
+                                        <span className="text-[9px] font-mono font-black text-white bg-slate-900 border border-slate-700 px-2 py-0.5 rounded leading-none">
+                                          SLIDE PILAR #{sec.number}
+                                        </span>
+                                        <span className="text-[9px] font-bold text-slate-400 font-mono tracking-tight leading-none">
+                                          PT PANCARAN GROUP LOGISTICS
+                                        </span>
+                                      </div>
+                                      
+                                      <h2 className="text-lg md:text-xl font-black text-indigo-900 uppercase leading-snug tracking-tight mt-1.5 font-sans">
+                                        {sec.title}
+                                      </h2>
+                                      <p className="text-[11px] text-slate-500 mt-1 font-bold leading-normal">
+                                        {sec.shortDesc}
+                                      </p>
+                                    </div>
 
-                                {/* Middle Bullet lists */}
-                                <div className="my-3 flex-grow overflow-y-auto max-h-[140px] md:max-h-[220px] pr-2 scrollbar-thin text-left">
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    {slideVal.split("\n")
-                                      .map(l => l.trim())
-                                      .filter(l => l.length > 0 && !l.startsWith("###"))
-                                      .slice(0, 4)
-                                      .map((bullet, bIdx) => (
-                                        <div key={bIdx} className="bg-slate-50 border border-slate-100 rounded-2xl p-3 flex gap-2.5 items-start font-sans shadow-sm">
-                                          <span className="text-sky-500 font-black text-[11px] shrink-0 mt-0.5 font-sans">✓</span>
-                                          <p className="text-[10px] md:text-[11px] font-bold text-slate-650 m-0 leading-normal text-left font-sans">
-                                            {bullet.replace(/^\*\s*/, "").replace(/^-\s*/, "").replace(/\*\*/g, "")}
-                                          </p>
-                                        </div>
-                                      ))}
+                                    {/* Middle Bullet lists */}
+                                    <div className="my-3 flex-grow overflow-y-auto max-h-[140px] md:max-h-[220px] pr-2 scrollbar-thin text-left">
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        {slideVal.split("\n")
+                                          .map(l => l.trim())
+                                          .filter(l => l.length > 0 && !l.startsWith("###"))
+                                          .slice(0, 4)
+                                          .map((bullet, bIdx) => (
+                                            <div key={bIdx} className="bg-slate-50 border border-slate-100 rounded-2xl p-3 flex gap-2.5 items-start font-sans shadow-sm">
+                                              <span className="text-sky-500 font-black text-[11px] shrink-0 mt-0.5 font-sans">✓</span>
+                                              <p className="text-[10px] md:text-[11px] font-bold text-slate-650 m-0 leading-normal text-left font-sans">
+                                                {bullet.replace(/^\*\s*/, "").replace(/^-\s*/, "").replace(/\*\*/g, "")}
+                                              </p>
+                                            </div>
+                                          ))}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Right side: Illustration Image for the Pillar */}
+                                  <div className="w-full md:w-5/12 h-36 md:h-auto rounded-2xl overflow-hidden shadow-lg border border-slate-100 flex-shrink-0 relative">
+                                    <img 
+                                      src={slideImagesList[projectPptSlideIndex]} 
+                                      alt={sec.title} 
+                                      className="w-full h-full object-cover" 
+                                      referrerPolicy="no-referrer"
+                                    />
+                                    {/* Small elegant tag overlay */}
+                                    <div className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-md text-[8px] font-mono font-black tracking-widest text-white px-2 py-1 rounded">
+                                      {sec.title.toUpperCase()}
+                                    </div>
                                   </div>
                                 </div>
 

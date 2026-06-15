@@ -4,6 +4,7 @@
  */
 import { jsPDF } from "jspdf";
 import pptxgen from "pptxgenjs";
+import { drawPramaCanvasIllustration, getCategoryFromTitle } from "./illustrationPainter";
 
 export function parseInlineMarkdown(text: string): string {
   if (!text) return "";
@@ -291,324 +292,407 @@ export function exportToWord(title: string, text: string, divisionName: string) 
   function generateWordInfographic(docText: string, docTitle: string, divName: string): string {
     try {
       const canvas = document.createElement("canvas");
-      canvas.width = 960;
-      canvas.height = 540;
+      // Compact size so that it stays completely intact when embedding in MS Word as A4
+      canvas.width = 800;
+      canvas.height = 420;
       const ctx = canvas.getContext("2d");
       if (!ctx) return "";
 
-      const { headings, stats } = extractKeyHeadingsAndStats(docText);
+      const cat = getCategoryFromTitle(docTitle);
 
-      // Background gradient
-      const bgGrad = ctx.createLinearGradient(0, 0, 960, 540);
-      bgGrad.addColorStop(0, "#ffffff");
-      bgGrad.addColorStop(1, "#f8fafc");
-      ctx.fillStyle = bgGrad;
-      ctx.fillRect(0, 0, 960, 540);
-
-      // Grid lines
-      ctx.strokeStyle = "rgba(203, 213, 225, 0.25)";
-      ctx.lineWidth = 1;
-      for (let x = 40; x < 960; x += 40) {
+      // Safe roundrect draw utility
+      const drawRoundRect = (x: number, y: number, w: number, h: number, r: number) => {
         ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, 540);
-        ctx.stroke();
-      }
-      for (let y = 40; y < 540; y += 40) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(960, y);
-        ctx.stroke();
-      }
-
-      // Border lines
-      ctx.strokeStyle = "#1e3a8a"; // Deep Navy
-      ctx.lineWidth = 8;
-      ctx.strokeRect(4, 4, 952, 532);
-
-      ctx.strokeStyle = "#00D285"; // Vibrant Green
-      ctx.lineWidth = 1.5;
-      ctx.strokeRect(16, 16, 928, 508);
-
-      // HEADER
-      ctx.fillStyle = "#0f172a";
-      ctx.fillRect(17, 17, 926, 68);
-
-      ctx.fillStyle = "#00D285";
-      ctx.font = "bold 10px 'Segoe UI', Arial, sans-serif";
-      ctx.fillText("✦ PRAMA COGNITIVE BUSINESS INTELLIGENCE SYSTEM • BLUEPRINT MAP", 35, 41);
-
-      const truncatedTitle = docTitle.replace("KAJIAN STRATEGIS KOMPREHENSIF: ", "").toUpperCase();
-      ctx.fillStyle = "#FFFFFF";
-      ctx.font = "bold 16px 'Segoe UI', Arial, sans-serif";
-      const titleWidth = ctx.measureText(truncatedTitle).width;
-      if (titleWidth > 580) {
-        ctx.fillText(truncatedTitle.slice(0, 50) + "...", 35, 65);
-      } else {
-        ctx.fillText(truncatedTitle, 35, 65);
-      }
-
-      ctx.fillStyle = "#38bdf8";
-      ctx.font = "bold 13px 'Segoe UI', Arial, sans-serif";
-      ctx.textAlign = "right";
-      ctx.fillText(`DIVISI: ${divName.toUpperCase()}`, 920, 42);
-
-      ctx.fillStyle = "#94a3b8";
-      ctx.font = "normal 10px monospace";
-      ctx.fillText("STATUS COMPLIANCE: 100% SECURE", 920, 64);
-      ctx.textAlign = "left";
-
-      // Panel Dividers
-      ctx.strokeStyle = "rgba(148, 163, 184, 0.2)";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(315, 95);
-      ctx.lineTo(315, 475);
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.moveTo(665, 95);
-      ctx.lineTo(665, 475);
-      ctx.stroke();
-
-      // Section Headers
-      ctx.fillStyle = "#0f172a";
-      ctx.font = "bold 14px 'Segoe UI', Arial, sans-serif";
-      ctx.fillText("I. METRIK KELAYAKAN UTAMA", 35, 115);
-
-      ctx.fillStyle = "#0f172a";
-      ctx.font = "bold 14px 'Segoe UI', Arial, sans-serif";
-      ctx.fillText("II. PILAR STRATEGIS PROYEK", 330, 115);
-
-      ctx.fillStyle = "#0f172a";
-      ctx.font = "bold 14px 'Segoe UI', Arial, sans-serif";
-      ctx.fillText("III. RADAR INTELIJEN SEKTOR", 680, 115);
-
-      // Left Panel: Gauges
-      const drawGauge = (cx: number, cy: number, radius: number, percent: number, color: string, label: string) => {
-        ctx.beginPath();
-        ctx.arc(cx, cy, radius, 0.8 * Math.PI, 2.2 * Math.PI);
-        ctx.strokeStyle = "#e2e8f0";
-        ctx.lineWidth = 8;
-        ctx.lineCap = "round";
-        ctx.stroke();
-
-        const endAngle = 0.8 * Math.PI + (1.4 * Math.PI * (percent / 100));
-        ctx.beginPath();
-        ctx.arc(cx, cy, radius, 0.8 * Math.PI, endAngle);
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 8;
-        ctx.lineCap = "round";
-        ctx.stroke();
-
-        ctx.fillStyle = "#0f172a";
-        ctx.font = "bold 15px 'Segoe UI', Arial, sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText(`${percent}%`, cx, cy + 5);
-
-        ctx.fillStyle = "#475569";
-        ctx.font = "bold 9px 'Segoe UI', Arial, sans-serif";
-        ctx.fillText(label, cx, cy + radius + 15);
-        ctx.textAlign = "left";
+        if (typeof ctx.roundRect === "function") {
+          ctx.roundRect(x, y, w, h, r);
+        } else {
+          ctx.moveTo(x + r, y);
+          ctx.lineTo(x + w - r, y);
+          ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+          ctx.lineTo(x + w, y + h - r);
+          ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+          ctx.lineTo(x + r, y + h);
+          ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+          ctx.lineTo(x, y + r);
+          ctx.quadraticCurveTo(x, y, x + r, y);
+          ctx.closePath();
+        }
       };
 
-      drawGauge(100, 190, 36, stats.feasibility, "#00D285", "KELAYAKAN TEKNIS");
-      drawGauge(230, 190, 36, stats.alignment, "#0284c7", "KESELARASAN STRATEGIS");
-      drawGauge(165, 315, 38, stats.readiness, "#8b5cf6", "KESIAPAN OPERASIONAL");
+      // Theme assignments based on category, clean & professional
+      let themePrimary = "#1e3a8a"; // Default deep navy
+      let themeAccent = "#10b981";  // Default green
+      let themeSecondary = "#0284c7"; // Default sky blue
+      let themeGlow = "#f0fdf4"; // Default mint backdrop
+      let alertColor = "#8b5cf6"; // Default purple
 
-      ctx.fillStyle = "#334155";
-      ctx.font = "normal 11px 'Segoe UI', Arial, sans-serif";
-      ctx.fillText(`• Kelayakan Kajian: SANGAT TINGGI (${stats.feasibility}%)`, 35, 410);
-      ctx.fillText(`• Sinergi Organisasi: Optimal & Selaras`, 35, 430);
-      ctx.fillText(`• Status Verifikasi: Terakreditasi PRAMA AI`, 35, 450);
+      if (cat.id === "forestry") {
+        themePrimary = "#064e3b";
+        themeAccent = "#10b981";
+        themeSecondary = "#047857";
+        themeGlow = "#f0fdf4";
+        alertColor = "#b45308";
+      } else if (cat.id === "demography") {
+        themePrimary = "#1e40af";
+        themeAccent = "#0ea5e9";
+        themeSecondary = "#f59e0b";
+        themeGlow = "#eff6ff";
+        alertColor = "#ef4444";
+      } else if (cat.id === "logistics") {
+        themePrimary = "#0f172a";
+        themeAccent = "#0ea5e9";
+        themeSecondary = "#2563eb";
+        themeGlow = "#f0f9ff";
+        alertColor = "#d97706";
+      } else if (cat.id === "tech") {
+        themePrimary = "#1e1b4b";
+        themeAccent = "#06b6d4";
+        themeSecondary = "#4f46e5";
+        themeGlow = "#f5f3ff";
+        alertColor = "#dc2626";
+      } else if (cat.id === "finance") {
+        themePrimary = "#1e1b4b";
+        themeAccent = "#d97706";
+        themeSecondary = "#2563eb";
+        themeGlow = "#fffbeb";
+        alertColor = "#16a34a";
+      } else if (cat.id === "risk") {
+        themePrimary = "#111827";
+        themeAccent = "#e11d48";
+        themeSecondary = "#7c3aed";
+        themeGlow = "#fff5f5";
+        alertColor = "#ea580c";
+      } else {
+        themePrimary = "#1e293b";
+        themeAccent = "#0d9488";
+        themeSecondary = "#0284c7";
+        themeGlow = "#f0fdfa";
+        alertColor = "#6366f1";
+      }
 
-      // Middle Panel: Pillars Flow
-      ctx.strokeStyle = "rgba(0, 210, 133, 0.35)";
-      ctx.lineWidth = 2;
-      ctx.setLineDash([3, 3]);
-      ctx.beginPath();
-      ctx.moveTo(355, 145);
-      ctx.lineTo(355, 415);
-      ctx.stroke();
-      ctx.setLineDash([]);
+      // Fill light clean gradient background
+      const bgGrad = ctx.createLinearGradient(0, 0, 0, 420);
+      bgGrad.addColorStop(0, "#ffffff");
+      bgGrad.addColorStop(0.3, themeGlow);
+      bgGrad.addColorStop(0.7, themeGlow);
+      bgGrad.addColorStop(1, "#ffffff");
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, 800, 420);
 
-      const pillarColors = ["#1e3a8a", "#0284c7", "#00D285", "#7c3aed"];
-      const statusTags = ["OPTIMAL", "INTEGRITAS", "STRATEGIS", "EFISIEN"];
-      const statusColors = ["#00D285", "#0284c7", "#8b5cf6", "#f97316"];
-
-      headings.forEach((heading, hIdx) => {
-        const cy = 145 + (hIdx * 82);
-
-        ctx.fillStyle = pillarColors[hIdx];
-        ctx.beginPath();
-        ctx.arc(355, cy + 22, 6, 0, 2 * Math.PI);
-        ctx.fill();
-        ctx.strokeStyle = "#ffffff";
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-
-        ctx.fillStyle = "rgba(241, 245, 249, 0.8)";
-        ctx.fillRect(380, cy, 260, 46);
-        ctx.strokeStyle = "rgba(148, 163, 184, 0.3)";
-        ctx.lineWidth = 1;
-        ctx.strokeRect(380, cy, 260, 46);
-
-        ctx.fillStyle = pillarColors[hIdx];
-        ctx.fillRect(380, cy, 4, 46);
-
-        ctx.fillStyle = pillarColors[hIdx];
-        ctx.font = "bold 11px monospace";
-        ctx.fillText(`0${hIdx + 1}`, 395, cy + 18);
-
-        ctx.fillStyle = statusColors[hIdx % 4];
-        ctx.fillRect(575, cy + 6, 55, 14);
-
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 8px Arial, sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText(statusTags[hIdx], 602, cy + 16);
-        ctx.textAlign = "left";
-
-        ctx.fillStyle = "#0f172a";
-        ctx.font = "bold 11px 'Segoe UI', Arial, sans-serif";
-        const dispH = heading.length > 25 ? heading.slice(0, 23) + "..." : heading;
-        ctx.fillText(dispH, 395, cy + 34);
-      });
-
-      // Right Panel: Radar and Stats
-      const rx = 800;
-      const ry = 220;
-      const rSize = 60;
-
-      ctx.strokeStyle = "rgba(148, 163, 184, 0.25)";
+      // Subtle abstract grid lines for blueprint aesthetic
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.12)";
       ctx.lineWidth = 1;
-      for (let j = 1; j <= 3; j++) {
-        const cr = rSize * (j / 3);
-        ctx.beginPath();
-        for (let i = 0; i < 5; i++) {
-          const angle = (i * 2 * Math.PI / 5) - Math.PI / 2;
-          const px = rx + cr * Math.cos(angle);
-          const py = ry + cr * Math.sin(angle);
-          if (i === 0) ctx.moveTo(px, py);
-          else ctx.lineTo(px, py);
+      for (let x = 40; x < 800; x += 40) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 420); ctx.stroke();
+      }
+      for (let y = 40; y < 420; y += 40) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(800, y); ctx.stroke();
+      }
+
+      // Double elegant borders
+      ctx.strokeStyle = themePrimary;
+      ctx.lineWidth = 6;
+      ctx.strokeRect(3, 3, 794, 414);
+
+      ctx.strokeStyle = themeAccent;
+      ctx.lineWidth = 1.2;
+      ctx.strokeRect(10, 10, 780, 400);
+
+      // Drawing inline glyph vectors dynamically based on icons
+      const drawGlyphIcon = (ix: number, iy: number, type: string, color: string) => {
+        ctx.save();
+        if (type === "leaf") {
+          ctx.beginPath();
+          ctx.moveTo(ix - 10, iy + 10);
+          ctx.quadraticCurveTo(ix - 12, iy - 8, ix + 8, iy - 8);
+          ctx.quadraticCurveTo(ix + 12, iy + 8, ix - 10, iy + 10);
+          ctx.fillStyle = color;
+          ctx.fill();
+          ctx.beginPath();
+          ctx.moveTo(ix - 10, iy + 10);
+          ctx.lineTo(ix + 8, iy - 8);
+          ctx.strokeStyle = "#ffffff";
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+        } else if (type === "star") {
+          ctx.beginPath();
+          for (let i = 0; i < 5; i++) {
+            const angle = (i * 2 * Math.PI / 5) - Math.PI / 2;
+            ctx.lineTo(ix + 9 * Math.cos(angle), iy + 9 * Math.sin(angle));
+            const nextAngle = ((i + 0.5) * 2 * Math.PI / 5) - Math.PI / 2;
+            ctx.lineTo(ix + 4 * Math.cos(nextAngle), iy + 4 * Math.sin(nextAngle));
+          }
+          ctx.closePath();
+          ctx.fillStyle = color;
+          ctx.fill();
+        } else if (type === "cloud") {
+          ctx.beginPath();
+          ctx.arc(ix - 4, iy + 2, 5, Math.PI * 0.5, Math.PI * 1.5);
+          ctx.arc(ix, iy - 3, 7, Math.PI, Math.PI * 2);
+          ctx.arc(ix + 5, iy + 2, 5, Math.PI * 1.5, Math.PI * 0.5);
+          ctx.closePath();
+          ctx.fillStyle = color;
+          ctx.fill();
+        } else if (type === "lightning") {
+          ctx.beginPath();
+          ctx.moveTo(ix + 2, iy - 10);
+          ctx.lineTo(ix - 6, iy + 1);
+          ctx.lineTo(ix - 1, iy + 1);
+          ctx.lineTo(ix - 3, iy + 10);
+          ctx.lineTo(ix + 6, iy - 1);
+          ctx.lineTo(ix + 1, iy - 1);
+          ctx.closePath();
+          ctx.fillStyle = color;
+          ctx.fill();
+        } else if (type === "fuel") {
+          ctx.beginPath();
+          ctx.moveTo(ix, iy - 10);
+          ctx.quadraticCurveTo(ix + 8, iy, ix, iy + 10);
+          ctx.quadraticCurveTo(ix - 8, iy, ix, iy - 10);
+          ctx.closePath();
+          ctx.fillStyle = color;
+          ctx.fill();
+        } else if (type === "alert") {
+          ctx.beginPath();
+          ctx.moveTo(ix, iy - 10);
+          ctx.lineTo(ix + 10, iy + 6);
+          ctx.lineTo(ix - 10, iy + 6);
+          ctx.closePath();
+          ctx.fillStyle = color;
+          ctx.fill();
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "bold 9px Arial";
+          ctx.textAlign = "center";
+          ctx.fillText("!", ix, iy + 4);
+        } else if (type === "shield") {
+          ctx.beginPath();
+          ctx.moveTo(ix, iy - 9);
+          ctx.quadraticCurveTo(ix + 8, iy - 9, ix + 8, iy);
+          ctx.quadraticCurveTo(ix + 8, iy + 6, ix, iy + 10);
+          ctx.quadraticCurveTo(ix - 8, iy + 6, ix - 8, iy);
+          ctx.quadraticCurveTo(ix - 8, iy - 9, ix, iy - 9);
+          ctx.closePath();
+          ctx.fillStyle = color;
+          ctx.fill();
+        } else if (type === "target") {
+          ctx.beginPath();
+          ctx.arc(ix, iy, 9, 0, 2 * Math.PI);
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(ix, iy, 4, 0, 2 * Math.PI);
+          ctx.fillStyle = color;
+          ctx.fill();
+        } else if (type === "gear") {
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          ctx.arc(ix, iy, 9, 0, 2 * Math.PI);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(ix, iy, 4, 0, 2 * Math.PI);
+          ctx.fillStyle = "#ffffff";
+          ctx.fill();
+        } else {
+          ctx.fillStyle = color;
+          ctx.fillRect(ix - 8, iy + 1, 4, 7);
+          ctx.fillRect(ix - 1, iy - 3, 4, 11);
+          ctx.fillRect(ix + 6, iy - 7, 4, 15);
         }
-        ctx.closePath();
-        ctx.stroke();
-      }
+        ctx.restore();
+      };
 
-      for (let i = 0; i < 5; i++) {
-        const angle = (i * 2 * Math.PI / 5) - Math.PI / 2;
-        ctx.beginPath();
-        ctx.moveTo(rx, ry);
-        ctx.lineTo(rx + rSize * Math.cos(angle), ry + rSize * Math.sin(angle));
-        ctx.stroke();
-      }
-
-      const radarLabels = ["EFISIENSI", "MITIGASI", "ADAPTASI", "SKALABILITAS", "TEKNOLOGI"];
-      ctx.fillStyle = "#64748b";
-      ctx.font = "bold 9px Arial, sans-serif";
-      for (let i = 0; i < 5; i++) {
-        const angle = (i * 2 * Math.PI / 5) - Math.PI / 2;
-        const lx = rx + (rSize + 15) * Math.cos(angle);
-        const ly = ry + (rSize + 8) * Math.sin(angle);
-        ctx.textAlign = "center";
-        ctx.fillText(radarLabels[i], lx, ly + 2);
-      }
-      ctx.textAlign = "left";
-
-      const polygonPoints: {x: number, y: number}[] = [];
-      const multipliers = [
-        stats.efficiencyIdx / 100,
-        (100 - stats.riskIdx) / 100,
-        stats.adaptabilityIdx / 100,
-        stats.scalabilityIdx / 100,
-        0.82
+      // Determine the 6 Metric items and labels (Shortened, NO lists/paragraphs)
+      const displayMetrics = cat.id === "forestry" ? [
+        { title: "Lahan", icon: "leaf", color: "#10b981" },
+        { title: "Sertifikat", icon: "star", color: "#eab308" },
+        { title: "Karbon", icon: "cloud", color: "#0ea5e9" },
+        { title: "Rute", icon: "gear", color: "#6366f1" },
+        { title: "Kargo", icon: "chart", color: "#a855f7" },
+        { title: "ESG", icon: "shield", color: "#065f46" }
+      ] : cat.id === "demography" ? [
+        { title: "Profil", icon: "target", color: "#1e40af" },
+        { title: "Sensus", icon: "chart", color: "#10b981" },
+        { title: "Sosial", icon: "alert", color: "#ef4444" },
+        { title: "Sektor", icon: "gear", color: "#eab308" },
+        { title: "Fasilitas", icon: "shield", color: "#6366f1" },
+        { title: "KKM", icon: "leaf", color: "#0ea5e9" }
+      ] : cat.id === "logistics" ? [
+        { title: "Armada", icon: "lightning", color: "#eab308" },
+        { title: "Solar", icon: "fuel", color: "#f43f5e" },
+        { title: "Kapasitas", icon: "chart", color: "#10b981" },
+        { title: "Akurasi", icon: "target", color: "#0284c7" },
+        { title: "Mitigasi", icon: "alert", color: "#f97316" },
+        { title: "Sopir", icon: "shield", color: "#3b82f6" }
+      ] : cat.id === "tech" ? [
+        { title: "API Latency", icon: "lightning", color: "#0ea5e9" },
+        { title: "Throughput", icon: "target", color: "#6366f1" },
+        { title: "Enkripsi", icon: "shield", color: "#10b981" },
+        { title: "Database", icon: "chart", color: "#3b82f6" },
+        { title: "Server", icon: "gear", color: "#a855f7" },
+        { title: "Uptime", icon: "star", color: "#eab308" }
+      ] : cat.id === "finance" ? [
+        { title: "Margin", icon: "chart", color: "#10b981" },
+        { title: "Capex", icon: "star", color: "#eab308" },
+        { title: "Opex", icon: "alert", color: "#f43f5e" },
+        { title: "Payback", icon: "target", color: "#3b82f6" },
+        { title: "Audit", icon: "shield", color: "#0ea5e9" },
+        { title: "Tax", icon: "star", color: "#6366f1" }
+      ] : cat.id === "risk" ? [
+        { title: "Prevensi", icon: "shield", color: "#10b981" },
+        { title: "Alarm", icon: "lightning", color: "#eab308" },
+        { title: "Regulasi", icon: "gavel", color: "#b45309" },
+        { title: "Deviasi", icon: "alert", color: "#f43f5e" },
+        { title: "Recovery", icon: "gear", color: "#0ea5e9" },
+        { title: "Audit", icon: "target", color: "#3b82f6" }
+      ] : [
+        { title: "Efisiensi", icon: "gear", color: "#3b82f6" },
+        { title: "Sinergi", icon: "chart", color: "#10b981" },
+        { title: "Sikap", icon: "shield", color: "#6366f1" },
+        { title: "Fokus", icon: "star", color: "#eab308" },
+        { title: "Mitigasi", icon: "lightning", color: "#f97316" },
+        { title: "Prama", icon: "leaf", color: "#059669" }
       ];
 
-      for (let i = 0; i < 5; i++) {
-        const angle = (i * 2 * Math.PI / 5) - Math.PI / 2;
-        const cr = rSize * multipliers[i];
-        polygonPoints.push({
-          x: rx + cr * Math.cos(angle),
-          y: ry + cr * Math.sin(angle)
-        });
-      }
-
-      ctx.fillStyle = "rgba(3, 105, 161, 0.2)";
-      ctx.beginPath();
-      ctx.moveTo(polygonPoints[0].x, polygonPoints[0].y);
-      for (let i = 1; i < 5; i++) {
-        ctx.lineTo(polygonPoints[i].x, polygonPoints[i].y);
-      }
-      ctx.closePath();
+      // LEFT COLUMN: Metrics Matrix (Grid layout)
+      // Height 280, width 320. Centered on x: 190.
+      drawRoundRect(30, 40, 340, 275, 14);
+      ctx.fillStyle = "#ffffff";
       ctx.fill();
-
-      ctx.strokeStyle = "#0284c7";
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.25)";
+      ctx.lineWidth = 1.5;
       ctx.stroke();
 
-      ctx.fillStyle = "#ffffff";
-      polygonPoints.forEach(p => {
+      // Matrix header line
+      ctx.fillStyle = themePrimary;
+      ctx.font = "bold 13px 'Segoe UI', Arial, sans-serif";
+      ctx.fillText(cat.id === "demography" ? "METRIK SEKTOR KEPENDUDUKAN" : "VALUASI METRIK SEKTOR UTAMA", 45, 68);
+
+      const gridCols = [100, 200, 300];
+      const gridRows = [140, 240];
+
+      displayMetrics.forEach((item, idx) => {
+        const rIdx = Math.floor(idx / 3);
+        const cIdx = idx % 3;
+        const imX = gridCols[cIdx];
+        const imY = gridRows[rIdx];
+
+        // Themed backdrop glow circles
         ctx.beginPath();
-        ctx.arc(p.x, p.y, 3.5, 0, 2 * Math.PI);
+        ctx.arc(imX, imY, 24, 0, Math.PI * 2);
+        ctx.fillStyle = themeGlow;
         ctx.fill();
-        ctx.strokeStyle = "#0284c7";
-        ctx.lineWidth = 1;
+        ctx.strokeStyle = item.color;
+        ctx.lineWidth = 1.2;
         ctx.stroke();
+
+        // Icon rendering
+        drawGlyphIcon(imX, imY, item.icon, item.color);
+
+        // Name
+        ctx.fillStyle = "#1e293b";
+        ctx.font = "bold 11px 'Segoe UI', Arial, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(item.title, imX, imY + 41);
+        ctx.textAlign = "left"; // reset
       });
 
-      const drawRow = (tx: number, ty: number, key: string, val: string, col: string) => {
-        ctx.fillStyle = "#64748b";
-        ctx.font = "normal 10px 'Segoe UI', Arial, sans-serif";
-        ctx.fillText(key, tx, ty);
+      // RIGHT COLUMN: Beautiful interconnected pipeline of PANCA Pillars (Star / Flow Network)
+      drawRoundRect(400, 40, 370, 275, 14);
+      ctx.fillStyle = "#ffffff";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.25)";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
 
-        ctx.fillStyle = col;
-        ctx.font = "bold 11px monospace";
-        ctx.textAlign = "right";
-        ctx.fillText(val, tx + 225, ty);
-        ctx.textAlign = "left";
+      ctx.fillStyle = themePrimary;
+      ctx.font = "bold 13px 'Segoe UI', Arial, sans-serif";
+      ctx.fillText("ALUR INTEGRASI PILAR P-A-N-C-A", 420, 68);
 
-        ctx.strokeStyle = "rgba(148, 163, 184, 0.12)";
-        ctx.lineWidth = 1;
+      // We draw 5 pillars "P" "A" "N" "C" "A". 
+      // Center of loop is (585, 175)
+      const cx = 585;
+      const cy = 175;
+      const radius = 70;
+      const angles = [
+        -Math.PI / 2, // P (top)
+        -Math.PI / 2 + (2 * Math.PI / 5), // A
+        -Math.PI / 2 + (4 * Math.PI / 5), // N
+        -Math.PI / 2 + (6 * Math.PI / 5), // C
+        -Math.PI / 2 + (8 * Math.PI / 5)  // A
+      ];
+
+      const pancaLetters = ["P", "A", "N", "C", "A"];
+      const pancaColors = ["#f43f5e", "#6366f1", "#eab308", "#10b981", "#f97316"];
+      const pancaLabels = cat.id === "demography" 
+        ? ["Pemetaan", "Akurasi", "Nilai", "Cepat", "Alokasi"]
+        : ["Proteksi", "Akurasi", "Nilai", "Cepat", "Alokasi"];
+
+      // Draw beautiful loop connector circles/lines with thick track arrow elements
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.25)";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Clean dash highlight or ticks
+      ctx.strokeStyle = themeAccent;
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]); // Reset
+
+      // Render the 5 nodes
+      angles.forEach((angle, idx) => {
+        const nx = cx + radius * Math.cos(angle);
+        const ny = cy + radius * Math.sin(angle);
+
+        // Circle node backdrop
         ctx.beginPath();
-        ctx.moveTo(tx, ty + 5);
-        ctx.lineTo(tx + 225, ty + 5);
+        ctx.arc(nx, ny, 16, 0, Math.PI * 2);
+        ctx.fillStyle = pancaColors[idx];
+        ctx.fill();
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 2;
         ctx.stroke();
-      };
 
-      drawRow(685, 335, "Indeks Efisiensi", `+${stats.efficiencyIdx}%`, "#00d285");
-      drawRow(685, 365, "Kapasitas Skalabilitas", `PRM-${stats.scalabilityIdx}`, "#0284c7");
-      drawRow(685, 395, "Faktor Risiko Korporat", `LOW Q-${stats.riskIdx}%`, "#ef4444");
-      drawRow(685, 425, "Toleransi Keamanan", "STABIL", "#8b5cf6");
+        // Letters
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 13px monospace";
+        ctx.textAlign = "center";
+        ctx.fillText(pancaLetters[idx], nx, ny + 5);
 
-      // Footer
-      ctx.fillStyle = "#f1f5f9";
-      ctx.fillRect(17, 478, 926, 44);
+        // Labels placed radially or nicely offset
+        // Offset outwards from the circle
+        const ox = cx + (radius + 28) * Math.cos(angle);
+        const oy = cy + (radius + 28) * Math.sin(angle) + 3;
 
-      ctx.fillStyle = "#475569";
-      const barcodeWidths = [2, 5, 1, 3, 4, 1, 6, 2, 3, 1, 4, 2, 1, 5, 2, 4, 1, 3, 2, 4];
-      let bX = 35;
+        ctx.fillStyle = "#334155";
+        ctx.font = "bold 9.5px 'Segoe UI', Arial, sans-serif";
+        ctx.fillText(pancaLabels[idx], ox, oy);
+        ctx.textAlign = "left"; // reset
+      });
+
+      // DRAW BOTTOM FOOTER INFO STRIP
+      drawRoundRect(30, 335, 740, 48, 10);
+      ctx.fillStyle = themePrimary;
+      ctx.fill();
+
+      // Footer branding text
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 9.5px monospace";
+      ctx.fillText("✦ PRAMA COGNITIVE BUSINESS ADVISOR MAP • VERIFIED ENTERPRISE MODEL • S-A-F-E BLUEPRINT", 48, 363);
+
+      // Clean barcode
+      ctx.fillStyle = themeAccent;
+      const barcodeWidths = [1, 2, 4, 1, 3, 1, 2, 3, 1, 4, 2, 1, 3, 2, 4];
+      let bx = 650;
       for (let bw of barcodeWidths) {
-        ctx.fillRect(bX, 488, bw, 24);
-        bX += bw + 2;
+        ctx.fillRect(bx, 351, bw, 16);
+        bx += bw + 1.2;
       }
-
-      ctx.fillStyle = "#475569";
-      ctx.font = "bold 8px monospace";
-      ctx.fillText("*PRAMA-SYNCHRONIZED-MAP*", 35, 517);
-
-      ctx.fillStyle = "#475569";
-      ctx.font = "bold 11px 'Segoe UI', Arial, sans-serif";
-      ctx.fillText("TI & PROYEK UTAMA PT PANCARAN GROUP • PRAMA SYSTEM", 225, 504);
-
-      ctx.fillStyle = "#00D285";
-      ctx.font = "bold 14px Arial, sans-serif";
-      ctx.textAlign = "right";
-      ctx.fillText("PRAMA CERTIFIED", 915, 501);
-
-      ctx.fillStyle = "#64748b";
-      ctx.font = "normal 8px monospace";
-      ctx.fillText("COGNITIVE VERIFICATION ID: PRM-WORD-COMPLIANT", 915, 513);
 
       return canvas.toDataURL("image/png");
     } catch (err) {
@@ -724,7 +808,7 @@ export function exportToWord(title: string, text: string, divisionName: string) 
 
         ${infographicUrl ? `
         <div style="text-align: center; margin-top: 15pt; margin-bottom: 25pt; page-break-inside: avoid;">
-          <img src="${infographicUrl}" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px;" alt="Peta Visual Strategis PRAMA" />
+          <img src="${infographicUrl}" width="600" style="width: 6.25in; max-width: 100%; height: auto; border: 1px solid #cbd5e1; border-radius: 6px; display: block; margin: 0 auto;" alt="Peta Visual Strategis PRAMA" />
           <p style="font-size: 8.5pt; color: #64748b; font-style: italic; text-align: center; margin-top: 6pt; font-family: 'Segoe UI', Arial, sans-serif;">
             Gambar 1.0: Peta Visual Strategis Terpadu PT Pancaran Group - Hasil Evaluasi Cognitive AI PRAMA
           </p>
@@ -1415,147 +1499,28 @@ export async function exportToPPTX(
       // Removed bugged lineSpacing of 1.2 points which caused lines of text to stack/overlap on top of each other
     });
 
-    // Helper inside to perform hybrid client-side and server-side image fetch to base64 conversion.
-    // Extremely robust: uses client-side direct fetch & Canvas caching first to bypass any server network limitations,
-    // then falls back to backend proxy, and lastly renders a beautiful light-themed corporate diagram fallback.
-    const getImageBase64WithFallback = async (imageUrl: string, slideTitleText: string): Promise<string> => {
-      // Append a cache-buster query parameter to bypass the browser's disk cache.
-      // This is necessary because Chrome/Safari cache the image when it is displayed in standard <img> tags (without CORS headers).
-      // Requesting it again with crossOrigin="anonymous" or fetch() CORS mode will fail with a CORS error unless cache is bypassed.
-      let corsImageUrl = imageUrl;
-      if (imageUrl && imageUrl.includes("unsplash.com")) {
-        const separator = imageUrl.includes("?") ? "&" : "?";
-        corsImageUrl = `${imageUrl}${separator}cors=true&ts=${Date.now()}`;
-      }
-
-      // Direct high-speed client-side fetch (bypasses server sandbox restrictions completely)
-      try {
-        const fetchRes = await fetch(corsImageUrl, { mode: "cors" });
-        if (fetchRes.ok) {
-          const blob = await fetchRes.blob();
-          const base64: string = await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.onerror = () => resolve("");
-            reader.readAsDataURL(blob);
-          });
-          if (base64) return base64;
-        }
-      } catch (e) {
-        console.warn("Client-side direct fetch failed for image:", corsImageUrl, e);
-      }
-
-      // Live Image element drawing to canvas (resolves local browser caching, fully supports CORS since Unsplash/Picsum CDNs allow *)
-      try {
-        const base64: string = await new Promise((resolve) => {
-          const img = new Image();
-          img.crossOrigin = "anonymous";
-          img.onload = () => {
-            try {
-              const canvas = document.createElement("canvas");
-              canvas.width = img.naturalWidth || img.width || 800;
-              canvas.height = img.naturalHeight || img.height || 500;
-              const ctx = canvas.getContext("2d");
-              if (ctx) {
-                ctx.drawImage(img, 0, 0);
-                resolve(canvas.toDataURL("image/jpeg"));
-                return;
-              }
-            } catch (canvasErr) {
-              console.error("Canvas rendering from image failed:", canvasErr);
-            }
-            resolve("");
-          };
-          img.onerror = () => resolve("");
-          img.src = corsImageUrl;
-        });
-        if (base64) return base64;
-      } catch (e) {
-        console.warn("Client-side Image rendering failed for:", corsImageUrl, e);
-      }
-
-      // Server-side proxy backup (CORS bypassed via Node backend)
-      try {
-        const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(imageUrl)}`;
-        const res = await fetch(proxyUrl);
-        if (res.ok) {
-          const data = await res.json();
-          if (data && data.base64) {
-            return data.base64;
-          }
-        }
-      } catch (err) {
-        console.error("Server image proxy fetch failed for:", imageUrl, err);
-      }
-
-      // Elegant off-white custom light corporate diagram template fallback (Never black!)
+    // Helper inside to generate a pristine high-fidelity custom strategic illustration
+    // fully client-side and zero-delay, using the Prama drawing engine.
+    // This establishes 100% visual parity with the on-screen active web animations!
+    const getImageBase64WithFallback = async (slideTitleText: string): Promise<string> => {
       try {
         const canvas = document.createElement("canvas");
-        canvas.width = 800;
-        canvas.height = 500;
+        canvas.width = 1000;
+        canvas.height = 650;
         const ctx = canvas.getContext("2d");
         if (ctx) {
-          // Warm elegant light off-white gradient background
-          const grad = ctx.createLinearGradient(0, 0, 800, 500);
-          grad.addColorStop(0, "#F8FAFC");
-          grad.addColorStop(1, "#F1F5F9");
-          ctx.fillStyle = grad;
-          ctx.fillRect(0, 0, 800, 500);
-
-          // Vivid corporate green outline frame
-          ctx.strokeStyle = "#00D285";
-          ctx.lineWidth = 4;
-          ctx.strokeRect(15, 15, 770, 470);
-
-          // High status clean watermark
-          ctx.fillStyle = "rgba(0, 210, 133, 0.08)";
-          ctx.font = "italic bold 52px Arial";
-          ctx.textAlign = "center";
-          ctx.fillText("PRAMA ADVISOR", 400, 260);
-
-          // Heading Slide Topic label
-          ctx.fillStyle = "#0F172A";
-          ctx.font = "bold 20px Arial";
-          ctx.textAlign = "center";
-          
-          const words = slideTitleText.replace(/_+/g, " ").toUpperCase().split(" ");
-          let line = "";
-          let yPos = 200;
-          for (let n = 0; n < words.length; n++) {
-            const testLine = line + words[n] + " ";
-            const metrics = ctx.measureText(testLine);
-            if (metrics.width > 600 && n > 0) {
-              ctx.fillText(line, 400, yPos);
-              line = words[n] + " ";
-              yPos += 32;
-            } else {
-              line = testLine;
-            }
-          }
-          ctx.fillText(line, 400, yPos);
-
-          ctx.fillStyle = "#00D285";
-          ctx.font = "bold 13px Arial";
-          ctx.fillText("PT PANCARAN GROUP • STRATEGIC ADVISORY", 400, 420);
-
+          // Render a beautifully developed static frame of the target slide's category
+          drawPramaCanvasIllustration(ctx, 1000, 650, slideTitleText, idx, 150);
           return canvas.toDataURL("image/png");
         }
       } catch (canvasErr) {
-        console.error("Canvas drawing failed:", canvasErr);
+        console.error("Local PPT illustration drawing failed:", canvasErr);
       }
-
-      // Ultimate emergency absolute 1x1 white fallback
       return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP89f8AAuEB979f1jUAAAAASUVORK5CYII=";
     };
 
-    // Load base64 with multi-layered fallback strategy and clean for PPTX format requirements
-    let rawBase64 = "";
-    if (slideData.imageUrl) {
-      rawBase64 = await getImageBase64WithFallback(slideData.imageUrl, cleanSlideTitle);
-    } else {
-      // Use fallback template right away
-      rawBase64 = await getImageBase64WithFallback("", cleanSlideTitle);
-    }
+    // Generate custom illustration base64
+    const rawBase64 = await getImageBase64WithFallback(cleanSlideTitle);
 
     // Pptxgenjs expects base64 data to have a MIME header like 'image/png;base64,iVBORw...' or 'image/jpeg;base64,...'
     // but without the leading 'data:' schema prefix. Let's process it correctly:

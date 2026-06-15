@@ -30,6 +30,7 @@ import {
   exportChatBIToPPTX
 } from "./utils/chatIntelligenceHelper";
 import Navbar from "./components/Navbar";
+import { PramaAnimatedIllustration } from "./components/PramaAnimatedIllustration";
 const pramaLogo = "https://lh3.googleusercontent.com/d/1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X";
 
 export interface User {
@@ -81,7 +82,13 @@ import {
   Grid,
   ArrowLeft,
   Hand,
-  Move
+  Move,
+  Volume2,
+  VolumeX,
+  Play,
+  Pause,
+  Maximize2,
+  Minimize2
 } from "lucide-react";
 import { GoogleGenAI } from "@google/genai";
 import {
@@ -598,6 +605,158 @@ export default function App() {
   const [activeSlideIndex, setActiveSlideIndex] = useState<number>(0);
   const [copiedState, setCopiedState] = useState<boolean>(false);
 
+  // --- VOICE NARRATION (TTS) & AUTOPLAY STATES ---
+  const [isTtsPlaying, setIsTtsPlaying] = useState<boolean>(false);
+  const [isTtsAutoplay, setIsTtsAutoplay] = useState<boolean>(false);
+  const [ttsVolume, setTtsVolume] = useState<number>(0.9);
+  const [ttsRate, setTtsRate] = useState<number>(1.0);
+  const [isPptFullscreen, setIsPptFullscreen] = useState<boolean>(false);
+
+  const autoplayTimerRef = useRef<any>(null);
+  const currentUtteranceRef = useRef<any>(null);
+
+  // --- PPT PRESENTATION TEXT TO SPEECH AND AUTOPLAY ENGINE ---
+  const stopTtsAndTimers = () => {
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    setIsTtsPlaying(false);
+    if (autoplayTimerRef.current) {
+      clearTimeout(autoplayTimerRef.current);
+      autoplayTimerRef.current = null;
+    }
+  };
+
+  const speakCurrentSlide = () => {
+    if (typeof window === "undefined" || !window.speechSynthesis || !pptPreview) return;
+
+    // Reset previous speaking and timeouts
+    stopTtsAndTimers();
+
+    // Determine target speaker text
+    let targetText = "";
+    if (activeSlideIndex === 0) {
+      const rawTitle = pptPreview.title || "";
+      const cleanTitle = rawTitle
+        .replace(/^KAJIAN STRATEGIS KOMPREHENSIF:\s*/i, "")
+        .replace(/^Presentasi_Kajian_/gi, "")
+        .replace(/^Presentasi\s+Kajian\s+/gi, "")
+        .replace(/^Presentasi\s+/gi, "")
+        .replace(/^Kajian\s+/gi, "")
+        .replace(/Presentasi Kajian Kajian/gi, "Presentasi Kajian")
+        .trim();
+      targetText = `Selamat pagi atau siang Bapak dan Ibu sekalian. Selamat datang di presentasi laporan. Hari ini kami memaparkan kajian strategis komprehensif mengenai, ${cleanTitle}. Dokumen ini diproduksi guna memberikan analisis pilar operasional dan implementasi taktis bagi divisi ${(activeDivision || "umum").toUpperCase()} di PT Pancaran Group. Mari kita mulai pembahasannya.`;
+    } else if (activeSlideIndex === pptPreview.slides.length + 1) {
+      targetText = "Demikian seluruh rangkaian presentasi kajian strategis komprehensif ini selesai kami sampaikan Bapak dan Ibu sekalian. Terima kasih yang sebesar-besarnya atas perhatian dan masukan berharga dari Bapak Ibu jajaran direksi, komite eksekutif, dan tim operasional PT Pancaran Group. Kami mengundang Bapak Ibu untuk memulai diskusi interaktif dan sesi tanya jawab.";
+    } else {
+      const currentSlide = pptPreview.slides[activeSlideIndex - 1];
+      if (currentSlide) {
+        targetText = currentSlide.speakerNotes || `Slide Bab ${activeSlideIndex}, ${currentSlide.title}.`;
+      }
+    }
+
+    // Clean text: strip out markdown asterisks, stars, quotes or code blocks
+    const cleanText = targetText
+      .replace(/\*\*/g, "")
+      .replace(/\*/g, "")
+      .replace(/`/g, "")
+      .replace(/["'""'“”]/g, "")
+      .trim();
+
+    try {
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.lang = "id-ID"; // Standard Indonesian language
+      utterance.volume = ttsVolume;
+      utterance.rate = ttsRate;
+
+      utterance.onstart = () => {
+        setIsTtsPlaying(true);
+      };
+
+      utterance.onend = () => {
+        setIsTtsPlaying(false);
+        if (isTtsAutoplay) {
+          // If we are on the very last slide, turn off autoplay
+          if (activeSlideIndex >= pptPreview.slides.length + 1) {
+            setIsTtsAutoplay(false);
+          } else {
+            // Buffer delay 2.5 seconds before going to the next slide automatically
+            autoplayTimerRef.current = setTimeout(() => {
+              setActiveSlideIndex(prev => prev + 1);
+            }, 2500);
+          }
+        }
+      };
+
+      utterance.onerror = (e) => {
+        console.error("Speech Synthesis Error:", e);
+        setIsTtsPlaying(false);
+      };
+
+      currentUtteranceRef.current = utterance;
+      window.speechSynthesis.speak(utterance);
+    } catch (err) {
+      console.error("Speech Synthesis initiation failed:", err);
+      setIsTtsPlaying(false);
+    }
+  };
+
+  // Trigger speech on actual index changes when isTtsAutoplay is active
+  useEffect(() => {
+    if (pptPreview && isTtsAutoplay) {
+      speakCurrentSlide();
+    }
+    return () => {
+      // Clean up timer if active
+      if (autoplayTimerRef.current) {
+        clearTimeout(autoplayTimerRef.current);
+      }
+    };
+  }, [activeSlideIndex, isTtsAutoplay]);
+
+  // Cancel immediately if presentation is closed
+  useEffect(() => {
+    if (!pptPreview) {
+      stopTtsAndTimers();
+      setIsTtsAutoplay(false);
+      setIsPptFullscreen(false);
+    }
+  }, [pptPreview]);
+
+  // Keyboard navigation and control inside presentation mode
+  useEffect(() => {
+    if (!pptPreview) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check if user is typing on any input or textarea to avoid blocking standard text input
+      const activeEl = document.activeElement;
+      if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")) {
+        return;
+      }
+
+      if (e.key === "ArrowRight") {
+        setActiveSlideIndex(prev => Math.min(pptPreview.slides.length + 1, prev + 1));
+      } else if (e.key === "ArrowLeft") {
+        setActiveSlideIndex(prev => Math.max(0, prev - 1));
+      } else if (e.key === "Escape") {
+        setIsPptFullscreen(false);
+      } else if (e.key === " ") {
+        // Spacebar toggles narration
+        e.preventDefault();
+        if (isTtsPlaying) {
+          stopTtsAndTimers();
+        } else {
+          speakCurrentSlide();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [pptPreview, activeSlideIndex, isTtsPlaying, isTtsAutoplay]);
+
   // Active workspace states
   const [files, setFiles] = useState<SavedFile[]>([]);
   const [selectedFile, setSelectedFile] = useState<SavedFile | null>(null);
@@ -649,13 +808,34 @@ export default function App() {
   // Tab selector inside main dashboard
   const [dashboardView, setDashboardView] = useState<"divisions" | "saved_docs" | "approval_requests" | "project_dashboard" | "chat_intelligence">("divisions");
 
+  // State and handlers for the enterprise hub banner image
+  const [hubBannerImage, setHubBannerImage] = useState<string | null>(() => {
+    return localStorage.getItem("prama_hub_banner_image") || "https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8";
+  });
+  const [isBannerDragging, setIsBannerDragging] = useState(false);
+
+  const handleBannerUpload = (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      if (dataUrl) {
+        setHubBannerImage(dataUrl);
+        localStorage.setItem("prama_hub_banner_image", dataUrl);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   // Chat Intelligence Custom BI parameters
   const [chatBIState, setChatBIState] = useState<ChatIntelligenceState>(defaultChatIntelligence);
 
   const [slideImageErrors, setSlideImageErrors] = useState<Record<number, boolean>>({});
 
   // Project Dashboard customized parameters
-  const [dashboardProjectTitle, setDashboardProjectTitle] = useState("Kajian Strategis: Waste Management Transportation");
+  const [dashboardProjectTitle, setDashboardProjectTitle] = useState("Kajian Strategis: Forestry Management Transportation");
   const [activeDashboardSection, setActiveDashboardSection] = useState<number>(1);
   const [dashboardSectionsState, setDashboardSectionsState] = useState<Record<number, string>>(() => {
     const initial: Record<number, string> = {};
@@ -3077,6 +3257,106 @@ ${lastMsgText}`;
 
         {/* Division selector Body */}
         <div className="max-w-7xl mx-auto px-4 py-11 text-center flex-grow flex flex-col justify-center">
+
+          {/* ----------------- ENTERPRISE BANNER BOX ----------------- */}
+          <div className="max-w-5xl mx-auto w-full mb-8 relative">
+            <div
+              className={`w-full h-36 md:h-44 rounded-[1.5rem] md:rounded-[2rem] border-2 border-dashed overflow-hidden relative transition-all duration-300 flex flex-col items-center justify-center cursor-pointer ${
+                hubBannerImage 
+                  ? "border-transparent bg-slate-900 shadow-xl" 
+                  : isBannerDragging 
+                  ? "border-indigo-500 bg-indigo-50/50 scale-[1.01]" 
+                  : "border-slate-300 hover:border-slate-400 bg-white shadow-sm"
+              }`}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsBannerDragging(true);
+              }}
+              onDragLeave={() => setIsBannerDragging(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setIsBannerDragging(false);
+                const file = e.dataTransfer.files?.[0];
+                if (file) handleBannerUpload(file);
+              }}
+              onClick={() => {
+                document.getElementById("hidden-banner-input")?.click();
+              }}
+              title="Seret & letakkan gambar atau klik untuk mengunggah"
+              id="enterprise-banner-clickable"
+            >
+              {hubBannerImage ? (
+                <>
+                  <img
+                    src={hubBannerImage}
+                    alt="Corporate Banner"
+                    className="w-full h-full object-cover rounded-[1.5rem] md:rounded-[2rem]"
+                    referrerPolicy="no-referrer"
+                    id="enterprise-uploaded-banner-img"
+                  />
+                  {/* Hover Overlay */}
+                  <div className="absolute inset-0 bg-slate-950/40 opacity-0 hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-3 rounded-[1.5rem] md:rounded-[2rem]">
+                    <button 
+                      type="button"
+                      className="px-4 py-2 bg-white/95 text-slate-900 hover:bg-white font-semibold text-xs rounded-xl shadow-lg flex items-center gap-2 transition-transform active:scale-95"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        document.getElementById("hidden-banner-input")?.click();
+                      }}
+                      id="btn-change-banner"
+                    >
+                      <span>🔄</span> Ganti Gambar Banner
+                    </button>
+                    <button 
+                      type="button"
+                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold text-xs rounded-xl shadow-lg flex items-center gap-2 transition-transform active:scale-95"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setHubBannerImage(null);
+                        localStorage.removeItem("prama_hub_banner_image");
+                      }}
+                      id="btn-reset-banner"
+                    >
+                      <span>🗑️</span> Hapus
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="p-6 md:p-8 flex flex-col md:flex-row items-center gap-5 text-left max-w-3xl">
+                  {/* Left Blueprint Art */}
+                  <div className="hidden sm:flex h-14 w-14 shrink-0 items-center justify-center rounded-[1.25rem] bg-indigo-50 border border-indigo-100 text-indigo-600 shadow-sm">
+                    <svg className="w-7 h-7 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  {/* Text details */}
+                  <div className="flex-1 text-center md:text-left">
+                    <h4 className="font-display font-black text-slate-800 text-sm md:text-base leading-snug">
+                      UNGGAH GAMBAR HEADER KONTEN KORPORAT
+                    </h4>
+                    <p className="text-xs text-slate-500 font-medium mt-1 leading-relaxed">
+                      Seret & letakkan berkas gambar di sini, atau klik untuk memilih gambar resmi Direktorat Enterprise (Dimensi ideal: 1200 x 200 piksel).
+                    </p>
+                  </div>
+                  {/* Button trigger */}
+                  <span className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-sm tracking-wide transition-all uppercase whitespace-nowrap">
+                    Pilih Berkas
+                  </span>
+                </div>
+              )}
+              
+              <input
+                id="hidden-banner-input"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleBannerUpload(file);
+                }}
+              />
+            </div>
+          </div>
           
           <div className="mb-8 block">
             <span className="font-mono text-[10px] font-extrabold pb-1 bg-indigo-50 border border-indigo-100 text-indigo-700 px-3 py-1 rounded-full uppercase tracking-widest inline-block">
@@ -5131,44 +5411,75 @@ ${lastMsgText}`;
 
       {/* 2. PPT SLIDESHOW PREVIEW INTERACTIVE MODAL */}
       {pptPreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#030712]/90 p-4 backdrop-blur-md overflow-y-auto animate-fade-in text-slate-800">
-          <div className="flex flex-col bg-white rounded-[2rem] w-full max-w-5xl shadow-2xl overflow-hidden border border-slate-200">
+        <div className={`fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 backdrop-blur-md overflow-y-auto animate-fade-in text-slate-800 transition-all duration-300 ${isPptFullscreen ? "bg-[#020617] p-1 sm:p-2" : "bg-[#030712]/95"}`}>
+          <div className={`flex flex-col w-full shadow-2xl overflow-hidden border transition-all duration-300 ${isPptFullscreen ? "max-w-[98vw] h-[96vh] bg-slate-900 border-slate-800 shadow-slate-950/90 rounded-3xl" : "bg-white max-w-7xl border-slate-200 rounded-[2rem]"}`}>
             {/* Header toolbar */}
-            <div className="bg-white px-8 py-5 border-b border-slate-100 flex items-center justify-between">
-              <div className="flex items-center gap-3.5">
-                <div className="h-10 w-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-sm">
+            <div className={`px-6 sm:px-8 py-4 sm:py-5 border-b flex items-center justify-between transition-all ${isPptFullscreen ? "bg-slate-950 border-slate-800" : "bg-white border-slate-100"}`}>
+              <div className="flex items-center gap-3">
+                <div className={`h-10 w-10 rounded-xl flex items-center justify-center shadow-sm border ${isPptFullscreen ? "bg-slate-900 border-slate-800 text-[#00D285]" : "bg-blue-50 border-blue-100 text-blue-600"}`}>
                   <Presentation className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="text-xs sm:text-sm font-extrabold text-slate-800 uppercase tracking-wider font-display">SLIDE SHOW & INTERACTIVE PREVIEW</h3>
+                  <h3 className={`text-xs sm:text-sm font-extrabold uppercase tracking-wider font-display ${isPptFullscreen ? "text-white" : "text-slate-800"}`}>
+                    {isPptFullscreen ? "MODUS PRESENTASI UTAMA (THEATER MODE)" : "SLIDE SHOW & INTERACTIVE PREVIEW"}
+                  </h3>
                   <p className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest">{pptPreview.fileName.toUpperCase()}.PPTX</p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5">
+                {/* Visual state pill for TTS autoplay */}
+                {isTtsAutoplay && (
+                  <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-bold font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 animate-pulse">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
+                    AUTOPLAY ACTIVE
+                  </span>
+                )}
+                
+                {!isPptFullscreen && (
+                  <button
+                    onClick={async (e) => {
+                      const btn = e.currentTarget;
+                      const originalText = btn.innerHTML;
+                      btn.disabled = true;
+                      btn.innerHTML = `<span class="flex items-center gap-1.5"><svg class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> <span>Menyiapkan PPTX...</span></span>`;
+                      try {
+                        await exportToPPTX(pptPreview.fileName, pptPreview.slides, activeDivision || "PORTAL");
+                      } catch (error) {
+                        console.error(error);
+                      } finally {
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                      }
+                    }}
+                    className="flex items-center gap-1.5 px-4 py-2.5 text-xs font-black bg-[#0082FB] hover:bg-[#0072DF] text-white border-none rounded-full transition-all cursor-pointer shadow-md shadow-blue-100 disabled:opacity-50"
+                  >
+                    <Download className="h-3.5 w-3.5 stroke-[2.5]" />
+                    <span>Unduh PPTX</span>
+                  </button>
+                )}
+
                 <button
-                  onClick={async (e) => {
-                    const btn = e.currentTarget;
-                    const originalText = btn.innerHTML;
-                    btn.disabled = true;
-                    btn.innerHTML = `<span class="flex items-center gap-1.5"><svg class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> <span>Menyiapkan PPTX...</span></span>`;
-                    try {
-                      await exportToPPTX(pptPreview.fileName, pptPreview.slides, activeDivision || "PORTAL");
-                    } catch (error) {
-                      console.error(error);
-                    } finally {
-                      btn.disabled = false;
-                      btn.innerHTML = originalText;
-                    }
-                  }}
-                  className="flex items-center gap-1.5 px-5 py-2.5 text-xs font-black bg-[#0082FB] hover:bg-[#0072DF] text-white border-none rounded-full transition-all cursor-pointer shadow-md shadow-blue-100 disabled:opacity-50"
+                  onClick={() => setIsPptFullscreen(prev => !prev)}
+                  className={`h-9 items-center gap-1.5 px-3 rounded-full border transition flex text-xs font-bold cursor-pointer ${isPptFullscreen ? "bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700" : "bg-slate-50 hover:bg-slate-100 text-slate-755 border-slate-200"}`}
+                  title="Toggle Layar Penuh"
                 >
-                  <Download className="h-3.5 w-3.5 stroke-[2.5]" />
-                  <span>Unduh PPTX (.pptx)</span>
+                  {isPptFullscreen ? (
+                    <>
+                      <Minimize2 className="h-4 w-4 text-[#00D285]" />
+                      <span className="hidden sm:inline">Keluar Layar Penuh</span>
+                    </>
+                  ) : (
+                    <>
+                      <Maximize2 className="h-4 w-4 text-[#00D285]" />
+                      <span className="hidden sm:inline">Layar Penuh</span>
+                    </>
+                  )}
                 </button>
+
                 <button
                   onClick={() => setPptPreview(null)}
-                  className="h-8 w-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 rounded-full transition cursor-pointer"
+                  className={`h-9 w-9 flex items-center justify-center rounded-full transition cursor-pointer ${isPptFullscreen ? "bg-slate-800 hover:bg-slate-755 text-slate-350 hover:text-white" : "bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800"}`}
                 >
                   <X className="h-4.5 w-4.5 stroke-[2.5]" />
                 </button>
@@ -5176,323 +5487,395 @@ ${lastMsgText}`;
             </div>
 
             {/* Main Interactive Screen with 16:9 canvas and Speaker notes */}
-            <div className="flex-1 overflow-y-auto bg-[#0B0F19] p-6 sm:p-8 flex flex-col items-center justify-center gap-6">
+            <div className={`flex-1 overflow-y-auto flex flex-col lg:flex-row items-stretch justify-center gap-6 transition-all ${isPptFullscreen ? "bg-slate-950 p-4 lg:p-5" : "bg-[#0B0F19] p-6 lg:p-7"}`}>
               
-              {/* Projector slide backdrop container */}
-              <div className="w-full max-w-4xl aspect-[16/9] bg-white rounded-2xl shadow-2xl border border-slate-800/20 flex overflow-hidden relative group">
-                {activeSlideIndex === 0 ? (
-                  // TITLE COVER SLIDE STYLE (MATCHES SLIDE 1)
-                  (() => {
-                    const rawTitle = pptPreview.title || "";
-                    const cleanTitle = rawTitle
-                      .replace(/^KAJIAN STRATEGIS KOMPREHENSIF:\s*/i, "")
-                      .replace(/^Presentasi_Kajian_/gi, "")
-                      .replace(/^Presentasi\s+Kajian\s+/gi, "")
-                      .replace(/^Presentasi\s+/gi, "")
-                      .replace(/^Kajian\s+/gi, "")
-                      .replace(/Presentasi Kajian Kajian/gi, "Presentasi Kajian")
-                      .replace(/Kajian Kajian/gi, "Kajian")
-                      .replace(/Presentasi Presentasi/gi, "Presentasi")
-                      .replace(/Presentasi Kajian/gi, "")
-                      .replace(/Presentasi/gi, "")
-                      .replace(/Kajian/gi, "")
-                      .trim();
-
-                    return (
-                      <div className="flex-1 flex flex-col justify-center items-start bg-[#06152B] p-12 text-left select-none relative w-full h-full">
-                        {/* Vibrant Green Border */}
-                        <div className="absolute inset-3 border border-[#00D285] pointer-events-none rounded-sm" />
-                        
-                        <div className="text-[10px] font-mono font-black text-[#00D285] uppercase tracking-wider mb-4 flex items-center gap-1.5">
-                          <span>✦ PRAMA COGNITIVE PORTAL</span>
-                          <span>•</span>
-                          <span>{cleanTitle.toUpperCase()}</span>
-                        </div>
-                        
-                        <h1 className="text-white text-2xl sm:text-3xl lg:text-4xl font-extrabold max-w-3xl uppercase tracking-tight leading-tight select-text">
-                          KAJIAN STRATEGIS KOMPREHENSIF: {cleanTitle.toUpperCase()}
-                        </h1>
-                        
-                        <div className="h-0.5 w-16 bg-[#00D285] my-5" />
-                        
-                        <p className="text-slate-400 font-medium text-xs sm:text-sm max-w-2xl leading-relaxed">
-                          Kajian Komprehensif Skema Strategis &amp; Operasional {cleanTitle} PT Pancaran Group Berdasarkan Rekomendasi PRAMA AI Advisor
-                        </p>
-                        
-                        <div className="mt-8 space-y-1 text-left text-[#00D285] font-mono font-bold text-[9px] uppercase tracking-wider">
-                          <div>PROYEK: {cleanTitle.toUpperCase()}</div>
-                          <div>UNIT DIREKTORAT: {(activeDivision || "UMUM").toUpperCase() + " & BUSINESS DEVELOPMENT"}</div>
-                          <div>KLASIFIKASI: TERBATAS / INTERNAL PT PANCARAN GROUP</div>
-                        </div>
-                      </div>
-                    );
-                  })()
-                ) : activeSlideIndex === pptPreview.slides.length + 1 ? (
-                  // THANK YOU / PENUTUP SLIDE STYLE (MATCHES SLIDE 17)
-                  <div className="flex-1 flex flex-col justify-center items-center bg-[#06152B] p-12 text-center select-none relative">
-                    {/* Vibrant Green Border */}
-                    <div className="absolute inset-3 border border-[#00D285] pointer-events-none rounded-sm" />
-                    
-                    <h1 className="text-white text-3xl sm:text-5xl font-black tracking-widest leading-none mb-3 animate-pulse">
-                      TERIMA KASIH
-                    </h1>
-                    
-                    <h3 className="text-[#00D285] font-mono font-bold text-xs sm:text-sm uppercase tracking-wide mb-8">
-                      Sistem Dokumentasi Strategis & Operasional Terintegrasi
-                    </h3>
-                    
-                    <div className="mt-6 text-slate-400 font-mono text-[9px] sm:text-xs tracking-wide leading-relaxed">
-                      <div>✦ Diformulasikan secara otomatis oleh PRAMA Strategic AI Advisor</div>
-                      <div className="text-[#00D285] font-semibold mt-1">PT PANCARAN GROUP INDONESIA • RAHASIA INTERNAL SENSITIF</div>
-                    </div>
-                  </div>
-                ) : (
-                  // BENTO SPLIT LAYOUT CONTENT SLIDE STYLE
-                  (() => {
-                    const currentSlide = pptPreview.slides[activeSlideIndex - 1];
-                    
-                    const cleanLead = (txt: string) => {
-                      if (!txt) return "";
-                      return txt.trim()
-                        .replace(/^[-*•\s+]+/g, "") // strip leading bullet or list markers
+              {/* Left Column: Projector slide backdrop container (80% Width for focus) */}
+              <div className="w-full lg:w-[80%] flex flex-col justify-center items-center">
+                <div className={`w-full aspect-[16/9] bg-white rounded-2xl shadow-2xl border flex overflow-hidden relative group transition-all duration-300 ${isPptFullscreen ? "max-w-[100%] max-h-[65vh] border-slate-800" : "border-slate-800/20"}`}>
+                  {activeSlideIndex === 0 ? (
+                    // TITLE COVER SLIDE STYLE (MATCHES SLIDE 1)
+                    (() => {
+                      const rawTitle = pptPreview.title || "";
+                      const cleanTitle = rawTitle
+                        .replace(/^KAJIAN STRATEGIS KOMPREHENSIF:\s*/i, "")
+                        .replace(/^Presentasi_Kajian_/gi, "")
+                        .replace(/^Presentasi\s+Kajian\s+/gi, "")
+                        .replace(/^Presentasi\s+/gi, "")
+                        .replace(/^Kajian\s+/gi, "")
+                        .replace(/Presentasi Kajian Kajian/gi, "Presentasi Kajian")
+                        .replace(/Kajian Kajian/gi, "Kajian")
+                        .replace(/Presentasi Presentasi/gi, "Presentasi")
+                        .replace(/Presentasi Kajian/gi, "")
+                        .replace(/Presentasi/gi, "")
+                        .replace(/Kajian/gi, "")
                         .trim();
-                    };
 
-                    let introPara = "Kajian komprehensif implementasi strategi, tata kelola, dan operasional guna mengoptimalkan kinerja proyek.";
-                    let bPoints = currentSlide?.bullets || [];
-                    if (currentSlide?.bullets && currentSlide.bullets.length > 0) {
-                      if (currentSlide.bullets.length >= 3) {
-                        introPara = cleanLead(currentSlide.bullets[0]);
-                        bPoints = currentSlide.bullets.slice(1);
-                      } else {
-                        bPoints = currentSlide.bullets;
-                      }
-                    }
-
-                    const formatBulletText = (text: string) => {
-                      let cleanText = text.replace(/\*\*/g, ""); // strip raw stars
-                      const colonIdx = cleanText.indexOf(":");
-                      if (colonIdx > 0 && colonIdx < 30) {
-                        const boldPrefix = cleanText.slice(0, colonIdx + 1);
-                        const rest = cleanText.slice(colonIdx + 1);
-                        return (
-                          <span>
-                            <strong className="font-extrabold text-slate-900">{boldPrefix}</strong>
-                            {rest}
-                          </span>
-                        );
-                      }
-                      return <span>{cleanText}</span>;
-                    };
-
-                    return (
-                      <div className="w-full h-full flex flex-col md:flex-row bg-white text-slate-800 relative overflow-hidden">
-                        {/* Solid Top Accent Green Bar */}
-                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-[#00D285] z-10" />
-
-                        {/* Left half: Content & Bullets */}
-                        <div className="w-full md:w-7/12 h-full flex flex-col justify-between p-6 sm:p-8 md:p-10 relative overflow-hidden z-10">
-                          <div className="space-y-3 pt-2 shrink-0">
-                            {/* Header row */}
-                            <div className="text-[9px] font-mono font-bold text-slate-400 uppercase tracking-wider flex justify-between items-center w-full pb-1 shrink-0">
-                              <span>{pptPreview.fileName.toUpperCase()}</span>
-                              <span className="text-[#00D285] font-extrabold">SEKTOR: {(activeDivision || "UMUM").toUpperCase() + " & BD"}</span>
-                            </div>
-                            
-                            <div className="h-[1px] bg-slate-100 w-full shrink-0" />
-
-                            <div className="text-[10px] font-bold text-[#00D285] font-mono uppercase tracking-widest pt-1 shrink-0">
-                              KAJIAN STRATEGIS: BAB {activeSlideIndex}
-                            </div>
-                            
-                            <h2 className="text-slate-900 font-extrabold text-lg sm:text-xl md:text-[22px] leading-tight select-text shrink-0">
-                              {currentSlide?.title}
-                            </h2>
-                            
-                            <p className="text-xs text-slate-500 font-medium leading-relaxed pb-1 select-text shrink-0">
-                              {introPara.replace(/\*\*/g, "")}
-                            </p>
-
-                            <div className="space-y-2 shrink-0">
-                              {bPoints.map((bulletText, bIdx) => {
-                                const bulletClean = cleanLead(bulletText);
-                                if (!bulletClean) return null;
-                                return (
-                                  <div key={bIdx} className="flex gap-2.5 items-start pl-0.5 shrink-0">
-                                    <span className="text-[#00D285] mt-1 shrink-0 font-extrabold select-none text-[10px] sm:text-sm">•</span>
-                                    <p className="text-[11px] sm:text-xs text-slate-600 font-medium leading-relaxed select-text shrink-0">
-                                      {formatBulletText(bulletClean)}
-                                    </p>
-                                  </div>
-                                );
-                              })}
-                            </div>
+                      return (
+                        <div className="flex-1 flex flex-col justify-center items-start bg-[#06152B] p-8 sm:p-12 text-left select-none relative w-full h-full">
+                          {/* Vibrant Green Border */}
+                          <div className="absolute inset-3 border border-[#00D285] pointer-events-none rounded-sm" />
+                          
+                          <div className="text-[10px] font-mono font-black text-[#00D285] uppercase tracking-wider mb-4 flex items-center gap-1.5">
+                            <span>✦ PRAMA COGNITIVE PORTAL</span>
+                            <span>•</span>
+                            <span>{cleanTitle.toUpperCase()}</span>
                           </div>
-
-                          {/* Footer row */}
-                          <div className="text-[8px] font-mono font-bold text-slate-400 border-t border-slate-100 pt-2.5 w-full flex justify-between items-center mt-4 shrink-0">
-                            <span>PANCARAN GROUP &bull; CONFIDENTIAL DOCUMENTATION</span>
-                            <span className="text-slate-700 font-bold uppercase w-max tracking-wide">HALAMAN {activeSlideIndex + 1} DARI {pptPreview.slides.length + 2}</span>
+                          
+                          <h1 className="text-white text-xl sm:text-2xl lg:text-3.5xl font-extrabold max-w-3xl uppercase tracking-tight leading-tight select-text">
+                            KAJIAN STRATEGIS KOMPREHENSIF: {cleanTitle.toUpperCase()}
+                          </h1>
+                          
+                          <div className="h-0.5 w-16 bg-[#00D285] my-4 sm:my-5" />
+                          
+                          <p className="text-slate-400 font-medium text-xs sm:text-sm max-w-2xl leading-relaxed">
+                            Kajian Komprehensif Skema Strategis &amp; Operasional {cleanTitle} PT Pancaran Group Berdasarkan Rekomendasi PRAMA AI Advisor
+                          </p>
+                          
+                          <div className="mt-6 sm:mt-8 space-y-1 text-left text-[#00D285] font-mono font-bold text-[9px] uppercase tracking-wider">
+                            <div>PROYEK: {cleanTitle.toUpperCase()}</div>
+                            <div>UNIT DIREKTORAT: {(activeDivision || "UMUM").toUpperCase() + " & BUSINESS DEVELOPMENT"}</div>
+                            <div>KLASIFIKASI: TERBATAS / INTERNAL PT PANCARAN GROUP</div>
                           </div>
                         </div>
-
-                        {/* Right half: Photo Frame */}
-                        <div className="w-full md:w-5/12 h-full bg-slate-50 relative overflow-hidden flex flex-col justify-center items-center p-6 border-l border-slate-100">
-                          <div className="w-full h-full flex flex-col justify-center items-center gap-2">
-                            {/* Photo framed with green border */}
-                            <div className="w-full h-[85%] border-2 border-[#00D285] p-1 bg-white shadow-md relative overflow-hidden rounded-md flex items-center justify-center">
-                              {currentSlide?.imageUrl && !slideImageErrors[activeSlideIndex] ? (
-                                <img
-                                  src={currentSlide.imageUrl}
-                                  alt="Slide context"
-                                  className="w-full h-full object-cover rounded-xs"
-                                  referrerPolicy="no-referrer"
-                                  onError={() => {
-                                    setSlideImageErrors(prev => ({ ...prev, [activeSlideIndex]: true }));
-                                  }}
-                                />
-                              ) : (
-                                <div className="w-full h-full bg-slate-900 text-cyan-400 p-4 rounded flex flex-col justify-between font-mono text-[9px] relative overflow-hidden select-none">
-                                  {/* Modern tech grid backdrop */}
-                                  <div className="absolute inset-0 bg-[linear-gradient(rgba(6,21,43,0.85)_1px,transparent_1px),linear-gradient(90deg,rgba(6,21,43,0.85)_1px,transparent_1px)] bg-[size:10px_10px] opacity-20 pointer-events-none" />
-                                  
-                                  <div className="flex justify-between items-center border-b border-cyan-800/40 pb-1.5 z-10 shrink-0">
-                                    <span className="text-[8px] font-extrabold text-[#00D285] animate-pulse">● PRAMA ENGINE ACTIVE</span>
-                                    <span className="text-[7.5px] text-cyan-500 font-semibold font-mono">REV. 04A</span>
-                                  </div>
-                                  
-                                  <div className="flex-1 flex flex-col justify-center gap-2.5 my-2 z-10 w-full">
-                                    {/* Visual Nodes */}
-                                    <div className="flex justify-between items-center px-1 w-full shrink-0">
-                                      <div className="p-1 px-2 rounded border border-cyan-500/30 bg-cyan-950/40 text-center flex flex-col items-center">
-                                        <span className="text-cyan-400 font-extrabold text-[8px]">INPUT</span>
-                                        <span className="text-slate-400 text-[7px] font-sans">Data Source</span>
-                                      </div>
-                                      <div className="h-px bg-cyan-500/20 flex-1 mx-1 border-t border-dashed border-cyan-500/40" />
-                                      <div className="p-1.5 px-3 rounded-full border-2 border-[#00D285] bg-emerald-950/40 text-center flex flex-col items-center animate-pulse">
-                                        <span className="text-[#00D285] font-extrabold text-[9px] tracking-wide">PRAMA AI</span>
-                                        <span className="text-slate-300 text-[6.5px] font-sans">Core Analysis</span>
-                                      </div>
-                                      <div className="h-px bg-cyan-500/20 flex-1 mx-1 border-t border-dashed border-cyan-500/40" />
-                                      <div className="p-1 px-2 rounded border border-cyan-500/30 bg-cyan-950/40 text-center flex flex-col items-center">
-                                        <span className="text-cyan-400 font-extrabold text-[8px]">OUTPUT</span>
-                                        <span className="text-slate-400 text-[7px] font-sans">Dashboard</span>
-                                      </div>
-                                    </div>
-
-                                    {/* Metric Bar */}
-                                    <div className="bg-slate-950/60 border border-slate-800 rounded p-1.5 flex justify-between items-center w-full shrink-0">
-                                      <div className="flex flex-col text-left">
-                                        <span className="text-[7px] text-slate-500 font-sans uppercase">OPTIMASI SISTEM</span>
-                                        <span className="text-[9px] text-white font-extrabold font-mono tracking-normal leading-none max-w-[130px] truncate">PT PANCARAN GROUP</span>
-                                      </div>
-                                      <div className="text-right">
-                                        <span className="text-[10px] text-[#00D285] font-extrabold font-mono">+44.9%</span>
-                                        <span className="text-[6.5px] text-slate-400 font-sans block leading-none">EFFICIENCY INDEX</span>
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  <div className="border-t border-cyan-800/40 pt-1.5 flex justify-between text-[7px] text-slate-500 z-10 shrink-0">
-                                    <span>SYSTEM LOCK: BI-PRAMA v4</span>
-                                    <span>CONFIDENTIAL</span>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                            <span className="text-[8px] text-slate-400 italic font-bold tracking-wide text-center uppercase shrink-0">
-                              ILUSTRASI STRATEGIS: {currentSlide?.title ? currentSlide.title.slice(0, 30) : "PRAMA ANALISA"}...
-                            </span>
-                          </div>
-                        </div>
+                      );
+                    })()
+                  ) : activeSlideIndex === pptPreview.slides.length + 1 ? (
+                    // THANK YOU / PENUTUP SLIDE STYLE (MATCHES SLIDE 17)
+                    <div className="flex-1 flex flex-col justify-center items-center bg-[#06152B] p-8 sm:p-12 text-center select-none relative">
+                      {/* Vibrant Green Border */}
+                      <div className="absolute inset-3 border border-[#00D285] pointer-events-none rounded-sm" />
+                      
+                      <h1 className="text-white text-3xl sm:text-5xl font-black tracking-widest leading-none mb-3 animate-pulse">
+                        TERIMA KASIH
+                      </h1>
+                      
+                      <h3 className="text-[#00D285] font-mono font-bold text-xs sm:text-sm uppercase tracking-wide mb-6 sm:mb-8">
+                        Sistem Dokumentasi Strategis & Operasional Terintegrasi
+                      </h3>
+                      
+                      <div className="mt-4 sm:mt-6 text-slate-400 font-mono text-[9px] sm:text-xs tracking-wide leading-relaxed">
+                        <div>✦ Diformulasikan secara otomatis oleh PRAMA Strategic AI Advisor</div>
+                        <div className="text-[#00D285] font-semibold mt-1">PT PANCARAN GROUP INDONESIA • RAHASIA INTERNAL SENSITIF</div>
                       </div>
-                    );
-                  })()
-                )}
+                    </div>
+                  ) : (
+                    // BENTO SPLIT LAYOUT CONTENT SLIDE STYLE
+                    (() => {
+                      const currentSlide = pptPreview.slides[activeSlideIndex - 1];
+                      
+                      const cleanLead = (txt: string) => {
+                        if (!txt) return "";
+                        return txt.trim()
+                          .replace(/^[-*•\s+]+/g, "") // strip leading bullet or list markers
+                          .trim();
+                      };
 
-                {/* Left navigation arrow on-slide */}
-                <button
-                  disabled={activeSlideIndex === 0}
-                  onClick={() => setActiveSlideIndex(prev => Math.max(0, prev - 1))}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 h-9 w-9 flex items-center justify-center rounded-full bg-slate-900/60 hover:bg-slate-950 text-white disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer shadow-lg transition-all z-20"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
+                      let introPara = "Kajian komprehensif implementasi strategi, tata kelola, dan operasional guna mengoptimalkan kinerja proyek.";
+                      let bPoints = currentSlide?.bullets || [];
+                      if (currentSlide?.bullets && currentSlide.bullets.length > 0) {
+                        if (currentSlide.bullets.length >= 3) {
+                          introPara = cleanLead(currentSlide.bullets[0]);
+                          bPoints = currentSlide.bullets.slice(1);
+                        } else {
+                          bPoints = currentSlide.bullets;
+                        }
+                      }
 
-                {/* Right navigation arrow on-slide */}
-                <button
-                  disabled={activeSlideIndex === pptPreview.slides.length + 1}
-                  onClick={() => setActiveSlideIndex(prev => Math.min(pptPreview.slides.length + 1, prev + 1))}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 h-9 w-9 flex items-center justify-center rounded-full bg-slate-900/60 hover:bg-slate-950 text-white disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer shadow-lg transition-all z-20"
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </button>
+                      const formatBulletText = (text: string) => {
+                        let cleanText = text.replace(/\*\*/g, ""); // strip raw stars
+                        const colonIdx = cleanText.indexOf(":");
+                        if (colonIdx > 0 && colonIdx < 30) {
+                          const boldPrefix = cleanText.slice(0, colonIdx + 1);
+                          const rest = cleanText.slice(colonIdx + 1);
+                          return (
+                            <span>
+                              <strong className="font-extrabold text-slate-900">{boldPrefix}</strong>
+                              {rest}
+                            </span>
+                          );
+                        }
+                        return <span>{cleanText}</span>;
+                      };
+
+                      return (
+                        <div className="w-full h-full flex flex-col md:flex-row bg-white text-slate-800 relative overflow-hidden">
+                          {/* Solid Top Accent Green Bar */}
+                          <div className="absolute top-0 left-0 right-0 h-1.5 bg-[#00D285] z-10" />
+
+                          {/* Left half: Content & Bullets */}
+                          <div className="w-full md:w-7/12 h-full flex flex-col justify-between p-5 sm:p-7 md:p-9 relative overflow-hidden z-10">
+                            <div className="space-y-2.5 pt-1.5 shrink-0">
+                              {/* Header row */}
+                              <div className="text-[9px] font-mono font-bold text-slate-400 uppercase tracking-wider flex justify-between items-center w-full pb-1 shrink-0">
+                                <span>{pptPreview.fileName.toUpperCase()}</span>
+                                <span className="text-[#00D285] font-extrabold">SEKTOR: {(activeDivision || "UMUM").toUpperCase() + " & BD"}</span>
+                              </div>
+                              
+                              <div className="h-[1px] bg-slate-100 w-full shrink-0" />
+
+                              <div className="text-[10px] font-bold text-[#00D285] font-mono uppercase tracking-widest pt-1 shrink-0">
+                                KAJIAN STRATEGIS: BAB {activeSlideIndex}
+                              </div>
+                              
+                              <h2 className="text-slate-900 font-extrabold text-base sm:text-lg md:text-[20px] leading-tight select-text shrink-0">
+                                {currentSlide?.title}
+                              </h2>
+                              
+                              <p className="text-[11px] text-slate-500 font-medium leading-relaxed pb-1 select-text shrink-0">
+                                {introPara.replace(/\*\*/g, "")}
+                              </p>
+
+                              <div className="space-y-1.5 shrink-0 max-h-[140px] overflow-y-auto">
+                                {bPoints.map((bulletText, bIdx) => {
+                                  const bulletClean = cleanLead(bulletText);
+                                  if (!bulletClean) return null;
+                                  return (
+                                    <div key={bIdx} className="flex gap-2 items-start pl-0.5 shrink-0">
+                                      <span className="text-[#00D285] mt-0.5 shrink-0 font-extrabold select-none text-[10px] sm:text-xs">•</span>
+                                      <p className="text-[10.5px] sm:text-xs text-slate-655 font-medium leading-relaxed select-text shrink-0">
+                                        {formatBulletText(bulletClean)}
+                                      </p>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+
+                            {/* Footer row */}
+                            <div className="text-[8px] font-mono font-bold text-slate-400 border-t border-slate-100 pt-2 w-full flex justify-between items-center mt-2 shrink-0">
+                              <span>PANCARAN GROUP &bull; CONFIDENTIAL DOCUMENTATION</span>
+                              <span className="text-slate-700 font-bold uppercase w-max tracking-wide">HALAMAN {activeSlideIndex + 1} DARI {pptPreview.slides.length + 2}</span>
+                            </div>
+                          </div>
+
+                          {/* Right half: Photo Frame */}
+                          <div className="w-full md:w-5/12 h-full bg-slate-50 relative overflow-hidden flex flex-col justify-center items-center p-5 border-l border-slate-100">
+                            <div className="w-full h-full flex flex-col justify-center items-center gap-1.5">
+                              {/* Photo framed with green border */}
+                              <div className="w-full h-[85%] border border-[#00D285] p-1 bg-white shadow-sm relative overflow-hidden rounded-md flex items-center justify-center">
+                                <PramaAnimatedIllustration 
+                                  slideTitle={currentSlide?.title || "Kajian Proyek PRAMA"} 
+                                  slideIndex={activeSlideIndex} 
+                                />
+                              </div>
+                              <span className="text-[8px] text-slate-400 italic font-bold tracking-wide text-center uppercase shrink-0">
+                                ILUSTRASI STRATEGIS: {currentSlide?.title ? currentSlide.title.slice(0, 30) : "PRAMA ANALISA"}...
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()
+                  )}
+
+                  {/* Left navigation arrow on-slide */}
+                  <button
+                    disabled={activeSlideIndex === 0}
+                    onClick={() => {
+                      // Turn off autoplay on manual navigation to allow users to investigate
+                      setIsTtsAutoplay(false);
+                      stopTtsAndTimers();
+                      setActiveSlideIndex(prev => Math.max(0, prev - 1));
+                    }}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 h-9 w-9 flex items-center justify-center rounded-full bg-slate-900/60 hover:bg-slate-950 text-white disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer shadow-lg transition-all z-20"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+
+                  {/* Right navigation arrow on-slide */}
+                  <button
+                    disabled={activeSlideIndex === pptPreview.slides.length + 1}
+                    onClick={() => {
+                      // Turn off autoplay on manual navigation to allow users to investigate
+                      setIsTtsAutoplay(false);
+                      stopTtsAndTimers();
+                      setActiveSlideIndex(prev => Math.min(pptPreview.slides.length + 1, prev + 1));
+                    }}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 h-9 w-9 flex items-center justify-center rounded-full bg-slate-900/60 hover:bg-slate-950 text-white disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer shadow-lg transition-all z-20"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                </div>
               </div>
 
-              {/* Dual Panel: Penjelasan Singkat (Short Explanation) & Speaker Notes */}
-              <div className="w-full max-w-4xl bg-[#0D1527] rounded-2xl p-5 border border-slate-800 shadow-xl space-y-4">
-                <div className="flex justify-between items-center pb-2.5 border-b border-slate-800">
-                  <span className="font-mono text-[10px] text-[#00D285] font-black tracking-widest uppercase flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-[#00D285] animate-pulse" />
-                    📋 MODUL ANALISIS PRESENTASI & DUKUNGAN PRESENTER
-                  </span>
-                  <span className="bg-slate-800 text-slate-300 font-mono text-[9px] font-extrabold px-3 py-1 rounded-full border border-slate-700 shadow-inner">
-                    Slide {activeSlideIndex + 1} dari {pptPreview.slides.length + 2}
-                  </span>
-                </div>
+              {/* Right Column: Compact Advanced TTS Voice Narrator & Autoplay Sidebar (20% Width for focus) */}
+              <div className="w-full lg:w-[20%] bg-[#0D1527] rounded-3xl p-4 sm:p-4.5 border border-slate-800 shadow-xl flex flex-col justify-between gap-4 shrink-0">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                    <span className="font-mono text-[10px] text-[#00D285] font-black tracking-widest uppercase flex items-center gap-1.5">
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#00D285] animate-pulse" />
+                      🎙️ PANEL NARRATOR AI
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="bg-slate-900 text-[#00D285] font-mono text-[9px] font-bold px-2 py-0.5 rounded-full border border-slate-800 shadow-inner">
+                        Slide {activeSlideIndex + 1} / {pptPreview.slides.length + 2}
+                      </span>
+                    </div>
+                  </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  {/* Left Column: Penjelasan Singkat */}
-                  <div className="bg-[#121c33] p-4 rounded-xl border border-slate-800 flex flex-col justify-between">
-                    <div>
-                      <div className="text-[10px] uppercase font-mono font-black text-[#00D285] flex items-center gap-1.5 mb-2 select-none">
-                        💡 PENJELASAN SINGKAT SLIDE (CORE TAKEAWAY)
+                  {/* Playback Controls Stack */}
+                  <div className="flex flex-col gap-2">
+                    {/* Speak Button */}
+                    <button
+                      onClick={() => {
+                        if (isTtsPlaying) {
+                          stopTtsAndTimers();
+                        } else {
+                          speakCurrentSlide();
+                        }
+                      }}
+                      className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer border ${
+                        isTtsPlaying 
+                          ? "bg-red-500 hover:bg-red-605 text-white border-red-400" 
+                          : "bg-[#00D285]/10 hover:bg-[#00D285]/18 text-[#00D285] border border-[#00D285]/20"
+                      }`}
+                    >
+                      {isTtsPlaying ? (
+                        <>
+                          <VolumeX className="h-4 w-4" />
+                          <span>Hentikan Audio</span>
+                        </>
+                      ) : (
+                        <>
+                          <Volume2 className="h-4 w-4" />
+                          <span>Bicarakan Slide</span>
+                        </>
+                      )}
+                    </button>
+
+                    {/* Autoplay Slide Deck Button */}
+                    <button
+                      onClick={() => {
+                        const targetState = !isTtsAutoplay;
+                        setIsTtsAutoplay(targetState);
+                        if (targetState) {
+                          speakCurrentSlide();
+                        } else {
+                          stopTtsAndTimers();
+                        }
+                      }}
+                      className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer border ${
+                        isTtsAutoplay 
+                          ? "bg-emerald-500 text-white border-emerald-400 shadow-md shadow-emerald-950/40" 
+                          : "bg-slate-800 hover:bg-slate-750 text-slate-300 border-slate-700"
+                      }`}
+                    >
+                      <Play className={`h-3.5 w-3.5 ${isTtsAutoplay ? "animate-spin text-white" : "text-emerald-400"}`} />
+                      <span>{isTtsAutoplay ? "Autoplay ON" : "Mulai Auto Presentation"}</span>
+                    </button>
+                  </div>
+
+                  {/* Speech parameters */}
+                  <div className="space-y-2.5 bg-[#121c33]/70 border border-slate-800 p-3 rounded-xl">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-slate-400 font-mono text-[9px] uppercase font-bold">Kecepatan:</span>
+                      <div className="flex gap-1 bg-slate-900 p-0.5 rounded-lg border border-slate-800">
+                        {[0.85, 1.0, 1.2, 1.4].map((rate) => (
+                          <button
+                            key={rate}
+                            onClick={() => {
+                              setTtsRate(rate);
+                              if (isTtsPlaying || isTtsAutoplay) {
+                                setTimeout(() => speakCurrentSlide(), 50);
+                              }
+                            }}
+                            className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono transition cursor-pointer ${
+                              ttsRate === rate 
+                                ? "bg-[#00D285] text-slate-950 font-black" 
+                                : "text-slate-400 hover:text-slate-200"
+                            }`}
+                          >
+                            {rate}x
+                          </button>
+                        ))}
                       </div>
-                      <p className="text-xs text-slate-200 leading-relaxed font-semibold font-sans select-text">
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-slate-400 font-mono text-[9px] uppercase font-bold">Volume:</span>
+                      <div className="flex items-center gap-1.5 bg-slate-900 px-2 py-1 rounded-lg border border-slate-800">
+                        <Volume2 className="h-3 w-3 text-slate-400" />
+                        <input 
+                          type="range" 
+                          min="0.2" 
+                          max="1.0" 
+                          step="0.1" 
+                          value={ttsVolume} 
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value);
+                            setTtsVolume(val);
+                            if (isTtsPlaying || isTtsAutoplay) {
+                              setTimeout(() => speakCurrentSlide(), 50);
+                            }
+                          }}
+                          className="w-16 h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-[#00D285]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Dual Column/Stack Speaker Notes */}
+                  <div className="space-y-3">
+                    {/* Speak full script box */}
+                    <div className="bg-[#121c33]/55 p-3 rounded-xl border border-slate-800/65 max-h-[140px] overflow-y-auto">
+                      <div className="text-[9px] uppercase font-mono font-black text-blue-400 flex items-center gap-1.5 mb-1.5 select-none">
+                        🎙️ NASKAH PIDATO PRESENTER
+                      </div>
+                      <p className="text-[11px] text-slate-200 leading-relaxed font-semibold italic select-text">
+                        &quot;{activeSlideIndex === 0 ? "Selamat pagi/siang bapak dan ibu sekalian. Slide pembuka ini menjelaskan judul dan pilar utama kajian proyek strategis PRAMA untuk PT Pancaran Group." : activeSlideIndex === pptPreview.slides.length + 1 ? "Sesi presentasi komprehensif selesai. Kami mengucapkan terima kasih kepada pimpinan komite, direksi, dan jajaran tim operasional PT Pancaran Group." : (pptPreview.slides[activeSlideIndex - 1]?.speakerNotes || "Penjelasan pendukung slide.")}&quot;
+                      </p>
+                    </div>
+
+                    {/* Penjelasan Singkat */}
+                    <div className="bg-[#121c33]/50 p-3 rounded-xl border border-slate-800/60 max-h-[110px] overflow-y-auto">
+                      <div className="text-[9px] uppercase font-mono font-black text-[#00D285] flex items-center gap-1.5 mb-1 select-none">
+                        💡 PENJELASAN SINGKAT SLIDE
+                      </div>
+                      <p className="text-[11px] text-slate-300 leading-relaxed font-semibold font-sans select-text">
                         {(() => {
                           if (activeSlideIndex === 0) {
-                            return `Slide pembuka yang memperkenalkan dokumen hasil kajian strategis komprehensif PRAMA untuk proyek "${pptPreview.title}" di PT Pancaran Group pada unit ${(activeDivision || "UMUM").toUpperCase() + " & BD"}.`;
+                            return `Slide pembuka hasil kajian strategis komprehensif PRAMA untuk proyek "${pptPreview.title}" di PT Pancaran Group pada unit ${(activeDivision || "UMUM").toUpperCase() + " & BD"}.`;
                           } else if (activeSlideIndex === pptPreview.slides.length + 1) {
-                            return "Slide penutup formal untuk menyampaikan apresiasi mendalam kepada direksi, jajaran pimpinan PT Pancaran Group, penegasan kerahasiaan dokumen, serta membuka sesi diskusi interaktif.";
+                            return "Slide penutup formal menyampaikan apresiasi mendalam, penegasan kerahasiaan dokumen, serta membuka sesi diskusi interaktif.";
                           } else {
                             const slide = pptPreview.slides[activeSlideIndex - 1];
                             const bulletsText = slide?.bullets && slide.bullets.length > 0 
                               ? slide.bullets.slice(0, 2).map(b => b.replace(/\*\*/g, "")).join("; ")
                               : "";
-                            return `Fokus bahasan utama pada slide "${slide?.title || "Judul"}" ini merangkum analisis strategis serta usulan operasional terperinci terkait: ${bulletsText || "Rencana aksi, evaluasi, dan optimasi operasional berkelanjutan."}`;
+                            return `Fokus utama pada slide "${slide?.title || "Judul"}" merangkum analisis strategis serta usulan operasional terperinci terkait: ${bulletsText || "Rencana aksi, evaluasi, dan optimasi operasional berkelanjutan."}`;
                           }
                         })()}
                       </p>
                     </div>
                   </div>
+                </div>
 
-                  {/* Right Column: Speaker Notes */}
-                  <div className="bg-[#121c33] p-4 rounded-xl border border-slate-800 flex flex-col justify-between">
-                    <div>
-                      <div className="text-[10px] uppercase font-mono font-black text-blue-400 flex items-center gap-1.5 mb-2 select-none">
-                        🎙️ NASKAH LENGKAP PIDATO PRESENTER
-                      </div>
-                      <div className="max-h-[110px] overflow-y-auto pr-1">
-                        <p className="text-xs text-slate-300 leading-relaxed font-medium italic select-text">
-                          &quot;{activeSlideIndex === 0 ? "Selamat pagi/siang bapak dan ibu sekalian. Slide pembuka ini menjelaskan judul dan pilar utama kajian proyek strategis PRAMA untuk PT Pancaran Group." : activeSlideIndex === pptPreview.slides.length + 1 ? "Sesi presentasi komprehensif selesai. Kami mengucapkan terima kasih kepada pimpinan komite, direksi, dan jajaran tim operasional PT Pancaran Group." : (pptPreview.slides[activeSlideIndex - 1]?.speakerNotes || "Penjelasan pendukung slide.")}&quot;
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                <div className="hidden lg:block border-t border-slate-800/60 pt-2 text-[9px] font-mono text-slate-500 italic text-right select-none">
+                  {isTtsAutoplay ? (
+                    <span className="text-emerald-400 animate-pulse">● Autoplay aktif...</span>
+                  ) : (
+                    <span>Gunakan tombol untuk memutar suara.</span>
+                  )}
                 </div>
               </div>
 
             </div>
 
             {/* Bottom slideshow controls & paginator */}
-            <div className="bg-white border-t border-slate-100 px-8 py-5 flex justify-between items-center shrink-0 rounded-b-[2rem]">
-              <div className="flex gap-2 overflow-x-auto max-w-[70%] py-1">
+            <div className={`border-t px-6 sm:px-8 py-5 flex flex-col sm:flex-row justify-between items-center shrink-0 rounded-b-[2rem] gap-4 transition-all ${isPptFullscreen ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"}`}>
+              <div className="flex gap-1.5 overflow-x-auto max-w-full sm:max-w-[70%] py-1.5">
                 {Array.from({ length: pptPreview.slides.length + 2 }).map((_, dotIdx) => (
                   <button
                     key={dotIdx}
-                    onClick={() => setActiveSlideIndex(dotIdx)}
+                    onClick={() => {
+                      setIsTtsAutoplay(false);
+                      stopTtsAndTimers();
+                      setActiveSlideIndex(dotIdx);
+                    }}
                     className={`h-2.5 rounded-full transition-all cursor-pointer shrink-0 ${
-                      activeSlideIndex === dotIdx ? "w-7 bg-[#00D285]" : "w-2.5 bg-slate-200 hover:bg-slate-350"
+                      activeSlideIndex === dotIdx 
+                        ? (isPptFullscreen ? "w-8 bg-[#00D285]" : "w-7 bg-[#00D285]") 
+                        : (isPptFullscreen ? "w-2.5 bg-slate-700 hover:bg-slate-605" : "w-2.5 bg-slate-200 hover:bg-slate-350")
                     }`}
                   />
                 ))}
@@ -5501,7 +5884,7 @@ ${lastMsgText}`;
               <div className="flex gap-2">
                 <button
                   onClick={() => setPptPreview(null)}
-                  className="px-6 py-2.5 text-xs font-black text-slate-600 hover:text-slate-800 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-full transition cursor-pointer"
+                  className={`px-6 py-2.5 text-xs font-black rounded-full transition cursor-pointer ${isPptFullscreen ? "bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-705" : "text-slate-600 hover:text-slate-850 bg-slate-50 hover:bg-slate-105 border border-slate-200"}`}
                 >
                   Tutup Slideshow
                 </button>

@@ -235,7 +235,7 @@ export default function App() {
   const [isBgSettingsCollapsed, setIsBgSettingsCollapsed] = useState<boolean>(true);
 
   const [customVideoUrl, setCustomVideoUrl] = useState<string | null>(null);
-  const [videoSrc, setVideoSrc] = useState<string>("/custom-video.mp4");
+  const [videoSrc, setVideoSrc] = useState<string>("/PixVerse_V6_Extend_540P_buat_video_lebih_panja (1).mp4");
 
   const [customImageUrl, setCustomImageUrl] = useState<string | null>(null);
   const [imageSrc, setImageSrc] = useState<string>("https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8");
@@ -287,7 +287,7 @@ export default function App() {
         if (prev && (prev.includes("firebasestorage") || prev.startsWith("blob:") || prev.startsWith("http"))) {
           return prev;
         }
-        return "/custom-video.mp4";
+        return "/PixVerse_V6_Extend_540P_buat_video_lebih_panja (1).mp4";
       });
     }
   }, [customVideoUrl]);
@@ -407,7 +407,7 @@ export default function App() {
         if (data.videoUrl) {
           setVideoSrc(data.videoUrl);
         } else {
-          setVideoSrc("/custom-video.mp4");
+          setVideoSrc("/PixVerse_V6_Extend_540P_buat_video_lebih_panja (1).mp4");
         }
         if (data.imageUrl) {
           setImageSrc(data.imageUrl);
@@ -418,7 +418,7 @@ export default function App() {
         // Seed default in Firestore as "video" with intelligent default for maximum auto-consistency
         setDoc(settingsDocRef, {
           bgType: "video",
-          videoUrl: "/custom-video.mp4",
+          videoUrl: "/PixVerse_V6_Extend_540P_buat_video_lebih_panja (1).mp4",
           imageUrl: "https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8",
           lastUpdated: serverTimestamp()
         }, { merge: true }).catch((err) => {
@@ -500,7 +500,7 @@ export default function App() {
         URL.revokeObjectURL(customVideoUrl);
       }
       setCustomVideoUrl(null);
-      setVideoSrc("/custom-video.mp4");
+      setVideoSrc("/PixVerse_V6_Extend_540P_buat_video_lebih_panja (1).mp4");
 
       // Reset in Firestore
       const settingsDocRef = doc(db, "settings", "lobby_background");
@@ -2758,7 +2758,7 @@ ${lastMsgText}`;
             className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 animate-fade-in scale-[1.08] origin-center"
             style={{ zIndex: -1, opacity: 0.65 }}
             onError={() => {
-              const fallbackUrl = "/custom-video.mp4";
+              const fallbackUrl = "/PixVerse_V6_Extend_540P_buat_video_lebih_panja (1).mp4";
               if (videoSrc !== fallbackUrl) {
                 console.warn("Lobby video failed to load. Falling back to default custom video...");
                 setVideoSrc(fallbackUrl);
@@ -2873,7 +2873,7 @@ ${lastMsgText}`;
               referrerPolicy="no-referrer"
               className="w-full h-full object-cover scale-[1.08] origin-center"
               onError={() => {
-                const fallbackUrl = "/custom-video.mp4";
+                const fallbackUrl = "/PixVerse_V6_Extend_540P_buat_video_lebih_panja (1).mp4";
                 if (videoSrc !== fallbackUrl) {
                   console.warn("Setting fallback video stream on error for auth background...");
                   setVideoSrc(fallbackUrl);

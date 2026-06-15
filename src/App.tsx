@@ -229,10 +229,11 @@ export default function App() {
 
 
   const [heroBgType, setHeroBgType] = useState<"video" | "image">(() => {
-    return (localStorage.getItem("prama_hero_bg_type") as "video" | "image") || "video";
+    return (localStorage.getItem("prama_hero_bg_type") as "video" | "image") || "image";
   });
 
   const [isBgSettingsCollapsed, setIsBgSettingsCollapsed] = useState<boolean>(true);
+  const [showHeroBgSettingsDropdown, setShowHeroBgSettingsDropdown] = useState<boolean>(false);
 
   const [customVideoUrl, setCustomVideoUrl] = useState<string | null>(null);
   const [videoSrc, setVideoSrc] = useState<string>("/PixVerse_V6_Extend_540P_buat_video_lebih_panja (1).mp4");
@@ -402,7 +403,7 @@ export default function App() {
         if (data.bgType) {
           setHeroBgType(data.bgType);
         } else {
-          setHeroBgType("video");
+          setHeroBgType("image");
         }
         if (data.videoUrl) {
           setVideoSrc(data.videoUrl);
@@ -415,9 +416,9 @@ export default function App() {
           setImageSrc("https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8");
         }
       } else {
-        // Seed default in Firestore as "video" with intelligent default for maximum auto-consistency
+        // Seed default in Firestore as "image" with intelligent default for maximum auto-consistency
         setDoc(settingsDocRef, {
-          bgType: "video",
+          bgType: "image",
           videoUrl: "/PixVerse_V6_Extend_540P_buat_video_lebih_panja (1).mp4",
           imageUrl: "https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8",
           lastUpdated: serverTimestamp()
@@ -2796,48 +2797,60 @@ ${lastMsgText}`;
           </div>
         )}
 
-        <div className="menu-content" id="landing-menu-content">
-          <h1>Pancaran Group</h1>
-          <p className="mb-6">Solusi Logistik Masa Depan</p>
-
-          {/* Selector Tipe Latar (Video atau Foto) */}
-          <div className="flex flex-col items-center gap-1.5 mb-8">
-            <span className="text-[10px] uppercase font-mono font-black tracking-widest text-slate-300 opacity-80 select-none">
-              Pilihan Media Latar Belakang:
-            </span>
-            <div className="flex bg-slate-950/60 backdrop-blur-md border border-white/10 rounded-2xl p-1 gap-1 w-64 shadow-xl">
+        {/* ⚙️ Sleek, Small Gear Button (Tanda Gerigi) in the Top-Right Corner */}
+        <div className="absolute top-4 right-4 z-[9999] text-right font-sans">
+          <button
+            type="button"
+            onClick={() => setShowHeroBgSettingsDropdown(!showHeroBgSettingsDropdown)}
+            className="p-2.5 rounded-xl bg-slate-950/60 hover:bg-slate-950/85 backdrop-blur-md border border-white/10 hover:border-white/20 text-slate-300 hover:text-white transition duration-200 shadow-xl flex items-center justify-center cursor-pointer"
+            title="Pengaturan Latar Belakang"
+          >
+            <Settings className={`h-4 w-4 ${showHeroBgSettingsDropdown ? 'animate-spin-[duration:10s] text-emerald-400' : ''}`} />
+          </button>
+          {showHeroBgSettingsDropdown && (
+            <div className="absolute top-12 right-0 w-52 p-2 rounded-2xl bg-slate-950/90 backdrop-blur-md border border-white/15 shadow-2xl flex flex-col gap-1 z-[99999] text-left animate-fade-in">
+              <span className="text-[9px] uppercase font-mono font-black tracking-widest text-slate-400 px-2.5 py-1.5 select-none">
+                PILIHAN LATAR BELAKANG
+              </span>
               <button
                 type="button"
                 onClick={() => {
                   setHeroBgType("video");
                   localStorage.setItem("prama_hero_bg_type", "video");
+                  changeBgTypeInFirestore("video");
                 }}
-                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black tracking-wide transition duration-300 cursor-pointer ${
+                className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition duration-200 cursor-pointer ${
                   heroBgType === "video"
-                    ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
-                    : "text-slate-400 hover:text-white"
+                    ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
+                    : "text-slate-400 hover:text-white hover:bg-white/5"
                 }`}
               >
-                <Video className="h-3.5 w-3.5 shrink-0" />
-                <span>Video Latar</span>
+                <Video className="h-4 w-4 shrink-0" />
+                <span>Video Latar Belakang</span>
               </button>
               <button
                 type="button"
                 onClick={() => {
                   setHeroBgType("image");
                   localStorage.setItem("prama_hero_bg_type", "image");
+                  changeBgTypeInFirestore("image");
                 }}
-                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black tracking-wide transition duration-300 cursor-pointer ${
+                className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition duration-200 cursor-pointer ${
                   heroBgType === "image"
-                    ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
-                    : "text-slate-400 hover:text-white"
+                    ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
+                    : "text-slate-400 hover:text-white hover:bg-white/5"
                 }`}
               >
-                <Image className="h-3.5 w-3.5 shrink-0" />
-                <span>Foto Latar</span>
+                <Image className="h-4 w-4 shrink-0" />
+                <span>Foto Latar Belakang</span>
               </button>
             </div>
-          </div>
+          )}
+        </div>
+
+        <div className="menu-content" id="landing-menu-content">
+          <h1>Pancaran Group</h1>
+          <p className="mb-8">Solusi Logistik Masa Depan</p>
 
           <button 
             type="button"
@@ -2912,38 +2925,55 @@ ${lastMsgText}`;
           <span>Kembali ke Lobi</span>
         </button>
 
-        {/* Floating Background Selector on the top right */}
-        <div className="absolute top-4 right-4 z-[999] flex bg-slate-900/60 backdrop-blur-md border border-white/10 rounded-xl p-1 gap-1 shadow-md text-xs select-none">
+        {/* ⚙️ Sleek, Small Gear Button (Tanda Gerigi) in the Top-Right Corner */}
+        <div className="absolute top-4 right-4 z-[9999] text-right font-sans">
           <button
             type="button"
-            onClick={() => {
-              setHeroBgType("video");
-              localStorage.setItem("prama_hero_bg_type", "video");
-            }}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10.5px] font-black transition duration-200 cursor-pointer ${
-              heroBgType === "video"
-                ? "bg-indigo-650 text-white shadow"
-                : "text-slate-400 hover:text-slate-200"
-            }`}
+            onClick={() => setShowHeroBgSettingsDropdown(!showHeroBgSettingsDropdown)}
+            className="p-2.5 rounded-xl bg-slate-950/60 hover:bg-slate-950/85 backdrop-blur-md border border-white/10 hover:border-white/20 text-slate-300 hover:text-white transition duration-200 shadow-xl flex items-center justify-center cursor-pointer"
+            title="Pengaturan Latar Belakang"
           >
-            <Video className="h-3 w-3 shrink-0" />
-            <span>VIDEO</span>
+            <Settings className={`h-4 w-4 ${showHeroBgSettingsDropdown ? 'animate-spin-[duration:10s] text-emerald-400' : ''}`} />
           </button>
-          <button
-            type="button"
-            onClick={() => {
-              setHeroBgType("image");
-              localStorage.setItem("prama_hero_bg_type", "image");
-            }}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10.5px] font-black transition duration-200 cursor-pointer ${
-              heroBgType === "image"
-                ? "bg-indigo-650 text-white shadow"
-                : "text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            <Image className="h-3 w-3 shrink-0" />
-            <span>FOTO</span>
-          </button>
+          {showHeroBgSettingsDropdown && (
+            <div className="absolute top-12 right-0 w-52 p-2 rounded-2xl bg-slate-950/90 backdrop-blur-md border border-white/15 shadow-2xl flex flex-col gap-1 z-[99999] text-left animate-fade-in">
+              <span className="text-[9px] uppercase font-mono font-black tracking-widest text-slate-400 px-2.5 py-1.5 select-none">
+                PILIHAN LATAR BELAKANG
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setHeroBgType("video");
+                  localStorage.setItem("prama_hero_bg_type", "video");
+                  changeBgTypeInFirestore("video");
+                }}
+                className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition duration-200 cursor-pointer ${
+                  heroBgType === "video"
+                    ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
+                    : "text-slate-400 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                <Video className="h-4 w-4 shrink-0" />
+                <span>Video Latar Belakang</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setHeroBgType("image");
+                  localStorage.setItem("prama_hero_bg_type", "image");
+                  changeBgTypeInFirestore("image");
+                }}
+                className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition duration-200 cursor-pointer ${
+                  heroBgType === "image"
+                    ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
+                    : "text-slate-400 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                <Image className="h-4 w-4 shrink-0" />
+                <span>Foto Latar Belakang</span>
+              </button>
+            </div>
+          )}
         </div>
 
 

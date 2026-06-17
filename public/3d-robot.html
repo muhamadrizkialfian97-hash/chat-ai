@@ -73,7 +73,7 @@
     <div class="absolute inset-0 pointer-events-none z-10 flex flex-col justify-between p-6">
         
         <!-- Header Panel -->
-        <div class="w-full flex items-center justify-between pointer-events-auto">
+        <div id="header-panel" class="w-full flex items-center justify-between pointer-events-auto">
             <div class="glassmorphism p-4 rounded-2xl shadow-lg flex items-center gap-3 max-w-sm">
                 <div class="h-10 w-10 bg-slate-900 rounded-xl flex items-center justify-center text-xl text-white shadow-md">
                     🤖
@@ -180,6 +180,7 @@
         // --- THREE.JS CONFIGURATION ---
         let scene, camera, renderer, controls;
         let robotGroup, headGroup, jawMesh, neckMesh, torsoMesh, leftEye, rightEye, earPodLeft, earPodRight;
+        let leftArmMesh, rightArmMesh, mouthMesh;
         let isSpeaking = false;
         let speakAnimationTime = 0;
         let customSpeechUtterance = null;
@@ -337,16 +338,17 @@
 
             // Upper arms slightly sculpted
             const armGeo = new THREE.CylinderGeometry(0.14, 0.12, 0.6, 16);
-            const leftArm = new THREE.Mesh(armGeo, robotWhiteMaterial);
-            leftArm.position.set(-0.95, 0.15, 0.1);
-            leftArm.rotation.z = Math.PI / 12;
-            leftArm.rotation.x = -Math.PI / 18;
-            torsoMesh.add(leftArm);
+            leftArmMesh = new THREE.Mesh(armGeo, robotWhiteMaterial);
+            leftArmMesh.position.set(-0.95, 0.15, 0.1);
+            leftArmMesh.rotation.z = Math.PI / 12;
+            leftArmMesh.rotation.x = -Math.PI / 18;
+            torsoMesh.add(leftArmMesh);
 
-            const rightArm = leftArm.clone();
-            rightArm.position.set(0.95, 0.15, 0.1);
-            rightArm.rotation.z = -Math.PI / 12;
-            torsoMesh.add(rightArm);
+            rightArmMesh = new THREE.Mesh(armGeo, robotWhiteMaterial);
+            rightArmMesh.position.set(0.95, 0.15, 0.1);
+            rightArmMesh.rotation.z = -Math.PI / 12;
+            rightArmMesh.rotation.x = -Math.PI / 18;
+            torsoMesh.add(rightArmMesh);
 
             // Neck base socket
             const neckBaseGeo = new THREE.CylinderGeometry(0.28, 0.3, 0.15, 16);
@@ -429,11 +431,17 @@
             chinMesh.castShadow = true;
             chinGroup.add(chinMesh);
 
-            // Mouth black spacer slot
-            const mouthSlotGeo = new THREE.BoxGeometry(0.35, 0.05, 0.1);
-            const mouthSlot = new THREE.Mesh(mouthSlotGeo, darkVisorMaterial);
-            mouthSlot.position.set(0, 0.22, 0.24);
-            chinGroup.add(mouthSlot);
+            // Mouth background slot (black plate)
+            const mouthBGGeo = new THREE.BoxGeometry(0.24, 0.06, 0.04);
+            const mouthBG = new THREE.Mesh(mouthBGGeo, darkVisorMaterial);
+            mouthBG.position.set(0, 0.15, 0.41);
+            chinGroup.add(mouthBG);
+
+            // Glowing blue neon mouth mesh
+            const mouthGeo = new THREE.BoxGeometry(0.20, 0.015, 0.05);
+            mouthMesh = new THREE.Mesh(mouthGeo, blueEyeMaterial);
+            mouthMesh.position.set(0, 0.15, 0.42); // Sits slightly in front of the black plate
+            chinGroup.add(mouthMesh);
 
             jawMesh = chinGroup;
             headGroup.add(jawMesh);
@@ -488,6 +496,21 @@
                 jawMesh.position.y = -0.15;
                 jawMesh.position.z = 0.12;
                 jawMesh.rotation.x = 0;
+
+                // Animate mouth scale in standby
+                if (mouthMesh) {
+                    mouthMesh.scale.set(1.0, 0.4, 1.0);
+                }
+
+                // Gentle default breathing for arms in standby
+                if (leftArmMesh) {
+                    leftArmMesh.rotation.x = -Math.PI / 18 + Math.sin(time * 1.5) * 0.04;
+                    leftArmMesh.rotation.z = Math.PI / 12 + Math.cos(time * 1.5) * 0.01;
+                }
+                if (rightArmMesh) {
+                    rightArmMesh.rotation.x = -Math.PI / 18 + Math.sin(time * 1.5 + 0.7) * 0.04;
+                    rightArmMesh.rotation.z = -Math.PI / 12 + Math.cos(time * 1.5 + 0.7) * 0.01;
+                }
             } else {
                 // 3. LIP-SYNC/JAW-MOVEMENT ANIMATION (OSCILLATING ALIVE WHILE SPEAKING)
                 // Random natural jaw chattering matching syllables
@@ -498,6 +521,23 @@
 
                 // Emissive eyes flare pulsing during conversation
                 leftEye.material.emissiveIntensity = 2.0 + (Math.sin(time * 30) * 0.8);
+
+                // Dynamic vocal wave pulsing height and width for the glowing mouth mesh!
+                if (mouthMesh) {
+                    const mouthOpenScale = 0.6 + Math.abs(Math.sin(time * 24)) * 3.2; 
+                    const mouthWidthScale = 1.0 + Math.sin(time * 12) * 0.2; 
+                    mouthMesh.scale.set(mouthWidthScale, mouthOpenScale, 1.0);
+                }
+
+                // Energetic and expressive presentation gestures while speaking
+                if (leftArmMesh) {
+                    leftArmMesh.rotation.x = -Math.PI / 8 + Math.sin(time * 6.0) * 0.35;
+                    leftArmMesh.rotation.z = Math.PI / 9 + Math.cos(time * 4) * 0.18;
+                }
+                if (rightArmMesh) {
+                    rightArmMesh.rotation.x = -Math.PI / 8 + Math.sin(time * 5.2 + 1.2) * 0.40;
+                    rightArmMesh.rotation.z = -Math.PI / 9 + Math.cos(time * 3.5 + 0.6) * 0.20;
+                }
             }
 
             if (controls) controls.update();
@@ -645,6 +685,11 @@
 
         // Auto-detect if loaded inside an iframe (such as inside the Dashboard Tab)
         if (window.self !== window.top) {
+            // Hide the duplicate header panel
+            const headerPanel = document.getElementById('header-panel');
+            if (headerPanel) {
+                headerPanel.style.display = 'none';
+            }
             // Hide the enter portal button since we are already inside the portal!
             const enterBtn = document.getElementById('btn-enter-portal');
             if (enterBtn) {

@@ -1439,6 +1439,16 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
     const utterance = new SpeechSynthesisUtterance(textToSpeak);
     utterance.lang = "id-ID";
     utterance.rate = speechRate;
+
+    // Choose selected voice if matching
+    if (selectedVoiceName && availableVoices.length > 0) {
+      const chosen = availableVoices.find(v => v.name === selectedVoiceName);
+      if (chosen) {
+        utterance.voice = chosen;
+        // Keep lang synchronized with selected voice lang to prevent browser mismatched lang reading errors
+        utterance.lang = chosen.lang;
+      }
+    }
     
     utterance.onstart = () => {
       setIsPlayingSpeech(true);
@@ -1495,7 +1505,7 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
         window.speechSynthesis.cancel();
       }
     };
-  }, [projectPptSlideIndex, isSpeechPresenterActive, speechRate, autoNextPPT]);
+  }, [projectPptSlideIndex, isSpeechPresenterActive, speechRate, autoNextPPT, selectedVoiceName]);
 
   // Sidebar search & collections states
   const [searchMessagesQuery, setSearchMessagesQuery] = useState("");
@@ -5439,6 +5449,23 @@ ${lastMsgText}`;
                       </button>
 
                       {/* Pitch control setting */}
+                      {availableVoices.length > 0 && (
+                        <div className="flex items-center gap-1.5 bg-slate-850 px-2.5 py-1.5 rounded-xl border border-slate-700">
+                          <span className="text-[9px] font-black font-mono text-slate-400 leading-none">ASISTEN:</span>
+                          <select 
+                            value={selectedVoiceName}
+                            onChange={(e) => setSelectedVoiceName(e.target.value)}
+                            className="bg-transparent text-white font-mono text-[10.5px] font-black outline-none border-none py-0.5 cursor-pointer max-w-[140px] truncate"
+                          >
+                            {availableVoices.map((v, i) => (
+                              <option key={i} value={v.name} className="bg-slate-900 text-white">
+                                {v.lang.startsWith("id") ? "🇮🇩 " : ""} {v.name} ({v.lang})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
                       <div className="flex items-center gap-1.5 bg-slate-850 px-2.5 py-1.5 rounded-xl border border-slate-700">
                         <span className="text-[9px] font-black font-mono text-slate-400 leading-none">SPEED:</span>
                         <select 
@@ -7364,7 +7391,7 @@ ${lastMsgText}`;
             />
 
             {/* Dynamic Floating indicator button for reopening the 14 pillars panel when minimized */}
-            {!isRightPillarPanelOpen && (
+            {!isRightPillarPanelOpen && webDocPreview === "none" && !pptPreview && !articlePreview && (
               <button
                 type="button"
                 onClick={() => setIsRightPillarPanelOpen(true)}

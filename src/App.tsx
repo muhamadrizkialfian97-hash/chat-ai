@@ -1284,14 +1284,56 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
     } catch (err: any) {
       console.error("Error in robot voice chat response:", err);
       const friendlyStr = getFriendlyClientError(err);
-      const errorMsgMsg: ChatMessage = {
-        id: `robot-error-${Date.now()}`,
+      
+      const errStr = typeof err === "string" ? err : (err.message || JSON.stringify(err));
+      const lowercaseErr = errStr.toLowerCase();
+      const isGenuineAPIError = 
+        lowercaseErr.includes("apikey") || 
+        lowercaseErr.includes("api key") || 
+        lowercaseErr.includes("status code") || 
+        lowercaseErr.includes("status_code") || 
+        lowercaseErr.includes("key") || 
+        lowercaseErr.includes("quota") || 
+        lowercaseErr.includes("exhausted") || 
+        lowercaseErr.includes("gagal") || 
+        lowercaseErr.includes("hambatan") || 
+        lowercaseErr.includes("koneksi") || 
+        lowercaseErr.includes("proxy") || 
+        lowercaseErr.includes("invalid") ||
+        lowercaseErr.includes("permission") ||
+        lowercaseErr.includes("denied") ||
+        lowercaseErr.includes("403") ||
+        lowercaseErr.includes("failed to fetch");
+
+      let fallbackText = "";
+      if (isGenuineAPIError) {
+        const fallbackPayload = generateLocalSmartResponse(trimmedText, "HSSE Swarnadwipa", robotChatMessages);
+        let warningHeader = "";
+        if (friendlyStr.includes("RESOURCE_EXHAUSTED") || friendlyStr.includes("429")) {
+          warningHeader = `> ⚠️ **PEMBERITAHUAN:** *Batas kuota harian server bersama terlampaui (RESOURCE_EXHAUSTED 429).* Menyajikan asisten robot menggunakan **Modul Analisis Logistik Internal PRAMA**.\n\n`;
+        } else if (friendlyStr.includes("PERMISSION_DENIED") || friendlyStr.includes("403") || friendlyStr.includes("leaked")) {
+          warningHeader = `> ⚠️ **PEMBERITAHUAN:** *Akses Kunci API Ditolak (PERMISSION_DENIED 403).* Menyajikan asisten robot menggunakan **Modul Analisis Logistik Internal PRAMA**.\n\n`;
+        } else {
+          warningHeader = `> ⚠️ **PEMBERITAHUAN:** *Kunci API Gemini terputus sementara.* Menyajikan asisten robot menggunakan **Modul Analisis Logistik Internal PRAMA**.\n\n`;
+        }
+        fallbackText = warningHeader + fallbackPayload.text;
+      } else {
+        const fallbackPayload = generateLocalSmartResponse(trimmedText, "HSSE Swarnadwipa", robotChatMessages);
+        fallbackText = fallbackPayload.text;
+      }
+
+      const fallbackMsg: ChatMessage = {
+        id: `robot-fallback-${Date.now()}`,
         role: "model",
-        text: `⚠️ Maaf, gangguan koneksi: ${friendlyStr}`,
+        text: fallbackText,
         timestamp: Date.now(),
-        sender: "Sistem PRAMA"
+        sender: "PRAMA AI"
       };
-      setRobotChatMessages((prev) => [...prev, errorMsgMsg]);
+      setRobotChatMessages((prev) => [...prev, fallbackMsg]);
+      
+      // Speak the pure content (strip out warning markdown markers for cleaner TTS rendering)
+      const cleanTtsText = fallbackText.replace(/>/g, "").replace(/\*/g, "").replace(/⚠️/g, "");
+      speakTextFromParent(cleanTtsText);
     } finally {
       setIsRobotChatLoading(false);
     }

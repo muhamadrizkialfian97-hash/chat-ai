@@ -20,7 +20,8 @@ import {
   defaultDashboardSections, 
   exportSingleSectionToWord, 
   exportAllSectionsToWord, 
-  exportAllSectionsToPPTX
+  exportAllSectionsToPPTX,
+  generatePillarsForProject
 } from "./utils/projectDashboardHelper";
 import {
   ChatIntelligenceState,
@@ -89,7 +90,9 @@ import {
   Pause,
   Maximize2,
   Minimize2,
-  Send
+  Send,
+  FolderSync,
+  RefreshCw
 } from "lucide-react";
 import { GoogleGenAI } from "@google/genai";
 import {
@@ -380,6 +383,7 @@ export default function App() {
 
   const landingVideoRef = useRef<HTMLVideoElement>(null);
   const authVideoRef = useRef<HTMLVideoElement>(null);
+  const robotIframeRef = useRef<HTMLIFrameElement>(null);
 
   // Force autoplay under modern browser autoplay policies (Chrome, Safari, Firefox, Edge, and iOS/Android)
   useEffect(() => {
@@ -423,6 +427,23 @@ export default function App() {
       });
     }
   }, [customImageUrl]);
+
+  useEffect(() => {
+    const handleMessage = (e: MessageEvent) => {
+      if (e.data) {
+        if (e.data.type === "DISMISS_HERO") {
+          setShowHeroLanding(false);
+          sessionStorage.setItem("prama_hero_dismissed", "true");
+        } else if (e.data.type === "ROBOT_SPEAK_START") {
+          setIsRobotSpeaking(true);
+        } else if (e.data.type === "ROBOT_SPEAK_END") {
+          setIsRobotSpeaking(false);
+        }
+      }
+    };
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
 
   useEffect(() => {
     let activeUrl: string | null = null;
@@ -902,6 +923,17 @@ export default function App() {
   const [chatLoading, setChatLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedRightPilar, setSelectedRightPilar] = useState<number | null>(null);
+  const [isRightPillarPanelOpen, setIsRightPillarPanelOpen] = useState(true);
+  const [searchRightPilarQuery, setSearchRightPilarQuery] = useState("");
+
+  // Popup states for project change/rehydration confirmation in Chat
+  const [isConfirmProjectUpdateOpen, setIsConfirmProjectUpdateOpen] = useState(false);
+  const [proposedNewProjectName, setProposedNewProjectName] = useState("");
+  const [pendingTextToProcess, setPendingTextToProcess] = useState("");
+  const [pendingEnableSearch, setPendingEnableSearch] = useState(false);
+  const [pendingReferencedFile, setPendingReferencedFile] = useState<SavedFile | null>(null);
+  const [isDashboardChatAction, setIsDashboardChatAction] = useState(false); // true if right-side panel dashboard chat, false if main workspace chat
 
   // --- REAL-TIME MULTIPLAYER COLLABORATION ---
   const [roomId, setRoomId] = useState(() => localStorage.getItem("workspace_collab_room_id") || "global-space");
@@ -944,7 +976,81 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<"chat" | "files">("chat");
 
   // Tab selector inside main dashboard
-  const [dashboardView, setDashboardView] = useState<"divisions" | "saved_docs" | "approval_requests" | "project_dashboard" | "chat_intelligence">("divisions");
+  const [dashboardView, setDashboardView] = useState<"divisions" | "saved_docs" | "approval_requests" | "project_dashboard" | "chat_intelligence" | "robot_voice">("divisions");
+
+  // --- ROBOT VOICE & MEDIA AUTOMATION STATES ---
+  const [activeRobotSubtab, setActiveRobotSubtab] = useState<"tts" | "to_text" | "to_video">("tts");
+  const [robotTtsText, setRobotTtsText] = useState<string>("Pemberitahuan HSSE Pancaran Group: Seluruh lintasan hauling batubara Swarnadwipa telah dinyatakan aman. Pemantauan digital terus aktif 24 jam.");
+  const [robotTtsSpeed, setRobotTtsSpeed] = useState<number>(1.0);
+  const [robotTtsPitch, setRobotTtsPitch] = useState<number>(1.0);
+  const [robotTtsTone, setRobotTtsTone] = useState<string>("robo-announcer");
+  const [isRobotSpeaking, setIsRobotSpeaking] = useState<boolean>(false);
+  const [robotPlaybackLog, setRobotPlaybackLog] = useState<string[]>(() => [
+    `[${new Date().toLocaleTimeString("id-ID", { hour: "numeric", minute: "numeric" })}] Robot Voice Broadcast Engine Live`,
+    `[${new Date(Date.now() - 3600000).toLocaleTimeString("id-ID", { hour: "numeric", minute: "numeric" })}] Swarnadwipa Hauling Gate Guard Active`
+  ]);
+
+  const [transcriptionVideoUrl, setTranscriptionVideoUrl] = useState<string>("/PixVerse_V6_Extend_540P_buat_video_lebih_panja (1).mp4");
+  const [transcriptionOutput, setTranscriptionOutput] = useState<string>("");
+  const [isTranscribing, setIsTranscribing] = useState<boolean>(false);
+
+  const [textToVideoPrompt, setTextToVideoPrompt] = useState<string>("Dua buah armada truk angkutan batubara Pancaran Group sedang melintasi jalan hauling Swarnadwipa dengan latar matahari terbenam jingga yang megah.");
+  const [isGeneratingVideo, setIsGeneratingVideo] = useState<boolean>(false);
+  const [textToVideoResult, setTextToVideoResult] = useState<{ videoUrl: string; description: string; voiceScript: string } | null>(null);
+
+  const handleRobotVoiceSpeak = (customText?: string) => {
+    const txt = customText || robotTtsText;
+
+    if (robotIframeRef.current && robotIframeRef.current.contentWindow) {
+      robotIframeRef.current.contentWindow.postMessage({
+        type: "SPEAK",
+        text: txt,
+        speed: robotTtsSpeed,
+        pitch: robotTtsPitch
+      }, "*");
+      
+      const timeStr = new Date().toLocaleTimeString("id-ID", { hour: "numeric", minute: "numeric", second: "numeric" });
+      setRobotPlaybackLog(prev => [`[${timeStr}] Penyiaran Voice: "${txt.substring(0, 42)}..."`, ...prev]);
+      return;
+    }
+
+    if (!('speechSynthesis' in window)) {
+      alert("Browser Anda tidak mendukung Web Speech Synthesis.");
+      return;
+    }
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(txt);
+
+    // Attempt to pick a nice voice
+    const voices = window.speechSynthesis.getVoices();
+    // Try to find Indonesian voice, otherwise fallback
+    const idVoice = voices.find(v => v.lang.toLowerCase().includes("id") || v.lang.toLowerCase().includes("id-id"));
+    if (idVoice) {
+      utterance.voice = idVoice;
+    }
+
+    utterance.rate = robotTtsSpeed;
+    utterance.pitch = robotTtsPitch;
+
+    // Add cool effect by toggling speaking state and logs
+    utterance.onstart = () => {
+      setIsRobotSpeaking(true);
+      const timeStr = new Date().toLocaleTimeString("id-ID", { hour: "numeric", minute: "numeric", second: "numeric" });
+      setRobotPlaybackLog(prev => [`[${timeStr}] Penyiaran Voice: "${txt.substring(0, 42)}..."`, ...prev]);
+    };
+
+    utterance.onend = () => {
+      setIsRobotSpeaking(false);
+    };
+
+    utterance.onerror = () => {
+      setIsRobotSpeaking(false);
+    };
+
+    window.speechSynthesis.speak(utterance);
+  };
+
 
   // Chat Intelligence Custom BI parameters
   const [chatBIState, setChatBIState] = useState<ChatIntelligenceState>(defaultChatIntelligence);
@@ -1626,18 +1732,31 @@ ${focusText}`;
 
     const trimmedText = text.trim();
 
-    // 1. Detect project-change intent
-    let extractedProjectName = "";
-    let isProjectChangeTriggered = false;
+    // Detect project-change intent
     const changeProjectRegex = /(?:ganti|ubah|set|buka|ganti judul|pindah|ganti nama)\s*(?:proyek|project|kajian)?\s*(?:ke|to|jadi|menjadi)\s*([^\n]+)/i;
     const match = trimmedText.match(changeProjectRegex);
     if (match && match[1].trim()) {
-      extractedProjectName = match[1].trim().replace(/\*+/g, "").trim();
-      isProjectChangeTriggered = true;
-      setDashboardProjectTitle(extractedProjectName);
+      const extractedProjectName = match[1].trim().replace(/\*+/g, "").trim();
+      setProposedNewProjectName(extractedProjectName);
+      setPendingTextToProcess(trimmedText);
+      setIsDashboardChatAction(true);
+      setIsConfirmProjectUpdateOpen(true);
+      return; // Stop and show confirmation popup
     }
 
-    const updatedProjectTitle = isProjectChangeTriggered ? extractedProjectName : dashboardProjectTitle;
+    await proceedSendDashboardChatMessage(trimmedText);
+  };
+
+  const proceedSendDashboardChatMessage = async (
+    text: string, 
+    customProjectName?: string, 
+    customIsProjectTriggered?: boolean
+  ) => {
+    if (isDashboardChatLoading) return;
+    const trimmedText = text.trim();
+
+    const isProjectChangeTriggered = customIsProjectTriggered !== undefined ? customIsProjectTriggered : false;
+    const updatedProjectTitle = customProjectName !== undefined ? customProjectName : dashboardProjectTitle;
 
     // 2. Build context
     const secObj = defaultDashboardSections.find(s => s.number === activeDashboardSection);
@@ -1647,7 +1766,7 @@ ${focusText}`;
     let finalQuery = trimmedText + `\n\n[INFO SISTEM AKTIF: Pengajar proyek sedang melihat Pilar Ke-${activeDashboardSection}: "${secTitle}". Konten draf pilar ini adalah:\n"""\n${secContent}\n"""\nProyek ini berjudul: "${updatedProjectTitle}"]`;
     
     if (isProjectChangeTriggered) {
-      finalQuery = `[NOTIFIKASI SISTEM: PENGGUNA MEMINTA MENGUBAH JUDUL PROYEK AKTIF MENJADI "${extractedProjectName}". SISTEM TELAH BERHASIL MENGUPDATE NYA DI FRONTEND. SAMBUT DAN KONFIRMASIKAN INI DENGAN PENULISAN DRAF STRATEGIS UNTUK PROYEK BARU TERSEBUT!]\n\n` + finalQuery;
+      finalQuery = `[NOTIFIKASI SISTEM: PENGGUNA MEMINTA MENGUBAH JUDUL PROYEK AKTIF MENJADI "${updatedProjectTitle}" DAN MEMINTA MEMPERBARUI SEMUA PILAR STRATEGIS YANG ADA DENGAN STRATEGI JURNAL BARU. DAN SISTEM TELAH BERHASIL MEREKONSTRUKSI SEMUA 14 PILAR SECARA PENUH DI FRONTEND. SAMBUT DAN KONFIRMASIKAN PENGGANTIAN INI DENGAN PENULISAN DRAF STRATEGIS UNTUK PROYEK BARU TERSEBUT!]\n\n` + finalQuery;
     }
 
     // 3. User message
@@ -1777,6 +1896,39 @@ ${focusText}`;
     }
   };
 
+  const handleConfirmProjectUpdate = async (shouldUpdatePillars: boolean) => {
+    setIsConfirmProjectUpdateOpen(false);
+    
+    if (shouldUpdatePillars) {
+      // 1. Update project title
+      setDashboardProjectTitle(proposedNewProjectName);
+      
+      // 2. Generate 14 new custom pillars for this brand new project
+      const newPillars = generatePillarsForProject(proposedNewProjectName);
+      setDashboardSectionsState(newPillars);
+      
+      // 3. Process the send action with the newly applied project and pillar rehydration flagged
+      if (isDashboardChatAction) {
+        await proceedSendDashboardChatMessage(pendingTextToProcess, proposedNewProjectName, true);
+      } else {
+        await proceedSendMessage(pendingTextToProcess, pendingEnableSearch, pendingReferencedFile, proposedNewProjectName, true);
+      }
+    } else {
+      // If they declined, still pass the message but do not change title or update any pillars
+      if (isDashboardChatAction) {
+        await proceedSendDashboardChatMessage(pendingTextToProcess, dashboardProjectTitle, false);
+      } else {
+        await proceedSendMessage(pendingTextToProcess, pendingEnableSearch, pendingReferencedFile, dashboardProjectTitle, false);
+      }
+    }
+
+    // Reset temporary states
+    setProposedNewProjectName("");
+    setPendingTextToProcess("");
+    setPendingEnableSearch(false);
+    setPendingReferencedFile(null);
+  };
+
   // 1. Send Message via API server-side route
   const handleSendMessage = async (
     text: string,
@@ -1786,18 +1938,33 @@ ${focusText}`;
     if (chatLoading) return;
 
     // Detect project-change intent
-    let extractedProjectName = "";
-    let isProjectChangeTriggered = false;
     const changeProjectRegex = /(?:ganti|ubah|set|buka|ganti judul|pindah|ganti nama)\s*(?:proyek|project|kajian)?\s*(?:ke|to|jadi|menjadi)\s*([^\n]+)/i;
     const match = text.match(changeProjectRegex);
     if (match && match[1].trim()) {
-      extractedProjectName = match[1].trim().replace(/\*+/g, "").trim();
-      isProjectChangeTriggered = true;
-      setDashboardProjectTitle(extractedProjectName);
+      const extractedProjectName = match[1].trim().replace(/\*+/g, "").trim();
+      setProposedNewProjectName(extractedProjectName);
+      setPendingTextToProcess(text);
+      setPendingEnableSearch(enableSearch);
+      setPendingReferencedFile(referencedFile || null);
+      setIsDashboardChatAction(false);
+      setIsConfirmProjectUpdateOpen(true);
+      return; // Stop and show confirmation popup
     }
 
-    // Dynamic title injection
-    const updatedProjectTitle = isProjectChangeTriggered ? extractedProjectName : dashboardProjectTitle;
+    await proceedSendMessage(text, enableSearch, referencedFile);
+  };
+
+  const proceedSendMessage = async (
+    text: string,
+    enableSearch: boolean,
+    referencedFile?: SavedFile | null,
+    customProjectName?: string,
+    customIsProjectTriggered?: boolean
+  ) => {
+    if (chatLoading) return;
+
+    const isProjectChangeTriggered = customIsProjectTriggered !== undefined ? customIsProjectTriggered : false;
+    const updatedProjectTitle = customProjectName !== undefined ? customProjectName : dashboardProjectTitle;
 
     const divisionPromptHeader = activeDivision 
       ? `\n\n[SISTEM INTENSI INTERNAL DIVISI: ${getDivisionSystemInstruction(activeDivision)}]`
@@ -1806,7 +1973,7 @@ ${focusText}`;
     // Build the query message payload
     let finalQuery = text + divisionPromptHeader;
     if (isProjectChangeTriggered) {
-      finalQuery = `[NOTIFIKASI SISTEM: PENGGUNA BARUSAN MEMINTA MENGUBAH PROYEK AKTIF KE "${extractedProjectName}". SISTEM TELAH BERHASIL MENGUBAH JUDUL PROYEK AKTIF DI LAYER FRONTEND RE-RENDER MENJADI "${extractedProjectName}". SEBAGAI ASISTEN KAIDAH PRAMA, SAMBUT DAN KONFIRMASIKAN PADA DESKRIPSI JAWABAN ANDA DENGAN PENUH SEMANGAT BAHWA ANDA SUDAH MENGUBAH PROYEK KE "${extractedProjectName}" DAN MULAI ANALISIS 15 PILAR KAJIAN JURNAL UNTUK STRATEGI INI!]\n\n` + finalQuery;
+      finalQuery = `[NOTIFIKASI SISTEM: PENGGUNA BARUSAN MEMINTA MENGUBAH PROYEK AKTIF KE "${updatedProjectTitle}" DAN MEMPERSENTELKAN SEMUA 14 PILAR UNTUK STRATEGI PROYEK BARU TERSEBUT. SISTEM TELAH BERHASIL MEREKONSTRUKSI ELEMEN PILAR-PILAR DI FRONTEND. SEBAGAI ASISTEN KAIDAH PRAMA, SAMBUT DAN KONFIRMASIKAN PADA DESKRIPSI JAWABAN ANDA DENGAN PENUH SEMANGAT BAHWA ANDA SUDAH MENGUBAH PROYEK KE "${updatedProjectTitle}" DAN SEPAKAT DAGING STRATEGIS PILAR-PILARNYA TELAH DIPERBARUI SECARA REAL-TIME DI LAYAR UNTUK STRATEGI BARU INI!]\n\n` + finalQuery;
     }
 
     if (referencedFile) {
@@ -3148,7 +3315,6 @@ ${lastMsgText}`;
                 onClick={() => {
                   setHeroBgType("video");
                   localStorage.setItem("prama_hero_bg_type", "video");
-                  changeBgTypeInFirestore("video");
                 }}
                 className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition duration-200 cursor-pointer ${
                   heroBgType === "video"
@@ -3164,7 +3330,6 @@ ${lastMsgText}`;
                 onClick={() => {
                   setHeroBgType("image");
                   localStorage.setItem("prama_hero_bg_type", "image");
-                  changeBgTypeInFirestore("image");
                 }}
                 className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition duration-200 cursor-pointer ${
                   heroBgType === "image"
@@ -3181,18 +3346,19 @@ ${lastMsgText}`;
 
         <div className="menu-content" id="landing-menu-content">
           <h1>Pancaran Group</h1>
-          <p className="mb-8">Solusi Logistik Masa Depan</p>
+          <p className="mb-0 text-white tracking-widest font-mono text-xs uppercase opacity-80 pt-1">Solusi Logistik Masa Depan</p>
 
           <button 
             type="button"
-            className="btn-mulai font-bold mt-2" 
+            className="btn-mulai font-bold mt-8 bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-8 py-3.5 rounded-2xl shadow-xl transition-all duration-300 transform active:scale-95 cursor-pointer flex items-center gap-2 tracking-wide font-sans text-xs shrink-0" 
             id="btn-mulai-jelajah"
             onClick={() => {
               setShowHeroLanding(false);
               sessionStorage.setItem("prama_hero_dismissed", "true");
             }}
           >
-            Mulai Jelajah AI
+            <span>MASUK PORTAL SYSTEM</span>
+            <Sparkles className="h-4 w-4" />
           </button>
         </div>
       </div>
@@ -3625,6 +3791,8 @@ ${lastMsgText}`;
                 ? "Simpan Draf & Dokumen Artikel PM"
                 : dashboardView === "project_dashboard"
                 ? "Dashboard Formulasi Jurnal PM"
+                : dashboardView === "robot_voice"
+                ? "Robot Voice Information & Media Automation"
                 : "Administrasi Persetujuan Registrasi"}
             </h2>
             <p className="mt-1.5 text-xs text-slate-500 max-w-xl mx-auto font-bold leading-relaxed">
@@ -3634,6 +3802,8 @@ ${lastMsgText}`;
                 ? "Kelola, edit, cari, cetak, dan ekspor draf artikel project management atau dokumen audit yang tersimpan di cloud terenkripsi portal PRAMA."
                 : dashboardView === "project_dashboard"
                 ? "Lihat, edit, dan unduh 14 pilar analisis dan strategi manajemen proyek secara lengkap dalam format dokumen Word (.doc) terpisah atau presentasi PPTX (.pptx)."
+                : dashboardView === "robot_voice"
+                ? "Otomatisasi pengolahan media logistik: transkripsikan video peninjauan lapangan menjadi teks, rekayasa teks-ke-video realistis, serta sintesiskan siaran suara robotik terpadu."
                 : "Verifikasi, terima, atau tolak permohonan pendaftaran dari kandidat staf baru sebelum mereka diberikan hak akses ke asisten cerdas internal PRAMA."}
             </p>
           </div>
@@ -5927,6 +6097,33 @@ ${lastMsgText}`;
                 PT PANCARAN GROUP COGNITIVE BUSINESS INTELLIGENCE SYSTEM &bull; GENERATIVE CLIENT-SIDE DASHBOARD
               </div>
             </div>
+          ) : dashboardView === "robot_voice" ? (
+            <div className="max-w-6xl mx-auto text-left bg-[#f3f4f6] rounded-3xl border border-slate-200 shadow-2xl overflow-hidden w-full h-[780px] flex flex-col transition-all duration-300 relative font-sans">
+              
+              {/* Elegant floating Return to Hub button */}
+              <div className="absolute top-4 right-4 z-40">
+                <button
+                  type="button"
+                  onClick={() => setDashboardView("divisions")}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-black rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 cursor-pointer border border-white/10 active:scale-95 uppercase tracking-wider font-mono shrink-0"
+                  title="Kembali ke Hub Utama"
+                >
+                  <ArrowLeft className="h-4 w-4 shrink-0" />
+                  <span>Kembali ke Hub</span>
+                </button>
+              </div>
+
+              {/* Full Screen Iframe of White PRAMA 3D AI */}
+              <div className="w-full h-full relative flex-grow overflow-hidden bg-[#f3f4f6]">
+                <iframe
+                  ref={robotIframeRef}
+                  src="/3d-robot.html"
+                  title="PRAMA 3D Interactive Robot Panel"
+                  className="w-full h-full border-none block"
+                  style={{ width: "100%", height: "100%", display: "block" }}
+                />
+              </div>
+            </div>
           ) : (
             /* Division Bento-like Selection Grid */
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-left max-w-5xl mx-auto">
@@ -6196,6 +6393,64 @@ ${lastMsgText}`;
                 </div>
               </div>
 
+              {/* Standalone custom card for Robot Voice & Media Automation */}
+              <div
+                onClick={() => {
+                  setDashboardView("robot_voice");
+                }}
+                className="group relative flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-5 transition-all duration-300 cursor-pointer hover:border-cyan-500 shadow-sm hover:shadow-lg hover:-translate-y-0.5 animate-none"
+              >
+                <div className="space-y-4">
+                  {/* Header: Icon and Division Code */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl transition bg-cyan-50 text-cyan-800 border border-cyan-100 shadow-sm font-bold">
+                      <Cpu className="h-5 w-5 text-cyan-500 animate-pulse" />
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-mono text-[9px] font-black tracking-widest bg-cyan-50 text-cyan-700 px-2 py-0.5 rounded border border-cyan-200 uppercase">
+                        ROBOT VOICE & MEDIA
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Title & description */}
+                  <div>
+                    <h4 className="font-display font-extrabold text-sm leading-snug transition text-slate-800 group-hover:text-cyan-700">
+                      Robot Voice & Media Automation
+                    </h4>
+                    <p className="text-[10px] font-bold text-slate-400 mt-0.5 tracking-wide line-clamp-1 uppercase">
+                      AUTOMATION & GENERATIVE WORKSPACE
+                    </p>
+                  </div>
+
+                  {/* Quick profile info */}
+                  <div className="pt-2 border-t border-slate-100">
+                    <span className="text-[8px] font-extrabold text-slate-400 uppercase tracking-widest block font-mono">FUNGSI OTOMATISASI</span>
+                    <p className="text-[10px] text-slate-500 leading-normal font-bold mt-1 line-clamp-4 italic">
+                      &quot;Integrasi transkripsi video-ke-teks otomatis, simulatif adegan text-to-video dengan sulih suara robotik, serta rekayasa papan informasi suara interaktif.&quot;
+                    </p>
+                  </div>
+                </div>
+
+                {/* Standalone Button */}
+                <div className="pt-4 mt-auto">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDashboardView("robot_voice");
+                    }}
+                    className="w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-black tracking-wide transition shadow-sm bg-cyan-50 border border-cyan-100 hover:bg-cyan-600 hover:text-white text-cyan-700 cursor-pointer hover:border-cyan-500 hover:scale-101"
+                  >
+                    <Cpu className="h-4 w-4 shrink-0 text-cyan-500 group-hover:text-white" />
+                    <span>Akses Robot Voice & Media</span>
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-cyan-100 text-cyan-800 font-extrabold shadow-inner shrink-0 leading-none group-hover:bg-cyan-700 group-hover:text-slate-100 ml-1 animate-pulse">
+                      OTOMATIS
+                    </span>
+                  </button>
+                </div>
+              </div>
+
             </div>
           )}
 
@@ -6349,7 +6604,7 @@ ${lastMsgText}`;
         <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
           
           {/* Column 1: AI Chat Canvas - Full Width Focused View */}
-          <div className="flex-1 flex flex-col h-full overflow-hidden w-full">
+          <div className="flex-1 flex flex-col h-full overflow-hidden w-full relative">
              <ChatPanel
               messages={chatMessages}
               loading={chatLoading}
@@ -6386,7 +6641,222 @@ ${lastMsgText}`;
               isSearchingMessages={isSearching}
               onToggleSearchMessages={setIsSearching}
             />
+
+            {/* Dynamic Floating indicator button for reopening the 14 pillars panel when minimized */}
+            {!isRightPillarPanelOpen && (
+              <button
+                type="button"
+                onClick={() => setIsRightPillarPanelOpen(true)}
+                className="absolute top-4 right-14 z-30 flex h-9 items-center gap-1.5 px-3 rounded-xl bg-[#5B4DFB] hover:bg-[#4a3ce0] text-white text-[10.5px] font-black shadow-lg cursor-pointer transition border border-indigo-400 select-none"
+                title="Buka 14 Pilar Strategis"
+              >
+                <Sparkles className="h-3.5 w-3.5 text-white animate-pulse" />
+                <span>Lihat 14 Pilar</span>
+              </button>
+            )}
           </div>
+
+          {/* Column 2: 14 Pillars Interactive Right Panel */}
+          {isRightPillarPanelOpen && (
+            <aside className="w-full md:w-[350px] lg:w-[410px] bg-white border-l border-slate-200 flex flex-col h-full shrink-0 overflow-hidden shadow-xl relative transition-all duration-300">
+              {/* Panel Header */}
+              <div className="bg-slate-900 text-white px-4 py-3.5 flex items-center justify-between border-b border-slate-800 shrink-0 select-none">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-6 w-6 bg-indigo-950 text-indigo-450 text-indigo-400 border border-indigo-850 rounded-lg flex items-center justify-center font-bold text-xs shadow-inner">
+                    ✨
+                  </div>
+                  <div>
+                    <h4 className="text-[11.5px] font-black uppercase tracking-wider font-mono">14 Pilar Strategis</h4>
+                    <span className="text-[8.5px] font-extrabold text-slate-400 font-mono tracking-widest block uppercase">PRAMA FORMULATOR BI</span>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      exportAllSectionsToWord(dashboardProjectTitle, dashboardSectionsState);
+                    }}
+                    className="p-1.5 px-2 bg-slate-800 hover:bg-slate-750 text-white hover:text-indigo-300 rounded-lg text-[9.5px] font-black border border-slate-700 transition cursor-pointer shrink-0"
+                    title="Unduh draf dari seluruh 14 pilar sekaligus (.doc)"
+                  >
+                    Ekspor Semua
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsRightPillarPanelOpen(false)}
+                    className="text-slate-450 hover:text-white transition duration-200 cursor-pointer p-1.5 rounded-full hover:bg-slate-800"
+                    title="Sembunyikan Panel"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick Search */}
+              <div className="p-3 border-b border-slate-100 bg-slate-50/70 shrink-0 select-none">
+                <div className="relative flex items-center bg-white border border-slate-200 rounded-xl overflow-hidden px-3 shadow-3sm">
+                  <Search className="h-3.5 w-3.5 text-slate-400 shrink-0 mr-1.5" />
+                  <input
+                    type="text"
+                    placeholder="Saring berdasarkan nama pilar..."
+                    value={searchRightPilarQuery}
+                    onChange={(e) => setSearchRightPilarQuery(e.target.value)}
+                    className="w-full bg-transparent border-none text-xs text-slate-800 focus:outline-none focus:ring-0 py-2.5 font-sans font-semibold"
+                  />
+                  {searchRightPilarQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchRightPilarQuery("")}
+                      className="text-[10px] text-slate-450 hover:text-slate-700 font-extrabold mr-1 shrink-0"
+                    >
+                      Batal
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Description Info Banner */}
+              <div className="bg-amber-50/70 border-b border-amber-100 px-4 py-2.5 text-[10px] text-amber-850 font-medium leading-normal flex items-start gap-2 shrink-0 select-none">
+                <CircleAlert className="h-3.5 w-3.5 text-amber-600 shrink-0 mt-0.5" />
+                <span>
+                  Ketuk salah satu pilar di bawah untuk **melihat isi draf**, **mengunduh file Word** individu, atau **membahas** secara interaktif bersama asisten AI.
+                </span>
+              </div>
+
+              {/* Pillars Interactive List Card with scrolling wrapper */}
+              <div className="flex-1 overflow-y-auto p-3 space-y-2 pb-12 bg-slate-100/40 divide-y divide-transparent select-none">
+                {defaultDashboardSections
+                  .filter(sec => {
+                    const q = searchRightPilarQuery.toLowerCase().trim();
+                    if (!q) return true;
+                    return sec.title.toLowerCase().includes(q) || 
+                           sec.number.toString() === q ||
+                           sec.shortDesc.toLowerCase().includes(q);
+                  })
+                  .map((sec) => {
+                    const isSelected = selectedRightPilar === sec.number;
+                    const val = dashboardSectionsState[sec.number] || sec.defaultContent;
+                    
+                    return (
+                      <div
+                        key={sec.number}
+                        className={`bg-white rounded-2xl border transition-all duration-300 overflow-hidden flex flex-col ${
+                          isSelected 
+                            ? "border-indigo-500 ring-1 ring-indigo-200 shadow-md transform scale-[0.99]" 
+                            : "border-slate-200/80 hover:border-slate-350 hover:shadow-sm"
+                        }`}
+                      >
+                        {/* Summary Header of Card */}
+                        <div
+                          onClick={() => setSelectedRightPilar(isSelected ? null : sec.number)}
+                          className="p-3.5 flex items-center justify-between gap-3 cursor-pointer select-none text-left"
+                        >
+                          <div className="min-w-0 flex-1 flex items-start gap-3">
+                            <span className={`block h-6.5 w-6.5 mt-0.5 shrink-0 flex items-center justify-center rounded-xl text-[10.5px] font-black transition-colors ${
+                              isSelected 
+                                ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/20" 
+                                : "bg-slate-100 text-slate-550 border border-slate-200"
+                            }`}>
+                              {sec.number}
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <h5 className={`text-[12px] font-black truncate uppercase tracking-tight ${
+                                isSelected ? "text-indigo-950" : "text-slate-800"
+                              }`}>
+                                {sec.title}
+                              </h5>
+                              <p className="text-[10px] font-semibold text-slate-400 line-clamp-1 mt-0.5">
+                                {sec.shortDesc}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {/* Download Single Pillar Button */}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                exportSingleSectionToWord(dashboardProjectTitle, sec, val);
+                              }}
+                              title={`Unduh Dokumen ${sec.title} (.doc)`}
+                              className="h-8 w-8 rounded-xl bg-slate-50 hover:bg-emerald-600 border border-slate-200 hover:border-emerald-600 text-slate-550 hover:text-white flex items-center justify-center transition shadow-3sm cursor-pointer"
+                            >
+                              <Download className="h-3.5 w-3.5" />
+                            </button>
+                            
+                            <span className="text-slate-400 font-extrabold text-[10px] w-4 text-center">
+                              {isSelected ? "▲" : "▼"}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Detailed Description Block - If selected/expanded ("bisa liat") */}
+                        {isSelected && (
+                          <div className="px-4 pb-4 pt-2.5 border-t border-slate-100 bg-slate-50/50 text-left text-xs leading-relaxed space-y-3 animate-fade-in select-text">
+                            <div className="flex items-center justify-between">
+                              <div className="text-[9.5px] font-black text-indigo-700 font-mono uppercase tracking-widest flex items-center gap-1.5">
+                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                <span>Preview Konten Draf</span>
+                              </div>
+                              <span className="text-[8px] font-black font-mono text-slate-400 uppercase tracking-tight">
+                                Terakhir Diedit: Lokal
+                              </span>
+                            </div>
+                            
+                            {/* Scrollable live preview of content */}
+                            <div className="bg-white rounded-xl border border-slate-200 p-3 max-h-56 overflow-y-auto font-mono text-[10px] text-slate-700 leading-relaxed whitespace-pre-wrap select-all">
+                              {val}
+                            </div>
+
+                            {/* Action buttons inside detail */}
+                            <div className="flex gap-2 pt-1">
+                              {/* Download Word button */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  exportSingleSectionToWord(dashboardProjectTitle, sec, val);
+                                }}
+                                className="flex-1 flex items-center justify-center gap-1 bg-emerald-600 hover:bg-emerald-500 text-[10.5px] font-black text-white rounded-lg py-2 shadow-sm transition active:scale-97 cursor-pointer"
+                              >
+                                <Download className="h-3.5 w-3.5" />
+                                <span>Unduh Bab Word</span>
+                              </button>
+
+                              {/* Ask/collaborate on chat */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  handleSendMessage(`Tolong berikan komentar taktis, optimasi operasional, dan masukan inovatif untuk Draf Pilar ${sec.number} ("${sec.title}") berikut:\n\n${val}`, false);
+                                }}
+                                className="flex-1 flex items-center justify-center gap-1 bg-[#5B4DFB] hover:bg-[#4a3ce0] text-[10.5px] font-black text-white rounded-lg py-2 shadow-sm transition active:scale-97 cursor-pointer"
+                              >
+                                <Sparkles className="h-3.5 w-3.5 text-indigo-200" />
+                                <span>Bahas di Chat</span>
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                
+                {defaultDashboardSections.filter(sec => {
+                  const q = searchRightPilarQuery.toLowerCase().trim();
+                  if (!q) return true;
+                  return sec.title.toLowerCase().includes(q) || 
+                         sec.number.toString() === q ||
+                         sec.shortDesc.toLowerCase().includes(q);
+                }).length === 0 && (
+                  <div className="py-12 text-center text-slate-400">
+                    <p className="text-xs font-bold font-mono">Data pilar tidak ditemukan</p>
+                    <p className="text-[10px] mt-1 text-slate-450">Cobalah kata kunci pencarian yang lain.</p>
+                  </div>
+                )}
+              </div>
+            </aside>
+          )}
 
         </div>
 
@@ -7305,6 +7775,61 @@ ${lastMsgText}`;
                   Tutup Slideshow
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. CONFIRM PROJECT DETECTED UPDATE MODAL (MANDATORILY SPECIFIED BY USER) */}
+      {isConfirmProjectUpdateOpen && (
+        <div className="fixed inset-0 z-55 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md animate-fade-in" style={{ zIndex: 9999 }}>
+          <div className="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl border border-slate-200 transition-all duration-300 transform scale-100 flex flex-col p-6 space-y-4">
+            
+            {/* Header */}
+            <div className="flex items-center gap-3.5 border-b border-slate-100 pb-3">
+              <div className="h-11 w-11 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+                <FolderSync className="h-6 w-6 stroke-[2]" />
+              </div>
+              <div className="flex-1">
+                <span className="font-mono text-[9px] font-black text-emerald-600 block uppercase tracking-widest">PRAMA STRATEGIC SYSTEM</span>
+                <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-tight">Pergantian Proyek Terdeteksi</h3>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="space-y-3 py-1">
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Asisten PRAMA mendeteksi instruksi penggantian pembahasan menuju proyek baru:
+              </p>
+              <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-3">
+                <span className="font-mono text-[8px] font-bold text-emerald-600 block uppercase tracking-wider mb-0.5">Nama Proyek Baru:</span>
+                <span className="text-xs font-black text-emerald-950 uppercase block leading-normal">
+                  {proposedNewProjectName}
+                </span>
+              </div>
+              <p className="text-xs text-slate-700 leading-relaxed font-semibold">
+                Apakah Anda ingin mereset dan memperbarui seluruh isi 14 pilar strategis pada dashboard secara penuh agar selaras dengan proyek baru ini secara instan?
+              </p>
+              <div className="text-[10px] bg-slate-50 border border-slate-150 rounded-lg p-2.5 text-slate-500 leading-normal flex gap-2">
+                <span className="text-emerald-600 shrink-0 font-bold select-none">•</span>
+                <span><strong>Catatan:</strong> Jika Anda menyetujui, kalkulasi finansial, estimasi TAM/SAM/SOM, segmentasi pasar, SOP mitigasi risiko, and kualifikasi organisasi pada dashboard 14 pilar akan direkonstruksi menyesuaikan proyek baru <strong>&quot;{proposedNewProjectName}&quot;</strong>.</span>
+              </div>
+            </div>
+
+            {/* Footer buttons */}
+            <div className="flex gap-2.5 pt-2 justify-end border-t border-slate-100">
+              <button
+                onClick={() => handleConfirmProjectUpdate(false)}
+                className="px-4 py-2 text-xs font-extrabold text-slate-500 hover:text-slate-800 hover:bg-slate-50 border border-slate-200 rounded-xl transition cursor-pointer"
+              >
+                Ganti Judul Saja
+              </button>
+              <button
+                onClick={() => handleConfirmProjectUpdate(true)}
+                className="px-4.5 py-2 text-xs font-extrabold bg-[#00D285] hover:bg-[#00b270] text-slate-900 rounded-xl transition cursor-pointer shadow-md shadow-emerald-50"
+              >
+                Ya, Rekonstruksi 14 Pilar
+              </button>
             </div>
           </div>
         </div>

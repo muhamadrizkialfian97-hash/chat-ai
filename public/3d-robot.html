@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRAMA 3D Vocal Assistant & Vocalizer Hub</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+        }
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        .glassmorphism {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px) saturate(180%);
+            -webkit-backdrop-filter: blur(12px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        .glassmorphism-dark {
+            background: rgba(15, 23, 42, 0.82);
+            backdrop-filter: blur(12px) saturate(180%);
+            -webkit-backdrop-filter: blur(12px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="relative select-none text-slate-800">
+
+    <!-- WebGL Canvas Container -->
+    <div id="canvas-container" class="absolute w-full h-full"></div>
+
+    <!-- UI Overlay Layer (Pointer events auto default to pass to background) -->
+    <div class="absolute inset-0 pointer-events-none z-10 flex flex-col justify-between p-6">
+        
+        <!-- Header Panel -->
+        <div class="w-full flex items-center justify-between pointer-events-auto">
+            <div class="glassmorphism p-4 rounded-2xl shadow-lg flex items-center gap-3 max-w-sm">
+                <div class="h-10 w-10 bg-slate-900 rounded-xl flex items-center justify-center text-xl text-white shadow-md">
+                    🤖
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-sm tracking-tight text-slate-900 leading-none">PRAMA 3D AI COGNITIVE AGENT</h1>
+                    <p class="text-[9.5px] font-mono tracking-widest text-slate-500 uppercase mt-1">Vocalizer & LipSync System v3.5</p>
+                </div>
+            </div>
+            
+            <!-- Dismiss / Enter Portal Button -->
+            <button id="btn-enter-portal" class="glassmorphism-dark hover:bg-slate-900 px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2.5 text-xs text-white tracking-wider font-extrabold transition-all duration-300 hover:scale-105 active:scale-95 border border-white/20 hover:border-emerald-500/50">
+                <span>MASUK KE PORTAL PRAMA</span>
+                <span class="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            </button>
+        </div>
+
+        <!-- Robot Interactive Center Status -->
+        <div class="mx-auto text-center translate-y-[-20%]">
+            <div id="status-badge" class="glassmorphism px-3.5 py-1.5 rounded-full inline-flex items-center gap-2 text-[10px] font-mono font-bold tracking-widest text-slate-600 uppercase shadow-sm">
+                <span id="status-dot" class="h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
+                <span id="status-text">Standby & Breathing</span>
+            </div>
+        </div>
+
+        <!-- Bottom Controls Dashboard -->
+        <div class="w-full max-w-2xl mx-auto flex flex-col gap-3 pointer-events-auto shrink-0 pb-2">
+            
+            <!-- Real-time Text Subtitles Display -->
+            <div id="subtitles-panel" class="hidden glassmorphism-dark px-5 py-3 rounded-xl border border-white/10 text-center text-sm font-semibold tracking-wide text-cyan-300 max-w-xl mx-auto shadow-md transition-all duration-300 transform translate-y-2 opacity-0">
+                <span id="subtitles-text">&ldquo;&rdquo;</span>
+            </div>
+
+            <!-- Controller Console -->
+            <div class="glassmorphism p-5 rounded-3xl shadow-2xl border border-white/60 space-y-4">
+                <div class="flex items-center justify-between border-b border-black/5 pb-2">
+                    <span class="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-widest">SINTESIS SUARA TERSTRUKTUR & LIP-SYNC DIGITAL</span>
+                    <div class="flex items-center gap-2 text-[10px] font-mono text-slate-400">
+                        <span>AUDIO OUTPUT: <b class="text-slate-800">WEB SPEECH API</b></span>
+                    </div>
+                </div>
+
+                <!-- Input group -->
+                <div class="flex gap-2.5">
+                    <input id="input-tts-text" type="text" 
+                           value="Selamat datang di Portal Digital PRAMA Pancaran Group. Saya adalah asisten kecerdasan kognitif tiga dimensi siap membantu Anda merancang manajemen proyek kontemporer." 
+                           placeholder="Type a message for PRAMA AI to vocalize..."
+                           class="flex-grow bg-white/80 focus:bg-white border border-slate-300/80 hover:border-slate-400 rounded-2xl px-4 py-3 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-emerald-500/20 font-bold transition duration-200">
+                    <button id="btn-vocalize" class="bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs uppercase px-6 py-3 rounded-2xl transition-all duration-200 shadow-md flex items-center gap-2 active:scale-95 cursor-pointer">
+                        <span id="vocalize-icon">🗣️</span>
+                        <span id="vocalize-label">SIARKAN SUARA</span>
+                    </button>
+                </div>
+
+                <!-- Control tuning & presets -->
+                <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 pt-1">
+                    <!-- Presets slider -->
+                    <div class="flex flex-wrap items-center gap-1.5">
+                        <button onclick="setTtsPreset('peringatan')" class="bg-slate-100 hover:bg-slate-200 active:scale-95 transition text-[9px] font-bold text-slate-700 px-2.5 py-1 rounded-lg">
+                            ⚠️ Peringatan HSSE
+                        </button>
+                        <button onclick="setTtsPreset('status')" class="bg-slate-100 hover:bg-slate-200 active:scale-95 transition text-[9px] font-bold text-slate-700 px-2.5 py-1 rounded-lg">
+                            🚛 Status Armada
+                        </button>
+                        <button onclick="setTtsPreset('salam')" class="bg-slate-100 hover:bg-slate-200 active:scale-95 transition text-[9px] font-bold text-slate-700 px-2.5 py-1 rounded-lg">
+                            👋 Selamat Datang
+                        </button>
+                    </div>
+
+                    <!-- Slide Controls -->
+                    <div class="flex items-center gap-4 text-[9.5px] font-mono text-slate-500">
+                        <div class="flex items-center gap-2">
+                            <span>SPEED:</span>
+                            <input id="range-speed" type="range" min="0.5" max="1.8" step="0.1" value="1.0" class="w-16 accent-slate-900 cursor-pointer">
+                            <span id="lbl-speed">1.0x</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span>PITCH:</span>
+                            <input id="range-pitch" type="range" min="0.6" max="1.4" step="0.1" value="1.0" class="w-16 accent-slate-900 cursor-pointer">
+                            <span id="lbl-pitch">1.0x</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Helper Tip -->
+                <p class="text-[9.5px] text-slate-400 text-center md:text-left leading-normal font-medium">
+                    💡 <b>Interaksi Navigasi:</b> Geser kursor mouse atau sentuh layar di atas robot untuk melakukan rotasi kamera halus secara interaktif.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading WebGL indicator -->
+    <div id="loader" class="absolute inset-0 bg-slate-50 flex flex-col items-center justify-center z-50 transition-opacity duration-700">
+        <div class="animate-spin rounded-full h-10 w-10 border-4 border-slate-950 border-t-transparent mb-4"></div>
+        <span class="text-xs font-mono font-bold text-slate-500 uppercase tracking-widest">Memuat Render 3D WebGL...</span>
+    </div>
+
+    <!-- Scripts CDN for Three.js & OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- THREE.JS CONFIGURATION ---
+        let scene, camera, renderer, controls;
+        let robotGroup, headGroup, jawMesh, neckMesh, torsoMesh, leftEye, rightEye, earPodLeft, earPodRight;
+        let isSpeaking = false;
+        let speakAnimationTime = 0;
+        let customSpeechUtterance = null;
+
+        // Mouse tracking for interactive tilting
+        let mouseX = 0, mouseY = 0;
+        let targetRotationX = 0, targetRotationY = 0;
+        const windowHalfX = window.innerWidth / 2;
+        const windowHalfY = window.innerHeight / 2;
+
+        const container = document.getElementById('canvas-container');
+
+        function init3D() {
+            // Scene Setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf3f4f6); // Matching foto robot.jpg clean backdrop
+            scene.fog = new THREE.FogExp2(0xf3f4f6, 0.08);
+
+            // Camera Setup
+            camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 100);
+            camera.position.set(0, 0.2, 5.5);
+
+            // Renderer Setup
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.0;
+            container.appendChild(renderer.domElement);
+
+            // Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.maxPolarAngle = Math.PI / 2 + 0.1; // Limit below the floor
+            controls.minDistance = 3.5;
+            controls.maxDistance = 8.5;
+            controls.enablePan = false;
+
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.82);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1.3);
+            dirLight.position.set(5, 8, 5);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 1024;
+            dirLight.shadow.mapSize.height = 1024;
+            dirLight.shadow.bias = -0.0001;
+            scene.add(dirLight);
+
+            const rimLight = new THREE.DirectionalLight(0xdbeafe, 0.85); // Blue rim tint
+            rimLight.position.set(-5, 4, -5);
+            scene.add(rimLight);
+
+            // Point light for shiny blue eyes glow effect
+            const blueGlowLight = new THREE.PointLight(0x06b6d4, 1.4, 3);
+            blueGlowLight.position.set(0, 0.6, 0.8);
+            scene.add(blueGlowLight);
+
+            // Build Humanoid Robot (Styled after white sleek chassis, mechanical shoulder joints)
+            buildRobotModel();
+
+            // Ground Studio catch shadow
+            const groundGeo = new THREE.PlaneGeometry(30, 30);
+            const groundMat = new THREE.ShadowMaterial({ opacity: 0.08 });
+            const ground = new THREE.Mesh(groundGeo, groundMat);
+            ground.rotation.x = -Math.PI / 2;
+            ground.position.y = -1.8;
+            ground.receiveShadow = true;
+            scene.add(ground);
+
+            // Remove loading screen
+            document.getElementById('loader').classList.add('opacity-0');
+            setTimeout(() => {
+                document.getElementById('loader').style.display = 'none';
+            }, 700);
+
+            // Track mouse move for subtle interactive head target looking
+            window.addEventListener('mousemove', onMouseMove, false);
+            window.addEventListener('resize', onWindowResize, false);
+        }
+
+        // Beautiful materials matching white sleek chassis
+        const robotWhiteMaterial = new THREE.MeshStandardMaterial({
+            color: 0xfafafa,
+            roughness: 0.12,
+            metalness: 0.1,
+            clearcoat: 0.8,
+            clearcoatRoughness: 0.1
+        });
+
+        const darkVisorMaterial = new THREE.MeshStandardMaterial({
+            color: 0x0f172a,
+            roughness: 0.05,
+            metalness: 0.85
+        });
+
+        const copperMetalMaterial = new THREE.MeshStandardMaterial({
+            color: 0xb45309,
+            roughness: 0.3,
+            metalness: 0.8
+        });
+
+        const darkMetalMaterial = new THREE.MeshStandardMaterial({
+            color: 0x334155,
+            roughness: 0.4,
+            metalness: 0.75
+        });
+
+        const blueEyeMaterial = new THREE.MeshStandardMaterial({
+            color: 0x06b6d4,
+            emissive: 0x0891b2,
+            emissiveIntensity: 2.2,
+            roughness: 0.1
+        });
+
+        function buildRobotModel() {
+            robotGroup = new THREE.Group();
+            robotGroup.position.set(0, -0.4, 0);
+            scene.add(robotGroup);
+
+            // 1. TORSO (Chest piece with mechanical aesthetic)
+            const torsoGeo = new THREE.CylinderGeometry(0.7, 0.5, 1.4, 32);
+            torsoMesh = new THREE.Mesh(torsoGeo, robotWhiteMaterial);
+            torsoMesh.castShadow = true;
+            torsoMesh.receiveShadow = true;
+            robotGroup.add(torsoMesh);
+
+            // Chest screen overlay or power core
+            const chestCoreGeo = new THREE.CylinderGeometry(0.32, 0.32, 0.1, 16);
+            const chestCoreMesh = new THREE.Mesh(chestCoreGeo, darkVisorMaterial);
+            chestCoreMesh.rotation.x = Math.PI / 2;
+            chestCoreMesh.position.set(0, 0.2, 0.45);
+            torsoMesh.add(chestCoreMesh);
+
+            const coreGlowGeo = new THREE.CylinderGeometry(0.24, 0.24, 0.05, 16);
+            const coreGlowMesh = new THREE.Mesh(coreGlowGeo, blueEyeMaterial);
+            coreGlowMesh.rotation.x = Math.PI / 2;
+            coreGlowMesh.position.set(0, 0.2, 0.49);
+            torsoMesh.add(coreGlowMesh);
+
+            // Mechanical Shoulder Joints
+            const leftJointGeo = new THREE.SphereGeometry(0.2, 16, 16);
+            const leftJoint = new THREE.Mesh(leftJointGeo, darkMetalMaterial);
+            leftJoint.position.set(-0.85, 0.45, 0);
+            torsoMesh.add(leftJoint);
+
+            const rightJoint = leftJoint.clone();
+            rightJoint.position.set(0.85, 0.45, 0);
+            torsoMesh.add(rightJoint);
+
+            // Upper arms slightly sculpted
+            const armGeo = new THREE.CylinderGeometry(0.14, 0.12, 0.6, 16);
+            const leftArm = new THREE.Mesh(armGeo, robotWhiteMaterial);
+            leftArm.position.set(-0.95, 0.15, 0.1);
+            leftArm.rotation.z = Math.PI / 12;
+            leftArm.rotation.x = -Math.PI / 18;
+            torsoMesh.add(leftArm);
+
+            const rightArm = leftArm.clone();
+            rightArm.position.set(0.95, 0.15, 0.1);
+            rightArm.rotation.z = -Math.PI / 12;
+            torsoMesh.add(rightArm);
+
+            // Neck base socket
+            const neckBaseGeo = new THREE.CylinderGeometry(0.28, 0.3, 0.15, 16);
+            const neckBase = new THREE.Mesh(neckBaseGeo, darkMetalMaterial);
+            neckBase.position.y = 0.72;
+            torsoMesh.add(neckBase);
+
+            // Neck Sleek cylinder
+            const neckGeo = new THREE.CylinderGeometry(0.16, 0.18, 0.35, 16);
+            neckMesh = new THREE.Mesh(neckGeo, robotWhiteMaterial);
+            neckMesh.position.y = 0.9;
+            robotGroup.add(neckMesh);
+
+            // 2. HEAD GROUP (Allows multi-axis rotating/tilting)
+            headGroup = new THREE.Group();
+            headGroup.position.set(0, 1.25, 0); // Positioned above neck
+            robotGroup.add(headGroup);
+
+            // Sleek Head Sphere Upper Dome
+            const headSphereGeo = new THREE.SphereGeometry(0.55, 32, 24);
+            const headSleekSphere = new THREE.Mesh(headSphereGeo, robotWhiteMaterial);
+            headSleekSphere.castShadow = true;
+            headSleekSphere.position.set(0, 0.15, 0);
+            headGroup.add(headSleekSphere);
+
+            // Visor Overlay Plate (Black curved plate under blue eyes)
+            const visorGeo = new THREE.SphereGeometry(0.56, 32, 16, 0, Math.PI * 2, Math.PI/3, Math.PI/3);
+            const visorMesh = new THREE.Mesh(visorGeo, darkVisorMaterial);
+            visorMesh.scale.set(1.0, 0.65, 1.0);
+            visorMesh.position.set(0, 0.1, 0.02);
+            headGroup.add(visorMesh);
+
+            // Glow Eyes (Blue horizontal sleek bar or separate spheres matching foto robot.jpg)
+            const eyeGeo = new THREE.SphereGeometry(0.06, 16, 16);
+            
+            // Left eye
+            leftEye = new THREE.Mesh(eyeGeo, blueEyeMaterial);
+            leftEye.position.set(-0.16, 0.15, 0.44);
+            headGroup.add(leftEye);
+
+            // Right eye
+            rightEye = leftEye.clone();
+            rightEye.position.set(0.16, 0.15, 0.44);
+            headGroup.add(rightEye);
+
+            // Sleek metallic ear pod design (Both sides of head)
+            const earGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.08, 24);
+            
+            // Left ear pod
+            earPodLeft = new THREE.Mesh(earGeo, robotWhiteMaterial);
+            earPodLeft.rotation.z = Math.PI / 2;
+            earPodLeft.position.set(-0.54, 0.14, 0);
+            headGroup.add(earPodLeft);
+
+            // Ear inner accent
+            const earAccentGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.1, 16);
+            const earAccentLeft = new THREE.Mesh(earAccentGeo, copperMetalMaterial);
+            earAccentLeft.rotation.z = Math.PI / 2;
+            earAccentLeft.position.set(-0.56, 0.14, 0);
+            headGroup.add(earAccentLeft);
+
+            // Right ear pod
+            earPodRight = earPodLeft.clone();
+            earPodRight.position.set(0.54, 0.14, 0);
+            headGroup.add(earPodRight);
+
+            const earAccentRight = earAccentLeft.clone();
+            earAccentRight.position.set(0.56, 0.14, 0);
+            headGroup.add(earAccentRight);
+
+            // 3. SEPARATE CHIN/JAW GEOMETRY (Crucial for Lip-Sync Dynamic Movement)
+            // Shaped like a perfect white chin guard cup matching foto robot.jpg
+            const chinGroup = new THREE.Group();
+            chinGroup.position.set(0, -0.15, 0.12); // Neck joint area of jaw
+
+            const chinGeo = new THREE.SphereGeometry(0.42, 24, 12, 0, Math.PI, Math.PI / 2, Math.PI / 2);
+            const chinMesh = new THREE.Mesh(chinGeo, robotWhiteMaterial);
+            chinMesh.scale.set(1.0, 1.1, 0.9);
+            chinMesh.rotation.x = -Math.PI / 4;
+            chinMesh.castShadow = true;
+            chinGroup.add(chinMesh);
+
+            // Mouth black spacer slot
+            const mouthSlotGeo = new THREE.BoxGeometry(0.35, 0.05, 0.1);
+            const mouthSlot = new THREE.Mesh(mouthSlotGeo, darkVisorMaterial);
+            mouthSlot.position.set(0, 0.22, 0.24);
+            chinGroup.add(mouthSlot);
+
+            jawMesh = chinGroup;
+            headGroup.add(jawMesh);
+
+            // Establish thinking pose (As mentioned: bust-up, initially in a subtle thinking tilt)
+            headGroup.rotation.y = -0.14;
+            headGroup.rotation.x = 0.08;
+            headGroup.rotation.z = -0.06;
+        }
+
+        function onMouseMove(event) {
+            mouseX = (event.clientX - windowHalfX) / 1000;
+            mouseY = (event.clientY - windowHalfY) / 1000;
+        }
+
+        function onWindowResize() {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        // --- ANIMATION & RENDER LOOP ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const time = clock.getElapsedTime();
+
+            // 1. Sleek Inertial Mouse Tracking Head looking rotation
+            // Combine with random thinking look variations
+            if (!isSpeaking) {
+                targetRotationY = mouseX * 0.35;
+                targetRotationX = mouseY * 0.2;
+            } else {
+                targetRotationY = mouseX * 0.15;
+                targetRotationX = mouseY * 0.08;
+            }
+
+            // Damping rotation
+            headGroup.rotation.y += (targetRotationY - headGroup.rotation.y) * 0.04;
+            headGroup.rotation.x += (targetRotationX - headGroup.rotation.x) * 0.04;
+
+            // 2. Head and torso gentle breathing tilt
+            const breathingFactor = Math.sin(time * 1.5) * 0.015;
+            torsoMesh.rotation.z = Math.sin(time * 1.2) * 0.01;
+            torsoMesh.position.y = Math.sin(time * 1.5) * 0.02;
+
+            if (!isSpeaking) {
+                headGroup.rotation.z = breathingFactor * 0.6;
+                // Standard default thinking pose jaw positioning
+                jawMesh.position.y = -0.15;
+                jawMesh.position.z = 0.12;
+                jawMesh.rotation.x = 0;
+            } else {
+                // 3. LIP-SYNC/JAW-MOVEMENT ANIMATION (OSCILLATING ALIVE WHILE SPEAKING)
+                // Random natural jaw chattering matching syllables
+                const syllableIntensity = Math.abs(Math.sin(time * 18) * Math.cos(time * 6));
+                jawMesh.position.y = -0.15 - (syllableIntensity * 0.11);
+                jawMesh.position.z = 0.12 - (syllableIntensity * 0.05);
+                jawMesh.rotation.x = -syllableIntensity * 0.15;
+
+                // Emissive eyes flare pulsing during conversation
+                leftEye.material.emissiveIntensity = 2.0 + (Math.sin(time * 30) * 0.8);
+            }
+
+            if (controls) controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // --- NATIVE TEXT-TO-SPEECH (SPEAKING) INTELLIGENCE ---
+        
+        function speakCurrentText() {
+            const txt = document.getElementById('input-tts-text').value.trim();
+            if(!txt) return;
+
+            // Cancel any current speaking session
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            } else {
+                alert("Browser Anda tidak mendukung Web Speech Synthesis API.");
+                return;
+            }
+
+            customSpeechUtterance = new SpeechSynthesisUtterance(txt);
+
+            // Read controls speed & pitch
+            const speed = parseFloat(document.getElementById('range-speed').value);
+            const pitch = parseFloat(document.getElementById('range-pitch').value);
+
+            customSpeechUtterance.rate = speed;
+            customSpeechUtterance.pitch = pitch;
+
+            // Set Indonesian language
+            customSpeechUtterance.lang = "id-ID";
+
+            // Find a premium Indonesian voice if available
+            const voices = window.speechSynthesis.getVoices();
+            const idVoice = voices.find(v => v.lang.toLowerCase().includes("id") || v.lang.toLowerCase().includes("id-id"));
+            if (idVoice) {
+                customSpeechUtterance.voice = idVoice;
+            }
+
+            customSpeechUtterance.onstart = function() {
+                isSpeaking = true;
+                
+                // Update UI statuses
+                document.getElementById('status-dot').className = "h-2 w-2 rounded-full bg-emerald-500 animate-ping";
+                document.getElementById('status-text').innerText = "MENYIARKAN SULIH SUARA...";
+                document.getElementById('vocalize-icon').innerText = "🔊";
+                document.getElementById('vocalize-label').innerText = "SIARAN AKTIF";
+                
+                // Show floating text subtitle glass overlay
+                const subtitleBox = document.getElementById('subtitles-panel');
+                subtitleBox.style.display = "block";
+                document.getElementById('subtitles-text').innerHTML = `&ldquo;${txt}&rdquo;`;
+                setTimeout(() => {
+                    subtitleBox.classList.remove('opacity-0', 'translate-y-2');
+                }, 50);
+
+                // Notify parent
+                if (window.parent) {
+                    window.parent.postMessage({ type: 'ROBOT_SPEAK_START', text: txt }, '*');
+                }
+            };
+
+            customSpeechUtterance.onend = function() {
+                resetSpeakingState();
+            };
+
+            customSpeechUtterance.onerror = function() {
+                resetSpeakingState();
+            };
+
+            window.speechSynthesis.speak(customSpeechUtterance);
+        }
+
+        function resetSpeakingState() {
+            isSpeaking = false;
+            
+            // Re-apply standard breathing statuses
+            document.getElementById('status-dot').className = "h-2 w-2 rounded-full bg-blue-500 animate-pulse";
+            document.getElementById('status-text').innerText = "STANDBY & BREATHING";
+            document.getElementById('vocalize-icon').innerText = "🗣️";
+            document.getElementById('vocalize-label').innerText = "SIARKAN SUARA";
+
+            // Animate and hide subtitle overlay
+            const subtitleBox = document.getElementById('subtitles-panel');
+            subtitleBox.classList.add('opacity-0', 'translate-y-2');
+            setTimeout(() => {
+                subtitleBox.style.display = "none";
+            }, 300);
+
+            // Re-stabilize eyes emitting glow
+            if (leftEye) leftEye.material.emissiveIntensity = 2.2;
+            if (rightEye) rightEye.material.emissiveIntensity = 2.2;
+
+            // Notify parent
+            if (window.parent) {
+                window.parent.postMessage({ type: 'ROBOT_SPEAK_END' }, '*');
+            }
+        }
+
+        // Voice Presets
+        function setTtsPreset(type) {
+            const inputField = document.getElementById('input-tts-text');
+            if (type === 'peringatan') {
+                inputField.value = "Peringatan HSSE Tingkat Satu: Kondisi jalan hauling Swarnadwipa berdebu pekat. Seluruh pengemudi wajib mengaktifkan lampu hazard dan mengurangi batas kecepatan.";
+            } else if (type === 'status') {
+                inputField.value = "Laporan Operasional Armada Logistik: Status pengangkutan batubara Swarnadwipa hari ini berjalan lancar dengan volume tercapai seratus persen aman.";
+            } else if (type === 'salam') {
+                inputField.value = "Selamat datang di Portal Digital PRAMA Pancaran Group. Saya adalah asisten kecerdasan kognitif tiga dimensi siap membantu Anda merancang manajemen proyek kontemporer.";
+            }
+            
+            // Auto trigger look preview
+            speakCurrentText();
+        }
+
+        // Sync visual labels with range values
+        document.getElementById('range-speed').addEventListener('input', function() {
+            document.getElementById('lbl-speed').innerText = this.value + "x";
+        });
+        document.getElementById('range-pitch').addEventListener('input', function() {
+            document.getElementById('lbl-pitch').innerText = this.value + "x";
+        });
+
+        // Trigger Vocalization on enter key
+        document.getElementById('input-tts-text').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                speakCurrentText();
+            }
+        });
+
+        // Event listener for Vocalize Speak button
+        document.getElementById('btn-vocalize').addEventListener('click', function() {
+            if (isSpeaking) {
+                window.speechSynthesis.cancel();
+                resetSpeakingState();
+            } else {
+                speakCurrentText();
+            }
+        });
+
+        // Auto-detect if loaded inside an iframe (such as inside the Dashboard Tab)
+        if (window.self !== window.top) {
+            // Hide the enter portal button since we are already inside the portal!
+            const enterBtn = document.getElementById('btn-enter-portal');
+            if (enterBtn) {
+                enterBtn.style.display = 'none';
+            }
+        }
+
+        // Message receiver from parent website (such as dashboard)
+        window.addEventListener('message', function(e) {
+            if (!e.data) return;
+            if (e.data.type === 'SPEAK') {
+                const textInput = document.getElementById('input-tts-text');
+                if (textInput) {
+                    textInput.value = e.data.text || "";
+                }
+                const speedRange = document.getElementById('range-speed');
+                const pitchRange = document.getElementById('range-pitch');
+                if (speedRange && e.data.speed) {
+                    speedRange.value = e.data.speed;
+                    document.getElementById('lbl-speed').innerText = e.data.speed + "x";
+                }
+                if (pitchRange && e.data.pitch) {
+                    pitchRange.value = e.data.pitch;
+                    document.getElementById('lbl-pitch').innerText = e.data.pitch + "x";
+                }
+                speakCurrentText();
+            } else if (e.data.type === 'STOP') {
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                }
+                resetSpeakingState();
+            }
+        });
+
+        // Message communication to Dismiss this Iframe and enter Portal
+        document.getElementById('btn-enter-portal').addEventListener('click', function() {
+            if (window.parent) {
+                window.parent.postMessage({ type: 'DISMISS_HERO' }, '*');
+            }
+        });
+
+        // Voice list loader fallback (WebSpeech load delay)
+        window.speechSynthesis.onvoiceschanged = function() {
+            // Pre-load triggers
+        };
+
+        // Bootstrap WebGL
+        init3D();
+        animate();
+
+    </script>
+</body>
+</html>

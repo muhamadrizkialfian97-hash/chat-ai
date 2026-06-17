@@ -1282,7 +1282,7 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
 
       speakTextFromParent(mainAnswerText);
     } catch (err: any) {
-      console.error("Error in robot voice chat response:", err);
+      console.warn("Handled robot voice chat response warning:", err?.message || err);
       const friendlyStr = getFriendlyClientError(err);
       
       const errStr = typeof err === "string" ? err : (err.message || JSON.stringify(err));
@@ -2190,14 +2190,53 @@ ${focusText}`;
 
       setDashboardChatMessages([...newMsgs, modelMsg]);
     } catch (err: any) {
-      console.error(err);
-      const errFriendlyText = err?.message || "Koneksi terhambat. Silakan coba kembali.";
+      console.warn("Handled dashboard chat response warning:", err?.message || err);
+      
+      const friendlyStr = getFriendlyClientError(err);
+      const errStr = typeof err === "string" ? err : (err.message || JSON.stringify(err));
+      const lowercaseErr = errStr.toLowerCase();
+      const isGenuineAPIError = 
+        lowercaseErr.includes("apikey") || 
+        lowercaseErr.includes("api key") || 
+        lowercaseErr.includes("status code") || 
+        lowercaseErr.includes("status_code") || 
+        lowercaseErr.includes("key") || 
+        lowercaseErr.includes("quota") || 
+        lowercaseErr.includes("exhausted") || 
+        lowercaseErr.includes("gagal") || 
+        lowercaseErr.includes("hambatan") || 
+        lowercaseErr.includes("koneksi") || 
+        lowercaseErr.includes("proxy") || 
+        lowercaseErr.includes("invalid") ||
+        lowercaseErr.includes("permission") ||
+        lowercaseErr.includes("denied") ||
+        lowercaseErr.includes("403") ||
+        lowercaseErr.includes("failed to fetch");
+
+      let fallbackText = "";
+      if (isGenuineAPIError) {
+        // Run local smart response
+        const fallbackPayload = generateLocalSmartResponse(finalQuery, "spia", newMsgs);
+        let warningHeader = "";
+        if (friendlyStr.includes("RESOURCE_EXHAUSTED") || friendlyStr.includes("429")) {
+          warningHeader = `> ⚠️ **PEMBERITAHUAN:** *Batas kuota harian server bersama terlampaui (RESOURCE_EXHAUSTED 429).* Menyajikan hasil menggunakan **Modul Analisis Logistik Internal PRAMA**.\n\n---\n\n`;
+        } else if (friendlyStr.includes("PERMISSION_DENIED") || friendlyStr.includes("403") || friendlyStr.includes("leaked")) {
+          warningHeader = `> ⚠️ **PEMBERITAHUAN:** *Akses Kunci API Ditolak (PERMISSION_DENIED 403).* Menyajikan hasil menggunakan **Modul Analisis Logistik Internal PRAMA**.\n\n---\n\n`;
+        } else {
+          warningHeader = `> ⚠️ **PEMBERITAHUAN:** *Kunci API Gemini terputus sementara.* Menyajikan hasil menggunakan **Modul Analisis Logistik Internal PRAMA**.\n\n---\n\n`;
+        }
+        fallbackText = warningHeader + fallbackPayload.text;
+      } else {
+        const fallbackPayload = generateLocalSmartResponse(finalQuery, "spia", newMsgs);
+        fallbackText = fallbackPayload.text;
+      }
+
       const errorModelMsg: ChatMessage = {
-        id: `m-dash-err-${Date.now()}`,
+        id: `m-dash-fallback-${Date.now()}`,
         role: "model",
-        text: `Error: ${errFriendlyText}`,
+        text: fallbackText,
         timestamp: Date.now(),
-        sender: "Sistem PRAMA",
+        sender: "PRAMA AI Advisor",
       };
       setDashboardChatMessages([...newMsgs, errorModelMsg]);
     } finally {
@@ -7321,6 +7360,7 @@ ${lastMsgText}`;
               }}
               isSearchingMessages={isSearching}
               onToggleSearchMessages={setIsSearching}
+              onOpenRightPillarPanel={() => setIsRightPillarPanelOpen(true)}
             />
 
             {/* Dynamic Floating indicator button for reopening the 14 pillars panel when minimized */}

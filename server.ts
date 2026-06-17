@@ -336,7 +336,7 @@ app.post("/api/chat", async (req, res) => {
       sources: searchSources
     });
   } catch (error: any) {
-    console.error("Gemini API Error:", error);
+    console.warn("Gemini API Error (Handled):", error?.message || error);
     const friendlyError = getFriendlyGeminiError(error);
     
     let status = 500;

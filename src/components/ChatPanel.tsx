@@ -29,6 +29,7 @@ interface ChatPanelProps {
   onToggleSearchMessages?: (active: boolean) => void;
   searchQuery?: string;
   onSearchQueryChange?: (query: string) => void;
+  onOpenRightPillarPanel?: () => void;
 }
 
 export default function ChatPanel({
@@ -55,6 +56,7 @@ export default function ChatPanel({
   onToggleSearchMessages,
   searchQuery: searchQueryProps,
   onSearchQueryChange: onSearchQueryChangeProps,
+  onOpenRightPillarPanel,
 }: ChatPanelProps) {
   const [input, setInput] = useState("");
   const [enableSearch, setEnableSearch] = useState(false);
@@ -707,6 +709,17 @@ export default function ChatPanel({
                                       )}
                                       <span>{isGeneratingPPT ? "Memproses..." : "Unduh PPT (.pptx)"}</span>
                                     </button>
+
+                                    {onOpenRightPillarPanel && (
+                                      <button
+                                        type="button"
+                                        onClick={onOpenRightPillarPanel}
+                                        className="flex items-center gap-2 rounded-full bg-[#5B4DFB] hover:bg-[#4a3ce0] text-white border-none px-4 py-2 text-xs font-bold transition cursor-pointer shadow-lg shadow-indigo-100/30"
+                                      >
+                                        <Sparkles className="h-4 w-4 text-white animate-pulse" />
+                                        <span>Lihat 14 Pilar</span>
+                                      </button>
+                                    )}
                                   </div>
                                 </div>
 

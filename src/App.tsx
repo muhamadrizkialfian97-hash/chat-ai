@@ -4126,7 +4126,7 @@ ${lastMsgText}`;
         />
 
         {/* Division selector Body */}
-        <div className="max-w-7xl mx-auto px-4 py-11 text-center flex-grow flex flex-col justify-center">
+        <div className={`${(dashboardView === "project_dashboard" || dashboardView === "chat_intelligence") ? "max-w-[98%] 2xl:max-w-[1650px]" : "max-w-7xl"} mx-auto px-4 py-11 text-center flex-grow flex flex-col justify-center transition-all duration-300`}>
           
           <div className="mb-8 block">
             <span className="font-mono text-[10px] font-extrabold pb-1 bg-indigo-50 border border-indigo-100 text-indigo-700 px-3 py-1 rounded-full uppercase tracking-widest inline-block">
@@ -4448,7 +4448,7 @@ ${lastMsgText}`;
               </div>
             </div>
           ) : dashboardView === "project_dashboard" ? (
-            <div className="max-w-6xl mx-auto text-left bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden w-full min-h-[680px] flex flex-col">
+            <div className="max-w-full mx-auto text-left bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden w-full min-h-[680px] flex flex-col transition-all duration-300">
               {/* Header */}
               <div className="bg-slate-900 px-6 py-5 flex flex-col md:flex-row md:items-center justify-between gap-4 text-white border-b border-slate-800 shrink-0">
                 <div className="flex items-center gap-3.5">
@@ -5722,7 +5722,7 @@ ${lastMsgText}`;
               )}
             </div>
           ) : dashboardView === "chat_intelligence" ? (
-            <div className="max-w-6xl mx-auto text-left bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden w-full min-h-[680px] flex flex-col transition-all duration-300">
+            <div className="max-w-full mx-auto text-left bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden w-full min-h-[680px] flex flex-col transition-all duration-300">
               {/* Header */}
               <div className="bg-slate-900 px-6 py-5 flex flex-col md:flex-row md:items-center justify-between gap-4 text-white border-b border-slate-800 shrink-0">
                 <div className="flex items-center gap-3.5">

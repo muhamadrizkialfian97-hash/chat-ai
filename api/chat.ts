@@ -101,15 +101,31 @@ Kunci API Gemini yang dikonfigurasi tidak dikenali atau tidak sah menurut sistem
 3. Anda bisa mendapatkan kunci baru secara cepat di [Google AI Studio](https://aistudio.google.com/) secara gratis.`;
   }
 
-  // 4. Permission Denied (403)
+  // 4. Permission Denied (403) or Leaked Key
   if (
     code === 403 ||
     status === "PERMISSION_DENIED" ||
     lowercaseMsg.includes("permission_denied") ||
     lowercaseMsg.includes("not have permission") ||
+    lowercaseMsg.includes("leaked") ||
+    lowercaseMsg.includes("leak") ||
     lowercaseOriginal.includes("permission_denied") ||
-    lowercaseOriginal.includes("not have permission")
+    lowercaseOriginal.includes("not have permission") ||
+    lowercaseOriginal.includes("leaked") ||
+    lowercaseOriginal.includes("leak")
   ) {
+    if (lowercaseMsg.includes("leaked") || lowercaseOriginal.includes("leaked") || lowercaseMsg.includes("leak") || lowercaseOriginal.includes("leak")) {
+      return `⚠️ **Kunci API Dilaporkan Bocor / Diblokir (PERMISSION_DENIED / HTTP 403)**
+
+Sistem Keamanan Google mendeteksi bahwa kunci API Gemini bawaan yang digunakan saat ini telah terpublikasi atau bocor (*leaked key*) di ranah publik (misal: ter-commit di repositori publik secara tidak sengaja). Demi melindungi penyalahgunaan, Google AI Cloud otomatis memblokir secara permanen kunci tersebut.
+
+### 💡 Solusi Cepat untuk Melanjutkan Sesi:
+1. Silakan klik tombol **KONEKSI (BROWSER)** di bagian atas halaman chat ini.
+2. Dapatkan kunci API baru pribadi Anda secara cepat (gratis dan selesai dalam 30 detik) di [Google AI Studio](https://aistudio.google.com/).
+3. Tempelkan kunci pribadi tersebut pada kolom input, lalu klik tombol **Simpan**.
+4. Setelah kunci pribadi Anda disimpan, Anda dapat langsung mengirim ulang pesan Anda! Sesi AI akan dialihkan secara langsung dari browser Anda ke Google AI secara aman tanpa kendala.`;
+    }
+
     return `⚠️ **Kunci API Tidak Memiliki Izin Akses (PERMISSION_DENIED / HTTP 403)**
 
 Kunci API Gemini yang digunakan saat ini tidak memiliki izin akses atau dibatasi oleh kebijakan Google Cloud/AI Studio.

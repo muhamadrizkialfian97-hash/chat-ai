@@ -92,7 +92,15 @@ import {
   Minimize2,
   Send,
   FolderSync,
-  RefreshCw
+  RefreshCw,
+  Bot,
+  Mic,
+  MicOff,
+  Sliders,
+  Sun,
+  Sunset,
+  MessageSquareCode,
+  Key
 } from "lucide-react";
 import { GoogleGenAI } from "@google/genai";
 import {
@@ -981,9 +989,313 @@ export default function App() {
   // --- ROBOT VOICE & MEDIA AUTOMATION STATES ---
   const [activeRobotSubtab, setActiveRobotSubtab] = useState<"tts" | "to_text" | "to_video">("tts");
   const [robotTtsText, setRobotTtsText] = useState<string>("Pemberitahuan HSSE Pancaran Group: Seluruh lintasan hauling batubara Swarnadwipa telah dinyatakan aman. Pemantauan digital terus aktif 24 jam.");
-  const [robotTtsSpeed, setRobotTtsSpeed] = useState<number>(1.0);
-  const [robotTtsPitch, setRobotTtsPitch] = useState<number>(1.0);
+  const [robotTtsSpeed, setRobotTtsSpeed] = useState<number>(1.05);
+  const [robotTtsPitch, setRobotTtsPitch] = useState<number>(1.1);
   const [robotTtsTone, setRobotTtsTone] = useState<string>("robo-announcer");
+
+  // --- ROBOT VOICE CHAT STATES ---
+  const [robotChatMessages, setRobotChatMessages] = useState<ChatMessage[]>(() => [
+    {
+      id: "robot-init",
+      role: "model",
+      text: "Halo Muhamad! Selamat datang di Laboratorium Robotika Xenon. Saya sudah siap mendengar suara Anda dan mengobrol lewat menu chat ini. Silakan kirim pesan atau klik tombol Mikrofon untuk mulai berbicara!",
+      timestamp: Date.now(),
+      sender: "PRAMA AI"
+    }
+  ]);
+  const [robotChatInput, setRobotChatInput] = useState<string>("");
+  const [isRobotChatLoading, setIsRobotChatLoading] = useState<boolean>(false);
+  const [robotAtmosphere, setRobotAtmosphere] = useState<"studio" | "sunset" | "neon">("studio");
+  
+  // Voice list loading
+  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [selectedVoiceName, setSelectedVoiceName] = useState<string>("");
+  const [isSpeechRecognitionRunning, setIsSpeechRecognitionRunning] = useState<boolean>(false);
+  const recognitionRef = useRef<any>(null);
+
+  useEffect(() => {
+    if ("speechSynthesis" in window) {
+      const loadVoices = () => {
+        const voices = window.speechSynthesis.getVoices();
+        setAvailableVoices(voices);
+        const idVoice = voices.find(v => v.lang.toLowerCase().includes("id") || v.lang.toLowerCase().includes("id-id"));
+        if (idVoice) {
+          setSelectedVoiceName(idVoice.name);
+        } else if (voices.length > 0) {
+          setSelectedVoiceName(voices[0].name);
+        }
+      };
+      loadVoices();
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+  }, []);
+
+  const [showRobotKey, setShowRobotKey] = useState<boolean>(false);
+
+  const speakTextFromParent = (txt: string) => {
+    if (robotIframeRef.current && robotIframeRef.current.contentWindow) {
+      robotIframeRef.current.contentWindow.postMessage({
+        type: "SPEAK",
+        text: txt,
+        speed: robotTtsSpeed,
+        pitch: robotTtsPitch,
+        voiceName: selectedVoiceName
+      }, "*");
+    } else {
+      if (!("speechSynthesis" in window)) return;
+      
+      window.speechSynthesis.cancel();
+      
+      const utterance = new SpeechSynthesisUtterance(txt);
+      utterance.lang = "id-ID";
+      utterance.rate = robotTtsSpeed;
+      utterance.pitch = robotTtsPitch;
+      
+      if (selectedVoiceName) {
+        const voices = window.speechSynthesis.getVoices();
+        const chosenVoice = voices.find(v => v.name === selectedVoiceName);
+        if (chosenVoice) {
+          utterance.voice = chosenVoice;
+        }
+      }
+      
+      utterance.onstart = () => {
+        setIsRobotSpeaking(true);
+      };
+      
+      const handleEnd = () => {
+        setIsRobotSpeaking(false);
+      };
+      
+      utterance.onend = handleEnd;
+      utterance.onerror = handleEnd;
+      
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
+  const stopSpeakingFromParent = () => {
+    if (robotIframeRef.current && robotIframeRef.current.contentWindow) {
+      robotIframeRef.current.contentWindow.postMessage({
+        type: "STOP"
+      }, "*");
+    } else {
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+      setIsRobotSpeaking(false);
+    }
+  };
+
+  const handleSetAtmosphere = (atm: "studio" | "sunset" | "neon") => {
+    setRobotAtmosphere(atm);
+    if (robotIframeRef.current && robotIframeRef.current.contentWindow) {
+      robotIframeRef.current.contentWindow.postMessage({
+        type: "SET_ATMOSPHERE",
+        atmosphere: atm
+      }, "*");
+    }
+  };
+
+  const toggleSpeechRecognition = () => {
+    if (isSpeechRecognitionRunning) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      setIsSpeechRecognitionRunning(false);
+    } else {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert("Sistem Speech Recognition tidak didukung di browser ini. Gunakan Google Chrome atau Edge.");
+        return;
+      }
+      
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = "id-ID";
+
+      recognition.onstart = () => {
+        setIsSpeechRecognitionRunning(true);
+      };
+
+      recognition.onresult = async (e: any) => {
+        const transcript = e.results[0][0].transcript;
+        if (transcript && transcript.trim()) {
+          handleSendRobotChatMessage(transcript.trim());
+        }
+      };
+
+      recognition.onerror = (e: any) => {
+        console.error("Speech recognition error:", e);
+        setIsSpeechRecognitionRunning(false);
+      };
+
+      recognition.onend = () => {
+        setIsSpeechRecognitionRunning(false);
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    }
+  };
+
+  const getFriendlyClientError = (err: any): string => {
+    let messageText = "";
+    if (typeof err === "string") {
+      messageText = err;
+    } else if (err && typeof err === "object") {
+      messageText = err.message || JSON.stringify(err);
+    }
+
+    let parsed: any = null;
+    try {
+      const startIdx = messageText.indexOf("{");
+      const endIdx = messageText.lastIndexOf("}");
+      if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+        parsed = JSON.parse(messageText.substring(startIdx, endIdx + 1));
+      } else {
+        parsed = JSON.parse(messageText);
+      }
+    } catch (e) {}
+
+    let code = err?.status || err?.statusCode || "";
+    let status = "";
+    let originalMsg = messageText;
+
+    if (parsed) {
+      if (parsed.error) {
+        code = parsed.error.code || code;
+        status = parsed.error.status || status;
+        messageText = parsed.error.message || messageText;
+      } else {
+        code = parsed.code || code;
+        status = parsed.status || status;
+        messageText = parsed.message || messageText;
+      }
+    }
+
+    const lowercaseMsg = messageText.toLowerCase();
+
+    if (code === 403 || status === "PERMISSION_DENIED" || lowercaseMsg.includes("permission_denied") || lowercaseMsg.includes("403") || lowercaseMsg.includes("leaked") || lowercaseMsg.includes("leak")) {
+      return `Akses Kunci API Ditolak (PERMISSION_DENIED 403)
+
+Kunci API Gemini bawaan/pribadi ditolak atau dilaporkan bocor di ranah publik.
+
+💡 Solusi:
+1. Hubungkan Kunci API Gemini Anda pribadi yang aktif. Silakan gunakan panel "KONEKSI AI ENGINE" di bawah jendela Robot 3D.
+2. Dapatkan API Key secara gratis dan cepat di Google AI Studio (https://aistudio.google.com/).
+3. Tempelkan kunci tersebut di kolom di bawah ini, sehingga Anda bisa melanjutkan percakapan dengan lancar.`;
+    }
+
+    if (code === 429 || status === "RESOURCE_EXHAUSTED" || lowercaseMsg.includes("429") || lowercaseMsg.includes("quota")) {
+      return `Batas Kuota Penggunaan Terlampaui (RESOURCE_EXHAUSTED 429)
+
+Kuota Kunci API habis atau batas transmisi terlampaui.
+
+💡 Solusi:
+Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3D untuk melewati kuota server bersama ini secara aman.`;
+    }
+
+    return messageText || originalMsg;
+  };
+
+  const handleSendRobotChatMessage = async (text: string) => {
+    if (!text || !text.trim()) return;
+    const trimmedText = text.trim();
+
+    const userMsg: ChatMessage = {
+      id: `robot-usr-${Date.now()}`,
+      role: "user",
+      text: trimmedText,
+      timestamp: Date.now(),
+      sender: "Muhammad"
+    };
+
+    setRobotChatMessages((prev) => [...prev, userMsg]);
+    setRobotChatInput("");
+    setIsRobotChatLoading(true);
+
+    try {
+      let mainAnswerText = "";
+      const systemInstruction = 
+        "Skenario: Anda adalah PRAMA 3D AI Cognitive Agent dari Laboratorium Robotika Xenon. " +
+        "Bicara dengan ramah, informatif, singkat-padat (maksimal 3-4 kalimat agar nyaman didengar saat dibacakan suara), berbobot, dan santun. " +
+        "Gunakan bahasa Indonesia yang baku namun bersahabat. Pengguna Anda saat ini adalah Muhamad (analis/pengelola utama).";
+
+      if (apiMode === "client" && clientApiKey) {
+        const aiBrowser = new GoogleGenAI({ apiKey: clientApiKey });
+        const formattedContents = robotChatMessages.slice(-6).map((msg: any) => ({
+          role: msg.role === "user" ? "user" : "model",
+          parts: [{ text: msg.text || "" }]
+        }));
+        formattedContents.push({
+          role: "user",
+          parts: [{ text: trimmedText }]
+        });
+        
+        const response = await aiBrowser.models.generateContent({
+          model: "gemini-3.5-flash",
+          contents: formattedContents,
+          config: { systemInstruction }
+        });
+        mainAnswerText = response.text || "";
+      } else {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: trimmedText,
+            history: robotChatMessages.slice(-6).map((msg: any) => ({
+              role: msg.role === "user" ? "user" : "model",
+              text: msg.text
+            })),
+            enableSearch: false,
+            customApiKey: clientApiKey || undefined,
+            systemInstruction
+          })
+        });
+
+        if (res && res.ok) {
+          const data = await res.json();
+          mainAnswerText = data.text || data.response || "";
+        } else {
+          let errorDetail = "Gagal memperoleh respons asisten.";
+          try {
+            const errData = await res.json();
+            if (errData && errData.error) {
+              errorDetail = errData.error;
+            }
+          } catch (e) {}
+          throw new Error(errorDetail);
+        }
+      }
+
+      const modelMsg: ChatMessage = {
+        id: `robot-model-${Date.now()}`,
+        role: "model",
+        text: mainAnswerText,
+        timestamp: Date.now(),
+        sender: "PRAMA AI"
+      };
+      setRobotChatMessages((prev) => [...prev, modelMsg]);
+
+      speakTextFromParent(mainAnswerText);
+    } catch (err: any) {
+      console.error("Error in robot voice chat response:", err);
+      const friendlyStr = getFriendlyClientError(err);
+      const errorMsgMsg: ChatMessage = {
+        id: `robot-error-${Date.now()}`,
+        role: "model",
+        text: `⚠️ Maaf, gangguan koneksi: ${friendlyStr}`,
+        timestamp: Date.now(),
+        sender: "Sistem PRAMA"
+      };
+      setRobotChatMessages((prev) => [...prev, errorMsgMsg]);
+    } finally {
+      setIsRobotChatLoading(false);
+    }
+  };
   const [isRobotSpeaking, setIsRobotSpeaking] = useState<boolean>(false);
   const [robotPlaybackLog, setRobotPlaybackLog] = useState<string[]>(() => [
     `[${new Date().toLocaleTimeString("id-ID", { hour: "numeric", minute: "numeric" })}] Robot Voice Broadcast Engine Live`,
@@ -1000,55 +1312,10 @@ export default function App() {
 
   const handleRobotVoiceSpeak = (customText?: string) => {
     const txt = customText || robotTtsText;
-
-    if (robotIframeRef.current && robotIframeRef.current.contentWindow) {
-      robotIframeRef.current.contentWindow.postMessage({
-        type: "SPEAK",
-        text: txt,
-        speed: robotTtsSpeed,
-        pitch: robotTtsPitch
-      }, "*");
-      
-      const timeStr = new Date().toLocaleTimeString("id-ID", { hour: "numeric", minute: "numeric", second: "numeric" });
-      setRobotPlaybackLog(prev => [`[${timeStr}] Penyiaran Voice: "${txt.substring(0, 42)}..."`, ...prev]);
-      return;
-    }
-
-    if (!('speechSynthesis' in window)) {
-      alert("Browser Anda tidak mendukung Web Speech Synthesis.");
-      return;
-    }
-    window.speechSynthesis.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(txt);
-
-    // Attempt to pick a nice voice
-    const voices = window.speechSynthesis.getVoices();
-    // Try to find Indonesian voice, otherwise fallback
-    const idVoice = voices.find(v => v.lang.toLowerCase().includes("id") || v.lang.toLowerCase().includes("id-id"));
-    if (idVoice) {
-      utterance.voice = idVoice;
-    }
-
-    utterance.rate = robotTtsSpeed;
-    utterance.pitch = robotTtsPitch;
-
-    // Add cool effect by toggling speaking state and logs
-    utterance.onstart = () => {
-      setIsRobotSpeaking(true);
-      const timeStr = new Date().toLocaleTimeString("id-ID", { hour: "numeric", minute: "numeric", second: "numeric" });
-      setRobotPlaybackLog(prev => [`[${timeStr}] Penyiaran Voice: "${txt.substring(0, 42)}..."`, ...prev]);
-    };
-
-    utterance.onend = () => {
-      setIsRobotSpeaking(false);
-    };
-
-    utterance.onerror = () => {
-      setIsRobotSpeaking(false);
-    };
-
-    window.speechSynthesis.speak(utterance);
+    speakTextFromParent(txt);
+    
+    const timeStr = new Date().toLocaleTimeString("id-ID", { hour: "numeric", minute: "numeric", second: "numeric" });
+    setRobotPlaybackLog(prev => [`[${timeStr}] Penyiaran Voice: "${txt.substring(0, 42)}..."`, ...prev]);
   };
 
 
@@ -6098,30 +6365,402 @@ ${lastMsgText}`;
               </div>
             </div>
           ) : dashboardView === "robot_voice" ? (
-            <div className="max-w-6xl mx-auto text-left bg-[#f3f4f6] rounded-3xl border border-slate-200 shadow-2xl overflow-hidden w-full h-[780px] flex flex-col transition-all duration-300 relative font-sans">
-              
-              {/* Elegant floating Return to Hub button */}
-              <div className="absolute top-4 right-4 z-40">
-                <button
-                  type="button"
-                  onClick={() => setDashboardView("divisions")}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-black rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 cursor-pointer border border-white/10 active:scale-95 uppercase tracking-wider font-mono shrink-0"
-                  title="Kembali ke Hub Utama"
-                >
-                  <ArrowLeft className="h-4 w-4 shrink-0" />
-                  <span>Kembali ke Hub</span>
-                </button>
+            <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-6 p-1 transition-all duration-300 font-sans text-left items-stretch">
+              {/* LEFT COLUMN: 3D ROBOT STAGE */}
+              <div className="flex-1 lg:w-7/12 bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden flex flex-col h-[760px] relative">
+                
+                {/* 1. FLOATING BRANDING HEADER (Floating over Top-Left area of 3D Canvas) */}
+                <div className="absolute top-4 left-4 z-20 flex items-center gap-3 bg-white/90 backdrop-blur-md border border-slate-200/60 p-3 rounded-2xl shadow-lg max-w-[280px]">
+                  <div className="h-9 w-9 rounded-xl bg-slate-900 flex items-center justify-center text-white shrink-0">
+                    <Bot className="h-5 w-5 stroke-[2] text-[#00D285]" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-tight truncate leading-tight">PRAMA 3D AI Cognitive</h3>
+                    <p className="font-mono text-[8px] font-bold text-slate-400 uppercase tracking-wider truncate leading-none mt-0.5">Vocalizer & Lipsync System V3.5</p>
+                  </div>
+                </div>
+
+                {/* 2. FLOATING RETURN BUTTON (Top-Right area of 3D Canvas) */}
+                <div className="absolute top-4 right-4 z-20">
+                  <button
+                    type="button"
+                    onClick={() => setDashboardView("divisions")}
+                    className="flex items-center gap-2 px-3.5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-black rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 cursor-pointer border border-white/10 active:scale-95 uppercase tracking-wider font-mono"
+                    title="Kembali ke Hub Utama"
+                  >
+                    <ArrowLeft className="h-3.5 w-3.5 shrink-0" />
+                    <span>Kembali ke Hub</span>
+                  </button>
+                </div>
+
+                {/* 3. THREE.JS ROBOT CANVAS IFRAME PORT (Fills center) */}
+                <div className="w-full flex-grow relative overflow-hidden bg-slate-50">
+                  <iframe
+                    ref={robotIframeRef}
+                    src="/3d-robot.html"
+                    title="PRAMA 3D Interactive Robot Panel"
+                    className="w-full h-full border-none block"
+                    style={{ width: "100%", height: "100%", display: "block" }}
+                  />
+                </div>
+
+                {/* 4. ATMOSPHERE BACKSTAGE COLOR SELECTOR PANEL (Aesthetic border bar at the bottom) */}
+                <div className="bg-white border-t border-slate-100 px-5 py-3 flex items-center justify-between shrink-0 font-mono text-[9px]">
+                  <div className="flex items-center gap-1.5 text-slate-500 font-bold uppercase tracking-wider">
+                    <span>Atmosphere:</span>
+                  </div>
+                  <div className="flex bg-slate-100 rounded-xl p-1 gap-1 border border-slate-200/50">
+                    <button
+                      type="button"
+                      onClick={() => handleSetAtmosphere("studio")}
+                      className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-[9px] font-extrabold uppercase transition-all duration-200 cursor-pointer ${
+                        robotAtmosphere === "studio"
+                          ? "bg-slate-800 text-white shadow-sm font-black"
+                          : "text-slate-500 hover:text-slate-800"
+                      }`}
+                    >
+                      <Sun className="h-3 w-3 stroke-[2] hover:animate-spin" />
+                      <span>Studio</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSetAtmosphere("sunset")}
+                      className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-[9px] font-extrabold uppercase transition-all duration-200 cursor-pointer ${
+                        robotAtmosphere === "sunset"
+                          ? "bg-amber-600 text-white shadow-sm font-black"
+                          : "text-slate-500 hover:text-slate-800"
+                      }`}
+                    >
+                      <Sunset className="h-3 w-3 stroke-[2]" />
+                      <span>Sunset</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSetAtmosphere("neon")}
+                      className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-[9px] font-extrabold uppercase transition-all duration-200 cursor-pointer ${
+                        robotAtmosphere === "neon"
+                          ? "bg-indigo-600 text-white shadow-sm font-black"
+                          : "text-slate-500 hover:text-slate-800"
+                      }`}
+                    >
+                      <Sparkles className="h-3 w-3 stroke-[2]" />
+                      <span>Neon</span>
+                    </button>
+                  </div>
+                </div>
               </div>
 
-              {/* Full Screen Iframe of White PRAMA 3D AI */}
-              <div className="w-full h-full relative flex-grow overflow-hidden bg-[#f3f4f6]">
-                <iframe
-                  ref={robotIframeRef}
-                  src="/3d-robot.html"
-                  title="PRAMA 3D Interactive Robot Panel"
-                  className="w-full h-full border-none block"
-                  style={{ width: "100%", height: "100%", display: "block" }}
-                />
+              {/* RIGHT COLUMN: CHAT WINDOW & CALIBRATION BOX */}
+              <div className="lg:w-5/12 flex flex-col gap-5 h-[760px] shrink-0">
+                
+                {/* WIDGET 1: ROBOTIC CHAT WINDOW */}
+                <div className="flex-1 bg-white rounded-3xl border border-slate-200 shadow-xl flex flex-col overflow-hidden p-5 gap-3.5 min-h-[440px]">
+                  
+                  {/* Panel Header */}
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2.5 shrink-0">
+                    <div className="flex items-center gap-2">
+                      <div className="h-7 w-7 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                        <MessageSquareCode className="h-4 w-4 stroke-[2]" />
+                      </div>
+                      <span className="font-mono text-[9px] font-black text-slate-800 tracking-wider">
+                        MENU CHAT XENON
+                      </span>
+                    </div>
+                    <span className="flex items-center gap-1 text-[8px] font-mono text-indigo-600 bg-indigo-50 border border-indigo-150 px-2 py-0.5 rounded-lg font-bold">
+                      <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
+                      COGNITIVE ENGINE V3.5
+                    </span>
+                  </div>
+
+                  {/* Scrollable Message History Area */}
+                  <div className="flex-1 overflow-y-auto space-y-3.5 pr-1 text-slate-800 flex flex-col">
+                    {robotChatMessages.map((msg) => {
+                      const isBot = msg.role === "model";
+                      return (
+                        <div
+                          key={msg.id}
+                          className={`flex gap-3 max-w-[85%] ${
+                            isBot ? "self-start" : "self-end flex-row-reverse"
+                          }`}
+                        >
+                          {isBot && (
+                            <div className="h-7 w-7 rounded-lg bg-indigo-100 border border-indigo-200 flex items-center justify-center text-indigo-700 font-mono text-[10px] font-bold shrink-0 self-start">
+                              🤖
+                            </div>
+                          )}
+                          <div className="space-y-1">
+                            <span className="block text-[8px] font-mono text-slate-400 font-bold uppercase tracking-wider">
+                              {msg.sender || (isBot ? "PRAMA AI" : "Anda")} &bull;{" "}
+                              {new Date(msg.timestamp).toLocaleTimeString("id", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                            <div
+                              className={`p-3 text-xs leading-relaxed ${
+                                isBot
+                                  ? "bg-indigo-50/50 border border-indigo-100/60 text-slate-800 rounded-2xl rounded-tl-none font-bold"
+                                  : "bg-[#00D285]/10 border border-[#00D285]/20 text-[#004d30] rounded-2xl rounded-tr-none font-black"
+                              }`}
+                            >
+                              {msg.text}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {isRobotChatLoading && (
+                      <div className="flex gap-3 max-w-[80%] self-start items-center">
+                        <div className="h-7 w-7 rounded-lg bg-slate-100 flex items-center justify-center text-slate-700 animate-spin shrink-0">
+                          <RefreshCw className="h-4 w-4" />
+                        </div>
+                        <div className="bg-slate-50 border border-slate-100 text-slate-500 rounded-2xl p-2.5 text-[11px] font-bold animate-pulse">
+                          PRAMA AI sedang berpikir...
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Status / Quick buttons Panel */}
+                  <div className="flex items-center justify-between shrink-0 pt-1.5 border-t border-slate-100 flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleSendRobotChatMessage("Sapa saya dan beri orientasi pilar strategis")}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100/80 text-indigo-700 hover:text-indigo-900 border border-indigo-150 rounded-xl text-[9.5px] font-extrabold uppercase transition cursor-pointer select-none active:scale-95"
+                    >
+                      <Sparkles className="h-3 w-3 text-indigo-600 animate-pulse" />
+                      <span>✨ Sapa Saya</span>
+                    </button>
+
+                    <div
+                      onClick={toggleSpeechRecognition}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[9.5px] font-extrabold uppercase cursor-pointer select-none active:scale-95 border transition-all duration-300 ${
+                        isSpeechRecognitionRunning
+                          ? "bg-red-50 text-red-700 border-red-200 blink-pulse font-black"
+                          : "bg-emerald-50 text-emerald-700 border-emerald-250"
+                      }`}
+                    >
+                      <span className={`h-1.5 w-1.5 rounded-full ${
+                        isSpeechRecognitionRunning ? "bg-red-600 animate-ping" : "bg-emerald-500"
+                      }`} />
+                      <span>Gemini Live: {isSpeechRecognitionRunning ? "Listening" : "Off"}</span>
+                    </div>
+                  </div>
+
+                  {/* Input form */}
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (robotChatInput.trim()) {
+                        handleSendRobotChatMessage(robotChatInput);
+                      }
+                    }}
+                    className="flex items-center gap-2.5 shrink-0 pt-1 border-t border-slate-100"
+                  >
+                    <button
+                      type="button"
+                      onClick={toggleSpeechRecognition}
+                      className={`h-10 w-10 shrink-0 rounded-xl flex items-center justify-center transition border ${
+                        isSpeechRecognitionRunning
+                          ? "bg-red-500 border-red-500 text-white animate-pulse"
+                          : "bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-500 hover:text-slate-800"
+                      }`}
+                      title={isSpeechRecognitionRunning ? "Hentikan perekaman suara" : "Mulai merekam suara langsung"}
+                    >
+                      {isSpeechRecognitionRunning ? (
+                        <MicOff className="h-4 w-4" />
+                      ) : (
+                        <Mic className="h-4 w-4" />
+                      )}
+                    </button>
+                    <input
+                      type="text"
+                      value={robotChatInput}
+                      onChange={(e) => setRobotChatInput(e.target.value)}
+                      placeholder="Ketik pesan..."
+                      className="flex-grow bg-slate-50 focus:bg-white border border-slate-250/80 hover:border-slate-350 focus:border-indigo-400 rounded-xl px-4 py-2.5 text-xs text-slate-800 outline-none font-bold transition duration-200 focus:ring-2 focus:ring-indigo-100"
+                    />
+                    <button
+                      type="submit"
+                      disabled={!robotChatInput.trim() || isRobotChatLoading}
+                      className="h-10 w-10 shrink-0 rounded-xl bg-slate-900 border border-slate-900 hover:bg-slate-800 text-white flex items-center justify-center transition active:scale-95 disabled:opacity-40"
+                    >
+                      <Send className="h-4 w-40" style={{ width: "auto" }} />
+                    </button>
+                  </form>
+                </div>
+
+                {/* WIDGET 2: VOICE CALIBRATION MATRIX */}
+                <div className="bg-white rounded-3xl border border-slate-200 shadow-xl p-5 flex flex-col gap-3 shrink-0">
+                  
+                  {/* Calibrator Header */}
+                  <div className="flex items-center gap-2 border-b border-slate-150 pb-2.5 shrink-0">
+                    <Sliders className="h-4 w-4 text-slate-400 stroke-[2.2]" />
+                    <span className="font-mono text-[9px] font-black text-slate-700 tracking-wider">
+                      MATRIKS KALIBRASI SUARA & AI ENGINE
+                    </span>
+                  </div>
+
+                  {/* AI Connection Settings */}
+                  <div className="bg-gradient-to-r from-indigo-50/70 to-blue-50/50 rounded-2xl border border-indigo-100/60 p-3.5 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Key className="h-3 w-3 text-indigo-500" />
+                        <span className="font-mono text-[8.5px] font-extrabold uppercase text-indigo-950 tracking-wider">
+                          Koneksi AI Engine (Gemini)
+                        </span>
+                      </div>
+                      <span className={`text-[7.5px] font-mono px-2 py-0.5 rounded-full font-bold uppercase border ${
+                        apiMode === "client" && clientApiKey
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          : "bg-amber-50 text-amber-700 border-amber-250"
+                      }`}>
+                        {apiMode === "client" && clientApiKey ? "API Key Aktif" : "Proxy Server"}
+                      </span>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setApiMode("proxy")}
+                        className={`flex-1 py-1.5 rounded-lg text-[8.5px] font-extrabold uppercase transition border ${
+                          apiMode === "proxy"
+                            ? "bg-slate-900 border-slate-900 text-white shadow-sm"
+                            : "bg-white border-slate-200 text-slate-500 hover:text-slate-800"
+                        }`}
+                      >
+                        Bawaan (Proxy)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setApiMode("client")}
+                        className={`flex-1 py-1.5 rounded-lg text-[8.5px] font-extrabold uppercase transition border ${
+                          apiMode === "client"
+                            ? "bg-indigo-600 border-indigo-600 text-white shadow-sm"
+                            : "bg-white border-slate-200 text-slate-500 hover:text-slate-800"
+                        }`}
+                      >
+                        Kunci Sendiri (API Key)
+                      </button>
+                    </div>
+
+                    <div className="space-y-1 text-left">
+                      <span className="block text-[8px] font-black uppercase text-slate-500 tracking-wider">
+                        Ubah Gemini API Key Pribadi Anda:
+                      </span>
+                      <div className="relative flex items-center bg-white border border-slate-200 hover:border-slate-350 rounded-xl overflow-hidden px-3 h-9 transition focus-within:ring-2 focus-within:ring-indigo-100 focus-within:border-indigo-400">
+                        <input
+                          type={showRobotKey ? "text" : "password"}
+                          value={clientApiKey || ""}
+                          onChange={(e) => {
+                            const cleanedVal = e.target.value.trim();
+                            setClientApiKey(cleanedVal);
+                            if (cleanedVal) {
+                              setApiMode("client");
+                            }
+                          }}
+                          placeholder={clientApiKey ? "••••••••••••••••••••" : "Ubah API Key Anda disini..."}
+                          className="w-full bg-transparent border-none text-[10px] text-slate-800 focus:outline-none focus:ring-0 py-1 font-mono font-bold"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowRobotKey(!showRobotKey)}
+                          className="text-slate-400 hover:text-slate-600 px-1 cursor-pointer"
+                        >
+                          {showRobotKey ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                        </button>
+                      </div>
+                      <p className="text-[7px] text-slate-400 leading-tight font-medium font-mono uppercase mt-1">
+                        *Masukkan API Key Anda sendiri bila API Key bawaan mengalami pemblokiran/limitasi kuota.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Dropdown voice speaker selection */}
+                  <div className="space-y-1 text-left shrink-0">
+                    <span className="block text-[8px] font-black uppercase text-slate-400 tracking-wider">
+                      Pilihan Suara (TTS Speaker):
+                    </span>
+                    <select
+                      value={selectedVoiceName}
+                      onChange={(e) => setSelectedVoiceName(e.target.value)}
+                      className="w-full bg-slate-50 block border border-slate-200 hover:border-slate-350 px-3 py-2.5 rounded-xl text-xs text-slate-700 outline-none font-bold transition duration-200 focus:ring-2 focus:ring-emerald-500/10 cursor-pointer"
+                    >
+                      {availableVoices.length > 0 ? (
+                        availableVoices.map((voice) => (
+                          <option key={voice.name} value={voice.name}>
+                            {voice.name} ({voice.lang})
+                          </option>
+                        ))
+                      ) : (
+                        <option value="">Browser Default (Indonesian)</option>
+                      )}
+                    </select>
+                  </div>
+
+                  {/* Sliders Grid */}
+                  <div className="grid grid-cols-2 gap-4 shrink-0 text-left pt-0.5">
+                    
+                    {/* Speed Slider */}
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-[8px] font-black uppercase text-slate-400 tracking-wider">
+                        <span>Kecepatan:</span>
+                        <span className="font-mono text-indigo-600 font-bold">{robotTtsSpeed}x</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.5"
+                        max="1.8"
+                        step="0.05"
+                        value={robotTtsSpeed}
+                        onChange={(e) => setRobotTtsSpeed(parseFloat(e.target.value))}
+                        className="w-full accent-slate-900 cursor-pointer h-1 bg-slate-100 rounded-lg appearance-none"
+                      />
+                    </div>
+
+                    {/* Pitch / Jaw Slider */}
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-[8px] font-black uppercase text-slate-400 tracking-wider">
+                        <span>Gerak Mulut (Jaw):</span>
+                        <span className="font-mono text-indigo-600 font-bold">{robotTtsPitch}x</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.6"
+                        max="1.5"
+                        step="0.05"
+                        value={robotTtsPitch}
+                        onChange={(e) => setRobotTtsPitch(parseFloat(e.target.value))}
+                        className="w-full accent-slate-900 cursor-pointer h-1 bg-slate-100 rounded-lg appearance-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Actions / Calibration bottom row */}
+                  <div className="flex justify-between items-center text-[10px] pt-1 border-t border-slate-150 font-mono text-slate-500 shrink-0 font-bold">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRobotTtsSpeed(1.05);
+                        setRobotTtsPitch(1.1);
+                        if (availableVoices.length > 0) {
+                          const idVoice = availableVoices.find(v => v.lang.toLowerCase().includes("id") || v.lang.toLowerCase().includes("id-id"));
+                          if (idVoice) setSelectedVoiceName(idVoice.name);
+                        }
+                      }}
+                      className="flex items-center gap-1.5 hover:text-slate-800 text-[9px] transition cursor-pointer select-none uppercase tracking-wider"
+                    >
+                      <RefreshCw className="h-3 w-3 text-slate-400 shrink-0" />
+                      <span>Riset Matriks</span>
+                    </button>
+                    
+                    <div className="flex items-center gap-1.5 text-emerald-600 font-extrabold uppercase text-[9px] tracking-wider">
+                      <Volume2 className="h-3.5 w-3.5" />
+                      <span>Suara: Aktif</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           ) : (

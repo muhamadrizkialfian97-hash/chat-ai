@@ -108,7 +108,7 @@
             </div>
 
             <!-- Controller Console -->
-            <div class="glassmorphism p-5 rounded-3xl shadow-2xl border border-white/60 space-y-4">
+            <div id="iframe-controller-console" class="glassmorphism p-5 rounded-3xl shadow-2xl border border-white/60 space-y-4">
                 <div class="flex items-center justify-between border-b border-black/5 pb-2">
                     <span class="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-widest">SINTESIS SUARA TERSTRUKTUR & LIP-SYNC DIGITAL</span>
                     <div class="flex items-center gap-2 text-[10px] font-mono text-slate-400">
@@ -183,6 +183,7 @@
         let isSpeaking = false;
         let speakAnimationTime = 0;
         let customSpeechUtterance = null;
+        let ambientLightGlobal, dirLightGlobal, rimLightGlobal, blueGlowLightGlobal;
 
         // Mouse tracking for interactive tilting
         let mouseX = 0, mouseY = 0;
@@ -222,25 +223,25 @@
             controls.enablePan = false;
 
             // Lights
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.82);
-            scene.add(ambientLight);
+            ambientLightGlobal = new THREE.AmbientLight(0xffffff, 0.82);
+            scene.add(ambientLightGlobal);
 
-            const dirLight = new THREE.DirectionalLight(0xffffff, 1.3);
-            dirLight.position.set(5, 8, 5);
-            dirLight.castShadow = true;
-            dirLight.shadow.mapSize.width = 1024;
-            dirLight.shadow.mapSize.height = 1024;
-            dirLight.shadow.bias = -0.0001;
-            scene.add(dirLight);
+            dirLightGlobal = new THREE.DirectionalLight(0xffffff, 1.3);
+            dirLightGlobal.position.set(5, 8, 5);
+            dirLightGlobal.castShadow = true;
+            dirLightGlobal.shadow.mapSize.width = 1024;
+            dirLightGlobal.shadow.mapSize.height = 1024;
+            dirLightGlobal.shadow.bias = -0.0001;
+            scene.add(dirLightGlobal);
 
-            const rimLight = new THREE.DirectionalLight(0xdbeafe, 0.85); // Blue rim tint
-            rimLight.position.set(-5, 4, -5);
-            scene.add(rimLight);
+            rimLightGlobal = new THREE.DirectionalLight(0xdbeafe, 0.85); // Blue rim tint
+            rimLightGlobal.position.set(-5, 4, -5);
+            scene.add(rimLightGlobal);
 
             // Point light for shiny blue eyes glow effect
-            const blueGlowLight = new THREE.PointLight(0x06b6d4, 1.4, 3);
-            blueGlowLight.position.set(0, 0.6, 0.8);
-            scene.add(blueGlowLight);
+            blueGlowLightGlobal = new THREE.PointLight(0x06b6d4, 1.4, 3);
+            blueGlowLightGlobal.position.set(0, 0.6, 0.8);
+            scene.add(blueGlowLightGlobal);
 
             // Build Humanoid Robot (Styled after white sleek chassis, mechanical shoulder joints)
             buildRobotModel();
@@ -529,11 +530,17 @@
             // Set Indonesian language
             customSpeechUtterance.lang = "id-ID";
 
-            // Find a premium Indonesian voice if available
+            // Find a premium Indonesian or selected voice if available
             const voices = window.speechSynthesis.getVoices();
-            const idVoice = voices.find(v => v.lang.toLowerCase().includes("id") || v.lang.toLowerCase().includes("id-id"));
-            if (idVoice) {
-                customSpeechUtterance.voice = idVoice;
+            let chosenVoice = null;
+            if (window.preferredVoiceName) {
+                chosenVoice = voices.find(v => v.name === window.preferredVoiceName);
+            }
+            if (!chosenVoice) {
+                chosenVoice = voices.find(v => v.lang.toLowerCase().includes("id") || v.lang.toLowerCase().includes("id-id"));
+            }
+            if (chosenVoice) {
+                customSpeechUtterance.voice = chosenVoice;
             }
 
             customSpeechUtterance.onstart = function() {
@@ -643,6 +650,11 @@
             if (enterBtn) {
                 enterBtn.style.display = 'none';
             }
+            // Hide the controller console to avoid double outputs
+            const controllerConsole = document.getElementById('iframe-controller-console');
+            if (controllerConsole) {
+                controllerConsole.style.display = 'none';
+            }
         }
 
         // Message receiver from parent website (such as dashboard)
@@ -663,12 +675,75 @@
                     pitchRange.value = e.data.pitch;
                     document.getElementById('lbl-pitch').innerText = e.data.pitch + "x";
                 }
+                window.preferredVoiceName = e.data.voiceName || "";
                 speakCurrentText();
+            } else if (e.data.type === 'START_SPEAKING_ANIM') {
+                isSpeaking = true;
+                document.getElementById('status-dot').className = "h-2 w-2 rounded-full bg-emerald-500 animate-ping";
+                document.getElementById('status-text').innerText = "MENYIARKAN SULIH SUARA...";
+                document.getElementById('vocalize-icon').innerText = "🔊";
+                document.getElementById('vocalize-label').innerText = "SIARAN AKTIF";
+                
+                const subtitleBox = document.getElementById('subtitles-panel');
+                if (subtitleBox) {
+                    subtitleBox.style.display = "block";
+                    const safeText = e.data.text || "";
+                    document.getElementById('subtitles-text').innerHTML = `&ldquo;${safeText}&rdquo;`;
+                    setTimeout(() => {
+                        subtitleBox.classList.remove('opacity-0', 'translate-y-2');
+                    }, 50);
+                }
+            } else if (e.data.type === 'STOP_SPEAKING_ANIM') {
+                resetSpeakingState();
             } else if (e.data.type === 'STOP') {
                 if ('speechSynthesis' in window) {
                     window.speechSynthesis.cancel();
                 }
                 resetSpeakingState();
+            } else if (e.data.type === 'SET_ATMOSPHERE') {
+                const atmosphere = e.data.atmosphere;
+                let bgColor, fogColor, lightColor, rimColor, glowColor;
+                if (atmosphere === 'sunset') {
+                    bgColor = 0xfff7ed; 
+                    fogColor = 0xfff7ed;
+                    lightColor = 0xfed7aa; 
+                    rimColor = 0xf97316; 
+                    glowColor = 0xea580c;
+                } else if (atmosphere === 'neon') {
+                    bgColor = 0x030712; 
+                    fogColor = 0x030712;
+                    lightColor = 0x60a5fa; 
+                    rimColor = 0xfae8ff; 
+                    glowColor = 0xd946ef;
+                } else { 
+                    bgColor = 0xf3f4f6; 
+                    fogColor = 0xf3f4f6;
+                    lightColor = 0xffffff;
+                    rimColor = 0xdbeafe;
+                    glowColor = 0x06b6d4;
+                }
+                
+                if (scene) {
+                    scene.background = new THREE.Color(bgColor);
+                    if (scene.fog) {
+                        scene.fog.color = new THREE.Color(fogColor);
+                    }
+                }
+                if (ambientLightGlobal) {
+                    ambientLightGlobal.color = new THREE.Color(lightColor);
+                    ambientLightGlobal.intensity = atmosphere === 'neon' ? 0.42 : 0.82;
+                }
+                if (dirLightGlobal) {
+                    dirLightGlobal.color = new THREE.Color(lightColor);
+                    dirLightGlobal.intensity = atmosphere === 'neon' ? 0.6 : 1.3;
+                }
+                if (rimLightGlobal) {
+                    rimLightGlobal.color = new THREE.Color(rimColor);
+                }
+                if (blueGlowLightGlobal) {
+                    blueGlowLightGlobal.color = new THREE.Color(glowColor);
+                    blueGlowLightGlobal.intensity = atmosphere === 'neon' ? 2.5 : 1.4;
+                }
             }
         });
 

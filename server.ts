@@ -227,10 +227,9 @@ app.post("/api/upload-image-sync", (req, res) => {
   }
 });
 
-// REST endpoint for chat
 app.post("/api/chat", async (req, res) => {
   try {
-    const { message, history = [], enableSearch = false, customApiKey } = req.body;
+    const { message, history = [], enableSearch = false, customApiKey, systemInstruction } = req.body;
     
     if (!message || typeof message !== "string") {
       res.status(400).json({ error: "Message is required and must be a string." });
@@ -264,7 +263,7 @@ app.post("/api/chat", async (req, res) => {
     });
 
     const config: any = {
-      systemInstruction: "You are Gemini Chat, a highly capable and intelligent AI assistant. Help the user draft notes, code, generate text documents, and analyze data. Reply in Indonesian by default (or speak the language the user speaks). If the user asks for a file, data structure or code, deliver well-formatted Markdown blocks.",
+      systemInstruction: systemInstruction || "You are Gemini Chat, a highly capable and intelligent AI assistant. Help the user draft notes, code, generate text documents, and analyze data. Reply in Indonesian by default (or speak the language the user speaks). If the user asks for a file, data structure or code, deliver well-formatted Markdown blocks.",
     };
 
     if (enableSearch) {

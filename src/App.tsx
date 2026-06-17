@@ -88,7 +88,8 @@ import {
   Play,
   Pause,
   Maximize2,
-  Minimize2
+  Minimize2,
+  Send
 } from "lucide-react";
 import { GoogleGenAI } from "@google/genai";
 import {
@@ -230,6 +231,104 @@ const slideImagesList = [
   "https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&w=800&q=80", // Pillar 13 Roadmap
   "https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=800&q=80", // Pillar 14 Sustainability
   "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=800&q=80", // Slide 15 Ending
+];
+
+export const DASHBOARD_PRESETS = [
+  {
+    id: "forestry",
+    name: "Layanan Ekspedisi Perhutanan (Default Kayu & Timber - Bawaan)",
+    title: "Kajian Strategis: Forestry Management Transportation",
+    description: "Preset bawaan pabrik untuk transportasi kayu logs dekarbonisasi.",
+    sectionsOverride: null
+  },
+  {
+    id: "coal",
+    name: "Logistik Batu Bara & Mineral Berat (Coal & Bulk Cargo)",
+    title: "Analisis Kelayakan: Transportasi Koridor Batu Bara Swarnadwipa",
+    description: "Analisis logistik mineral berat, curah, dengan armada heavy-duty tipper.",
+    sectionsOverride: {
+      1: "### 1. Global / National (NAT) Overview\n\n**Kepatuhan Regulasi Tambang:**\nKajian kepatuhan terhadap regulasi Dirjen Minerba dan UU No. 3 Tahun 2020 tentang Pertambangan Mineral dan Batubara. Mengaitkan de-sulfurisasi pada rantai pasok batubara domestik dan sanksi ODOL kementerian perhubungan.",
+      2: "### 2. Market Opportunity\n\n**Rute Logistik Strategis Batubara:**\nTerdapat kesenjangan ketersediaan transporter dengan indeks keselamatan HSE standar internasional untuk rute hauling dari mulut tambang batubara (Sumatera Selatan / Kalimantan Timur) ke stockpile pelabuhan pemuatan.",
+      3: "### 3. Financial Analysis\n\n**Proyeksi Capex & Opex Batubara Swarnadwipa:**\n\n**A. Capital Expenditure (Capex):**\n* Pembelian 15 Unit Tipper Truck Heavy Duty: **Rp 18.500.000.000**\n* Fasilitas Bengkel Penyelamat Lapangan: **Rp 1.200.000.005**\n* *Total Capex:* **Rp 19.700.000.005**\n\n**B. Opex Bulanan:**\n* BBM Solar Industri & Pelumas Spesial: **Rp 450.000.000**\n* Gaji Supir Hauling Lapangan: **Rp 120.000.000**\n* Ban & Suku Cadang Keras: **Rp 110.000.050**\n* *Total Opex:* **Rp 680.000.000 / Bulan**\n\n**C. Kelayakan Finansial:**\n* Payback Period (PBP): **3.1 Tahun**\n* ROI Proyek: **38.5%**\n* IRR: **29.1%**",
+      4: "### 4. Supply & Demand\n\n**Kapasitas Pengangkutan Curah Tambang:**\nPermintaan sangat tinggi dari pemilik PKP2B untuk mengamankan slot angkutan sebelum musim penghujan tiba. Sisi suplai kontainer dump-tipper berbadan hukum resmi sangat terbatas.",
+      5: "### 5. Structure & Value Chain\n\n**Closed-Loop Hauling Ecosystem:**\n1. Loading Point di stockpile mulut tambang batubara.\n2. Hauling Road khusus non-umum standar muatan gandar 12 ton.\n3. Discharge Point di jembatan timbang konveyor pelabuhan tongkang laut.",
+      6: "### 6. Organizational Scope\n\n**Organisasi Hauling Lapangan:**\n* Pengemudi: Memiliki SIM Barkas Heavy-Duty, sertifikasi Kesehatan Kerja B3, dan sertifikat Defensive Driving Course tambang.\n* Supervisor Safety Alat Berat: Kualifikasi K3 Pertambangan (Pengawas Operasional Pertama - POP).",
+      7: "### 7. Transition Model (Pre-On-Post)\n\n**Tahap Transisi Deployment:**\n* Pre-Onboarding: Pengecekan kontur kelandaian jalan hauling tambang.\n* Onboarding: Pembagian rute shift sopir gilir 12 jam.\n* Post-Onboarding: Monitoring real-time cycle time armada batubara via IoT panel.",
+      8: "### 8. Go-To-Market (GTM) Strategy\n\n**Penetrasi B2B Minerba:**\nMenandatangani kontrak jangka panjang Minimum Take-or-Pay (MToP) dengan jaminan utilisasi armada di atas 85% bersama perusahaan tambang batubara pemegang IPPKH.",
+      9: "### 9. Operating Model\n\n**Prosedur Alur Kerja Dispatching:**\nSistem konvoi armada (Platooning) dengan batas kecepatan 40km/jam di rute hauling utama untuk menghindari debu tebal dan risiko senggolan alat berat.",
+      10: "### 10. Risk Management Matrix\n\n**Manajemen Risiko Hauling:**\n* Risiko amblas di rute hauling berlumpur: Penyediaan unit bulldoser rescue stand-by di titik kritis.\n* Risiko polusi debu ke warga sekitar: Penyiraman jalan menggunakan water tank truck berkala 3x sehari.",
+      11: "### 11. Digital Coverage & Logistics Industry 4.0\n\n**Teknologi Pelacakan Minerba:**\nPenerapan sensor pengukur suspensi muatan otomatis untuk mencegah muatan berlebih (Anti-ODOL sensor) dan kamera anti-mengantuk (fatigue sensor) pada kemudi pengemudi.",
+      12: "### 12. Competitor Landscapes\n\n**Keunggulan Pancaran:**\nTeruji dalam sistem manajemen terintegrasi armada besar yang kokoh, memiliki jaminan lisensi hukum dan asuransi muatan penuh (Cargo Liability) yang dihindari oleh transporter liar.",
+      13: "### 13. Market Sizing (TAM, SAM, SOM)\n\n• TAM: Rp 4.5 Triliun (potensi logistik mineral curah domestik)\n• SAM: Rp 1.2 Triliun (pasar angkutan hauling Sumatera bagian selatan)\n• SOM: Rp 280 Miliar (target kontrak tahunan armada tipper Pancaran Swarnadwipa)",
+      14: "### 14. Customer Acquisition Cost (CAC) & Lifetime Value (LTV)\n\n• CAC: Rp 120.000.000 (proses tender pertambangan ketat)\n• LTV Kontrak: Rp 2.400.000.000 per key customer\n• Rasio LTV/CAC: 20.0x (Sangat Menguntungkan karena LTV kontrak tambang berskala raksasa)"
+    }
+  },
+  {
+    id: "coldchain",
+    name: "Transportasi Rantai Dingin (Cold Chain & Fresh Logistics)",
+    title: "Kajian Kelayakan: Ekspansi Cold Chain Distribusi Farmasi & Boga Segar Jawa-Bali",
+    description: "Analisis logistik khusus kontainer pendingin (reefer container) dengan kontrol suhu konstan.",
+    sectionsOverride: {
+      1: "### 1. Global / National (NAT) Overview\n\n**Kepatuhan Distribusi Farmasi CDOB:**\nKajian kepatuhan terhadap standarisasi BPOM tentang Cara Distribusi Obat yang Baik (CDOB) dan regulasi sistem mutu ISO 9001 untuk menjaga integritas vaksin serta bahan makanan segar rentan rusak selama masa pengangkutan darat.",
+      2: "### 2. Market Opportunity\n\n**Pertumbuhan Logistik Suhu Terkontrol:**\nPemulihan sektor FMCG dan lonjakan konsumsi obat-obatan memerlukan transporter bersertifikat BPOM dengan fitur termometer cloud-realtime guna memitigasi risiko pembusukan bahan baku di transit.",
+      3: "### 3. Financial Analysis\n\n**Proyeksi Capex & Opex Cold Chain:**\n\n**A. Capital Expenditure (Capex):**\n* Pembelian 8 unit Reefer Box ThermoKing 6-Wheeler: **Rp 6.400.000.000**\n* Perangkat Pengontrol Suhu IoT Telematika: **Rp 220.005.000**\n* *Total Capex:* **Rp 6.620.000.000**\n\n**B. Opex Kontrol Suhu Bulanan:**\n* Konsumsi Solar Tambahan untuk Generator Reefer: **Rp 95.000.000**\n* Perawatan Kompresor Pendingin Berkala: **Rp 35.000.000**\n* Gaji Driver Terlatih Suhu: **Rp 48.000.000**\n* *Total Opex:* **Rp 178.000.000 / Bulan**\n\n**C. Metrik ROI:**\n* Payback Period (PBP): **2.4 Tahun**\n* ROI Proyek: **41.2%**\n* IRR: **31.3%**",
+      4: "### 4. Supply & Demand\n\n**Suplai Reefer Terbatas:**\nSuplai unit berpendingin berkualitas tinggi yang memiliki kalibrasi suhu berkala BPOM sangatlah minim. Kebanyakan adalah truk boks kering biasa yang diubah seadanya. Permintaan dari produsen es krim dan vaksin internasional melonjak hebat.",
+      5: "### 5. Structure & Value Chain\n\n**Sirkulasi Distribusi Rantai Dingin:**\n1. Cold Storage Pengirim (Suhu Konstan -20C).\n2. Loading Gate Tertutup (Mencegah Kondensasi).\n3. Pelayaran Penyebrangan Ketat Ketapang-Gilimanuk.\n4. Drop-off di Depo Retailer Bali.",
+      6: "### 6. Organizational Scope\n\n**Struktur Staf Pengatur Suhu:**\n* Supervisor Gudang Beku: Bersertifikat CDOB Farmasi.\n* Pengemudi Reefer: Menguasai pengaturan kelistrikan generator genset box reefer dan penanganan alarm penyimpangan suhu di jalan.",
+      7: "### 7. Transition Model (Pre-On-Post)\n\n**Transition Deployment Plan:**\n* Pre-Onboarding: Kalibrasi sensor suhu oleh badan meteorologi independen.\n* Onboarding: Uji coba pengiriman boks reefer kosong untuk memastikan stabilitas suhu di dalam boks selama 12 jam perjalanan.\n* Post-Onboarding: Pengiriman perdana muatan cokelat premium.",
+      8: "### 8. Go-To-Market (GTM) Strategy\n\n**Fokus Pasar Pabrikan Boga & Obat-obatan:**\nMenyediakan Layanan Garansi Zero-Defect (Suhu Konstan atau Uang Kembali) untuk memenangkan kontrak distribusi dengan merk farmasi besar multinasional.",
+      9: "### 9. Operating Model\n\n**SOP SLA Distribusi Boga Segar:**\n* Batas Deviasi Suhu Box: **Maksimal ±2°C** dari target suhu setpoint.\n* Waktu Pemuatan Kargo: **Maksimal 45 Menit** semenjak pintu gudang pendingin dibuka.",
+      10: "### 10. Risk Management Matrix\n\n**Mitigasi Kegagalan Pendinginan:**\n* Risiko genset reefer mati mendadak: Pemasangan genset cadangan (Dual-Power Genset backup) terpasang di sasis bawah truk.\n* Risiko kemacetan panjang di pelabuhan feri: Penyediaan suplai daya listrik darat di pelabuhan penyeberangan.",
+      11: "### 11. Digital Coverage & Logistics Industry 4.0\n\n**Sistem Telemetri Suhu Real-time:**\nIntegrasi API dengan dashboard pengirim yang memperlihatkan grafik fluktuasi grafik suhu boks reefer setiap 5 menit secara otomatis via satelit GPS.",
+      12: "### 12. Competitor Landscapes\n\n**Analisis Pembanding Pasar:**\nPesaing lokal tidak memiliki sistem pelaporan suhu digital terpusat secara langsung, memberikan Pancaran keunggulan teknologi mutlak untuk memenuhi persyaratan jaminan kualitas BPOM.",
+      13: "### 13. Market Sizing (TAM, SAM, SOM)\n\n• TAM: Rp 2.8 Triliun (pasar cold chain nasional Indonesia)\n• SAM: Rp 820 Miliar (distribusi farmasi & boga beku koridor Jawa-Bali)\n• SOM: Rp 160 Miliar (target perolehan kontrak logistik FMCG reefer Pancaran)",
+      14: "### 14. Customer Acquisition Cost (CAC) & Lifetime Value (LTV)\n\n• CAC: Rp 65.000.000\n• LTV Kontrak: Rp 980.000.000 per tahun kontrak industri makanan\n• Rasio LTV/CAC: 15.0x karena retensi klien farmasi bersifat sangat loyal jangka panjang"
+    }
+  },
+  {
+    id: "oceanport",
+    name: "Hub Intermodal & Kontainer Pelabuhan (Port & Sea Freight)",
+    title: "Kajian Kelayakan: Port Intermodal Hub & Shuttle Container Terminal Tanjung Priok",
+    description: "Preset analisis operasional transit peti kemas dari hinterland industri ke pelabuhan pengekspor.",
+    sectionsOverride: {
+      1: "### 1. Global / National (NAT) Overview\n\n**Regulasi Penumpukan & Bea Cukai Pelabuhan:**\nKajian regulasi pemenuhan target dwelling-time pelabuhan nasional Bea Cukai Indonesia serta pengurusan Sistem Informasi Manifes Kepelabuhanan (Inaportnet) milik Kementerian Perhubungan.",
+      2: "### 2. Market Opportunity\n\n**Shuttle Peti Kemas Hinterland:**\nArus bongkar muat peti kemas ekspor-impor yang terus tumbuh membutuhkan jaminan transportasi shuttle kontainer terjadwal dari kaasan pabrik Karawang secara efisien tanpa penundaan di depo penumpukan.",
+      3: "### 3. Financial Analysis\n\n**Proyeksi Keuangan Port Intermodal:**\n\n**A. Capital Expenditure (Capex):**\n* Pembelian 10 Unit Skeletal Trailer Chassis Container: **Rp 4.200.000.000**\n* Sistem ERP Depo & Terminal Operating System (TOS): **Rp 350.000.000**\n* *Total Capex:* **Rp 4.550.000.000**\n\n**B. Opex Penanganan Depo Bulanan:**\n* Tarif Bongkar Muat (LOLO) & Stack Depo: **Rp 85.000.000**\n* BBM Truk Penarik Trailer: **Rp 160.000.000**\n* Gaji Driver & Staf Administrasi Bea Cukai: **Rp 52.000.000**\n* *Total Opex:* **Rp 297.000.000 / Bulan**\n\n**C. Analisis Kelayakan:**\n* Payback Period (PBP): **2.1 Tahun**\n* Return on Investment (ROI): **44.5%**\n* IRR: **32.8%**",
+      4: "### 4. Supply & Demand\n\n**Kebutuhan Tinggi Depo Terintegrasi:**\nDepo penumpukan peti kemas yang memiliki integrasi digital langsung dengan jadwal keberangkatan kapal laut sangat dicari oleh perusahaan ekportir raksasa untuk menghindari biaya denda keterlambatan penumpukan (Demurrage).",
+      5: "### 5. Structure & Value Chain\n\n**Hinterland-to-Port Value Chain:**\n1. Penjemputan peti kemas kosong di depo kargo.\n2. Pemuatan barang ekspor di gudang pabrik.\n3. Pengantaran peti kemas penuh melewati jalan tol khusus pelabuhan.\n4. Pembongkaran di terminal peti kemas Tanjung Priok (JICT).",
+      6: "### 6. Organizational Scope\n\n**Staf Kepabeanan & Lapangan:**\n* Ekspedisi Port Specialist: Menguasai manajemen dokumen ekspor-impor (Bill of Lading, PEB, PIB, Bea Cukai SPJM/SPJK).\n* Driver Trailer 40 Feet: Terampil bermanuver di area sempit terminal pelabuhan.",
+      7: "### 7. Transition Model (Pre-On-Post)\n\n**Transition Milestones:**\n* Pre-Onboarding: Pendaftaran nomor registrasi transporter digital di gerbang otomatis JICT.\n* Onboarding: Pembukaan jalur shuttle terjadwal harian Karawang-Tanjung Priok.\n* Post-Onboarding: Analisis otomatis utilisasi kapasitas angkut trailer ekspor.",
+      8: "### 8. Go-To-Market (GTM) Strategy\n\n**Aliansi Bersama Shipping Lines:**\nMenandatangani kontrak pengangkutan satu paket (Through Bill of Lading) bersama operator pelayaran kapal laut global (seperti Maersk / MSC) untuk menyedot kargo langsung dari pemilik barang.",
+      9: "### 9. Operating Model\n\n**SOP Dwelling Time & SLA:**\n* SLA Penarikan Kontainer dari Terminal: **Maksimal 3 Jam** sejak dokumen Bea Cukai keluar bebas SPPB.\n* Batas Kecepatan Trailer di Depo: **Maksimal 15 km/jam** keselamatan mutlak.",
+      10: "### 10. Risk Management Matrix\n\n**Manajemen Risiko Kemacetan Gerbang Tol Port:**\n* Risiko keterlambatan masuk closing-time kapal: Mitigasi dengan rute alternatif malam hari khusus dan penempatan depo buffer dekat gerbang pelabuhan.",
+      11: "### 11. Digital Coverage & Logistics Industry 4.0\n\n**Integrasi Sistem Inaportnet:**\nPenerapan sistem scan barcode gerbang otomatis (Gate RFID Automatic Recognition) untuk mempercepat proses truk masuk depo tanpa sentuhan dokumen fisik.",
+      12: "### 12. Competitor Landscapes\n\n**Analisis Peta Persaingan:**\nArmada Pancaran Group yang melimpah memberikan kepastian ketersediaan unit trailer 40 feet kapan pun (Instant Truck Availability), mengungguli perusahaan ekspedisi skala kecil.",
+      13: "### 13. Market Sizing (TAM, SAM, SOM)\n\n• TAM: Rp 6.2 Triliun (volume angkutan peti kemas nasional ekspor-impor)\n• SAM: Rp 1.8 Triliun (koridor pelabuhan Tanjung Priok - Jawa Barat hinterland)\n• SOM: Rp 320 Miliar (target raihan pangsa pasar shuttle kontainer Pancaran Group)",
+      14: "### 14. Customer Acquisition Cost (CAC) & Lifetime Value (LTV)\n\n• CAC: Rp 35.000.000\n• LTV Kontrak: Rp 3.500.000.000 per key customer pertahun\n• Rasio LTV/CAC: 100x (Sangat Fantastis karena volume pengiriman rutin bulanan berkelanjutan)"
+    }
+  },
+  {
+    id: "empty",
+    name: "Dashboard Kosong (Fresh Blank Dashboard Layout)",
+    title: "Kajian Baru: Rencana Strategis Project Management Baru",
+    description: "Mulai dari draf bersih kosong tanpa teks bawaan untuk kebebasan menulis.",
+    sectionsOverride: {
+      1: "### 1. Global / National (NAT) Overview\n\n[Tulis ulasan makro, hukum, regulasi, dan dekarbonisasi di sini...]",
+      2: "### 2. Market Opportunity\n\n[Tulis riset pasar, dan ceruk persaingan di sini...]",
+      3: "### 3. Financial Analysis\n\n**A. Capital Expenditure (Capex):**\n* [Tulis rincian capex di sini...]\n\n**B. Operational Expenditure (Opex) Bulanan:**\n* [Tulis rincian opex di sini...]\n\n**C. Proyeksi P&L & ROI:**\n* [Tulis perhitungan kelayakan modal di sini...]",
+      4: "### 4. Supply & Demand\n\n[Tulis ulasan penawaran kompetitor versus jumlah permintaan industri di sini...]",
+      5: "### 5. Structure & Value Chain\n\n[Tulis bagan struktur rantai nilai layanan logistik Anda di sini...]",
+      6: "### 6. Organizational Scope\n\n[Tulis syarat keahlian staf, kualifikasi pengemudi, standar SOP, dan metrik KPI di sini...]",
+      7: "### 7. Transition Model (Pre-On-Post)\n\n[Tulis milestones tahapan persiapan, onboarding rute, dan evaluasi berkelanjutan di sini...]",
+      8: "### 8. Go-To-Market (GTM) Strategy\n\n[Tulis strategi pemasaran B2B, lobi kontrak multitahun, dan rencana penetrasi pasar di sini...]",
+      9: "### 9. Operating Model\n\n[Tulis workflow dispatch rutin, pelacakan armada, dan tabel target SLA operasi di sini...]",
+      10: "### 10. Risk Management Matrix\n\n[Tulis matriks bahaya kecelakaan, kebocoran, tumpahan, dan langkah mitigasi darurat di sini...]",
+      11: "### 11. Digital Coverage & Logistics Industry 4.0\n\n[Tulis pemanfaatan sensor IoT, digitalisasi surat jalan, dan otomasi platform cloud ERP di sini...]",
+      12: "### 12. Competitor Landscapes\n\n[Tulis komparasi posisi bisnis Anda dengan kompetitor lokal/global di sini...]",
+      13: "### 13. Market Sizing (TAM, SAM, SOM)\n\n[Tulis hitungan nominal pasar TAM, SAM, SOM di sini...]",
+      14: "### 14. Customer Acquisition Cost (CAC) & Lifetime Value (LTV)\n\n[Tulis analisis kesehatan rasio investasi penjualan CAC berbanding profit LTV di sini...]"
+    }
+  }
 ];
 
 export default function App() {
@@ -522,16 +621,21 @@ export default function App() {
       setCustomVideoUrl(null);
       setVideoSrc("/PixVerse_V6_Extend_540P_buat_video_lebih_panja (1).mp4");
 
-      // Reset in Firestore
+      // Reset in Firestore with standard error handling
       const settingsDocRef = doc(db, "settings", "lobby_background");
-      await setDoc(settingsDocRef, {
-        videoUrl: "",
-        lastUpdated: serverTimestamp()
-      }, { merge: true });
+      try {
+        await setDoc(settingsDocRef, {
+          videoUrl: "",
+          lastUpdated: serverTimestamp()
+        }, { merge: true });
+      } catch (firestoreErr) {
+        handleFirestoreError(firestoreErr, OperationType.WRITE, "settings/lobby_background");
+      }
 
       alert("Video latar belakang direset ke default.");
     } catch (err) {
       console.error("Gagal menghapus video:", err);
+      alert("Gagal menghapus video: " + (err instanceof Error ? err.message : String(err)));
     }
   };
 
@@ -572,16 +676,20 @@ export default function App() {
 
       // Update background document in Firestore
       const settingsDocRef = doc(db, "settings", "lobby_background");
-      await setDoc(settingsDocRef, {
-        bgType: "image",
-        imageUrl: downloadUrl,
-        lastUpdated: serverTimestamp()
-      }, { merge: true });
+      try {
+        await setDoc(settingsDocRef, {
+          bgType: "image",
+          imageUrl: downloadUrl,
+          lastUpdated: serverTimestamp()
+        }, { merge: true });
+      } catch (firestoreErr) {
+        handleFirestoreError(firestoreErr, OperationType.WRITE, "settings/lobby_background");
+      }
 
       alert("Foto latar belakang berhasil diunggah ke Cloud Storage! Foto akan otomatis sinkron & muncul di Vercel/GitHub.");
     } catch (err) {
       console.error("Gagal menyimpan foto ke Firebase Storage:", err);
-      alert("Gagal mengunggah foto ke Cloud Server. Silakan coba kembali.");
+      alert("Gagal mengunggah foto ke Cloud Server: " + (err instanceof Error ? err.message : String(err)));
     }
   };
 
@@ -594,16 +702,21 @@ export default function App() {
       setCustomImageUrl(null);
       setImageSrc("https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8");
 
-      // Reset in Firestore
+      // Reset in Firestore with standard error handling
       const settingsDocRef = doc(db, "settings", "lobby_background");
-      await setDoc(settingsDocRef, {
-        imageUrl: "",
-        lastUpdated: serverTimestamp()
-      }, { merge: true });
+      try {
+        await setDoc(settingsDocRef, {
+          imageUrl: "",
+          lastUpdated: serverTimestamp()
+        }, { merge: true });
+      } catch (firestoreErr) {
+        handleFirestoreError(firestoreErr, OperationType.WRITE, "settings/lobby_background");
+      }
 
       alert("Foto latar belakang direset ke default.");
     } catch (err) {
       console.error("Gagal menghapus foto:", err);
+      alert("Gagal menghapus foto: " + (err instanceof Error ? err.message : String(err)));
     }
   };
 
@@ -848,6 +961,27 @@ export default function App() {
     });
     return initial;
   });
+
+  // Right side Chat Menu state
+  const [isDashboardChatOpen, setIsDashboardChatOpen] = useState<boolean>(true);
+  const [dashboardChatMessages, setDashboardChatMessages] = useState<ChatMessage[]>(() => {
+    return [
+      {
+        id: "dash-msg-welcome",
+        role: "model",
+        text: "Halo! Saya adalah PRAMA Strategic AI Advisor. Saya siap membantu Anda menganalisis, mengoptimalkan, dan merumuskan strategi draf 14 Pilar untuk proyek kajian AKTIF Anda. Silakan beri perintah atau diskusikan pilar mana pun di sini!\n\nTips: Anda bisa meminta saya untuk mengganti judul proyek dengan menulis 'ganti nama proyek ke [Nama Baru]' atau mengklik input judul proyek langsung di atas.",
+        timestamp: Date.now(),
+        sender: "PRAMA AI"
+      }
+    ];
+  });
+  const [isDashboardChatLoading, setIsDashboardChatLoading] = useState<boolean>(false);
+  const [dashboardChatInput, setDashboardChatInput] = useState<string>("");
+
+  // New Dashboard creation modal state
+  const [isCreateNewDashboardOpen, setIsCreateNewDashboardOpen] = useState<boolean>(false);
+  const [newDashboardTitleInput, setNewDashboardTitleInput] = useState<string>("");
+  const [newDashboardPresetId, setNewDashboardPresetId] = useState<string>("forestry");
 
   // Customized states for Article mode, Web Previews, PowerPoint Presenter Voice and Workflows
   const [workspaceViewState, setWorkspaceViewState] = useState<"editor" | "article" | "workflow">("editor");
@@ -1450,7 +1584,7 @@ Persona, Fokus & Karakter (SANGAT PENTING):
 - CAC, LTV
 Jika pengguna bertanya hal di luar 15 pilar ini, tolaklah dengan anggun, humoris, dan ingatkan kembali fokus keahlian PRAMA Anda.
 4. Sesi Tanya Jawab Interaktif: Pada akhir setiap respon, Anda WAJIB memicu kelanjutan obrolan dengan bertanya secara santun apakah pengguna butuh dibuatkan artikel detail untuk salah satu bab/pilar tertentu dahulu (seperti bab TAM SAM SOM draf finansial) atau semuanya sekaligus. Buat sesi tanya jawab mengalir alami layaknya rekan kerja nyata.
-5. Larangan Keras Simbol Asing: Tulis deskripsi Anda dalam bentuk kalimat paragraf yang rapi, bersih, mengalir, dan jelas. Anda SAMA SEKALI TIDAK BOLEH menggunakan simbol bintang (*) atau pagar (#) di seluruh respon Anda. Hindari bold text markdown seperti **bold**, bullet point simbol *, hastag kaku, atau heading pagar # dsb. Gunakan spasi kosong, huruf kapital biasa, angka biasa, atau abjad biasa untuk memilah rincian agar visual layar chat tetap super rapi, estetik, dan elegan.
+5. Larangan Keras Simbol Asing: Tulis deskripsi Anda dalam bentuk kalimat paragraf yang rapi, bersih, mengalir, dan jelas. Anda SAMA SEKALI TIDAK BOLEH menggunakan simbol bintang (*) atau pagar (#) di seluruh respon percakapan biasa Anda, KECUALI ketika Anda menyarankan rancangan draf / pembahasan tulisan baru yang utuh untuk pilar editor aktif! Jika Anda sedang merumuskan draf tulisan atau usulan rincian operasional baru untuk dimasukkan ke dokumen resmi pilar, Anda wajib meletakkannya di akhir balasan di dalam tag khusus: [UPDATE_PILAR] draf tulisan markdown lengkap di sini [/UPDATE_PILAR]. Dan jika menyarankan perubahan judul kajian, letakkan di dalam [UPDATE_JUDUL] judul baru di sini [/UPDATE_JUDUL]. Di dalam kedua tag ini, Anda bebas dan berhak menggunakan simbol bintang (*) dan pagar (#) standar format Markdown. Gunakan bahasa Indonesia formal dan profesional untuk isi rancangan draf tersebut. PRAMA AI System akan mengidentifikasi tag ini untuk menawarkan tombol "Terapkan Pembaruan Dokumen" demi memperbarui pilar yang aktif secara real-time!
 6. Rekomendasi Kisaran Angka Kelayakan Finansial:
 Ketika menganalisis TAM, SAM, SOM, sebutkan rekomendasi kisaran angka Rupiah (IDR) ideal yang sangat logis dan realistis untuk skala korporat distribusi dan logistik cargo nasional:
 - TAM (Total Addressable Market potensi pasar logistik nasional): Estimasi IDR 350 Triliun - IDR 700 Triliun (logis dengan porsi PDB logistik nasional).
@@ -1483,6 +1617,163 @@ ${focusText}`;
         console.error("Gagal memulai percakapan baru:", err);
         handleFirestoreError(err, OperationType.WRITE, `${chatsPath}/active_chat`);
       }
+    }
+  };
+
+  // Handler for right side collapsible dashboard chat panel
+  const handleSendDashboardChatMessage = async (text: string) => {
+    if (!text.trim() || isDashboardChatLoading) return;
+
+    const trimmedText = text.trim();
+
+    // 1. Detect project-change intent
+    let extractedProjectName = "";
+    let isProjectChangeTriggered = false;
+    const changeProjectRegex = /(?:ganti|ubah|set|buka|ganti judul|pindah|ganti nama)\s*(?:proyek|project|kajian)?\s*(?:ke|to|jadi|menjadi)\s*([^\n]+)/i;
+    const match = trimmedText.match(changeProjectRegex);
+    if (match && match[1].trim()) {
+      extractedProjectName = match[1].trim().replace(/\*+/g, "").trim();
+      isProjectChangeTriggered = true;
+      setDashboardProjectTitle(extractedProjectName);
+    }
+
+    const updatedProjectTitle = isProjectChangeTriggered ? extractedProjectName : dashboardProjectTitle;
+
+    // 2. Build context
+    const secObj = defaultDashboardSections.find(s => s.number === activeDashboardSection);
+    const secTitle = secObj ? secObj.title : "14 Pilar";
+    const secContent = dashboardSectionsState[activeDashboardSection] || "";
+
+    let finalQuery = trimmedText + `\n\n[INFO SISTEM AKTIF: Pengajar proyek sedang melihat Pilar Ke-${activeDashboardSection}: "${secTitle}". Konten draf pilar ini adalah:\n"""\n${secContent}\n"""\nProyek ini berjudul: "${updatedProjectTitle}"]`;
+    
+    if (isProjectChangeTriggered) {
+      finalQuery = `[NOTIFIKASI SISTEM: PENGGUNA MEMINTA MENGUBAH JUDUL PROYEK AKTIF MENJADI "${extractedProjectName}". SISTEM TELAH BERHASIL MENGUPDATE NYA DI FRONTEND. SAMBUT DAN KONFIRMASIKAN INI DENGAN PENULISAN DRAF STRATEGIS UNTUK PROYEK BARU TERSEBUT!]\n\n` + finalQuery;
+    }
+
+    // 3. User message
+    const userMsg: ChatMessage = {
+      id: `m-dash-usr-${Date.now()}`,
+      role: "user",
+      text: trimmedText,
+      timestamp: Date.now(),
+      sender: guestUser?.displayName || user?.displayName || collabUsername || "Analis PM"
+    };
+
+    const newMsgs = [...dashboardChatMessages, userMsg];
+    setDashboardChatMessages(newMsgs);
+    setDashboardChatInput("");
+    setIsDashboardChatLoading(true);
+
+    try {
+      let mainAnswerText = "";
+      
+      if (apiMode === "client") {
+        if (!clientApiKey) {
+          throw new Error("API Key Gemini belum diatur. Masukkan API Key Gemini Anda di panel setelan atas untuk menggunakan Direct Client Mode.");
+        }
+        const aiBrowser = new GoogleGenAI({ apiKey: clientApiKey });
+        const formattedContents = dashboardChatMessages.slice(-6).map((msg: any) => ({
+          role: msg.role === "user" ? "user" : "model",
+          parts: [{ text: msg.text || "" }]
+        }));
+        formattedContents.push({
+          role: "user",
+          parts: [{ text: finalQuery }]
+        });
+        const config: any = {
+          systemInstruction: getDivisionSystemInstruction("spia"), 
+        };
+        const clientModelsToTry = [
+          "gemini-3.5-flash",
+          "gemini-flash-latest",
+          "gemini-3.1-flash-lite",
+          "gemini-2.5-flash"
+        ];
+        let response = null;
+        let lastClientError = null;
+        for (const modelName of clientModelsToTry) {
+          try {
+            response = await aiBrowser.models.generateContent({
+              model: modelName,
+              contents: formattedContents,
+              config,
+            });
+            if (response) break;
+          } catch (err: any) {
+            console.warn(`Browser-side model in right chat failed:`, err);
+            lastClientError = err;
+          }
+        }
+        if (!response) {
+          throw lastClientError || new Error("Semua model Gemini gagal merespons.");
+        }
+        mainAnswerText = response.text || "";
+      } else {
+        // Query server-side proxy
+        let res;
+        try {
+          res = await fetch("/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              message: finalQuery,
+              history: dashboardChatMessages.slice(-6).map((msg: any) => ({
+                role: msg.role === "user" ? "user" : "model",
+                text: msg.text
+              })),
+              enableSearch: false,
+              customApiKey: clientApiKey || undefined,
+              systemInstruction: getDivisionSystemInstruction("spia"),
+            }),
+          });
+        } catch (fetchErr: any) {
+          throw new Error("Gagal menghubungi server proxy. Silakan periksa koneksi Anda.");
+        }
+
+        if (res && !res.ok) {
+          const responseText = await res.text();
+          let parsedData: any = null;
+          try {
+            parsedData = JSON.parse(responseText);
+          } catch(e) {}
+          let errorMsg = "Gagal memperoleh respons asisten.";
+          if (parsedData && parsedData.error) {
+            errorMsg = parsedData.error.message || JSON.stringify(parsedData.error);
+          } else {
+            errorMsg = responseText || errorMsg;
+          }
+          throw new Error(errorMsg);
+        } else if (res) {
+          const answerData = await res.json();
+          mainAnswerText = answerData.text || "";
+        }
+      }
+
+      // Keep tags and markdown formatting intact to support draft updates
+      let sanitizedAnswerText = mainAnswerText;
+
+      const modelMsg: ChatMessage = {
+        id: `m-dash-gem-${Date.now()}`,
+        role: "model",
+        text: sanitizedAnswerText,
+        timestamp: Date.now(),
+        sender: "PRAMA AI Advisor",
+      };
+
+      setDashboardChatMessages([...newMsgs, modelMsg]);
+    } catch (err: any) {
+      console.error(err);
+      const errFriendlyText = err?.message || "Koneksi terhambat. Silakan coba kembali.";
+      const errorModelMsg: ChatMessage = {
+        id: `m-dash-err-${Date.now()}`,
+        role: "model",
+        text: `Error: ${errFriendlyText}`,
+        timestamp: Date.now(),
+        sender: "Sistem PRAMA",
+      };
+      setDashboardChatMessages([...newMsgs, errorModelMsg]);
+    } finally {
+      setIsDashboardChatLoading(false);
     }
   };
 
@@ -3661,6 +3952,18 @@ ${lastMsgText}`;
 
                 <div className="flex items-center gap-3 self-end md:self-center">
                   <button
+                    type="button"
+                    onClick={() => {
+                      setNewDashboardTitleInput("");
+                      setNewDashboardPresetId("forestry");
+                      setIsCreateNewDashboardOpen(true);
+                    }}
+                    className="flex items-center gap-1.5 bg-violet-600 hover:bg-violet-550 hover:text-white active:scale-95 text-[11px] text-white border border-violet-500 rounded-xl px-3.5 py-2 font-bold cursor-pointer transition shadow-md"
+                  >
+                    <span>➕ Buat Dashboard Baru</span>
+                  </button>
+
+                  <button
                     onClick={() => setDashboardView("divisions")}
                     className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 hover:text-white active:scale-95 text-[11px] text-slate-300 border border-slate-700 rounded-xl px-3.5 py-2 font-bold cursor-pointer transition shadow"
                   >
@@ -4199,7 +4502,206 @@ ${lastMsgText}`;
                         </div>
                       </div>
                     );
-                  })()}
+                  })()
+                }
+                </div>
+
+                {/* RIGHT COLLAPSIBLE CHAT PANEL (Advising AI) */}
+                <div className={`border-l border-slate-200 shrink-0 bg-white flex flex-col transition-all duration-300 ${
+                  isDashboardChatOpen ? "w-full lg:w-80" : "w-full lg:w-14"
+                } relative overflow-hidden`} style={{ maxHeight: "600px" }}>
+                  {isDashboardChatOpen ? (
+                    <div className="flex flex-col h-full w-full min-w-[280px]">
+                      {/* Header */}
+                      <div className="bg-slate-900 border-b border-slate-800 p-3.5 flex items-center justify-between text-white shrink-0">
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                          <span className="text-[10.5px] font-black uppercase tracking-wider font-mono">
+                            PRAMA AI Advisor
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setIsDashboardChatOpen(false)}
+                          title="Sembunyikan Panel Chat"
+                          className="text-slate-400 hover:text-white transition duration-200 cursor-pointer"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      {/* Messages with customized styled layout */}
+                      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/50">
+                        {dashboardChatMessages.map((msg) => {
+                          const isAI = msg.role === "model";
+                          
+                          // Dynamic parsing for strategic discussion updates
+                          let displayText = msg.text;
+                          let extractedPilarDraft: string | null = null;
+                          let extractedJudulDraft: string | null = null;
+                          
+                          if (isAI) {
+                            // Extract [UPDATE_PILAR]...[/UPDATE_PILAR]
+                            const pilarRegex = /\[UPDATE_PILAR\]([\s\S]*?)\[\/UPDATE_PILAR\]/i;
+                            const pilarMatch = msg.text.match(pilarRegex);
+                            if (pilarMatch) {
+                              extractedPilarDraft = pilarMatch[1].trim();
+                              displayText = displayText.replace(pilarRegex, "").trim();
+                            }
+                            
+                            // Extract [UPDATE_JUDUL]...[/UPDATE_JUDUL] or [/JUDUL_PROYEK]
+                            const judulRegex = /\[UPDATE_JUDUL\]([\s\S]*?)\[\/(?:UPDATE_JUDUL|JUDUL_PROYEK)\]/i;
+                            const judulMatch = msg.text.match(judulRegex);
+                            if (judulMatch) {
+                              extractedJudulDraft = judulMatch[1].trim();
+                              displayText = displayText.replace(judulRegex, "").trim();
+                            }
+
+                            // Gentle formatting cleanup outside tags
+                            displayText = displayText.replace(/[*#]/g, "").trim();
+                          }
+
+                          return (
+                            <div key={msg.id} className={`flex flex-col ${isAI ? "items-start" : "items-end"} w-full`}>
+                              <span className="text-[8px] font-black font-mono text-slate-400 mb-0.5 tracking-wider uppercase">
+                                {msg.sender || (isAI ? "PRAMA AI" : "PENGGUNA")} &bull; {new Date(msg.timestamp).toLocaleTimeString("id-ID", { hour: "numeric", minute: "numeric" })}
+                              </span>
+                              
+                              <div className={`max-w-[90%] px-3 py-2 rounded-2xl text-[11px] text-left leading-relaxed font-sans ${
+                                isAI 
+                                  ? "bg-slate-100 border border-slate-200 text-slate-850 rounded-tl-none font-semibold text-justify animate-fade-in" 
+                                  : "bg-indigo-600 text-white rounded-tr-none font-bold select-all text-left"
+                              }`}>
+                                <div className="space-y-1.5 whitespace-pre-wrap">
+                                  {displayText}
+                                </div>
+                              </div>
+
+                              {/* Strategic Discussion Action Card for updating Editor */}
+                              {isAI && (
+                                <div className="mt-1.5 mb-3.5 w-[90%] bg-indigo-50/50 rounded-2xl border border-indigo-100 p-2.5 flex flex-col gap-1.5 shadow-sm shrink-0">
+                                  <div className="flex items-center gap-1 text-[8.5px] font-black text-indigo-700 uppercase tracking-widest font-mono">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                                    STRATEGIC WORKSPACE ACTIONS
+                                  </div>
+                                  
+                                  {extractedPilarDraft && (
+                                    <div className="bg-emerald-50 text-[10px] text-emerald-800 font-bold px-2 py-1 rounded-lg border border-emerald-100 uppercase tracking-wide leading-none py-1 text-center shrink-0">
+                                      ✨ DRAF REKOMENDASI TERDETEKSI
+                                    </div>
+                                  )}
+
+                                  {extractedJudulDraft && (
+                                    <div className="bg-violet-50 text-[10px] text-violet-850 font-bold px-2 py-1 rounded-lg border border-violet-100 tracking-wide text-center shrink-0">
+                                      ✨ USULAN JUDUL: "{extractedJudulDraft}"
+                                    </div>
+                                  )}
+
+                                  <div className="flex flex-col gap-1.5 mt-1">
+                                    <div className="flex items-center justify-between gap-1">
+                                      <span className="text-[8px] font-black text-slate-400 font-mono uppercase tracking-wider">Metode Sinkron:</span>
+                                      <select 
+                                        id={`sel-target-${msg.id}`}
+                                        defaultValue={extractedJudulDraft ? "judul" : activeDashboardSection.toString()}
+                                        className="text-[9px] font-black border border-slate-200 rounded-lg px-1.5 py-0.5 bg-white text-slate-700 outline-none max-w-[130px] shadow-sm tracking-tight"
+                                      >
+                                        <option value="judul">Judul Proyek</option>
+                                        {defaultDashboardSections.map(s => (
+                                          <option key={s.number} value={s.number.toString()}>
+                                            Pilar {s.number}: {s.title.substring(0, 16)}...
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </div>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const selectEl = document.getElementById(`sel-target-${msg.id}`) as HTMLSelectElement;
+                                        if (!selectEl) return;
+                                        const targetVal = selectEl.value;
+
+                                        if (targetVal === "judul") {
+                                          const finalTitle = extractedJudulDraft || displayText;
+                                          setDashboardProjectTitle(finalTitle);
+                                          alert(`Sukses! Judul Proyek berhasil diperbarui menjadi:\n"${finalTitle}"`);
+                                        } else {
+                                          const targetPilarNum = parseInt(targetVal, 10);
+                                          const finalContent = extractedPilarDraft || msg.text;
+                                          
+                                          // Update state
+                                          setDashboardSectionsState(prev => ({
+                                            ...prev,
+                                            [targetPilarNum]: finalContent
+                                          }));
+                                          
+                                          // Switch active section if needed so user sees the update instantly
+                                          setActiveDashboardSection(targetPilarNum);
+                                          
+                                          const targetSecName = defaultDashboardSections.find(s => s.number === targetPilarNum)?.title || "14 Pilar";
+                                          alert(`Pembahasan Sukses! Draf Pilar Ke-${targetPilarNum} ("${targetSecName}") telah diperbarui secara langsung dan dialihkan ke editor.`);
+                                        }
+                                      }}
+                                      className="w-full py-1.5 bg-indigo-600 hover:bg-indigo-550 active:scale-97 text-white font-black text-[9.5px] rounded-xl cursor-pointer transition shadow-md flex items-center justify-center gap-1 uppercase tracking-wider"
+                                    >
+                                      <span>⚡ Sinkronkan Pembahasan</span>
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                        {isDashboardChatLoading && (
+                          <div className="flex items-center gap-2 text-slate-400 text-[10px] font-bold font-mono pl-1 animate-pulse">
+                            <span className="flex h-1.5 w-1.5 rounded-full bg-indigo-600 animate-bounce" style={{ animationDelay: "0ms" }} />
+                            <span className="flex h-1.5 w-1.5 rounded-full bg-indigo-600 animate-bounce" style={{ animationDelay: "150ms" }} />
+                            <span className="flex h-1.5 w-1.5 rounded-full bg-indigo-600 animate-bounce" style={{ animationDelay: "300ms" }} />
+                            <span>PRAMA sedang menyusun skema...</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Input controls form */}
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          handleSendDashboardChatMessage(dashboardChatInput);
+                        }}
+                        className="p-3 border-t border-slate-200 bg-white shrink-0 flex items-center gap-1.5"
+                      >
+                        <input
+                          type="text"
+                          value={dashboardChatInput}
+                          onChange={(e) => setDashboardChatInput(e.target.value)}
+                          placeholder="Diskusikan pilar aktif..."
+                          disabled={isDashboardChatLoading}
+                          className="flex-grow text-[11.5px] font-sans px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 bg-white text-slate-800 disabled:opacity-50"
+                        />
+                        <button
+                          type="submit"
+                          disabled={isDashboardChatLoading || !dashboardChatInput.trim()}
+                          className="h-8.5 w-8.5 shrink-0 flex items-center justify-center rounded-xl bg-indigo-600 hover:bg-indigo-550 disabled:bg-slate-100 text-white disabled:text-slate-400 transition cursor-pointer"
+                        >
+                          <Send className="h-3.5 w-3.5" />
+                        </button>
+                      </form>
+                    </div>
+                  ) : (
+                    <div className="flex flex-row lg:flex-col items-center justify-between lg:justify-start h-full w-full py-2 px-3 lg:px-0 lg:py-4 gap-4 bg-slate-900 border-l border-slate-800 text-white">
+                      <button
+                        type="button"
+                        onClick={() => setIsDashboardChatOpen(true)}
+                        title="Buka Chat AI Advisor"
+                        className="h-9 w-9 flex items-center justify-center rounded-xl bg-violet-950 text-violet-400 hover:text-white hover:bg-violet-900 border border-violet-850 transition cursor-pointer animate-pulse"
+                      >
+                        <MessageSquare className="h-4.5 w-4.5 shrink-0" />
+                      </button>
+                      <span className="hidden lg:block text-[8.5px] font-black font-mono uppercase tracking-widest text-slate-400 select-none" style={{ writingMode: "vertical-lr", textOrientation: "mixed" }}>
+                        ASISTEN AI STRATEGIS
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -6045,6 +6547,154 @@ ${lastMsgText}`;
                 className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-xl transition cursor-pointer"
               >
                 Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          🆕 CREATE NEW DASHBOARD WORKSPACE MODAL OVERLAY
+          ========================================================================= */}
+      {isCreateNewDashboardOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-md overflow-y-auto animate-fade-in">
+          <div className="flex flex-col bg-white rounded-3xl w-full max-w-2xl max-h-[92vh] shadow-2xl border border-slate-205 border-slate-200 overflow-hidden text-slate-800 text-left">
+            {/* Modal Header */}
+            <div className="bg-slate-900 px-6 py-5 border-b border-slate-800 flex items-center justify-between text-white">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-violet-950 flex items-center justify-center text-violet-400 font-extrabold border border-violet-800">
+                  ➕
+                </div>
+                <div>
+                  <h3 className="text-sm font-black tracking-wider uppercase">Inisialisasi Kajian Baru</h3>
+                  <p className="text-[10px] font-mono font-bold text-slate-400 mt-0.5 uppercase tracking-widest">PRAMA Dashboard Template Builder</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsCreateNewDashboardOpen(false)}
+                className="text-slate-400 hover:text-white transition cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 overflow-y-auto space-y-6">
+              {/* Title Section */}
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono">
+                  Judul Proyek / Kajian Baru
+                </label>
+                <input
+                  type="text"
+                  value={newDashboardTitleInput}
+                  onChange={(e) => setNewDashboardTitleInput(e.target.value)}
+                  placeholder="Contoh: Kajian Strategis: Ekspansi Distribusi Nikel Freeport..."
+                  className="w-full px-4 py-3 text-xs font-extrabold border border-slate-205 border-slate-200 rounded-xl focus:border-indigo-500 outline-none shadow-inner bg-white text-slate-800"
+                />
+                <span className="text-[10px] leading-relaxed text-slate-500 block">
+                  Judul ini otomatis akan terintegrasi ke dokumen ekspor Microsoft Word (.doc) dan PowerPoint (.pptx).
+                </span>
+              </div>
+
+              {/* Presets List */}
+              <div className="space-y-3">
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono">
+                  Pilih Template Skenario Preset
+                </label>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                  {DASHBOARD_PRESETS.map((preset) => (
+                    <div
+                      key={preset.id}
+                      onClick={() => {
+                        setNewDashboardPresetId(preset.id);
+                        if (!newDashboardTitleInput || DASHBOARD_PRESETS.some(p => p.title === newDashboardTitleInput)) {
+                          setNewDashboardTitleInput(preset.title);
+                        }
+                      }}
+                      className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between text-left ${
+                        newDashboardPresetId === preset.id
+                          ? "border-violet-600 bg-violet-50/50 ring-4 ring-violet-100"
+                          : "border-slate-205 border-slate-200 hover:border-slate-350 hover:bg-slate-50 bg-white"
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-black text-slate-805 text-slate-800 uppercase tracking-tight">
+                            {preset.name}
+                          </span>
+                          <span className="text-[8px] font-black font-mono px-1.5 py-0.5 rounded uppercase leading-none bg-indigo-50 border border-indigo-100 text-indigo-700">
+                            {preset.id}
+                          </span>
+                        </div>
+                        <p className="text-[10.5px] leading-relaxed text-slate-500 font-semibold mb-3">
+                          {preset.description}
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        <span className="text-[8px] font-bold bg-indigo-50 text-indigo-700 rounded px-1.5 py-0.5 uppercase tracking-wide">
+                          {preset.id === "forestry" ? "B3/KAYU" : preset.id === "coal" ? "MINERAL" : preset.id === "cpo" ? "AGRI/LIQUID" : "STRATEGIS"}
+                        </span>
+                        <span className="text-[8px] font-bold bg-emerald-50 text-emerald-700 rounded px-1.5 py-0.5 uppercase tracking-wide">
+                          {preset.id === "forestry" ? "STANDAR HSE" : "HEAVY DUTY"}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex items-center justify-end gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsCreateNewDashboardOpen(false)}
+                className="px-4.5 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-650 text-slate-650 text-slate-600 font-black text-xs transition cursor-pointer"
+              >
+                Batalkan
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const preset = DASHBOARD_PRESETS.find(p => p.id === newDashboardPresetId) || DASHBOARD_PRESETS[0];
+                  
+                  // Reset State
+                  const chosenTitle = newDashboardTitleInput.trim() || preset.title;
+                  setDashboardProjectTitle(chosenTitle);
+                  
+                  // Handle sections rehydration securely
+                  const rehydratedContent: Record<number, string> = {};
+                  if (preset.sectionsOverride) {
+                    Object.assign(rehydratedContent, preset.sectionsOverride);
+                  } else {
+                    defaultDashboardSections.forEach((s) => {
+                      rehydratedContent[s.number] = s.defaultContent;
+                    });
+                  }
+                  setDashboardSectionsState(rehydratedContent);
+                  setActiveDashboardSection(1);
+                  
+                  // Setup clean welcoming chat history for new dashboard preset
+                  setDashboardChatMessages([
+                    {
+                      id: "dash-msg-welcome-preset",
+                      role: "model",
+                      text: `Selamat! Anda berhasil menginisialisasi kajian baru:\n"${chosenTitle}"\n\nTemplate skenario: [${preset.name.toUpperCase()}]. Saya telah memperbarui konten draf 14 Pilar dengan data operasional, rasio finansial target, dan spesifikasi armada logistik kustom untuk skenario ini.\n\nSilakan diskusikan atau pilih pilar manapun untuk disunting lebih jauh bersama saya!`,
+                      timestamp: Date.now(),
+                      sender: "PRAMA AI"
+                    }
+                  ]);
+                  
+                  setIsCreateNewDashboardOpen(false);
+                  alert(`Dashboard Kajian baru "${chosenTitle}" berhasil dibuat!`);
+                }}
+                className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-550 text-white font-black text-xs transition shadow-md active:scale-97 cursor-pointer"
+              >
+                Buat & Rekonstruksi 14 Pilar
               </button>
             </div>
           </div>

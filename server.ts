@@ -499,16 +499,22 @@ app.get("/api/proxy-image-raw", async (req, res) => {
   }
 });
 
-// Serve any mp4 files directly from the project root
+// Serve any mp4 files directly from public directory, falling back to root directory
 app.get("/*.mp4", (req, res) => {
   const filename = path.basename(req.path);
-  const filePath = path.join(process.cwd(), filename);
-  res.sendFile(filePath, (err) => {
-    if (err) {
-      console.warn(`Could not serve videofile ${filename} from root, falling back`);
-      res.status(404).send("Video file not found");
-    }
-  });
+  const publicPath = path.join(process.cwd(), "public", filename);
+  const rootPath = path.join(process.cwd(), filename);
+
+  if (fs.existsSync(publicPath)) {
+    res.sendFile(publicPath);
+  } else {
+    res.sendFile(rootPath, (err) => {
+      if (err) {
+        console.warn(`Could not serve videofile ${filename} from public or root, falling back`);
+        res.status(404).send("Video file not found");
+      }
+    });
+  }
 });
 
 // Setup Node HTTP Server wrapped around Express

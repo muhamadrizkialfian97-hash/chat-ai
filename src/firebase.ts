@@ -1,16 +1,24 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { initializeFirestore, persistentLocalCache, doc, getDocFromServer } from 'firebase/firestore';
+import { initializeFirestore, getFirestore, persistentLocalCache, doc, getDocFromServer } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import firebaseConfig from '../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
 
-// CRITICAL: Initialize firestore with persistent local cache to prevent offline connection failures
-export const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({})
-}, firebaseConfig.firestoreDatabaseId);
+// Resilient Firestore initialization wrapping persistent local cache in a try-catch to support restricted sandbox/iframes
+let tempDb;
+try {
+  tempDb = initializeFirestore(app, {
+    localCache: persistentLocalCache({})
+  }, firebaseConfig.firestoreDatabaseId);
+  console.log("Firestore initialized successfully with persistent local cache.");
+} catch (error) {
+  console.warn("Could not initialize with persistent local cache (possible sandbox/iframe restriction), falling back to baseline getFirestore:", error);
+  tempDb = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+}
 
+export const db = tempDb;
 export const auth = getAuth(app);
 export const storage = getStorage(app);
 

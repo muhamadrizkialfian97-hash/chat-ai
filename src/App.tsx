@@ -358,26 +358,30 @@ export default function App() {
 
 
   const [heroBgType, setHeroBgType] = useState<"video" | "image">(() => {
-    return (localStorage.getItem("prama_hero_bg_type") as "video" | "image") || "image";
+    return (localStorage.getItem("prama_hero_bg_type") as "video" | "image") || "video";
   });
 
   const [isBgSettingsCollapsed, setIsBgSettingsCollapsed] = useState<boolean>(true);
   const [showHeroBgSettingsDropdown, setShowHeroBgSettingsDropdown] = useState<boolean>(false);
 
   const [customVideoUrl, setCustomVideoUrl] = useState<string | null>(null);
-  const [videoSrc, setVideoSrc] = useState<string>("/PixVerse_V6_Extend_540P_buat_video_lebih_panja (1).mp4");
+  const [videoSrc, setVideoSrc] = useState<string>("/custom-video.mp4");
 
   const [customImageUrl, setCustomImageUrl] = useState<string | null>(null);
   const [imageSrc, setImageSrc] = useState<string>("https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8");
 
   const slideshowImages = useMemo(() => {
-    return [
+    const list = [
       "https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8",
       "https://lh3.googleusercontent.com/d/1nSoJB2pwraTTxpz_AdyLUsPE7ofF2bff",
       "https://lh3.googleusercontent.com/d/1jMchFR980yIMX2HGoGAWT3DjTkAm4Cyo",
       "https://lh3.googleusercontent.com/d/18BXAcvgkENCAyNpgOvdekd3HE1JfCILc"
     ];
-  }, []);
+    if (customImageUrl) {
+      list[0] = customImageUrl;
+    }
+    return list;
+  }, [customImageUrl]);
 
   const [slideshowIndex, setSlideshowIndex] = useState<number>(0);
 
@@ -410,136 +414,6 @@ export default function App() {
     }
   }, [heroBgType, videoSrc, showHeroLanding, user]);
 
-  useEffect(() => {
-    if (customVideoUrl) {
-      setVideoSrc(customVideoUrl);
-    } else {
-      setVideoSrc((prev) => {
-        if (prev && (prev.includes("firebasestorage") || prev.startsWith("blob:") || prev.startsWith("http"))) {
-          return prev;
-        }
-        return "/PixVerse_V6_Extend_540P_buat_video_lebih_panja (1).mp4";
-      });
-    }
-  }, [customVideoUrl]);
-
-  useEffect(() => {
-    if (customImageUrl) {
-      setImageSrc(customImageUrl);
-    } else {
-      setImageSrc((prev) => {
-        if (prev && (prev.includes("firebasestorage") || prev.startsWith("blob:"))) {
-          return prev;
-        }
-        return "https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8";
-      });
-    }
-  }, [customImageUrl]);
-
-  useEffect(() => {
-    const handleMessage = (e: MessageEvent) => {
-      if (e.data) {
-        if (e.data.type === "DISMISS_HERO") {
-          setShowHeroLanding(false);
-          sessionStorage.setItem("prama_hero_dismissed", "true");
-        } else if (e.data.type === "ROBOT_SPEAK_START") {
-          setIsRobotSpeaking(true);
-        } else if (e.data.type === "ROBOT_SPEAK_END") {
-          setIsRobotSpeaking(false);
-        }
-      }
-    };
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, []);
-
-  useEffect(() => {
-    let activeUrl: string | null = null;
-    
-    // First, play user's uploaded cache from local IndexedDB if they have it
-    getCustomBackgroundVideo().then(async (cachedBlob) => {
-      if (cachedBlob) {
-        activeUrl = URL.createObjectURL(cachedBlob);
-        setCustomVideoUrl(activeUrl);
-        
-        // AUTO-SYNC TO WORKSPACE SERVER:
-        // Automatically upload browser-uploaded video to development container's /public/custom-video.mp4
-        // so it persists, and gets bundled statically with Vercel deployment!
-        const isDevApp = window.location.hostname.includes("localhost") || 
-                          window.location.hostname.includes("run.app");
-        if (isDevApp) {
-          try {
-            const checkRes = await fetch("/api/check-video-sync");
-            if (checkRes.ok) {
-              const checkData = await checkRes.json();
-              if (!checkData.exists) {
-                console.log("Auto-synchronizing browser background video back to workspace files...");
-                await fetch("/api/upload-video-sync", {
-                  method: "POST",
-                  headers: { "Content-Type": "video/mp4" },
-                  body: cachedBlob
-                });
-                console.log("Auto-sync completed! Video is now a persistent public file inside the workspace.");
-              }
-            }
-          } catch (syncErr) {
-            console.warn("Background auto-sync failed (harmless during local-only dev runs):", syncErr);
-          }
-        }
-      }
-    }).catch(err => {
-      console.error("Gagal memuat video kustom:", err);
-    });
-    
-    return () => {
-      if (activeUrl) {
-        URL.revokeObjectURL(activeUrl);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    let activeImgUrl: string | null = null;
-    
-    getCustomBackgroundImage().then(async (cachedBlob) => {
-      if (cachedBlob) {
-        activeImgUrl = URL.createObjectURL(cachedBlob);
-        setCustomImageUrl(activeImgUrl);
-        
-        // AUTO-SYNC TO WORKSPACE SERVER:
-        const isDevApp = window.location.hostname.includes("localhost") || 
-                          window.location.hostname.includes("run.app");
-        if (isDevApp) {
-          try {
-            const checkRes = await fetch("/api/check-image-sync");
-            if (checkRes.ok) {
-              const checkData = await checkRes.json();
-              if (!checkData.exists) {
-                console.log("Auto-synchronizing browser background image back to workspace files...");
-                await fetch("/api/upload-image-sync", {
-                  method: "POST",
-                  headers: { "Content-Type": "image/png" },
-                  body: cachedBlob
-                });
-                console.log("Auto-sync completed! Image is now a persistent public file inside the workspace.");
-              }
-            }
-          } catch (syncErr) {
-            console.warn("Background auto-sync failed for image:", syncErr);
-          }
-        }
-      }
-    }).catch(err => {
-      console.error("Gagal memuat foto kustom:", err);
-    });
-    
-    return () => {
-      if (activeImgUrl) {
-        URL.revokeObjectURL(activeImgUrl);
-      }
-    };
-  }, []);
-
   // Synchronize background settings across ALL deploys (Local, Vercel, GitHub) via Firestore settings doc
   useEffect(() => {
     const settingsDocRef = doc(db, "settings", "lobby_background");
@@ -547,26 +421,33 @@ export default function App() {
       if (snapshot.exists()) {
         const data = snapshot.data();
         console.log("Firestore background settings updated:", data);
+        
+        // Honor stored background type settings correctly without hard overrides
         if (data.bgType) {
           setHeroBgType(data.bgType);
         } else {
-          setHeroBgType("image");
+          setHeroBgType("video");
         }
-        if (data.videoUrl) {
+
+        if (data.videoUrl && data.videoUrl !== "/PixVerse_V6_Extend_540P_buat_video_lebih_panja (1).mp4" && data.videoUrl !== "/custom-video.mp4" && data.videoUrl !== "") {
           setVideoSrc(data.videoUrl);
+          setCustomVideoUrl(data.videoUrl);
         } else {
-          setVideoSrc("/PixVerse_V6_Extend_540P_buat_video_lebih_panja (1).mp4");
+          setVideoSrc("/custom-video.mp4");
+          setCustomVideoUrl(null);
         }
-        if (data.imageUrl) {
+        if (data.imageUrl && data.imageUrl !== "https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8" && data.imageUrl !== "") {
           setImageSrc(data.imageUrl);
+          setCustomImageUrl(data.imageUrl);
         } else {
           setImageSrc("https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8");
+          setCustomImageUrl(null);
         }
       } else {
-        // Seed default in Firestore as "image" with intelligent default for maximum auto-consistency
+        // Seed default in Firestore as "video" with intelligent default for maximum auto-consistency
         setDoc(settingsDocRef, {
-          bgType: "image",
-          videoUrl: "/PixVerse_V6_Extend_540P_buat_video_lebih_panja (1).mp4",
+          bgType: "video",
+          videoUrl: "/custom-video.mp4",
           imageUrl: "https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8",
           lastUpdated: serverTimestamp()
         }, { merge: true }).catch((err) => {
@@ -601,54 +482,47 @@ export default function App() {
     }
 
     try {
-      await saveCustomBackgroundVideo(file);
-      if (customVideoUrl && !customVideoUrl.startsWith("http")) {
-        URL.revokeObjectURL(customVideoUrl);
-      }
-      const newUrl = URL.createObjectURL(file);
-      setCustomVideoUrl(newUrl);
+      // Local preview blob URL only for instant responsive UX while the upload proceeds
+      const tempUrl = URL.createObjectURL(file);
+      setVideoSrc(tempUrl);
 
-      // Upload directly to AI Studio workspace backend /public/custom-video.mp4 for fallback
-      try {
-        await fetch("/api/upload-video-sync", {
-          method: "POST",
-          headers: { "Content-Type": "video/mp4" },
-          body: file,
-        });
-      } catch (err) {
-        console.warn("Express server sync fallback error:", err);
-      }
-
-      // ULTIMATE SOURCE OF TRUTH: Upload directly to Firebase Storage bucket!
       console.log("Uploading custom video to Firebase Storage...");
       const storageRef = ref(storage, "backgrounds/lobby_video.mp4");
       const uploadResult = await uploadBytes(storageRef, file);
       const downloadUrl = await getDownloadURL(uploadResult.ref);
       console.log("Uploaded successfully! Download URL:", downloadUrl);
 
-      // Update background document in Firestore
+      // Save global cloud downloadUrl to settings/lobby_background document in Firestore
       const settingsDocRef = doc(db, "settings", "lobby_background");
-      await setDoc(settingsDocRef, {
-        bgType: "video",
-        videoUrl: downloadUrl,
-        lastUpdated: serverTimestamp()
-      }, { merge: true });
+      try {
+        await setDoc(settingsDocRef, {
+          bgType: "video",
+          videoUrl: downloadUrl,
+          lastUpdated: serverTimestamp()
+        }, { merge: true });
+      } catch (firestoreErr) {
+        handleFirestoreError(firestoreErr, OperationType.WRITE, "settings/lobby_background");
+      }
 
-      alert("Video latar belakang berhasil diunggah ke Cloud Storage! Video akan otomatis sinkron & muncul di Vercel/GitHub.");
+      setCustomVideoUrl(downloadUrl);
+      setVideoSrc(downloadUrl);
+      
+      // Revoke temporal local blob URL safely
+      if (tempUrl && !tempUrl.startsWith("http")) {
+        URL.revokeObjectURL(tempUrl);
+      }
+
+      alert("Video latar belakang berhasil disimpan di Firebase dan disinkronkan ke Cloud! Video ini akan tampil untuk seluruh pengunjung website (Vercel).");
     } catch (err) {
       console.error("Gagal menyimpan video ke Firebase Storage:", err);
-      alert("Gagal mengunggah video ke Cloud Server. Silakan coba kembali.");
+      alert("Gagal mengunggah video ke Cloud Server: " + (err instanceof Error ? err.message : String(err)));
     }
   };
 
   const handleResetVideo = async () => {
     try {
-      await clearCustomBackgroundVideo();
-      if (customVideoUrl && !customVideoUrl.startsWith("http")) {
-        URL.revokeObjectURL(customVideoUrl);
-      }
       setCustomVideoUrl(null);
-      setVideoSrc("/PixVerse_V6_Extend_540P_buat_video_lebih_panja (1).mp4");
+      setVideoSrc("/custom-video.mp4");
 
       // Reset in Firestore with standard error handling
       const settingsDocRef = doc(db, "settings", "lobby_background");
@@ -678,32 +552,17 @@ export default function App() {
     }
 
     try {
-      await saveCustomBackgroundImage(file);
-      if (customImageUrl && !customImageUrl.startsWith("http")) {
-        URL.revokeObjectURL(customImageUrl);
-      }
-      const newUrl = URL.createObjectURL(file);
-      setCustomImageUrl(newUrl);
+      // Local preview blob URL only for instant responsive UX while the upload proceeds
+      const tempUrl = URL.createObjectURL(file);
+      setImageSrc(tempUrl);
 
-      // Upload directly to AI Studio workspace backend /public/custom-image.png for fallback
-      try {
-        await fetch("/api/upload-image-sync", {
-          method: "POST",
-          headers: { "Content-Type": "image/png" },
-          body: file,
-        });
-      } catch (err) {
-        console.warn("Express server sync fallback error:", err);
-      }
-
-      // ULTIMATE SOURCE OF TRUTH: Upload directly to Firebase Storage bucket!
       console.log("Uploading custom image to Firebase Storage...");
       const storageRef = ref(storage, "backgrounds/lobby_image.png");
       const uploadResult = await uploadBytes(storageRef, file);
       const downloadUrl = await getDownloadURL(uploadResult.ref);
       console.log("Uploaded successfully! Download URL:", downloadUrl);
 
-      // Update background document in Firestore
+      // Save global cloud downloadUrl to settings/lobby_background document in Firestore
       const settingsDocRef = doc(db, "settings", "lobby_background");
       try {
         await setDoc(settingsDocRef, {
@@ -715,7 +574,15 @@ export default function App() {
         handleFirestoreError(firestoreErr, OperationType.WRITE, "settings/lobby_background");
       }
 
-      alert("Foto latar belakang berhasil diunggah ke Cloud Storage! Foto akan otomatis sinkron & muncul di Vercel/GitHub.");
+      setCustomImageUrl(downloadUrl);
+      setImageSrc(downloadUrl);
+
+      // Revoke temporal local blob URL safely
+      if (tempUrl && !tempUrl.startsWith("http")) {
+        URL.revokeObjectURL(tempUrl);
+      }
+
+      alert("Foto latar belakang berhasil disimpan di Firebase dan disinkronkan ke Cloud! Foto ini akan tampil untuk seluruh pengunjung website (Vercel).");
     } catch (err) {
       console.error("Gagal menyimpan foto ke Firebase Storage:", err);
       alert("Gagal mengunggah foto ke Cloud Server: " + (err instanceof Error ? err.message : String(err)));
@@ -724,10 +591,6 @@ export default function App() {
 
   const handleResetImage = async () => {
     try {
-      await clearCustomBackgroundImage();
-      if (customImageUrl && !customImageUrl.startsWith("http")) {
-        URL.revokeObjectURL(customImageUrl);
-      }
       setCustomImageUrl(null);
       setImageSrc("https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8");
 
@@ -1344,7 +1207,7 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
     `[${new Date(Date.now() - 3600000).toLocaleTimeString("id-ID", { hour: "numeric", minute: "numeric" })}] Swarnadwipa Hauling Gate Guard Active`
   ]);
 
-  const [transcriptionVideoUrl, setTranscriptionVideoUrl] = useState<string>("/PixVerse_V6_Extend_540P_buat_video_lebih_panja (1).mp4");
+  const [transcriptionVideoUrl, setTranscriptionVideoUrl] = useState<string>("/custom-video.mp4");
   const [transcriptionOutput, setTranscriptionOutput] = useState<string>("");
   const [isTranscribing, setIsTranscribing] = useState<boolean>(false);
 
@@ -3604,6 +3467,7 @@ ${lastMsgText}`;
         {heroBgType === "video" ? (
           <video
             ref={landingVideoRef}
+            src={videoSrc}
             autoPlay
             muted
             loop
@@ -3615,15 +3479,13 @@ ${lastMsgText}`;
             className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 animate-fade-in scale-[1.08] origin-center"
             style={{ zIndex: -1, opacity: 0.65 }}
             onError={() => {
-              const fallbackUrl = "/PixVerse_V6_Extend_540P_buat_video_lebih_panja (1).mp4";
+              const fallbackUrl = "/custom-video.mp4";
               if (videoSrc !== fallbackUrl) {
                 console.warn("Lobby video failed to load. Falling back to default custom video...");
                 setVideoSrc(fallbackUrl);
               }
             }}
-          >
-            <source src={videoSrc} type="video/mp4" />
-          </video>
+          />
         ) : (
           slideshowImages.map((src, idx) => (
             <img 
@@ -3664,7 +3526,7 @@ ${lastMsgText}`;
             <Settings className={`h-4 w-4 ${showHeroBgSettingsDropdown ? 'animate-spin-[duration:10s] text-emerald-400' : ''}`} />
           </button>
           {showHeroBgSettingsDropdown && (
-            <div className="absolute top-12 right-0 w-52 p-2 rounded-2xl bg-slate-950/90 backdrop-blur-md border border-white/15 shadow-2xl flex flex-col gap-1 z-[99999] text-left animate-fade-in">
+            <div className="absolute top-12 right-0 w-56 p-2.5 rounded-2xl bg-slate-950/95 backdrop-blur-md border border-white/15 shadow-2xl flex flex-col gap-1 z-[99999] text-left animate-fade-in font-sans">
               <span className="text-[9px] uppercase font-mono font-black tracking-widest text-slate-400 px-2.5 py-1.5 select-none">
                 PILIHAN LATAR BELAKANG
               </span>
@@ -3673,6 +3535,7 @@ ${lastMsgText}`;
                 onClick={() => {
                   setHeroBgType("video");
                   localStorage.setItem("prama_hero_bg_type", "video");
+                  changeBgTypeInFirestore("video");
                 }}
                 className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition duration-200 cursor-pointer ${
                   heroBgType === "video"
@@ -3688,6 +3551,7 @@ ${lastMsgText}`;
                 onClick={() => {
                   setHeroBgType("image");
                   localStorage.setItem("prama_hero_bg_type", "image");
+                  changeBgTypeInFirestore("image");
                 }}
                 className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition duration-200 cursor-pointer ${
                   heroBgType === "image"
@@ -3698,6 +3562,62 @@ ${lastMsgText}`;
                 <Image className="h-4 w-4 shrink-0" />
                 <span>Foto Latar Belakang</span>
               </button>
+
+              <div className="border-t border-white/10 my-1.5" />
+
+              <span className="text-[9px] uppercase font-mono font-black tracking-widest text-slate-400 px-2.5 py-1 select-none">
+                {heroBgType === "video" ? "KELOLA VIDEO MANUAL" : "KELOLA FOTO MANUAL"}
+              </span>
+
+              {heroBgType === "video" ? (
+                <div className="px-1 py-1 space-y-1.5">
+                  <label className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-755 text-white transition active:scale-95 cursor-pointer border border-white/10">
+                    <Upload className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
+                    <span>Pilih Manual (.MP4)</span>
+                    <input
+                      type="file"
+                      id="lobby-video-manual-upload-1"
+                      accept="video/mp4,video/x-m4v,video/*"
+                      onChange={handleVideoUpload}
+                      className="hidden"
+                    />
+                  </label>
+                  {customVideoUrl && (
+                    <button
+                      type="button"
+                      onClick={handleResetVideo}
+                      className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold bg-red-950/40 hover:bg-red-900/60 text-red-350 transition cursor-pointer border border-red-900/40"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                      <span>Kembalikan Default</span>
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="px-1 py-1 space-y-1.5">
+                  <label className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-755 text-white transition active:scale-95 cursor-pointer border border-white/10">
+                    <Upload className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
+                    <span>Pilih Manual (.JPG)</span>
+                    <input
+                      type="file"
+                      id="lobby-image-manual-upload-1"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                  </label>
+                  {customImageUrl && (
+                    <button
+                      type="button"
+                      onClick={handleResetImage}
+                      className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold bg-red-950/40 hover:bg-red-900/60 text-red-350 transition cursor-pointer border border-red-900/40"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                      <span>Kembalikan Default</span>
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -3732,6 +3652,7 @@ ${lastMsgText}`;
           {heroBgType === "video" ? (
             <video 
               ref={authVideoRef}
+              src={videoSrc}
               autoPlay 
               muted 
               loop 
@@ -3741,15 +3662,13 @@ ${lastMsgText}`;
               referrerPolicy="no-referrer"
               className="w-full h-full object-cover scale-[1.08] origin-center"
               onError={() => {
-                const fallbackUrl = "/PixVerse_V6_Extend_540P_buat_video_lebih_panja (1).mp4";
+                const fallbackUrl = "/custom-video.mp4";
                 if (videoSrc !== fallbackUrl) {
                   console.warn("Setting fallback video stream on error for auth background...");
                   setVideoSrc(fallbackUrl);
                 }
               }}
-            >
-              <source src={videoSrc} type="video/mp4" />
-            </video>
+            />
           ) : (
             slideshowImages.map((src, idx) => (
               <img 
@@ -3791,7 +3710,7 @@ ${lastMsgText}`;
             <Settings className={`h-4 w-4 ${showHeroBgSettingsDropdown ? 'animate-spin-[duration:10s] text-emerald-400' : ''}`} />
           </button>
           {showHeroBgSettingsDropdown && (
-            <div className="absolute top-12 right-0 w-52 p-2 rounded-2xl bg-slate-950/90 backdrop-blur-md border border-white/15 shadow-2xl flex flex-col gap-1 z-[99999] text-left animate-fade-in">
+            <div className="absolute top-12 right-0 w-56 p-2.5 rounded-2xl bg-slate-950/95 backdrop-blur-md border border-white/15 shadow-2xl flex flex-col gap-1 z-[99999] text-left animate-fade-in font-sans">
               <span className="text-[9px] uppercase font-mono font-black tracking-widest text-slate-400 px-2.5 py-1.5 select-none">
                 PILIHAN LATAR BELAKANG
               </span>
@@ -3827,6 +3746,62 @@ ${lastMsgText}`;
                 <Image className="h-4 w-4 shrink-0" />
                 <span>Foto Latar Belakang</span>
               </button>
+
+              <div className="border-t border-white/10 my-1.5" />
+
+              <span className="text-[9px] uppercase font-mono font-black tracking-widest text-slate-400 px-2.5 py-1 select-none">
+                {heroBgType === "video" ? "KELOLA VIDEO MANUAL" : "KELOLA FOTO MANUAL"}
+              </span>
+
+              {heroBgType === "video" ? (
+                <div className="px-1 py-1 space-y-1.5">
+                  <label className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-755 text-white transition active:scale-95 cursor-pointer border border-white/10">
+                    <Upload className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
+                    <span>Pilih Manual (.MP4)</span>
+                    <input
+                      type="file"
+                      id="lobby-video-manual-upload-2"
+                      accept="video/mp4,video/x-m4v,video/*"
+                      onChange={handleVideoUpload}
+                      className="hidden"
+                    />
+                  </label>
+                  {customVideoUrl && (
+                    <button
+                      type="button"
+                      onClick={handleResetVideo}
+                      className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold bg-red-950/40 hover:bg-red-900/60 text-red-350 transition cursor-pointer border border-red-900/40"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                      <span>Kembalikan Default</span>
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="px-1 py-1 space-y-1.5">
+                  <label className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-755 text-white transition active:scale-95 cursor-pointer border border-white/10">
+                    <Upload className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
+                    <span>Pilih Manual (.JPG)</span>
+                    <input
+                      type="file"
+                      id="lobby-image-manual-upload-2"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                  </label>
+                  {customImageUrl && (
+                    <button
+                      type="button"
+                      onClick={handleResetImage}
+                      className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold bg-red-950/40 hover:bg-red-900/60 text-red-350 transition cursor-pointer border border-red-900/40"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                      <span>Kembalikan Default</span>
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>

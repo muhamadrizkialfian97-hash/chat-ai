@@ -711,76 +711,172 @@ export async function exportAllSectionsToPPTX(projectTitle: string, sectionsMap:
   await pptx.writeFile({ fileName: sanitizedFilename });
 }
 
-export function generatePillarsForProject(projectName: string): Record<number, string> {
+export function generatePillarsForProject(projectName: string, fileContent?: string): Record<number, string> {
   const pName = projectName.trim();
   const lower = pName.toLowerCase();
+
+  // Deterministic seed based on project name to make calculations completely unique per project
+  let seed = 0;
+  for (let i = 0; i < pName.length; i++) {
+    seed = (seed << 5) - seed + pName.charCodeAt(i);
+    seed |= 0;
+  }
+  seed = Math.abs(seed);
+
+  // Default values based on seed hash
+  const defaultUnitsCount = 6 + (seed % 14);
+  const unitTypes = [
+    "Unit Truk Tronton Wingbox Multi-Axle",
+    "Unit Tipper Dump Truck Heavy-Duty (6x4)",
+    "Unit Reefer Box Truck ThermoKing ber-GPS",
+    "Unit Prime Mover Tractor Head Flatbed Chasis",
+    "Unit Bulk Tanker Trailer (Tangki Baja)",
+    "Unit CPO Tanker Truck Stainless Steel"
+  ];
+  const selectedUnitType = unitTypes[seed % unitTypes.length];
+  let unitsText = `${defaultUnitsCount} ${selectedUnitType}`;
+
+  const defaultCapexVal = (seed % 28 + 6) * 500000000; // 3M to 17M
+  const defaultOpexVal = (seed % 35 + 8) * 12500000; // 100M to 500M
+  
+  const defaultTamIDR = (seed % 9 + 3) * 1200000000000; // 3.6T to 13.2T
+  const defaultSamIDR = Math.round(defaultTamIDR * (0.15 + (seed % 20) / 100));
+  const defaultSomIDR = Math.round(defaultSamIDR * (0.1 + (seed % 15) / 100));
+
+  const defaultCacIDR = (seed % 45 + 15) * 1000000; // 15M to 60M
+  const defaultLtvIDR = defaultCacIDR * (seed % 12 + 8); // LTV range 8x to 19x
+
+  const defaultPbp = (2.2 + (seed % 25) / 10).toFixed(1); // 2.2 to 4.7 years
+  const defaultRoi = (28.5 + (seed % 180) / 10).toFixed(1); // 28.5% to 46.5%
+  const defaultIrr = (20.5 + (seed % 130) / 10).toFixed(1); // 20.5% to 33.5%
 
   // Determine industry type and thematic vocabulary
   let industry = "logistik & transportasi terintegrasi";
   let regulations = "**UU No. 22 Tahun 2009** tentang Lalu Lintas Angkutan Jalan dan regulasi sektoral terkait";
   let materialName = "kargo komersial";
-  let capexAmount = "12.500.000.000";
-  let opexAmount = "380.000.000";
-  let unitsText = "10 Unit Truk Tronton / Wingbox Multi-Axle";
+  let capexAmount = defaultCapexVal.toString();
+  let opexAmount = defaultOpexVal.toString();
   let extraDetail1 = "Pengangkutan kargo industri dengan jaminan SLA ketat.";
   let extraDetail2 = "Pengoptimalan jalur distribusi utama antar-wilayah.";
-  let capValue = "TAM: Rp 3.2 Triliun, SAM: Rp 850 Miliar, SOM: Rp 120 Miliar";
 
+  const getSizingText = (val: number) => {
+    if (val >= 1000000000000) return `Rp ${(val / 1000000000000).toFixed(1)} Triliun`;
+    return `Rp ${(val / 1000000000).toFixed(0)} Miliar`;
+  };
+
+  let tamFormatted = getSizingText(defaultTamIDR);
+  let samFormatted = getSizingText(defaultSamIDR);
+  let somFormatted = getSizingText(defaultSomIDR);
+  let cacFormatted = `Rp ${defaultCacIDR.toLocaleString("id-ID")}`;
+  let ltvFormatted = `Rp ${defaultLtvIDR.toLocaleString("id-ID")}`;
+  let ratioValue = (defaultLtvIDR / defaultCacIDR).toFixed(1);
+
+  // Custom-crafted industries
   if (lower.includes("batubara") || lower.includes("coal") || lower.includes("tambang") || lower.includes("mineral") || lower.includes("batu bara")) {
     industry = "distribusi mineral & tambang curah (Heavy-Duty Hauling)";
     regulations = "**UU No. 3 Tahun 2020** tentang Pertambangan Mineral dan Batubara, serta regulasi ESDM & ODOL";
     materialName = "batubara curah kering";
-    capexAmount = "19.500.000.000";
-    opexAmount = "680.000.000";
-    unitsText = "15 Unit Tipper Truck Heavy Duty (Volvo / Scania 6x4)";
     extraDetail1 = "Sistem pengangkutan khusus hauling dari mulut tambang batubara (stockpile) menuju dermaga penumpukan (jetty).";
     extraDetail2 = "Fasilitas keselamatan K3 pertambangan tinggi, penyiraman rute hauling, dan rest-area driver terintegrasi.";
-    capValue = "TAM: Rp 4.5 Triliun, SAM: Rp 1.2 Triliun, SOM: Rp 280 Miliar";
   } else if (lower.includes("dingin") || lower.includes("cold") || lower.includes("farmasi") || lower.includes("vaksin") || lower.includes("makanan") || lower.includes("boga") || lower.includes("fresh") || lower.includes("reefer")) {
     industry = "transportasi rantai dingin (Cold Chain & Temperature Controlled Logistics)";
     regulations = "**Sertifikasi CDOB BPOM** (Cara Distribusi Obat yang Baik) serta regulasi sistem mutu **ISO 9001**";
     materialName = "vaksin sensitif suhu & produk boga beku";
-    capexAmount = "7.500.000.000";
-    opexAmount = "195.000.000";
-    unitsText = "8 Unit Reefer Truck ThermoKing 6-Wheeler ber-GPS";
     extraDetail1 = "Instalasi sensor Thermo-Cloud IoT untuk pemantauan grafik fluktuasi suhu boks reefer setiap 5 menit.";
     extraDetail2 = "SOP ketat pengiriman dengan batas deviasi suhu boks maksimal ±2°C sepanjang koridor transit Jawa-Bali.";
-    capValue = "TAM: Rp 2.8 Triliun, SAM: Rp 820 Miliar, SOM: Rp 160 Miliar";
   } else if (lower.includes("pelabuhan") || lower.includes("port") || lower.includes("kontainer") || lower.includes("container") || lower.includes("laut") || lower.includes("ocean")) {
     industry = "intermodal & logistics hub pelabuhan komersial (Port & Sea Freight)";
     regulations = "**UU No. 17 Tahun 2008** tentang Pelayaran serta aturan kepabeanan & ISPS Code internasional";
     materialName = "petikemas kontainer ekspor-impor";
-    capexAmount = "15.400.000.000";
-    opexAmount = "450.000.000";
-    unitsText = "12 Unit Prime Mover Tractor Head dengan sasis flatbed multi-axle";
     extraDetail1 = "Pengaturan jadwal armada sinkron dengan waktu sandar kapal cargo pelayaran laut (*vessel closing time*).";
     extraDetail2 = "Integrasi depo kontainer pintar, inspeksi pintu segel penimbang, dan manajemen turn-around-time dermaga.";
-    capValue = "TAM: Rp 6.1 Triliun, SAM: Rp 2.2 Triliun, SOM: Rp 450 Miliar";
   } else if (lower.includes("semen") || lower.includes("cement") || lower.includes("clinker") || lower.includes("beton")) {
     industry = "logistik distribusi semen curah & clinker industri konstruksi";
     regulations = "**UU No. 22 Tahun 2009** serta Surat Edaran Kemenhub perihal batasan muatan sumbu terberat (MST) & Over Dimension Over Load (ODOL)";
     materialName = "semen curah kering & clinker";
-    capexAmount = "14.200.000.000";
-    opexAmount = "410.000.000";
-    unitsText = "10 Unit Bulk Cement Trailer (tangki baja tangguh)";
     extraDetail1 = "Penyaluran komoditas semen curah dari pabrik pengolahan semen menuju silo penampungan atau batching plant.";
     extraDetail2 = "Penggunaan blower kompresor berkinerja tinggi untuk kelancaran bongkar muat tanpa kontaminasi udara bebas.";
-    capValue = "TAM: Rp 3.8 Triliun, SAM: Rp 980 Miliar, SOM: Rp 190 Miliar";
+  } else if (lower.includes("pupuk") || lower.includes("fertilizer") || lower.includes("urea")) {
+    industry = "logistik distribusi pupuk pertanian & bahan kimia agroindustri";
+    regulations = "**PP No. 74 Tahun 2001** tentang Pengelolaan Bahan Berbahaya dan Beracun (B3) serta standardisasi sasis gandar Kemenhub";
+    materialName = "pupuk urea curah & amoniak cair";
+    extraDetail1 = "Pengangkutan pupuk kemasan bag dan bulk dari gudang pabrik menuju gudang lini III kabupaten.";
+    extraDetail2 = "SOP sirkulasi sasis tangki kedap udara guna meminimalisir kontaminasi kelembapan udara luar terhadap butir amoniak.";
+  } else if (lower.includes("cpo") || lower.includes("sawit") || lower.includes("palm oil") || lower.includes("minyak")) {
+    industry = "logistik Crude Palm Oil (CPO) & minyak nabati cair";
+    regulations = "**Sertifikasi ISPO** (Indonesian Sustainable Palm Oil) dan standar kebersihan sasis tangki Food Grade";
+    materialName = "minyak kelapa sawit kasar (CPO)";
+    extraDetail1 = "Rute hauling CPO dari pabrik kelapa sawit (PKS) lini tengah menuju depo penyimpanan pelabuhan (bulking station).";
+    extraDetail2 = "Instalasi katup pengaman anti-tumpah, pencuci tangki otomatis sasis (steam cleaner), dan pelacakan GPS suhu thermo.";
+  } else if (lower.includes("pasir") || lower.includes("quarry") || lower.includes("batu") || lower.includes("tanah") || lower.includes("galian")) {
+    industry = "logistik material galian tambang & infrastruktur sipil (Quarry Trucking)";
+    regulations = "**UU No. 3 Tahun 2020** serta Perda RTRW Kota/Kabupaten setempat mengenai izin jam lintasan kelas jalan";
+    materialName = "pasir cor, andesit, & batu agregat";
+    extraDetail1 = "Pengangkutan agregat konstruksi berdensitas tinggi dari titik penggalian menuju batching plant beton.";
+    extraDetail2 = "SOP wajib pemasangan terpal penutup bak tebal anti-debu dan pembersihan sasis unit scraper pembersih lumpur ban.";
+  } else if (lower.includes("gas") || lower.includes("lng") || lower.includes("lpg") || lower.includes("bensin") || lower.includes("solar")) {
+    industry = "logistik energi cair & gas terkompresi B3 spesifikasi tinggi";
+    regulations = "**Standar K3 Migas ESDM** dan UU No. 22 Tahun 2001 perihal izin distribusi angkutan bahan bakar umum nasional";
+    materialName = "BBM komanditer / gas cair terkompresi";
+    extraDetail1 = "Distribusi pasokan energi dari depo kilang pengolahan Pertamina menuju terminal SPBU atau tangki industri.";
+    extraDetail2 = "Unit wajib mengaplikasikan sistem pemutus arus listrik darurat, fire blanket sasis, dan sensor deteksi gas bocor otomatis.";
   }
 
-  // Calculate simulated P&L based on capex
-  const parsedOpex = Number(opexAmount.replace(/\./g, ""));
-  const monthlyRevenue = Math.round(parsedOpex * 1.85);
-  const revFormatted = monthlyRevenue.toLocaleString("id-ID");
-  const marginFormatted = Math.round(monthlyRevenue * 0.45).toLocaleString("id-ID");
-  const parsedCapex = Number(capexAmount.replace(/\./g, ""));
+  // File parser overrides if real content is provided!
+  if (fileContent) {
+    const capexMatch = fileContent.match(/(?:capex|investasi|capital\s*expenditure)\W*(?:idr|rp)?\s*([\d\.]+(?:\s*triliun|\s*miliar|\s*juta)?)/i);
+    if (capexMatch && capexMatch[1]) {
+      capexAmount = capexMatch[1].trim().replace(/\./g, "").replace(/\D/g, "");
+    }
+
+    const opexMatch = fileContent.match(/(?:opex|operasional|operational\s*expenditure)\W*(?:idr|rp)?\s*([\d\.]+(?:\s*triliun|\s*miliar|\s*juta)?)/i);
+    if (opexMatch && opexMatch[1]) {
+      opexAmount = opexMatch[1].trim().replace(/\./g, "").replace(/\D/g, "");
+    }
+
+    const tamMatch = fileContent.match(/(?:tam|total\s*addressable\s*market)\W*(?:idr|rp)?\s*([\d\.,]+(?:\s*triliun|\s*miliar|\s*juta|\s*t|\s*m)?)/i);
+    if (tamMatch && tamMatch[1]) tamFormatted = tamMatch[1].trim();
+
+    const samMatch = fileContent.match(/(?:sam|serviceable\s*addressable\s*market)\W*(?:idr|rp)?\s*([\d\.,]+(?:\s*triliun|\s*miliar|\s*juta|\s*t|\s*m)?)/i);
+    if (samMatch && samMatch[1]) samFormatted = samMatch[1].trim();
+
+    const somMatch = fileContent.match(/(?:som|serviceable\s*obtainable\s*market)\W*(?:idr|rp)?\s*([\d\.,]+(?:\s*triliun|\s*miliar|\s*juta|\s*t|\s*m)?)/i);
+    if (somMatch && somMatch[1]) somFormatted = somMatch[1].trim();
+
+    const cacMatch = fileContent.match(/(?:cac|customer\s*acquisition\s*cost)\W*(?:idr|rp)?\s*([\d\.,]+(?:\s*triliun|\s*miliar|\s*juta)?)/i);
+    if (cacMatch && cacMatch[1]) cacFormatted = cacMatch[1].trim();
+
+    const ltvMatch = fileContent.match(/(?:ltv|lifetime\s*value)\W*(?:idr|rp)?\s*([\d\.,]+(?:\s*triliun|\s*miliar|\s*juta)?)/i);
+    if (ltvMatch && ltvMatch[1]) ltvFormatted = ltvMatch[1].trim();
+
+    const indMatch = fileContent.match(/(?:industri|sektor|sector)\W*\s*([a-zA-Z0-9\s,&()-]{5,40})/i);
+    if (indMatch && indMatch[1]) industry = indMatch[1].trim();
+
+    const matMatch = fileContent.match(/(?:material|komoditas|kargo|barang|bawaan)\W*\s*([a-zA-Z0-9\s,&()-]{3,30})/i);
+    if (matMatch && matMatch[1]) materialName = matMatch[1].trim();
+
+    const untMatch = fileContent.match(/(?:armada|mobil|truk|units|unit)\W*(\d+\s*[a-zA-Z0-9\s-]+)/i);
+    if (untMatch && untMatch[1]) unitsText = untMatch[1].trim();
+  }
+
+  // Let's format numeric values
+  let numericCapex = Number(capexAmount);
+  if (isNaN(numericCapex) || numericCapex === 0) {
+    numericCapex = defaultCapexVal;
+  }
+  let numericOpex = Number(opexAmount);
+  if (isNaN(numericOpex) || numericOpex === 0) {
+    numericOpex = defaultOpexVal;
+  }
+
+  const monthlyRev = Math.round(numericOpex * 1.85);
 
   const pillars: Record<number, string> = {
     1: `### 1. Global / National (NAT) Overview\n\n**Kajian Regulasi & Kepatuhan Proyek:**\nKajian ini dirancang khusus untuk proyek **"${pName}"** dalam naungan ${industry}. Kepatuhan dijamin melalui penyelarasan penuh dengan regulasi nasional, khususnya ${regulations}.\n\n**Peluang Strategis untuk Pancaran Group:**\n* **Kepatuhan ESG Global:** Mengintegrasikan indikator keberlanjutan yang sejalan dengan dekarbonisasi rantai pasok untuk meningkatkan daya tawar di mata klien korporasi besar.\n* **Standardisasi Industri:** Menjadi penyedia transportasi berlisensi resmi yang handal di tengah regulasi pengawasan angkutan jalan yang kian diperketat pemerintah.`,
 
     2: `### 2. Market Opportunity\n\n**Analisis Kesenjangan & Ceruk Pasar Proyek:**\nProyek **"${pName}"** menyasar sektor logistik premium di mana terdapat gap atau kesenjangan besar antara transporter berlisensi standar dengan kebutuhan armada yang sangat andal.\n\n**Metode Eksploitasi Ceruk Pasar:**\n* **Sertifikasi Khusus:** Menyediakan lisensi operasional eksklusif untuk pengangkutan tipe ${materialName}.\n* **Dukungan Korporat:** Memosisikan Pancaran Group sebagai satu-satunya mitra strategis berskala nasional yang mampu memberikan jaminan keamanan berkas kargo bernilai tinggi secara konsisten.`,
 
-    3: `### 3. Financial (Capex, Opex, P&L, Cash Flow, ROI)\n\n**Analisis Kelayakan Finansial Proyek:**\n\nProyeksi arus kas dan pengembalian modal diestimasi secara cermat khusus untuk kajian **"${pName}"**:\n\n**A. Capital Expenditure (Capex):**\n* Pembelian Armada Baru (${unitsText}): **Rp ${parsedCapex.toLocaleString("id-ID")}**\n* Sistem IoT Telematika & Sertifikasi Awak: **Rp 350.000.000**\n* *Total Alokasi Investasi:* **Rp ${(parsedCapex + 350000000).toLocaleString("id-ID")}**\n\n**B. Operational Expenditure (Opex) Bulanan:**\n* BBM Industri, Biaya Tol, & Perawatan Rutin Sasis: **Rp ${parsedOpex.toLocaleString("id-ID")}**\n* Gaji & Premi Keselamatan Pengemudi: **Rp 60.000.000**\n* *Total Pengeluaran Rutin:* **Rp ${(parsedOpex + 60000000).toLocaleString("id-ID")} / Bulan**\n\n**C. Analisis Profitabilitas (P&L):**\n* Target Pendapatan Operasional: **Rp ${revFormatted} / Bulan**\n* Target Gross Margin (45%): **Rp ${marginFormatted} / Bulan**\n* **Payback Period (PBP):** **2.9 Tahun**\n* **Return on Investment (ROI):** **36.8%** (Tahun ke-3)\n* **Internal Rate of Return (IRR):** **27.4%**`,
+    3: `### 3. Financial (Capex, Opex, P&L, Cash Flow, ROI)\n\n**Analisis Kelayakan Finansial Proyek:**\n\nProyeksi arus kas dan pengembalian modal diestimasi secara cermat khusus untuk kajian **"${pName}"**:\n\n**A. Capital Expenditure (Capex):**\n* Pembelian Armada Baru (${unitsText}): **Rp ${numericCapex.toLocaleString("id-ID")}**\n* Sistem IoT Telematika & Sertifikasi Awak: **Rp 350.000.000**\n* *Total Alokasi Investasi:* **Rp ${(numericCapex + 350000000).toLocaleString("id-ID")}**\n\n**B. Operational Expenditure (Opex) Bulanan:**\n* BBM Industri, Biaya Tol, & Perawatan Rutin Sasis: **Rp ${numericOpex.toLocaleString("id-ID")}**\n* Gaji & Premi Keselamatan Pengemudi: **Rp 60.000.000**\n* *Total Pengeluaran Rutin:* **Rp ${(numericOpex + 60000000).toLocaleString("id-ID")} / Bulan**\n\n**C. Analisis Profitabilitas (P&L):**\n* Target Pendapatan Operasional: **Rp ${monthlyRev.toLocaleString("id-ID")} / Bulan**\n* Target Gross Margin (45%): **Rp ${Math.round(monthlyRev * 0.45).toLocaleString("id-ID")} / Bulan**\n* **Payback Period (PBP):** **${defaultPbp} Tahun**\n* **Return on Investment (ROI):** **${defaultRoi}%** (Tahun ke-3)\n* **Internal Rate of Return (IRR):** **${defaultIrr}%**`,
 
     4: `### 4. Supply & Demand\n\n**Analisis Dinamika Pasar Proyek:**\n\n* **Sisi Permintaan (Demand):** Volume pengangkutan untuk ${materialName} pada skala regional mengalami lonjakan karena bertumbuhnya aktivitas B2B di koridor operasional proyek **"${pName}"**.\n* **Sisi Penawaran (Supply):** Berdasarkan intelijen pasar, terdapat kelangkaan operator armada lokal yang memiliki sertifikasi kepatuhan dekarbonisasi penuh. Keadaan surplus permintaan ini menguntungkan posisi pricing power milik Pancaran Group.`,
 
@@ -800,9 +896,9 @@ export function generatePillarsForProject(projectName: string): Record<number, s
 
     12: `### 12. Competitor\n\n**Lansekap Kompetitif & Keunggulan Pesaing:**\n\n* **Kekuatan Kompetitor Regional:** Kebanyakan adalah operator konvensional skala kecil yang mengandalkan tarif murah namun mengabaikan komitmen perlindungan lingkungan.\n* **Keunggulan Kompetitif Pancaran Group:** Reputasi korporasi kokoh, kepemilikan sistem monitoring digital mandiri, jaminan ketersediaan armada cadangan, serta sertifikasi keselamatan kerja standar internasional.`,
 
-    13: `### 13. Market Sizing (TAM, SAM, SOM)\n\n**Estimasi Skala Pasar Sektor Terkait:**\n\n* **Total Addressable Market (TAM):** Rp 3.5 Triliun (potensi industri terkait skala nasional)\n* **Serviceable Addressable Market (SAM):** Rp 920 Miliar (permintaan pengangkutan spesifik di wilayah operasional koridor)\n* **Serviceable Obtainable Market (SOM):** Rp 180 Miliar (target perolehan kontrak tahunan realistis oleh unit Pancaran Group)`,
+    13: `### 13. Market Sizing (TAM, SAM, SOM)\n\n**Estimasi Skala Pasar Sektor Terkait:**\n\n* **Total Addressable Market (TAM):** ${tamFormatted} (potensi industri terkait skala nasional)\n* **Serviceable Addressable Market (SAM):** ${samFormatted} (permintaan pengangkutan spesifik di wilayah operasional koridor)\n* **Serviceable Obtainable Market (SOM):** ${somFormatted} (target perolehan kontrak tahunan realistis oleh unit Pancaran Group)`,
 
-    14: `### 14. Customer Acquisition Cost (CAC) & Lifetime Value (LTV)\n\n**Metrik Nilai Ekonomi Pelanggan:**\n\n* **Customer Acquisition Cost (CAC):** Rp 45.000.000 per korporasi (termasuk biaya proses negosiasi, analisis kelayakan, & adaptasi operasional rute awal).\n* **Customer Lifetime Value (LTV):** Rp 620.000.000 (bersandarkan retensi rata-rata kontrak berdurasi 3 tahun).\n* **Rasio LTV/CAC:** **13.7x** (Rasio sangat sehat dan sangat menguntungkan di atas rerata industri logistik).`
+    14: `### 14. Customer Acquisition Cost (CAC) & Lifetime Value (LTV)\n\n**Metrik Nilai Ekonomi Pelanggan:**\n\n* **Customer Acquisition Cost (CAC):** ${cacFormatted} per korporasi (termasuk biaya proses negosiasi, analisis kelayakan, & adaptasi operasional rute awal).\n* **Customer Lifetime Value (LTV):** ${ltvFormatted} (bersandarkan retensi rata-rata kontrak berdurasi 3 tahun).\n* **Rasio LTV/CAC:** **${ratioValue}x** (Rasio sangat sehat dan sangat menguntungkan di atas rerata industri logistik).`
   };
 
   return pillars;

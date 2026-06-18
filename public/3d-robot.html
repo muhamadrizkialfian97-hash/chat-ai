@@ -177,6 +177,13 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
     <script>
+        // --- EMBED / IFRAME DETECT & STYLING ---
+        const urlParams = new URLSearchParams(window.location.search);
+        const isEmbed = urlParams.get('embed') === 'true' || (window.self !== window.top);
+        if (isEmbed) {
+            document.write('<style>#header-panel, #btn-enter-portal, #iframe-controller-console { display: none !important; }</style>');
+        }
+
         // --- THREE.JS CONFIGURATION ---
         let scene, camera, renderer, controls;
         let robotGroup, headGroup, jawMesh, neckMesh, torsoMesh, leftEye, rightEye, earPodLeft, earPodRight;
@@ -336,16 +343,18 @@
             rightJoint.position.set(0.85, 0.45, 0);
             torsoMesh.add(rightJoint);
 
-            // Upper arms slightly sculpted
+            // Upper arms slightly sculpted (pivot shifted to shoulder joint for presentation style)
             const armGeo = new THREE.CylinderGeometry(0.14, 0.12, 0.6, 16);
+            armGeo.translate(0, -0.3, 0); // Translate geometry down to place origin at the top pivot
+            
             leftArmMesh = new THREE.Mesh(armGeo, robotWhiteMaterial);
-            leftArmMesh.position.set(-0.95, 0.15, 0.1);
+            leftArmMesh.position.set(-0.95, 0.45, 0.0);
             leftArmMesh.rotation.z = Math.PI / 12;
             leftArmMesh.rotation.x = -Math.PI / 18;
             torsoMesh.add(leftArmMesh);
 
             rightArmMesh = new THREE.Mesh(armGeo, robotWhiteMaterial);
-            rightArmMesh.position.set(0.95, 0.15, 0.1);
+            rightArmMesh.position.set(0.95, 0.45, 0.0);
             rightArmMesh.rotation.z = -Math.PI / 12;
             rightArmMesh.rotation.x = -Math.PI / 18;
             torsoMesh.add(rightArmMesh);
@@ -432,15 +441,15 @@
             chinGroup.add(chinMesh);
 
             // Mouth background slot (black plate)
-            const mouthBGGeo = new THREE.BoxGeometry(0.24, 0.06, 0.04);
+            const mouthBGGeo = new THREE.BoxGeometry(0.20, 0.05, 0.02);
             const mouthBG = new THREE.Mesh(mouthBGGeo, darkVisorMaterial);
-            mouthBG.position.set(0, 0.15, 0.41);
+            mouthBG.position.set(0, -0.10, 0.39);
             chinGroup.add(mouthBG);
 
             // Glowing blue neon mouth mesh
-            const mouthGeo = new THREE.BoxGeometry(0.20, 0.015, 0.05);
+            const mouthGeo = new THREE.BoxGeometry(0.16, 0.015, 0.02);
             mouthMesh = new THREE.Mesh(mouthGeo, blueEyeMaterial);
-            mouthMesh.position.set(0, 0.15, 0.42); // Sits slightly in front of the black plate
+            mouthMesh.position.set(0, -0.10, 0.40); // Sits slightly in front of the black plate
             chinGroup.add(mouthMesh);
 
             jawMesh = chinGroup;
@@ -529,14 +538,16 @@
                     mouthMesh.scale.set(mouthWidthScale, mouthOpenScale, 1.0);
                 }
 
-                // Energetic and expressive presentation gestures while speaking
+                // Energetic and expressive presentation gestures while speaking (with shoulder pivots)
                 if (leftArmMesh) {
-                    leftArmMesh.rotation.x = -Math.PI / 8 + Math.sin(time * 6.0) * 0.35;
-                    leftArmMesh.rotation.z = Math.PI / 9 + Math.cos(time * 4) * 0.18;
+                    leftArmMesh.rotation.x = -Math.PI / 4 + Math.sin(time * 3.5) * 0.35 + (syllableIntensity * 0.15);
+                    leftArmMesh.rotation.z = Math.PI / 6 + Math.cos(time * 2.5) * 0.12;
+                    leftArmMesh.rotation.y = Math.sin(time * 1.8) * 0.15;
                 }
                 if (rightArmMesh) {
-                    rightArmMesh.rotation.x = -Math.PI / 8 + Math.sin(time * 5.2 + 1.2) * 0.40;
-                    rightArmMesh.rotation.z = -Math.PI / 9 + Math.cos(time * 3.5 + 0.6) * 0.20;
+                    rightArmMesh.rotation.x = -Math.PI / 4 + Math.sin(time * 3.1 + 1.2) * 0.40 + (syllableIntensity * 0.18);
+                    rightArmMesh.rotation.z = -Math.PI / 6 + Math.cos(time * 2.2 + 0.6) * 0.12;
+                    rightArmMesh.rotation.y = Math.cos(time * 1.5) * 0.15;
                 }
             }
 

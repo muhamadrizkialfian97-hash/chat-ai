@@ -932,7 +932,7 @@ export default function App() {
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRightPilar, setSelectedRightPilar] = useState<number | null>(null);
-  const [isRightPillarPanelOpen, setIsRightPillarPanelOpen] = useState(true);
+  const [isRightPillarPanelOpen, setIsRightPillarPanelOpen] = useState(false);
   const [searchRightPilarQuery, setSearchRightPilarQuery] = useState("");
 
   // Popup states for project change/rehydration confirmation in Chat
@@ -6505,7 +6505,7 @@ ${lastMsgText}`;
                 <div className="w-full flex-grow relative overflow-hidden bg-slate-50">
                   <iframe
                     ref={robotIframeRef}
-                    src="/3d-robot.html"
+                    src="/3d-robot.html?embed=true"
                     title="PRAMA 3D Interactive Robot Panel"
                     className="w-full h-full border-none block"
                     style={{ width: "100%", height: "100%", display: "block" }}

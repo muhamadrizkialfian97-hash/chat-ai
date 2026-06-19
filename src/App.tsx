@@ -7177,18 +7177,7 @@ ${lastMsgText}`;
               onOpenRightPillarPanel={() => setIsRightPillarPanelOpen(true)}
             />
 
-            {/* Dynamic Floating indicator button for reopening the 14 pillars panel when minimized */}
-            {!isRightPillarPanelOpen && webDocPreview === "none" && !pptPreview && !articlePreview && (
-              <button
-                type="button"
-                onClick={() => setIsRightPillarPanelOpen(true)}
-                className="absolute top-4 right-14 z-30 flex h-9 items-center gap-1.5 px-3 rounded-xl bg-[#5B4DFB] hover:bg-[#4a3ce0] text-white text-[10.5px] font-black shadow-lg cursor-pointer transition border border-indigo-400 select-none"
-                title="Buka 14 Pilar Strategis"
-              >
-                <Sparkles className="h-3.5 w-3.5 text-white animate-pulse" />
-                <span>Lihat 14 Pilar</span>
-              </button>
-            )}
+            {/* Dynamic Floating indicator button removed as requested by user */}
           </div>
 
           {/* Column 2: 14 Pillars Interactive Right Panel */}
@@ -7999,19 +7988,41 @@ ${lastMsgText}`;
                     })()
                   ) : activeSlideIndex === pptPreview.slides.length + 1 ? (
                     // THANK YOU / PENUTUP SLIDE STYLE (MATCHES SLIDE 17)
-                    <div className="flex-1 flex flex-col justify-center items-center bg-[#06152B] p-8 sm:p-12 text-center select-none relative">
+                    <div className="flex-1 flex flex-col justify-center items-center bg-[#06152B] p-8 sm:p-12 text-center select-none relative w-full h-full overflow-hidden">
+                      {/* 1. Portal Illustration Background */}
+                      <div className="absolute inset-0 w-full h-full overflow-hidden select-none z-0">
+                        <img 
+                          src="/pancaran_illustration.jpg" 
+                          alt="Pancaran Group Logistics Illustration" 
+                          referrerPolicy="no-referrer"
+                          className="w-full h-full object-cover origin-center z-0 scale-[1.00]"
+                        />
+                        {/* Elegant dark overlay to ensure excellent readability of the white/green text */}
+                        <div className="absolute inset-0 bg-slate-950/75 backdrop-blur-[1px]" />
+                      </div>
+
                       {/* Vibrant Green Border */}
-                      <div className="absolute inset-3 border border-[#00D285] pointer-events-none rounded-sm" />
+                      <div className="absolute inset-3 border border-[#00D285] pointer-events-none rounded-sm z-10" />
                       
-                      <h1 className="text-white text-3xl sm:text-5xl font-black tracking-widest leading-none mb-3 animate-pulse">
+                      {/* Logo also displayed on the penutup screen for brand consistency and ultimate perfection */}
+                      <div className="z-20 mb-4 sm:mb-6">
+                        <img 
+                          src={pramaLogo} 
+                          alt="PT Pancaran Group Logo" 
+                          className="h-8 sm:h-12 w-auto object-contain mx-auto"
+                          referrerPolicy="no-referrer"
+                        />
+                      </div>
+
+                      <h1 className="text-white text-3xl sm:text-5xl font-black tracking-widest leading-none mb-3 animate-pulse z-20 drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]">
                         TERIMA KASIH
                       </h1>
                       
-                      <h3 className="text-[#00D285] font-mono font-bold text-xs sm:text-sm uppercase tracking-wide mb-6 sm:mb-8">
+                      <h3 className="text-[#00D285] font-mono font-bold text-xs sm:text-sm uppercase tracking-wider mb-6 sm:mb-8 z-20 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
                         Sistem Dokumentasi Strategis & Operasional Terintegrasi
                       </h3>
                       
-                      <div className="mt-4 sm:mt-6 text-slate-400 font-mono text-[9px] sm:text-xs tracking-wide leading-relaxed">
+                      <div className="mt-4 sm:mt-6 text-slate-300 font-mono text-[9px] sm:text-xs tracking-wide leading-relaxed z-20 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                         <div>✦ Diformulasikan secara otomatis oleh PRAMA Strategic AI Advisor</div>
                         <div className="text-[#00D285] font-semibold mt-1">PT PANCARAN GROUP INDONESIA • RAHASIA INTERNAL SENSITIF</div>
                       </div>

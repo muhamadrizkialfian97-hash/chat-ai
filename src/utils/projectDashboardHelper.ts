@@ -714,11 +714,41 @@ export async function exportAllSectionsToPPTX(projectTitle: string, sectionsMap:
 
   // --- SLIDE 16: Closing Thank You Slide ---
   const closingSlide = pptx.addSlide();
-  closingSlide.background = { color: "0F172A" };
+  
+  // Set background to the Pancaran Group Illustration for maximum visual brand impact
+  let closingBgPathPrj = "/pancaran_illustration.jpg";
+  if (typeof window !== "undefined" && window.location) {
+    closingBgPathPrj = window.location.origin + closingBgPathPrj;
+  }
+  closingSlide.background = { path: closingBgPathPrj };
+
+  // Semi-transparent dark overlay rectangle to guarantee pristine contrast and legibility
+  closingSlide.addShape("rect", {
+    x: 0.0,
+    y: 0.0,
+    w: 13.33,
+    h: 7.5,
+    fill: { color: "06152B", transparency: 75 }
+  });
+
   closingSlide.addShape("rect", {
     x: 0.1, y: 0.1, w: 13.13, h: 0.2,
     fill: { color: "00D285" }
   });
+
+  // Center corporate logo above title
+  try {
+    closingSlide.addImage({
+      path: "https://lh3.googleusercontent.com/d/1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X",
+      x: 5.415,
+      y: 0.9,
+      w: 2.5,
+      h: 0.8
+    });
+  } catch (err) {
+    console.error("Failed to add corporate logo to projectDashboard closing slide:", err);
+  }
+
   closingSlide.addText("TERIMA KASIH", {
     x: 1.0, y: 2.2, w: 11.3, h: 1.0,
     fontSize: 48, fontFace: "Arial Black", color: "FFFFFF", align: "center"

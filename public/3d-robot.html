@@ -320,52 +320,61 @@
             torsoMesh.receiveShadow = true;
             robotGroup.add(torsoMesh);
 
-            // Chest screen overlay or power core
-            const chestCoreGeo = new THREE.CylinderGeometry(0.32, 0.32, 0.1, 16);
+            // Chest screen overlay or power core (moved lower to y = -0.22 as sub-element)
+            const chestCoreGeo = new THREE.CylinderGeometry(0.24, 0.24, 0.08, 16);
             const chestCoreMesh = new THREE.Mesh(chestCoreGeo, darkVisorMaterial);
             chestCoreMesh.rotation.x = Math.PI / 2;
-            chestCoreMesh.position.set(0, 0.2, 0.45);
+            chestCoreMesh.position.set(0, -0.22, 0.45);
             torsoMesh.add(chestCoreMesh);
 
-            const coreGlowGeo = new THREE.CylinderGeometry(0.24, 0.24, 0.05, 16);
+            const coreGlowGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.04, 16);
             const coreGlowMesh = new THREE.Mesh(coreGlowGeo, blueEyeMaterial);
             coreGlowMesh.rotation.x = Math.PI / 2;
-            coreGlowMesh.position.set(0, 0.2, 0.49);
+            coreGlowMesh.position.set(0, -0.22, 0.48);
             torsoMesh.add(coreGlowMesh);
 
-            // Torso Logo Badge Backing (very professional, tech-looking, secure framing)
-            const badgeBackingGeo = new THREE.BoxGeometry(0.50, 0.24, 0.04);
+            // Torso Logo Badge Backing (very professional, tech-looking, secure framing - positioned higher up at y = 0.20)
+            const badgeBackingGeo = new THREE.BoxGeometry(0.70, 0.32, 0.04);
             const badgeBackingMat = new THREE.MeshStandardMaterial({
-                color: 0x0f172a, // dark slate
-                roughness: 0.2,
-                metalness: 0.8
+                color: 0x1e293b, // elegant dark slate
+                roughness: 0.15,
+                metalness: 0.85
             });
             const badgeBacking = new THREE.Mesh(badgeBackingGeo, badgeBackingMat);
-            badgeBacking.position.set(0, -0.22, 0.50);
+            badgeBacking.position.set(0, 0.20, 0.50);
             badgeBacking.rotation.x = -Math.PI / 36; // match torso taper
             torsoMesh.add(badgeBacking);
 
             // Green neon glowing border around torso badge
-            const badgeBorderGeo = new THREE.BoxGeometry(0.52, 0.26, 0.02);
+            const badgeBorderGeo = new THREE.BoxGeometry(0.72, 0.34, 0.02);
             const badgeBorderMat = new THREE.MeshBasicMaterial({ color: 0x00d285 });
             const badgeBorder = new THREE.Mesh(badgeBorderGeo, badgeBorderMat);
-            badgeBorder.position.set(0, -0.22, 0.49);
+            badgeBorder.position.set(0, 0.20, 0.49);
             badgeBorder.rotation.x = -Math.PI / 36;
             torsoMesh.add(badgeBorder);
 
-            // Pancaran Group Logo Plate
+            // Pancaran Group Logo Plate - Large, high-resolution, extreme sharpness and clarity
             try {
                 const logoLoader = new THREE.TextureLoader();
                 logoLoader.setCrossOrigin('anonymous');
                 logoLoader.load('https://lh3.googleusercontent.com/d/1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X', function(texture) {
-                    const logoPlateGeo = new THREE.PlaneGeometry(0.44, 0.18);
+                    // Max anisotropy filtering for crystal-clear texture rendering on angles
+                    texture.anisotropy = renderer && renderer.capabilities ? renderer.capabilities.getMaxAnisotropy() : 16;
+                    texture.minFilter = THREE.LinearMipmapLinearFilter;
+                    texture.magFilter = THREE.LinearFilter;
+                    texture.generateMipmaps = true;
+                    texture.encoding = THREE.sRGBEncoding;
+
+                    const logoPlateGeo = new THREE.PlaneGeometry(0.62, 0.26);
                     const logoPlateMat = new THREE.MeshBasicMaterial({
                         map: texture,
                         transparent: true,
-                        side: THREE.DoubleSide
+                        side: THREE.DoubleSide,
+                        alphaTest: 0.01,
+                        depthWrite: true
                     });
                     const logoPlateMesh = new THREE.Mesh(logoPlateGeo, logoPlateMat);
-                    logoPlateMesh.position.set(0, -0.22, 0.525);
+                    logoPlateMesh.position.set(0, 0.20, 0.525);
                     logoPlateMesh.rotation.x = -Math.PI / 36;
                     torsoMesh.add(logoPlateMesh);
                 }, undefined, function(err) {

@@ -2087,7 +2087,22 @@ export async function exportToPPTX(
 
   // 6. Last Slide (Slide 17) - Elegant Dark Theme "TERIMA KASIH"
   const closingSlide = pptx.addSlide();
-  closingSlide.background = { color: "06152B" }; // Deep Navy
+  
+  // Set background to the Pancaran Group Illustration for maximum visual brand impact
+  let closingBgPath = "/pancaran_illustration.jpg";
+  if (typeof window !== "undefined" && window.location) {
+    closingBgPath = window.location.origin + closingBgPath;
+  }
+  closingSlide.background = { path: closingBgPath };
+
+  // Semi-transparent dark overlay rectangle to guarantee pristine contrast and legibility
+  closingSlide.addShape("rect", {
+    x: 0.0,
+    y: 0.0,
+    w: 13.33,
+    h: 7.5,
+    fill: { color: "06152B", transparency: 75 }
+  });
 
   // Outer green border rectangle
   closingSlide.addShape("rect", {
@@ -2098,6 +2113,19 @@ export async function exportToPPTX(
     // Omit fill to keep the shape outline transparent/unfilled
     line: { color: "00D285", width: 1.5 }
   });
+
+  // Center corporate logo above title
+  try {
+    closingSlide.addImage({
+      path: "https://lh3.googleusercontent.com/d/1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X",
+      x: 5.415,
+      y: 0.9,
+      w: 2.5,
+      h: 0.8
+    });
+  } catch (err) {
+    console.error("Failed to add corporate logo to closing PPTX:", err);
+  }
 
   // Thank You text
   closingSlide.addText("TERIMA KASIH", {

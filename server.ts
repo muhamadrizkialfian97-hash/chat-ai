@@ -470,6 +470,25 @@ app.get("/api/proxy-file", async (req, res) => {
   }
 });
 
+// Dedicated secure endpoint to proxy the Pancaran Group corporate logo for Three.js without CORS restrictions
+app.get("/api/logo-pancaran", async (req, res) => {
+  try {
+    const driveUrl = "https://lh3.googleusercontent.com/d/1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X";
+    const response = await fetchImageWithRetry(driveUrl);
+    const contentType = response.headers.get("content-type") || "image/png";
+    res.setHeader("Content-Type", contentType);
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Cache-Control", "public, max-age=86400"); // Cache for 1 day
+    
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    res.send(buffer);
+  } catch (err: any) {
+    console.error("Critical logo proxy failure:", err.message);
+    res.status(500).send("Failed to proxy client corporate logo correctly.");
+  }
+});
+
 // REST endpoint to proxy raw binary stream of external images
 app.get("/api/proxy-image-raw", async (req, res) => {
   try {

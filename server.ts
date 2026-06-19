@@ -434,6 +434,42 @@ app.get("/api/proxy-image", async (req, res) => {
   }
 });
 
+// REST endpoint to proxy Firebase Storage files to bypass CORS issues in browser fetches
+app.get("/api/proxy-file", async (req, res) => {
+  try {
+    const fileUrl = req.query.url;
+    if (!fileUrl || typeof fileUrl !== "string") {
+      res.status(400).json({ error: "URL query parameter is required." });
+      return;
+    }
+
+    // Security check - restrict to Firebase Storage only
+    const isAllowed = fileUrl.startsWith("https://firebasestorage.googleapis.com/") || 
+                      fileUrl.startsWith("https://linear-honor-cb34d.firebasestorage.app/");
+    if (!isAllowed) {
+      res.status(400).json({ error: "Only Firebase Storage URLs are allowed to be proxied." });
+      return;
+    }
+
+    const response = await fetch(fileUrl);
+    if (!response.ok) {
+      res.status(response.status).json({ error: `Failed to fetch file from remote: ${response.statusText}` });
+      return;
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const contentType = response.headers.get("content-type") || "application/octet-stream";
+
+    res.setHeader("Content-Type", contentType);
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.send(buffer);
+  } catch (err: any) {
+    console.error("Proxy file error:", err.message);
+    res.status(500).json({ error: `Failed to proxy file: ${err.message}` });
+  }
+});
+
 // REST endpoint to proxy raw binary stream of external images
 app.get("/api/proxy-image-raw", async (req, res) => {
   try {

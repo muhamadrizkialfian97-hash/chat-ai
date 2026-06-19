@@ -1767,9 +1767,24 @@ export async function exportToPPTX(
     .replace(/\s+/g, " ")
     .trim();
 
-  // 4. Cover Slide (Slide 1) - Elegant Deep Navy & Vibrant Green Border Theme
+  // 4. Cover Slide (Slide 1) - Elegant Portal Illustration Theme
   const openingSlide = pptx.addSlide();
-  openingSlide.background = { color: "06152B" }; // Deep Navy
+  
+  // Set background to the Pancaran Group Illustration
+  let bgPath = "/pancaran_illustration.jpg";
+  if (typeof window !== "undefined" && window.location) {
+    bgPath = window.location.origin + bgPath;
+  }
+  openingSlide.background = { path: bgPath };
+
+  // Semi-transparent dark overlay rectangle for perfect text contrast
+  openingSlide.addShape("rect", {
+    x: 0.0,
+    y: 0.0,
+    w: 13.33,
+    h: 7.5,
+    fill: { color: "06152B", transparency: 45 }
+  });
 
   // Outer green border rectangle
   openingSlide.addShape("rect", {
@@ -1786,7 +1801,7 @@ export async function exportToPPTX(
   openingSlide.addText(`✦ PRAMA COGNITIVE PORTAL • ${cleanDisplayTitle.toUpperCase()}`, {
     x: 0.8,
     y: 0.7,
-    w: 11.73,
+    w: 8.5,
     h: 0.4,
     fontSize: 11,
     bold: true,
@@ -1794,6 +1809,18 @@ export async function exportToPPTX(
     fontFace: "Arial"
   });
 
+  // Corporate logo on the top right
+  try {
+    openingSlide.addImage({
+      path: "https://lh3.googleusercontent.com/d/1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X",
+      x: 10.0,
+      y: 0.5,
+      w: 2.5,
+      h: 0.8
+    });
+  } catch (err) {
+    console.error("Failed to add corporate logo to PPTX:", err);
+  }
   // Large centered/left main cover title
   openingSlide.addText(`KAJIAN STRATEGIS KOMPREHENSIF:\n${cleanDisplayTitle.toUpperCase()}`, {
     x: 0.8,

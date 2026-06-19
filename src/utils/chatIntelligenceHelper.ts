@@ -461,7 +461,22 @@ export async function exportChatBIToPPTX(state: ChatIntelligenceState) {
 
   // --- SLIDE 1: Cover Slide ---
   const slide1 = pptx.addSlide();
-  slide1.background = { color: "0F172A" }; // Deep slate/black theme
+  
+  // Set background to the Pancaran Group Illustration
+  let bgPath = "/pancaran_illustration.jpg";
+  if (typeof window !== "undefined" && window.location) {
+    bgPath = window.location.origin + bgPath;
+  }
+  slide1.background = { path: bgPath };
+
+  // Semi-transparent dark overlay rectangle for perfect text contrast
+  slide1.addShape("rect", {
+    x: 0.0,
+    y: 0.0,
+    w: 13.33,
+    h: 7.5,
+    fill: { color: "0F172A", transparency: 45 }
+  });
   
   // Left side bright green vertical lines
   slide1.addShape("rect", {
@@ -469,8 +484,21 @@ export async function exportChatBIToPPTX(state: ChatIntelligenceState) {
     fill: { color: "00D285" }
   });
 
+  // Corporate logo on the top right
+  try {
+    slide1.addImage({
+      path: "https://lh3.googleusercontent.com/d/1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X",
+      x: 10.0,
+      y: 0.5,
+      w: 2.5,
+      h: 0.8
+    });
+  } catch (err) {
+    console.error("Failed to add corporate logo to chatIntelligence PPTX:", err);
+  }
+
   slide1.addText("CHATS TO STRATEGIC BUSINESS INTELLIGENCE", {
-    x: 0.8, y: 1.8, w: 11.5, h: 0.5,
+    x: 0.8, y: 1.8, w: 9.0, h: 0.5,
     fontSize: 18, fontFace: "Calibri", color: "00D285", bold: true
   });
   slide1.addText(state.projectTitle.toUpperCase(), {

@@ -333,6 +333,48 @@
             coreGlowMesh.position.set(0, 0.2, 0.49);
             torsoMesh.add(coreGlowMesh);
 
+            // Torso Logo Badge Backing (very professional, tech-looking, secure framing)
+            const badgeBackingGeo = new THREE.BoxGeometry(0.50, 0.24, 0.04);
+            const badgeBackingMat = new THREE.MeshStandardMaterial({
+                color: 0x0f172a, // dark slate
+                roughness: 0.2,
+                metalness: 0.8
+            });
+            const badgeBacking = new THREE.Mesh(badgeBackingGeo, badgeBackingMat);
+            badgeBacking.position.set(0, -0.22, 0.50);
+            badgeBacking.rotation.x = -Math.PI / 36; // match torso taper
+            torsoMesh.add(badgeBacking);
+
+            // Green neon glowing border around torso badge
+            const badgeBorderGeo = new THREE.BoxGeometry(0.52, 0.26, 0.02);
+            const badgeBorderMat = new THREE.MeshBasicMaterial({ color: 0x00d285 });
+            const badgeBorder = new THREE.Mesh(badgeBorderGeo, badgeBorderMat);
+            badgeBorder.position.set(0, -0.22, 0.49);
+            badgeBorder.rotation.x = -Math.PI / 36;
+            torsoMesh.add(badgeBorder);
+
+            // Pancaran Group Logo Plate
+            try {
+                const logoLoader = new THREE.TextureLoader();
+                logoLoader.setCrossOrigin('anonymous');
+                logoLoader.load('https://lh3.googleusercontent.com/d/1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X', function(texture) {
+                    const logoPlateGeo = new THREE.PlaneGeometry(0.44, 0.18);
+                    const logoPlateMat = new THREE.MeshBasicMaterial({
+                        map: texture,
+                        transparent: true,
+                        side: THREE.DoubleSide
+                    });
+                    const logoPlateMesh = new THREE.Mesh(logoPlateGeo, logoPlateMat);
+                    logoPlateMesh.position.set(0, -0.22, 0.525);
+                    logoPlateMesh.rotation.x = -Math.PI / 36;
+                    torsoMesh.add(logoPlateMesh);
+                }, undefined, function(err) {
+                    console.error("Failed to load chest logo texture:", err);
+                });
+            } catch (e) {
+                console.error("Error creating chest logo:", e);
+            }
+
             // Mechanical Shoulder Joints
             const leftJointGeo = new THREE.SphereGeometry(0.2, 16, 16);
             const leftJoint = new THREE.Mesh(leftJointGeo, darkMetalMaterial);

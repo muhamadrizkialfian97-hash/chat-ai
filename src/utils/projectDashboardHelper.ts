@@ -566,16 +566,42 @@ export async function exportAllSectionsToPPTX(projectTitle: string, sectionsMap:
 
   // --- SLIDE 1: Cover Presentation ---
   const slide1 = pptx.addSlide();
-  // Charcoal full fluid background
-  slide1.background = { color: "0F172A" };
+  
+  // Set background to the Pancaran Group Illustration
+  let bgPath = "/pancaran_illustration.jpg";
+  if (typeof window !== "undefined" && window.location) {
+    bgPath = window.location.origin + bgPath;
+  }
+  slide1.background = { path: bgPath };
+
+  // Semi-transparent dark overlay rectangle for perfect text contrast
+  slide1.addShape("rect", {
+    x: 0.0,
+    y: 0.0,
+    w: 13.33,
+    h: 7.5,
+    fill: { color: "0F172A", transparency: 45 }
+  });
   // Visual accent green block
   slide1.addShape("rect", {
     x: 0.1, y: 0.1, w: 0.3, h: 7.3,
     fill: { color: "00D285" }
   });
+  // Corporate logo on the top right
+  try {
+    slide1.addImage({
+      path: "https://lh3.googleusercontent.com/d/1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X",
+      x: 10.0,
+      y: 0.5,
+      w: 2.5,
+      h: 0.8
+    });
+  } catch (err) {
+    console.error("Failed to add corporate logo to projectDashboard PPTX:", err);
+  }
   // Title text
   slide1.addText("KAJIAN STRATEGIS KOMPREHENSIF", {
-    x: 0.8, y: 1.8, w: 11.5, h: 0.5,
+    x: 0.8, y: 1.8, w: 9.0, h: 0.5,
     fontSize: 20, fontFace: "Calibri", color: "00D285", bold: true
   });
   slide1.addText("14 PILAR UTAMA ANALYSIS PROPOSAL & PM", {

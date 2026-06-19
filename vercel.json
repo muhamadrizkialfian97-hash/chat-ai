@@ -6,7 +6,7 @@
       "destination": "/api/chat"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!api/|.*\\.mp4|.*\\.mov|.*\\.webm|.*\\.png|.*\\.jpg|.*\\.jpeg|.*\\.gif|.*\\.svg|.*\\.webp|.*\\.ico|.*\\.html|.*\\.js|.*\\.css|.*\\.json|.*\\.docx|.*\\.doc|.*\\.pptx|.*\\.ppt|.*\\.xlsx|.*\\.xls|.*\\.pdf).*)",
       "destination": "/index.html"
     }
   ]

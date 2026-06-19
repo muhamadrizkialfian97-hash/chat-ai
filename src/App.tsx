@@ -357,8 +357,8 @@ export default function App() {
 
 
 
-  const [heroBgType, setHeroBgType] = useState<"video" | "image">(() => {
-    return (localStorage.getItem("prama_hero_bg_type") as "video" | "image") || "video";
+  const [heroBgType, setHeroBgType] = useState<"video" | "image" | "illustration">(() => {
+    return (localStorage.getItem("prama_hero_bg_type") as "video" | "image" | "illustration") || "illustration";
   });
 
   const [isBgSettingsCollapsed, setIsBgSettingsCollapsed] = useState<boolean>(true);
@@ -426,7 +426,7 @@ export default function App() {
         if (data.bgType) {
           setHeroBgType(data.bgType);
         } else {
-          setHeroBgType("video");
+          setHeroBgType("illustration");
         }
 
         if (data.videoUrl && data.videoUrl !== "/PixVerse_V6_Extend_540P_buat_video_lebih_panja (1).mp4" && data.videoUrl !== "/custom-video.mp4" && data.videoUrl !== "") {
@@ -444,9 +444,9 @@ export default function App() {
           setCustomImageUrl(null);
         }
       } else {
-        // Seed default in Firestore as "video" with intelligent default for maximum auto-consistency
+        // Seed default in Firestore as "illustration" with intelligent default for maximum auto-consistency
         setDoc(settingsDocRef, {
-          bgType: "video",
+          bgType: "illustration",
           videoUrl: "/custom-video.mp4",
           imageUrl: "https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8",
           lastUpdated: serverTimestamp()
@@ -460,7 +460,7 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  const changeBgTypeInFirestore = async (type: "video" | "image") => {
+  const changeBgTypeInFirestore = async (type: "video" | "image" | "illustration") => {
     try {
       const settingsDocRef = doc(db, "settings", "lobby_background");
       await setDoc(settingsDocRef, {
@@ -2712,6 +2712,8 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
 
     const activeUser = user || guestUser;
 
+    const division = fileInput.division || activeDivision || "";
+
     const filePayload: SavedFile = {
       id: fileId,
       name,
@@ -2721,6 +2723,7 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
       tags,
       userId: activeUser ? activeUser.uid : "local_user",
       updatedAt: Date.now(),
+      division,
     };
 
     if (socket && socket.readyState === WebSocket.OPEN) {
@@ -3464,225 +3467,55 @@ ${lastMsgText}`;
   if (showHeroLanding) {
     return (
       <div className="video-container" id="landing-hero-container">
-        {heroBgType === "video" ? (
-          <video
-            ref={landingVideoRef}
-            src={videoSrc}
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="auto"
-            id="bg-video"
-            key={videoSrc || "default"}
-            referrerPolicy="no-referrer"
-            className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 animate-fade-in scale-[1.08] origin-center"
-            style={{ zIndex: -1, opacity: 0.65 }}
-            onError={() => {
-              const fallbackUrl = "/custom-video.mp4";
-              if (videoSrc !== fallbackUrl) {
-                console.warn("Lobby video failed to load. Falling back to default custom video...");
-                setVideoSrc(fallbackUrl);
-              }
-            }}
-          />
-        ) : (
-          slideshowImages.map((src, idx) => (
-            <img 
-              key={src}
-              src={src} 
-              alt={`Pancaran Group Background ${idx + 1}`} 
-              referrerPolicy="no-referrer"
-              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 scale-[1.08] origin-center`}
-              style={{ zIndex: -1, opacity: idx === slideshowIndex ? 0.65 : 0 }}
-            />
-          ))
-        )}
+        <img 
+          src="/pancaran_illustration.jpg" 
+          alt="Pancaran Group Logistics Illustration" 
+          referrerPolicy="no-referrer"
+          className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 animate-fade-in scale-[1.00] origin-center"
+          style={{ zIndex: -1, opacity: 1.0 }}
+        />
 
-        {heroBgType === "image" && (
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex gap-2">
-            {slideshowImages.map((_, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => setSlideshowIndex(idx)}
-                className={`h-1.5 transition-all duration-300 rounded-full cursor-pointer ${
-                  idx === slideshowIndex ? "w-8 bg-emerald-400" : "w-1.5 bg-white/40 hover:bg-white/70"
-                }`}
-                title={`Slide ${idx + 1}`}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* ⚙️ Sleek, Small Gear Button (Tanda Gerigi) in the Top-Right Corner */}
-        <div className="absolute top-4 right-4 z-[9999] text-right font-sans">
-          <button
-            type="button"
-            onClick={() => setShowHeroBgSettingsDropdown(!showHeroBgSettingsDropdown)}
-            className="p-2.5 rounded-xl bg-slate-950/60 hover:bg-slate-950/85 backdrop-blur-md border border-white/10 hover:border-white/20 text-slate-300 hover:text-white transition duration-200 shadow-xl flex items-center justify-center cursor-pointer"
-            title="Pengaturan Latar Belakang"
-          >
-            <Settings className={`h-4 w-4 ${showHeroBgSettingsDropdown ? 'animate-spin-[duration:10s] text-emerald-400' : ''}`} />
-          </button>
-          {showHeroBgSettingsDropdown && (
-            <div className="absolute top-12 right-0 w-56 p-2.5 rounded-2xl bg-slate-950/95 backdrop-blur-md border border-white/15 shadow-2xl flex flex-col gap-1 z-[99999] text-left animate-fade-in font-sans">
-              <span className="text-[9px] uppercase font-mono font-black tracking-widest text-slate-400 px-2.5 py-1.5 select-none">
-                PILIHAN LATAR BELAKANG
-              </span>
-              <button
-                type="button"
-                onClick={() => {
-                  setHeroBgType("video");
-                  localStorage.setItem("prama_hero_bg_type", "video");
-                  changeBgTypeInFirestore("video");
-                }}
-                className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition duration-200 cursor-pointer ${
-                  heroBgType === "video"
-                    ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
-                    : "text-slate-400 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                <Video className="h-4 w-4 shrink-0" />
-                <span>Video Latar Belakang</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setHeroBgType("image");
-                  localStorage.setItem("prama_hero_bg_type", "image");
-                  changeBgTypeInFirestore("image");
-                }}
-                className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition duration-200 cursor-pointer ${
-                  heroBgType === "image"
-                    ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
-                    : "text-slate-400 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                <Image className="h-4 w-4 shrink-0" />
-                <span>Foto Latar Belakang</span>
-              </button>
-
-              <div className="border-t border-white/10 my-1.5" />
-
-              <span className="text-[9px] uppercase font-mono font-black tracking-widest text-slate-400 px-2.5 py-1 select-none">
-                {heroBgType === "video" ? "KELOLA VIDEO MANUAL" : "KELOLA FOTO MANUAL"}
-              </span>
-
-              {heroBgType === "video" ? (
-                <div className="px-1 py-1 space-y-1.5">
-                  <label className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-755 text-white transition active:scale-95 cursor-pointer border border-white/10">
-                    <Upload className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
-                    <span>Pilih Manual (.MP4)</span>
-                    <input
-                      type="file"
-                      id="lobby-video-manual-upload-1"
-                      accept="video/mp4,video/x-m4v,video/*"
-                      onChange={handleVideoUpload}
-                      className="hidden"
-                    />
-                  </label>
-                  {customVideoUrl && (
-                    <button
-                      type="button"
-                      onClick={handleResetVideo}
-                      className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold bg-red-950/40 hover:bg-red-900/60 text-red-350 transition cursor-pointer border border-red-900/40"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                      <span>Kembalikan Default</span>
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <div className="px-1 py-1 space-y-1.5">
-                  <label className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-755 text-white transition active:scale-95 cursor-pointer border border-white/10">
-                    <Upload className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
-                    <span>Pilih Manual (.JPG)</span>
-                    <input
-                      type="file"
-                      id="lobby-image-manual-upload-1"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                    />
-                  </label>
-                  {customImageUrl && (
-                    <button
-                      type="button"
-                      onClick={handleResetImage}
-                      className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold bg-red-950/40 hover:bg-red-900/60 text-red-350 transition cursor-pointer border border-red-900/40"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                      <span>Kembalikan Default</span>
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+        {/* High-Resolution Corporate Logo overlay at top center removed as requested by user */}
 
         <div className="menu-content" id="landing-menu-content">
-          <h1>Pancaran Group</h1>
-          <p className="mb-0 text-white tracking-widest font-mono text-xs uppercase opacity-80 pt-1">Solusi Logistik Masa Depan</p>
-
-          <button 
-            type="button"
-            className="btn-mulai font-bold mt-8 bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-8 py-3.5 rounded-2xl shadow-xl transition-all duration-300 transform active:scale-95 cursor-pointer flex items-center gap-2 tracking-wide font-sans text-xs shrink-0" 
-            id="btn-mulai-jelajah"
-            onClick={() => {
-              setShowHeroLanding(false);
-              sessionStorage.setItem("prama_hero_dismissed", "true");
-            }}
-          >
-            <span>MASUK PORTAL SYSTEM</span>
-            <Sparkles className="h-4 w-4" />
-          </button>
+          <div className="flex justify-center w-full">
+            <button 
+              type="button"
+              className="font-sans font-bold select-none cursor-pointer tracking-wider uppercase transition-all duration-300 transform hover:-translate-y-1 active:scale-95 text-xs text-white flex items-center gap-2.5 px-9 py-4 bg-[#00D285] hover:bg-[#00BA74] rounded-full shadow-2xl mt-52 sm:mt-[25rem] md:mt-[31rem]" 
+              id="btn-mulai-jelajah"
+              style={{
+                backgroundImage: "linear-gradient(135deg, #00D285, #0056b3)",
+                boxShadow: "0 10px 25px -5px rgba(0, 210, 133, 0.4), 0 8px 10px -6px rgba(0, 86, 179, 0.3)"
+              }}
+              onClick={() => {
+                setShowHeroLanding(false);
+                sessionStorage.setItem("prama_hero_dismissed", "true");
+              }}
+            >
+              <Globe className="h-4 w-4 text-white" />
+              <span>JELAJAHI SISTEM PORTAL</span>
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
-  // Render 2: Authentic Screen (Login & Register Form) - Theme: Light & Elegant with Brand Background Video/Image option
+  // Render 2: Authentic Screen (Login & Register Form) - Theme: Light & Elegant with Brand Background Illustration
   if (!activeUser) {
     return (
       <div className="relative min-h-screen flex items-center justify-center px-4 py-12 font-sans overflow-hidden">
-        {/* Brand Background Image or Video */}
+        {/* Brand Background Image */}
         <div className="absolute inset-0 z-0">
-          {heroBgType === "video" ? (
-            <video 
-              ref={authVideoRef}
-              src={videoSrc}
-              autoPlay 
-              muted 
-              loop 
-              playsInline 
-              preload="auto"
-              key={videoSrc || "auth-default"}
-              referrerPolicy="no-referrer"
-              className="w-full h-full object-cover scale-[1.08] origin-center"
-              onError={() => {
-                const fallbackUrl = "/custom-video.mp4";
-                if (videoSrc !== fallbackUrl) {
-                  console.warn("Setting fallback video stream on error for auth background...");
-                  setVideoSrc(fallbackUrl);
-                }
-              }}
-            />
-          ) : (
-            slideshowImages.map((src, idx) => (
-              <img 
-                key={src}
-                src={src} 
-                alt={`Pancaran Group Background ${idx + 1}`} 
-                referrerPolicy="no-referrer"
-                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 scale-[1.08] origin-center`}
-                style={{ opacity: idx === slideshowIndex ? 1 : 0 }}
-              />
-            ))
-          )}
+          <img 
+            src="/pancaran_illustration.jpg" 
+            alt="Pancaran Group Logistics Illustration" 
+            referrerPolicy="no-referrer"
+            className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 animate-fade-in scale-[1.00] origin-center"
+            style={{ zIndex: -1 }}
+          />
           {/* Elegant Dark/Blur Overlay to focus and elevate contrast */}
-          <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm" />
         </div>
 
         {/* Small floating Back Button on the top left */}
@@ -3699,113 +3532,6 @@ ${lastMsgText}`;
           <span>Kembali ke Lobi</span>
         </button>
 
-        {/* ⚙️ Sleek, Small Gear Button (Tanda Gerigi) in the Top-Right Corner */}
-        <div className="absolute top-4 right-4 z-[9999] text-right font-sans">
-          <button
-            type="button"
-            onClick={() => setShowHeroBgSettingsDropdown(!showHeroBgSettingsDropdown)}
-            className="p-2.5 rounded-xl bg-slate-950/60 hover:bg-slate-950/85 backdrop-blur-md border border-white/10 hover:border-white/20 text-slate-300 hover:text-white transition duration-200 shadow-xl flex items-center justify-center cursor-pointer"
-            title="Pengaturan Latar Belakang"
-          >
-            <Settings className={`h-4 w-4 ${showHeroBgSettingsDropdown ? 'animate-spin-[duration:10s] text-emerald-400' : ''}`} />
-          </button>
-          {showHeroBgSettingsDropdown && (
-            <div className="absolute top-12 right-0 w-56 p-2.5 rounded-2xl bg-slate-950/95 backdrop-blur-md border border-white/15 shadow-2xl flex flex-col gap-1 z-[99999] text-left animate-fade-in font-sans">
-              <span className="text-[9px] uppercase font-mono font-black tracking-widest text-slate-400 px-2.5 py-1.5 select-none">
-                PILIHAN LATAR BELAKANG
-              </span>
-              <button
-                type="button"
-                onClick={() => {
-                  setHeroBgType("video");
-                  localStorage.setItem("prama_hero_bg_type", "video");
-                  changeBgTypeInFirestore("video");
-                }}
-                className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition duration-200 cursor-pointer ${
-                  heroBgType === "video"
-                    ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
-                    : "text-slate-400 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                <Video className="h-4 w-4 shrink-0" />
-                <span>Video Latar Belakang</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setHeroBgType("image");
-                  localStorage.setItem("prama_hero_bg_type", "image");
-                  changeBgTypeInFirestore("image");
-                }}
-                className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition duration-200 cursor-pointer ${
-                  heroBgType === "image"
-                    ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
-                    : "text-slate-400 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                <Image className="h-4 w-4 shrink-0" />
-                <span>Foto Latar Belakang</span>
-              </button>
-
-              <div className="border-t border-white/10 my-1.5" />
-
-              <span className="text-[9px] uppercase font-mono font-black tracking-widest text-slate-400 px-2.5 py-1 select-none">
-                {heroBgType === "video" ? "KELOLA VIDEO MANUAL" : "KELOLA FOTO MANUAL"}
-              </span>
-
-              {heroBgType === "video" ? (
-                <div className="px-1 py-1 space-y-1.5">
-                  <label className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-755 text-white transition active:scale-95 cursor-pointer border border-white/10">
-                    <Upload className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
-                    <span>Pilih Manual (.MP4)</span>
-                    <input
-                      type="file"
-                      id="lobby-video-manual-upload-2"
-                      accept="video/mp4,video/x-m4v,video/*"
-                      onChange={handleVideoUpload}
-                      className="hidden"
-                    />
-                  </label>
-                  {customVideoUrl && (
-                    <button
-                      type="button"
-                      onClick={handleResetVideo}
-                      className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold bg-red-950/40 hover:bg-red-900/60 text-red-350 transition cursor-pointer border border-red-900/40"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                      <span>Kembalikan Default</span>
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <div className="px-1 py-1 space-y-1.5">
-                  <label className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-755 text-white transition active:scale-95 cursor-pointer border border-white/10">
-                    <Upload className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
-                    <span>Pilih Manual (.JPG)</span>
-                    <input
-                      type="file"
-                      id="lobby-image-manual-upload-2"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                    />
-                  </label>
-                  {customImageUrl && (
-                    <button
-                      type="button"
-                      onClick={handleResetImage}
-                      className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold bg-red-950/40 hover:bg-red-900/60 text-red-350 transition cursor-pointer border border-red-900/40"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                      <span>Kembalikan Default</span>
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
 
 
         {/* Auth Card wrapper with elevated relative z-index */}
@@ -3814,8 +3540,13 @@ ${lastMsgText}`;
           {/* Left panel: Info Hub Brand PRAMA */}
           <div className="bg-gradient-to-br from-indigo-700 via-indigo-900 to-slate-900 p-8 text-white flex flex-col justify-between">
             <div className="space-y-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-md text-white border border-white/15">
-                <Sparkles className="h-6 w-6 text-sky-300" />
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white p-2 border border-white/20 shadow-md">
+                <img 
+                  src={pramaLogo} 
+                  alt="PT Pancaran Group Logo" 
+                  className="h-full w-full object-contain"
+                  referrerPolicy="no-referrer"
+                />
               </div>
               
               <div>
@@ -5582,13 +5313,94 @@ ${lastMsgText}`;
                                 {dashboardProjectTitle || "Kajian Strategis: Forestry Management Transportation"}
                               </span>
                             </div>
-                            <div className="w-full md:w-5/12 h-40 md:h-60 rounded-2xl overflow-hidden shadow-lg border border-slate-100 flex-shrink-0">
-                              <img 
-                                src={slideImagesList[0]} 
-                                alt="Slide Cover" 
-                                className="w-full h-full object-cover" 
-                                referrerPolicy="no-referrer"
-                              />
+                            <div className="w-full md:w-5/12 h-40 md:h-60 rounded-2xl overflow-hidden shadow-lg border border-slate-800/10 flex-shrink-0 relative bg-slate-950">
+                              {/* Harbor Sunset Vector Graphic */}
+                              <div className="absolute inset-0 w-full h-full overflow-hidden select-none">
+                                <svg className="w-full h-full object-cover" viewBox="0 0 1000 562.5" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                  <defs>
+                                    <linearGradient id="sunsetSkyMini" x1="0%" y1="100%" x2="100%" y2="0%">
+                                      <stop offset="0%" stopColor="#1E1335" />
+                                      <stop offset="35%" stopColor="#2E1B4E" />
+                                      <stop offset="65%" stopColor="#701A75" />
+                                      <stop offset="85%" stopColor="#EA580C" />
+                                      <stop offset="100%" stopColor="#FDE047" />
+                                    </linearGradient>
+                                    <radialGradient id="solarGlowMini" cx="50%" cy="50%" r="50%">
+                                      <stop offset="0%" stopColor="#FFFFFF" />
+                                      <stop offset="15%" stopColor="#FFF9C4" />
+                                      <stop offset="45%" stopColor="#F97316" stopOpacity="0.75" />
+                                      <stop offset="100%" stopColor="#F97316" stopOpacity="0" />
+                                    </radialGradient>
+                                    <pattern id="cyanGridMini" width="25" height="25" patternUnits="userSpaceOnUse">
+                                      <path d="M 25 0 L 0 0 0 25" fill="none" stroke="rgba(0, 210, 133, 0.08)" strokeWidth="0.75" />
+                                    </pattern>
+                                    <radialGradient id="vignetteMini" cx="50%" cy="50%" r="70%">
+                                      <stop offset="0%" stopColor="#030712" stopOpacity="0.05" />
+                                      <stop offset="60%" stopColor="#030712" stopOpacity="0.45" />
+                                      <stop offset="100%" stopColor="#030712" stopOpacity="0.8" />
+                                    </radialGradient>
+                                  </defs>
+
+                                  <rect width="1000" height="562.5" fill="url(#sunsetSkyMini)" />
+
+                                  <g opacity="0.18">
+                                    <polygon points="800,130 1000,0 1000,60" fill="#FDE047" />
+                                    <polygon points="800,130 1000,120 1000,220" fill="#FDE047" />
+                                    <polygon points="800,130 1000,340 850,562" fill="#FDE047" />
+                                    <polygon points="800,130 650,562 500,562" fill="#FDE047" />
+                                    <polygon points="800,130 350,562 200,562" fill="#FDE047" />
+                                    <polygon points="800,130 0,562 0,440" fill="#FDE047" />
+                                    <polygon points="800,130 0,300 0,160" fill="#FDE047" />
+                                    <polygon points="800,130 0,20 100,0" fill="#FDE047" />
+                                  </g>
+
+                                  <circle cx="800" cy="130" r="140" fill="url(#solarGlowMini)" />
+                                  <circle cx="800" cy="130" r="35" fill="#FFFFFF" />
+
+                                  <path d="M 0 445 L 80 435 L 160 442 L 250 430 L 360 438 L 470 422 L 580 432 L 700 424 L 850 435 L 1000 422 L 1000 562.5 L 0 562.5 Z" fill="#2E1B4E" opacity="0.4" />
+                                  <path d="M 0 452 L 100 446 L 220 452 L 350 442 L 500 450 L 680 438 L 820 445 L 1000 440 L 1000 562.5 L 0 562.5 Z" fill="#180C27" />
+
+                                  <g stroke="#180C27" strokeWidth="2" opacity="0.85">
+                                    <line x1="880" y1="445" x2="880" y2="385" />
+                                    <line x1="880" y1="385" x2="850" y2="445" />
+                                    <line x1="880" y1="392" x2="915" y2="392" />
+                                    <line x1="865" y1="392" x2="935" y2="392" strokeWidth="3" />
+                                    <line x1="915" y1="392" x2="915" y2="445" strokeWidth="1" />
+                                  </g>
+
+                                  <path d="M 710 446 L 722 438 L 785 438 L 802 444 L 810 446 Z" fill="#180C27" />
+                                  <rect x="735" y="428" width="22" height="10" fill="#180C27" />
+                                  <rect x="762" y="432" width="14" height="6" fill="#00D285" />
+
+                                  <g fill="#140621">
+                                    <polygon points="20,452 20,405 60,385 100,405 100,452" />
+                                    <polygon points="105,452 105,415 155,415 155,452" />
+                                    <polygon points="165,452 165,390 195,390 215,405 215,452" />
+                                  </g>
+
+                                  <g fill="#0D0414">
+                                    <polygon points="40,452 170,452 230,562 0,562" opacity="0.95" />
+                                    <polygon points="200,452 400,452 500,562 250,562" opacity="0.95" />
+                                  </g>
+
+                                  <rect width="1000" height="562.5" fill="url(#cyanGridMini)" />
+                                  <rect width="1000" height="562.5" fill="url(#vignetteMini)" />
+
+                                  {/* Center Green Container Truck */}
+                                  <g transform="translate(425, 300) scale(1.1)">
+                                    <ellipse cx="80" cy="54" rx="65" ry="6.5" fill="#0A020F" opacity="0.75" />
+                                    <rect x="15" y="10" width="105" height="36" rx="4" fill="#00D285" stroke="#FFFFFF" strokeWidth="1.5" />
+                                    <circle cx="68" cy="28" r="3.5" fill="#FFFFFF" />
+                                    <path d="M 120,20 L 135,20 L 145,35 L 145,45 L 120,45 Z" fill="#FFFFFF" stroke="#0F172A" strokeWidth="1" />
+                                    <path d="M 124,24 L 133,24 L 138,34 L 124,34 Z" fill="#1E293B" />
+                                    
+                                    <circle cx="35" cy="48" r="9.5" fill="#1E293B" stroke="#FFFFFF" strokeWidth="1.5" />
+                                    <circle cx="55" cy="48" r="9.5" fill="#1E293B" stroke="#FFFFFF" strokeWidth="1.5" />
+                                    <circle cx="105" cy="48" r="9.5" fill="#1E293B" stroke="#FFFFFF" strokeWidth="1.5" />
+                                    <circle cx="132" cy="48" r="9.5" fill="#1E293B" stroke="#FFFFFF" strokeWidth="1.5" />
+                                  </g>
+                                </svg>
+                              </div>
                             </div>
                           </div>
                         ) : projectPptSlideIndex === 15 ? (
@@ -7625,7 +7437,7 @@ ${lastMsgText}`;
               </div>
               <span className="text-[10px] font-mono text-slate-400 font-bold bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200 select-none">
                 Total Dokumen: {
-                  files.filter(f => !activeDivision || f.division === activeDivision).length
+                  files.filter(f => !activeDivision || !f.division || f.division === activeDivision).length
                 }
               </span>
             </div>
@@ -7634,7 +7446,7 @@ ${lastMsgText}`;
             <div className="flex-1 overflow-y-auto p-6 bg-[#f8fafc]">
               {(() => {
                 const filteredCol = files
-                  .filter((f) => !activeDivision || f.division === activeDivision)
+                  .filter((f) => !activeDivision || !f.division || f.division === activeDivision)
                   .filter((f) => !koleksiSearch || f.name.toLowerCase().includes(koleksiSearch.toLowerCase()));
 
                 if (filteredCol.length === 0) {
@@ -8120,30 +7932,67 @@ ${lastMsgText}`;
                         .trim();
 
                       return (
-                        <div className="flex-1 flex flex-col justify-center items-start bg-[#06152B] p-8 sm:p-12 text-left select-none relative w-full h-full">
-                          {/* Vibrant Green Border */}
-                          <div className="absolute inset-3 border border-[#00D285] pointer-events-none rounded-sm" />
-                          
-                          <div className="text-[10px] font-mono font-black text-[#00D285] uppercase tracking-wider mb-4 flex items-center gap-1.5">
-                            <span>✦ PRAMA COGNITIVE PORTAL</span>
-                            <span>•</span>
-                            <span>{cleanTitle.toUpperCase()}</span>
+                        <div className="flex-1 flex flex-col justify-between p-6 sm:p-10 text-left select-none relative w-full h-full overflow-hidden bg-slate-950">
+                          {/* 1. Portal Illustration Background */}
+                          <div className="absolute inset-0 w-full h-full overflow-hidden select-none z-0">
+                            <img 
+                              src="/pancaran_illustration.jpg" 
+                              alt="Pancaran Group Logistics Illustration" 
+                              referrerPolicy="no-referrer"
+                              className="w-full h-full object-cover origin-center z-0 scale-[1.00]"
+                            />
+                            {/* Elegant dark overlay to ensure excellent readability of the white/green text */}
+                            <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-[1px]" />
                           </div>
-                          
-                          <h1 className="text-white text-xl sm:text-2xl lg:text-3.5xl font-extrabold max-w-3xl uppercase tracking-tight leading-tight select-text">
-                            KAJIAN STRATEGIS KOMPREHENSIF: {cleanTitle.toUpperCase()}
-                          </h1>
-                          
-                          <div className="h-0.5 w-16 bg-[#00D285] my-4 sm:my-5" />
-                          
-                          <p className="text-slate-400 font-medium text-xs sm:text-sm max-w-2xl leading-relaxed">
-                            Kajian Komprehensif Skema Strategis &amp; Operasional {cleanTitle} PT Pancaran Group Berdasarkan Rekomendasi PRAMA AI Advisor
-                          </p>
-                          
-                          <div className="mt-6 sm:mt-8 space-y-1 text-left text-[#00D285] font-mono font-bold text-[9px] uppercase tracking-wider">
-                            <div>PROYEK: {cleanTitle.toUpperCase()}</div>
-                            <div>UNIT DIREKTORAT: {(activeDivision || "UMUM").toUpperCase() + " & BUSINESS DEVELOPMENT"}</div>
-                            <div>KLASIFIKASI: TERBATAS / INTERNAL PT PANCARAN GROUP</div>
+
+                          {/* 2. Vibrant Green Frames */}
+                          <div className="absolute inset-3 border border-[#00D285] pointer-events-none rounded-sm z-10" />
+
+                          {/* 3. Header Info Left / Right */}
+                          <div className="absolute top-6 left-6 right-6 flex justify-between items-center z-25 select-none">
+                            <span className="text-[8px] sm:text-[10px] font-mono font-black text-white/80 uppercase tracking-widest">PRAMA COGNITIVE PORTAL</span>
+                            <div className="flex items-center gap-1.5">
+                              <img 
+                                src={pramaLogo} 
+                                alt="PT Pancaran Group Logo" 
+                                className="h-6 sm:h-9 w-auto object-contain"
+                                referrerPolicy="no-referrer"
+                              />
+                            </div>
+                          </div>
+
+                          {/* 4. Central Text Overlay Segment */}
+                          <div className="w-full flex flex-col items-center text-center px-6 sm:px-12 z-25 my-auto">
+                            {/* Glowing Center Pill Box */}
+                            <div className="flex justify-center w-full mb-3 sm:mb-4">
+                              <span className="bg-[#004D40]/85 border border-[#00D285]/65 rounded-full px-4 sm:px-6 py-1 sm:py-1.5 text-[8px] sm:text-[10px] text-[#00D285] font-mono tracking-widest uppercase font-black shadow-lg">
+                                KAJIAN STRATEGIS KOMPREHENSIF
+                              </span>
+                            </div>
+
+                            {/* Main Titles */}
+                            <h1 className="text-white text-lg sm:text-2xl md:text-3xl lg:text-4.5xl font-black tracking-wider leading-none select-text drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] uppercase">
+                              PT PANCARAN GROUP
+                            </h1>
+                            
+                            <h2 className="text-[#00D285] text-2xl sm:text-4xl md:text-5xl lg:text-[56px] font-extrabold tracking-widest leading-none select-text drop-shadow-[0_3px_6px_rgba(0,0,0,0.9)] uppercase mt-1 sm:mt-2.5">
+                              {cleanTitle.toUpperCase() || "COMERCIAL STRATEGIS"}
+                            </h2>
+
+                            {/* Main Subtitle Description */}
+                            <p className="text-slate-200 font-medium text-[9px] sm:text-[11.5px] md:text-sm max-w-3xl leading-relaxed mt-4 sm:mt-6 drop-shadow-[0_1.5px_3.5px_rgba(0,0,0,0.85)] select-text px-4">
+                              Kajian Komprehensif Skema Strategis &amp; Operasional Berdasarkan Rekomendasi PRAMA AI Advisor
+                            </p>
+                          </div>
+
+                          {/* 5. Footer Row Left / Right */}
+                          <div className="absolute bottom-6 left-6 right-6 flex justify-between items-center text-[8px] sm:text-[9.5px] font-mono font-bold text-white/80 uppercase tracking-wider z-25 select-none">
+                            <div>UNIT: {(activeDivision || "COMERCIAL").toUpperCase() + " & BUSINESS DEVELOPMENT"}</div>
+                            <div className="flex items-center gap-1.5">
+                              <span>KLASIFIKASI:</span>
+                              <span className="text-[#EF4444] font-black tracking-widest">TERBATAS</span>
+                              <span className="text-[#00D285] font-bold text-xs animate-pulse ml-0.5">✦</span>
+                            </div>
                           </div>
                         </div>
                       );

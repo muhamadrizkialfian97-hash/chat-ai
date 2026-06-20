@@ -16,6 +16,7 @@ import { db, storage, handleFirestoreError, OperationType } from "./firebase";
 import { ChatMessage, SavedFile } from "./types";
 import { generateLocalSmartResponse, cleanChatMessages } from "./utils/localAssistant";
 import { exportToWord, exportToPPTX, extractProjectTitle, downloadPDFDirect } from "./utils/documentExporter";
+import { exportToInteractiveHTML } from "./utils/htmlExporter";
 import { 
   defaultDashboardSections, 
   exportSingleSectionToWord, 
@@ -4277,6 +4278,31 @@ ${lastMsgText}`;
                       <Presentation className="h-3.5 w-3.5 text-sky-100" />
                       <span>Unduh PPTX</span>
                     </button>
+                    <button
+                      onClick={() => {
+                        const mappedSlides = defaultDashboardSections.map((sec) => {
+                          const rawContent = dashboardSectionsState[sec.number] || sec.defaultContent;
+                          const lines = rawContent.split("\n")
+                            .map(l => l.trim())
+                            .filter(l => l.length > 0 && !l.startsWith("###") && !l.startsWith("!"))
+                            .map(l => l.replace(/\*\*/g, "").replace(/^\*\s*/, "").replace(/^-\s*/, ""));
+                          const bullets = lines.slice(0, 5);
+                          const speakerNotes = `Membahas pilar strategi ${sec.number}: ${sec.title}. Analisis operasional merangkum: ${bullets.slice(0, 2).join(", ")}.`;
+                          return {
+                            title: `Pilar ${sec.number}: ${sec.title}`,
+                            bullets: bullets.length > 0 ? bullets : ["Materi pilar pembahasan komprehensif."],
+                            speakerNotes,
+                            imageUrl: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1200"
+                          };
+                        });
+                        exportToInteractiveHTML(dashboardProjectTitle || "Kajian 14 Pilar", mappedSlides, activeDivision || "UMUM");
+                      }}
+                      className="flex items-center gap-1.5 bg-[#00D285] hover:bg-[#00B472] text-white text-[10px] font-black rounded-xl px-3 py-2.5 transition shadow-md cursor-pointer"
+                      title="Unduh file HTML Presentasi Interaktif dengan Suara TTS dan Auto Next untuk 14 Pilar"
+                    >
+                      <Download className="h-3.5 w-3.5 text-white" />
+                      <span>Unduh HTML Interaktif</span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -5584,6 +5610,50 @@ ${lastMsgText}`;
                   >
                     <Presentation className="h-3.5 w-3.5 text-white" />
                     <span>Unduh PPTX Slides</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      const calc = calculateBIAnalysis(chatBIState);
+                      const mappedSlides = [
+                        {
+                          title: "METRIK KELAYAKAN INVESTASI (FINANCIAL BI)",
+                          bullets: [
+                            `Capital Expenditure (CAPEX): Rp ${chatBIState.initialCapex.toLocaleString()} Juta`,
+                            `Operating Expenditure (OPEX/Thn): Rp ${chatBIState.operatingExpense.toLocaleString()} Juta`,
+                            `Total Manfaat / Tahun: Rp ${calc.annualBenefit.toLocaleString()} Juta`,
+                            `Net Benefit (3 Tahun): Rp ${calc.netBenefit3Years.toLocaleString()} Juta`,
+                            `ROI Proyeksi 3 Tahun: ${calc.roiPercentage3Years.toFixed(1)}%`,
+                            `Payback Period: ${calc.paybackPeriod.toFixed(1)} Tahun`
+                          ],
+                          speakerNotes: `Analisis kelayakan finansial menunjukkan investasi awal sebesar Rp ${chatBIState.initialCapex.toLocaleString()} Juta dengan total manfaat per tahun mencapai Rp ${calc.annualBenefit.toLocaleString()} Juta. Nilai ROI terhitung pada tingkat ${calc.roiPercentage3Years.toFixed(1)}% dengan waktu pengembalian modal atau Payback Period selama ${calc.paybackPeriod.toFixed(1)} tahun. Ini adalah indikator investasi yang sangat sehat dan prospektif.`,
+                          imageUrl: "https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=1200"
+                        },
+                        {
+                          title: "REKOMENDASI PROGRAM TAKTIS HASIL CHAT AI",
+                          bullets: chatBIState.recommendations.map(r => `${r.title} (${r.category}) - Est: Rp ${r.cost.toLocaleString()} Jt: ${r.description}`),
+                          speakerNotes: `Rencana operasional taktis menyarankan beberapa program utama hasil asisten cerdas PRAMA, yaitu: ${chatBIState.recommendations.map(r => r.title).slice(0, 3).join(", ")}. Estimasi alokasi dana masing-masing program telah dirumuskan secara presisi.`,
+                          imageUrl: "https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=1200"
+                        },
+                        {
+                          title: "ANALISIS SWOT STRATEGIS",
+                          bullets: [
+                            `Kekuatan (Strengths): ${chatBIState.swot.strengths.slice(0, 2).join(". ")}`,
+                            `Kelemahan (Weaknesses): ${chatBIState.swot.weaknesses.slice(0, 2).join(". ")}`,
+                            `Peluang (Opportunities): ${chatBIState.swot.opportunities.slice(0, 2).join(". ")}`,
+                            `Ancaman (Threats): ${chatBIState.swot.threats.slice(0, 2).join(". ")}`
+                          ],
+                          speakerNotes: `Kajian SWOT menggarisbawahi kekuatan utama kita pada aspek ${chatBIState.swot.strengths[0] || "operasional"}, sementara kelemahan di bagian ${chatBIState.swot.weaknesses[0] || "logistik"} harus dimitigasi. Peluang pasar mencakup ${chatBIState.swot.opportunities[0] || "ekspansi"}, dengan tetap mewaspadai ancaman seperti ${chatBIState.swot.threats[0] || "regulasi"}.`,
+                          imageUrl: "https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=1200"
+                        }
+                      ];
+                      exportToInteractiveHTML(chatBIState.projectTitle || "Kajian Bisnis Intelijensi", mappedSlides, chatBIState.division || "BD");
+                    }}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#00D285] hover:bg-[#00B472] text-white text-[10.5px] font-black rounded-xl transition shadow-md active:scale-97 cursor-pointer"
+                    title="Unduh file HTML Presentasi Interaktif dengan Suara TTS dan Auto Next untuk Chat BI"
+                  >
+                    <Download className="h-3.5 w-3.5 text-white" />
+                    <span>Unduh HTML Interaktif</span>
                   </button>
 
                   <button
@@ -7847,26 +7917,39 @@ ${lastMsgText}`;
                 )}
                 
                 {!isPptFullscreen && (
-                  <button
-                    onClick={async (e) => {
-                      const btn = e.currentTarget;
-                      const originalText = btn.innerHTML;
-                      btn.disabled = true;
-                      btn.innerHTML = `<span class="flex items-center gap-1.5"><svg class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> <span>Menyiapkan PPTX...</span></span>`;
-                      try {
-                        await exportToPPTX(pptPreview.fileName, pptPreview.slides, activeDivision || "PORTAL");
-                      } catch (error) {
-                        console.error(error);
-                      } finally {
-                        btn.disabled = false;
-                        btn.innerHTML = originalText;
-                      }
-                    }}
-                    className="flex items-center gap-1.5 px-4 py-2.5 text-xs font-black bg-[#0082FB] hover:bg-[#0072DF] text-white border-none rounded-full transition-all cursor-pointer shadow-md shadow-blue-100 disabled:opacity-50"
-                  >
-                    <Download className="h-3.5 w-3.5 stroke-[2.5]" />
-                    <span>Unduh PPTX</span>
-                  </button>
+                  <>
+                    <button
+                      onClick={async (e) => {
+                        const btn = e.currentTarget;
+                        const originalText = btn.innerHTML;
+                        btn.disabled = true;
+                        btn.innerHTML = `<span class="flex items-center gap-1.5"><svg class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> <span>Menyiapkan PPTX...</span></span>`;
+                        try {
+                          await exportToPPTX(pptPreview.fileName, pptPreview.slides, activeDivision || "PORTAL");
+                        } catch (error) {
+                          console.error(error);
+                        } finally {
+                          btn.disabled = false;
+                          btn.innerHTML = originalText;
+                        }
+                      }}
+                      className="flex items-center gap-1.5 px-4 py-2.5 text-xs font-black bg-[#0082FB] hover:bg-[#0072DF] text-white border-none rounded-full transition-all cursor-pointer shadow-md shadow-blue-100 disabled:opacity-50"
+                    >
+                      <Download className="h-3.5 w-3.5 stroke-[2.5]" />
+                      <span>Unduh PPTX</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        exportToInteractiveHTML(pptPreview.title || pptPreview.fileName, pptPreview.slides, activeDivision || "PORTAL");
+                      }}
+                      className="flex items-center gap-1.5 px-4 py-2.5 text-xs font-black bg-[#00D285] hover:bg-[#00B472] text-white border-none rounded-full transition-all cursor-pointer shadow-md shadow-emerald-100"
+                      title="Unduh file HTML Presentasi Interaktif dengan Suara TTS dan Auto Next"
+                    >
+                      <Download className="h-3.5 w-3.5 stroke-[2.5]" />
+                      <span>Unduh HTML Interaktif</span>
+                    </button>
+                  </>
                 )}
 
                 <button

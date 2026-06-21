@@ -3660,55 +3660,80 @@ ${lastMsgText}`;
   if (!activeUser) {
     return (
       <div className="relative min-h-screen w-full flex items-center justify-center font-sans overflow-hidden bg-[#030c1b]" id="landing-hero-container">
-        {/* Underlay dark slate bg that matches the starting frame color of the video */}
-        <div className="absolute inset-0 bg-[#030c1b] z-0" />
+        {/* Underlay brand illustration image - displayed immediately during load so the user experiences zero lag, black screens, or loading spinners */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center select-none z-0"
+          style={{ 
+            backgroundImage: "url('/pancaran_illustration.jpg')",
+            filter: "brightness(0.35) contrast(1.1)"
+          }}
+        />
+        {/* Subtle radial dark overlay over the loading underlay to blend with the app design */}
+        <div className="absolute inset-0 bg-indigo-950/20 backdrop-blur-[1px] z-10" />
 
-        {/* High-Definition YouTube Cinematic Background Player (Muted, auto-looping, no controls, zero loading delay, fully bright) */}
-        <div className="absolute inset-0 overflow-hidden select-none z-10 pointer-events-none">
-          <iframe
-            src="https://www.youtube.com/embed/2zUuSebtwfk?autoplay=1&mute=1&loop=1&playlist=2zUuSebtwfk&controls=0&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3&playsinline=1&enablejsapi=1&disablekb=1"
-            allow="autoplay; encrypted-media"
-            className="absolute top-1/2 left-1/2 min-w-full min-h-full -translate-x-1/2 -translate-y-1/2 object-cover pointer-events-none border-0"
-            style={{ width: '140vw', height: '140vh' }}
-            title="Pancaran Group Corporate Presentation Video"
+        {/* High-Definition Dynamic YouTube Cinematic Background Player - only visible when fully loaded and active */}
+        <div 
+          className={`absolute inset-0 overflow-hidden select-none transition-opacity duration-[1200ms] ease-in-out z-20 pointer-events-none ${
+            landingVideoLoaded ? "opacity-100 scale-100" : "opacity-0 scale-105"
+          }`}
+        >
+          <div 
+            id="landing-yt-player" 
+            className="absolute top-1/2 left-1/2 min-w-full min-h-full -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+            style={{ width: '135vw', height: '135vh' }}
           />
-          {/* Fully transparent mask with no dark shades or black overlays for a fully bright and colorful view */}
-          <div className="absolute inset-0 bg-transparent" style={{ zIndex: 5 }} />
         </div>
 
-        {/* Global heavy-duty transparent touch/drag shield covering the layout to swallow clicks before they reach YouTube iframe */}
+        {/* Dynamic Dark Dimming Backdrop - dims the background video to create depth and highlight the central exploration CTA */}
+        <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-[0.5px] z-30 pointer-events-none" />
+
+        {/* Heavy-duty global transparent block shield that swallows all clicks and touches before they can reach the iframe */}
         <div 
-          className="absolute inset-0 bg-transparent cursor-default pointer-events-auto select-none"
-          style={{ zIndex: 15 }}
+          className="absolute inset-0 cursor-default pointer-events-auto select-none"
+          style={{ zIndex: 35, background: "rgba(0, 0, 0, 0)" }}
           onClick={(e) => {
             e.stopPropagation();
             e.preventDefault();
           }}
           onTouchStart={(e) => {
             e.stopPropagation();
+            if (e.cancelable) e.preventDefault();
+          }}
+          onTouchMove={(e) => {
+            e.stopPropagation();
+            if (e.cancelable) e.preventDefault();
           }}
           onTouchEnd={(e) => {
             e.stopPropagation();
+            if (e.cancelable) e.preventDefault();
+          }}
+          onMouseDown={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+          }}
+          onMouseUp={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
           }}
         />
 
         {showHeroLanding ? (
           /* MENU UTAMA / LOBBY LANDING SCREEN OVERLAY */
-          <div className="relative z-30 flex flex-col items-center justify-center w-full h-full p-4 animate-fade-in" style={{ transform: 'translateZ(0)' }}>
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-4 animate-fade-in" style={{ transform: 'translateZ(0)', zIndex: 50 }}>
             {/* Menu content elevated above touch shield */}
-            <div className="menu-content" id="landing-menu-content" style={{ zIndex: 25 }}>
+            <div className="menu-content" id="landing-menu-content" style={{ zIndex: 60 }}>
               <div className="flex justify-center w-full">
                 <button 
                   type="button"
-                  className="font-sans font-bold select-none cursor-pointer tracking-wider uppercase transition-all duration-300 transform hover:-translate-y-1 active:scale-95 text-xs text-white flex items-center gap-2.5 px-9 py-4 bg-[#00D285] hover:bg-[#00BA74] rounded-full shadow-2xl mt-52 sm:mt-[25rem] md:mt-[31rem]" 
+                  className="font-sans font-bold select-none cursor-pointer tracking-wider uppercase transition-all duration-300 transform hover:-translate-y-1 active:scale-95 text-xs text-white flex items-center gap-2.5 px-9 py-4 bg-[#00D285] hover:bg-[#00BA74] rounded-full shadow-2xl" 
                   id="btn-mulai-jelajah"
                   style={{
                     backgroundImage: "linear-gradient(135deg, #00D285, #0056b3)",
                     boxShadow: "0 10px 25px -5px rgba(0, 210, 133, 0.4), 0 8px 10px -6px rgba(0, 86, 179, 0.3)"
                   }}
                   onClick={() => {
-                    setShowHeroLanding(false);
-                    sessionStorage.setItem("prama_hero_dismissed", "true");
+                     setShowHeroLanding(false);
+                     sessionStorage.setItem("prama_hero_dismissed", "true");
                   }}
                 >
                   <Globe className="h-4 w-4 text-white" />
@@ -3719,7 +3744,7 @@ ${lastMsgText}`;
           </div>
         ) : (
           /* AUTHENTIC FORM OVERLAY (LOGIN AND REGISTER CARD) */
-          <div className="relative z-30 w-full max-w-4xl px-4 py-8 sm:py-12 flex flex-col items-center justify-center animate-fade-in" style={{ transform: 'translateZ(0)' }}>
+          <div className="relative w-full max-w-4xl px-4 py-8 sm:py-12 flex flex-col items-center justify-center animate-fade-in" style={{ transform: 'translateZ(0)', zIndex: 50 }}>
             
             {/* Small floating Back Button on the top left */}
             <button

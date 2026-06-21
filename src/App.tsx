@@ -407,6 +407,8 @@ export default function App() {
     return sessionStorage.getItem("prama_hero_dismissed") !== "true";
   });
 
+  const [landingVideoLoaded, setLandingVideoLoaded] = useState<boolean>(false);
+
 
 
   const [heroBgType, setHeroBgType] = useState<"video" | "image" | "illustration">(() => {
@@ -3519,15 +3521,34 @@ ${lastMsgText}`;
   if (showHeroLanding) {
     return (
       <div className="video-container" id="landing-hero-container">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ zIndex: -1 }}>
+        {/* Placeholder Cargo Brand Illustration Underlay during load/buffering */}
+        <div className="absolute inset-0 bg-slate-950" style={{ zIndex: -3 }}>
+          <img 
+            src="/pancaran_illustration.jpg" 
+            alt="Pancaran Group Logistics Illustration" 
+            referrerPolicy="no-referrer"
+            className="absolute inset-0 w-full h-full object-cover scale-105 blur-[2px]"
+          />
+          <div className="absolute inset-0 bg-slate-950/40" />
+        </div>
+
+        {/* Video Wrapper with Smooth Fade-in transition */}
+        <div 
+          className={`absolute inset-0 overflow-hidden transition-opacity duration-[1200ms] ease-in-out ${
+            landingVideoLoaded ? "opacity-100" : "opacity-0"
+          }`} 
+          style={{ zIndex: -2 }}
+        >
           <iframe 
-            src="https://www.youtube.com/embed/2zUuSebtwfk?autoplay=1&mute=1&loop=1&playlist=2zUuSebtwfk&controls=0&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1"
+            src="https://www.youtube.com/embed/2zUuSebtwfk?autoplay=1&mute=1&loop=1&playlist=2zUuSebtwfk&controls=0&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&disablekb=1&playsinline=1&enablejsapi=1"
             title="Pancaran Group Dynamics Hero Video"
             className="absolute top-1/2 left-1/2 w-[115%] h-[115%] -translate-x-1/2 -translate-y-1/2 border-0"
             style={{ pointerEvents: 'none', minWidth: '100vw', minHeight: '100vh' }}
-            allow="autoplay; encrypted-media"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            onLoad={() => setLandingVideoLoaded(true)}
           />
-          <div className="absolute inset-0 bg-slate-950/20" />
+          {/* Solid event-shield overlay to block touch and prevent YouTube playback symbols */}
+          <div className="absolute inset-0 bg-slate-950/20 pointer-events-auto" />
         </div>
 
         {/* High-Resolution Corporate Logo overlay at top center removed as requested by user */}

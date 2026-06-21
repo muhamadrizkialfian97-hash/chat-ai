@@ -408,8 +408,147 @@ export default function App() {
   });
 
   const [landingVideoLoaded, setLandingVideoLoaded] = useState<boolean>(false);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
+  // Fullscreen helper
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen()
+        .then(() => setIsFullscreen(true))
+        .catch(err => console.error("Error entering fullscreen:", err));
+    } else {
+      document.exitFullscreen()
+        .then(() => setIsFullscreen(false))
+        .catch(err => console.error("Error exiting fullscreen:", err));
+    }
+  };
 
+  useEffect(() => {
+    const handleFsChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener("fullscreenchange", handleFsChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFsChange);
+    };
+  }, []);
+
+  const ytPlayerRef = useRef<any>(null);
+  const playStateIntervalRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!showHeroLanding) return;
+
+    let playerInstance: any = null;
+
+    const initYTPlayer = () => {
+      const container = document.getElementById('landing-yt-player');
+      if (!container) return;
+
+      try {
+        playerInstance = new (window as any).YT.Player('landing-yt-player', {
+          videoId: '2zUuSebtwfk',
+          playerVars: {
+            autoplay: 1,
+            mute: 1,
+            controls: 0,
+            showinfo: 0,
+            rel: 0,
+            loop: 1,
+            playlist: '2zUuSebtwfk',
+            modestbranding: 1,
+            iv_load_policy: 3,
+            playsinline: 1,
+            disablekb: 1,
+            fs: 0,
+            autohide: 1,
+            vq: 'hd1080'
+          },
+          events: {
+            onReady: (event: any) => {
+              event.target.mute();
+              event.target.playVideo();
+              if (typeof event.target.setPlaybackQuality === 'function') {
+                event.target.setPlaybackQuality('hd1080');
+              }
+            },
+            onStateChange: (event: any) => {
+              // 1 is YT.PlayerState.PLAYING
+              if (event.data === 1) {
+                setLandingVideoLoaded(true);
+                startLoopPolling(event.target);
+              }
+              // 0 is YT.PlayerState.ENDED
+              if (event.data === 0) {
+                event.target.playVideo();
+              }
+            }
+          }
+        });
+        ytPlayerRef.current = playerInstance;
+      } catch (err) {
+        console.error("Youtube initialization failed:", err);
+      }
+    };
+
+    const startLoopPolling = (player: any) => {
+      if (playStateIntervalRef.current) {
+        clearInterval(playStateIntervalRef.current);
+      }
+      playStateIntervalRef.current = window.setInterval(() => {
+        try {
+          if (player && typeof player.getCurrentTime === 'function') {
+            const currentTime = player.getCurrentTime();
+            const duration = player.getDuration();
+            // Loop 0.8 seconds before video end to avoid the black frame delay
+            if (duration > 0 && currentTime >= duration - 0.8) {
+              player.seekTo(0.1, true);
+              player.playVideo();
+            }
+          }
+        } catch (e) {
+          // fail safe
+        }
+      }, 250);
+    };
+
+    // If script already loaded, initialize directly
+    if ((window as any).YT && (window as any).YT.Player) {
+      initYTPlayer();
+    } else {
+      // Register global callback
+      (window as any).onYouTubeIframeAPIReady = () => {
+        initYTPlayer();
+      };
+      
+      // Load script if not already loaded
+      if (!document.getElementById('yt-iframe-api-script')) {
+        const tag = document.createElement('script');
+        tag.id = 'yt-iframe-api-script';
+        tag.src = 'https://www.youtube.com/iframe_api';
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        if (firstScriptTag && firstScriptTag.parentNode) {
+          firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+        } else {
+          document.head.appendChild(tag);
+        }
+      }
+    }
+
+    return () => {
+      if (playStateIntervalRef.current) {
+        clearInterval(playStateIntervalRef.current);
+      }
+      try {
+        if (playerInstance && typeof playerInstance.destroy === 'function') {
+          playerInstance.destroy();
+        }
+      } catch (e) {
+        // fail safe
+      }
+      ytPlayerRef.current = null;
+    };
+  }, [showHeroLanding]);
 
   const [heroBgType, setHeroBgType] = useState<"video" | "image" | "illustration">(() => {
     return (localStorage.getItem("prama_hero_bg_type") as "video" | "image" | "illustration") || "illustration";
@@ -3539,21 +3678,58 @@ ${lastMsgText}`;
           }`} 
           style={{ zIndex: -2 }}
         >
-          <iframe 
-            src="https://www.youtube.com/embed/2zUuSebtwfk?autoplay=1&mute=1&loop=1&playlist=2zUuSebtwfk&controls=0&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&disablekb=1&playsinline=1&enablejsapi=1"
-            title="Pancaran Group Dynamics Hero Video"
-            className="absolute top-1/2 left-1/2 w-[115%] h-[115%] -translate-x-1/2 -translate-y-1/2 border-0"
-            style={{ pointerEvents: 'none', minWidth: '100vw', minHeight: '100vh' }}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            onLoad={() => setLandingVideoLoaded(true)}
-          />
-          {/* Solid event-shield overlay to block touch and prevent YouTube playback symbols */}
-          <div className="absolute inset-0 bg-slate-950/20 pointer-events-auto" />
+          <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none">
+            <div 
+              id="landing-yt-player" 
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none" 
+              style={{ width: '135vw', height: '135vh', minWidth: '100%', minHeight: '100%' }}
+            />
+          </div>
+          {/* Solid event-shield overlay inside video container */}
+          <div className="absolute inset-0 bg-slate-950/20 pointer-events-auto" style={{ zIndex: 5 }} />
+        </div>
+
+        {/* Global heavy-duty transparent touch/drag shield covering the layout to swallow clicks before they reach YouTube iframe */}
+        <div 
+          className="absolute inset-0 bg-transparent cursor-default pointer-events-auto select-none"
+          style={{ zIndex: 15 }}
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+          }}
+          onTouchStart={(e) => {
+            e.stopPropagation();
+          }}
+          onTouchEnd={(e) => {
+            e.stopPropagation();
+          }}
+        />
+
+        {/* Floating Fullscreen Control Badge at Top Right - Elevated above touch shield */}
+        <div className="absolute top-6 right-6 select-none" style={{ zIndex: 30 }}>
+          <button
+            onClick={toggleFullscreen}
+            type="button"
+            className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/20 bg-slate-950/40 backdrop-blur-md text-white hover:bg-slate-900/60 transition-all duration-300 shadow-lg cursor-pointer text-xs font-mono font-bold tracking-wider"
+          >
+            {isFullscreen ? (
+              <>
+                <Minimize2 className="h-3.5 w-3.5 text-rose-400" />
+                <span>LAYAR NORMAL</span>
+              </>
+            ) : (
+              <>
+                <Maximize2 className="h-3.5 w-3.5 text-[#00D285]" />
+                <span>LAYAR PENUH</span>
+              </>
+            )}
+          </button>
         </div>
 
         {/* High-Resolution Corporate Logo overlay at top center removed as requested by user */}
 
-        <div className="menu-content" id="landing-menu-content">
+        {/* Menu content elevated above touch shield */}
+        <div className="menu-content" id="landing-menu-content" style={{ zIndex: 25 }}>
           <div className="flex justify-center w-full">
             <button 
               type="button"

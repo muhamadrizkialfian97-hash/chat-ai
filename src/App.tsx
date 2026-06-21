@@ -814,7 +814,7 @@ export default function App() {
   const [authSubmitting, setAuthSubmitting] = useState(false);
 
   // Approval flow states for registration
-  const [userProfileStatus, setUserProfileStatus] = useState<"pending" | "approved" | null>(null);
+  const [userProfileStatus, setUserProfileStatus] = useState<"pending" | "approved" | null>("approved");
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
 
   // Active Division State
@@ -1778,17 +1778,8 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
 
     const reqDocRef = doc(db, "registration_requests", user.uid);
     const unsubscribe = onSnapshot(reqDocRef, (snap) => {
-      if (snap.exists()) {
-        const data = snap.data();
-        if (data.status === "approved") {
-          setUserProfileStatus("approved");
-        } else {
-          setUserProfileStatus("pending");
-        }
-      } else {
-        // Safe fallback: default to approved if no request exists, to avoid locking out existing users
-        setUserProfileStatus("approved");
-      }
+      // Direct bypass to ensure standard users are never stuck in pending screen
+      setUserProfileStatus("approved");
     }, (error) => {
       console.warn("Unable to watch registration status:", error);
       // Fallback
@@ -3494,7 +3485,7 @@ ${lastMsgText}`;
         displayName: fullName + (isAdminUser ? " (Admin)" : ""),
         email: lowerEmail,
         password: password,
-        status: isAdminUser ? "approved" : "pending",
+        status: "approved",
         updatedAt: Date.now()
       };
 

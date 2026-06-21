@@ -437,7 +437,7 @@ export default function App() {
   const playStateIntervalRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!showHeroLanding) return;
+    if (!showHeroLanding && (user || guestUser)) return;
 
     let playerInstance: any = null;
 
@@ -548,7 +548,7 @@ export default function App() {
       }
       ytPlayerRef.current = null;
     };
-  }, [showHeroLanding]);
+  }, [showHeroLanding, user, guestUser]);
 
   const [heroBgType, setHeroBgType] = useState<"video" | "image" | "illustration">(() => {
     return (localStorage.getItem("prama_hero_bg_type") as "video" | "image" | "illustration") || "illustration";
@@ -3656,37 +3656,24 @@ ${lastMsgText}`;
     );
   }
 
-  // Render 1.5: Cinematic Photo Landing/Intro Screen
-  if (showHeroLanding) {
+  // Render 1.5: Cinematic Video Start Layout (No Static Images/Loading Spanners)
+  if (!activeUser) {
     return (
-      <div className="video-container" id="landing-hero-container">
-        {/* Placeholder Cargo Brand Illustration Underlay during load/buffering */}
-        <div className="absolute inset-0 bg-slate-950" style={{ zIndex: -3 }}>
-          <img 
-            src="/pancaran_illustration.jpg" 
-            alt="Pancaran Group Logistics Illustration" 
-            referrerPolicy="no-referrer"
-            className="absolute inset-0 w-full h-full object-cover scale-105 blur-[2px]"
-          />
-          <div className="absolute inset-0 bg-slate-950/40" />
-        </div>
+      <div className="relative min-h-screen w-full flex items-center justify-center font-sans overflow-hidden bg-[#030c1b]" id="landing-hero-container">
+        {/* Underlay dark slate bg that matches the starting frame color of the video */}
+        <div className="absolute inset-0 bg-[#030c1b] z-0" />
 
-        {/* Video Wrapper with Smooth Fade-in transition */}
-        <div 
-          className={`absolute inset-0 overflow-hidden transition-opacity duration-[1200ms] ease-in-out ${
-            landingVideoLoaded ? "opacity-100" : "opacity-0"
-          }`} 
-          style={{ zIndex: -2 }}
-        >
-          <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none">
-            <div 
-              id="landing-yt-player" 
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none" 
-              style={{ width: '135vw', height: '135vh', minWidth: '100%', minHeight: '100%' }}
-            />
-          </div>
-          {/* Solid event-shield overlay inside video container */}
-          <div className="absolute inset-0 bg-slate-950/20 pointer-events-auto" style={{ zIndex: 5 }} />
+        {/* High-Definition YouTube Cinematic Background Player (Muted, auto-looping, no controls, zero loading delay, fully bright) */}
+        <div className="absolute inset-0 overflow-hidden select-none z-10 pointer-events-none">
+          <iframe
+            src="https://www.youtube.com/embed/2zUuSebtwfk?autoplay=1&mute=1&loop=1&playlist=2zUuSebtwfk&controls=0&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3&playsinline=1&enablejsapi=1&disablekb=1"
+            allow="autoplay; encrypted-media"
+            className="absolute top-1/2 left-1/2 min-w-full min-h-full -translate-x-1/2 -translate-y-1/2 object-cover pointer-events-none border-0"
+            style={{ width: '140vw', height: '140vh' }}
+            title="Pancaran Group Corporate Presentation Video"
+          />
+          {/* Fully transparent mask with no dark shades or black overlays for a fully bright and colorful view */}
+          <div className="absolute inset-0 bg-transparent" style={{ zIndex: 5 }} />
         </div>
 
         {/* Global heavy-duty transparent touch/drag shield covering the layout to swallow clicks before they reach YouTube iframe */}
@@ -3705,68 +3692,51 @@ ${lastMsgText}`;
           }}
         />
 
-        {/* High-Resolution Corporate Logo overlay at top center removed as requested by user */}
-
-        {/* Menu content elevated above touch shield */}
-        <div className="menu-content" id="landing-menu-content" style={{ zIndex: 25 }}>
-          <div className="flex justify-center w-full">
-            <button 
-              type="button"
-              className="font-sans font-bold select-none cursor-pointer tracking-wider uppercase transition-all duration-300 transform hover:-translate-y-1 active:scale-95 text-xs text-white flex items-center gap-2.5 px-9 py-4 bg-[#00D285] hover:bg-[#00BA74] rounded-full shadow-2xl mt-52 sm:mt-[25rem] md:mt-[31rem]" 
-              id="btn-mulai-jelajah"
-              style={{
-                backgroundImage: "linear-gradient(135deg, #00D285, #0056b3)",
-                boxShadow: "0 10px 25px -5px rgba(0, 210, 133, 0.4), 0 8px 10px -6px rgba(0, 86, 179, 0.3)"
-              }}
-              onClick={() => {
-                setShowHeroLanding(false);
-                sessionStorage.setItem("prama_hero_dismissed", "true");
-              }}
-            >
-              <Globe className="h-4 w-4 text-white" />
-              <span>JELAJAHI SISTEM PORTAL</span>
-            </button>
+        {showHeroLanding ? (
+          /* MENU UTAMA / LOBBY LANDING SCREEN OVERLAY */
+          <div className="relative z-30 flex flex-col items-center justify-center w-full h-full p-4 animate-fade-in" style={{ transform: 'translateZ(0)' }}>
+            {/* Menu content elevated above touch shield */}
+            <div className="menu-content" id="landing-menu-content" style={{ zIndex: 25 }}>
+              <div className="flex justify-center w-full">
+                <button 
+                  type="button"
+                  className="font-sans font-bold select-none cursor-pointer tracking-wider uppercase transition-all duration-300 transform hover:-translate-y-1 active:scale-95 text-xs text-white flex items-center gap-2.5 px-9 py-4 bg-[#00D285] hover:bg-[#00BA74] rounded-full shadow-2xl mt-52 sm:mt-[25rem] md:mt-[31rem]" 
+                  id="btn-mulai-jelajah"
+                  style={{
+                    backgroundImage: "linear-gradient(135deg, #00D285, #0056b3)",
+                    boxShadow: "0 10px 25px -5px rgba(0, 210, 133, 0.4), 0 8px 10px -6px rgba(0, 86, 179, 0.3)"
+                  }}
+                  onClick={() => {
+                    setShowHeroLanding(false);
+                    sessionStorage.setItem("prama_hero_dismissed", "true");
+                  }}
+                >
+                  <Globe className="h-4 w-4 text-white" />
+                  <span>JELAJAHI SISTEM PORTAL</span>
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-    );
-  }
+        ) : (
+          /* AUTHENTIC FORM OVERLAY (LOGIN AND REGISTER CARD) */
+          <div className="relative z-30 w-full max-w-4xl px-4 py-8 sm:py-12 flex flex-col items-center justify-center animate-fade-in" style={{ transform: 'translateZ(0)' }}>
+            
+            {/* Small floating Back Button on the top left */}
+            <button
+              type="button"
+              id="btn-back-to-video"
+              onClick={() => {
+                setShowHeroLanding(true);
+                sessionStorage.removeItem("prama_hero_dismissed");
+              }}
+              className="absolute top-4 left-4 z-[999] flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/60 backdrop-blur-md border border-white/10 text-slate-300 hover:text-white transition duration-200 shadow-md select-none text-xs font-semibold cursor-pointer"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              <span>Kembali ke Lobi</span>
+            </button>
 
-  // Render 2: Authentic Screen (Login & Register Form) - Theme: Light & Elegant with Brand Background Illustration
-  if (!activeUser) {
-    return (
-      <div className="relative min-h-screen flex items-center justify-center px-4 py-12 font-sans overflow-hidden">
-        {/* Brand Background Image */}
-        <div className="absolute inset-0 z-0">
-          <img 
-            src="/pancaran_illustration.jpg" 
-            alt="Pancaran Group Logistics Illustration" 
-            referrerPolicy="no-referrer"
-            className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 animate-fade-in scale-[1.00] origin-center"
-            style={{ zIndex: -1 }}
-          />
-          {/* Elegant Dark/Blur Overlay to focus and elevate contrast */}
-          <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm" />
-        </div>
-
-        {/* Small floating Back Button on the top left */}
-        <button
-          type="button"
-          id="btn-back-to-video"
-          onClick={() => {
-            setShowHeroLanding(true);
-            sessionStorage.removeItem("prama_hero_dismissed");
-          }}
-          className="absolute top-4 left-4 z-[999] flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/60 backdrop-blur-md border border-white/10 text-slate-300 hover:text-white transition duration-200 shadow-md select-none text-xs font-semibold cursor-pointer"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          <span>Kembali ke Lobi</span>
-        </button>
-
-
-
-        {/* Auth Card wrapper with elevated relative z-index */}
-        <div className="relative z-10 w-full max-w-4xl bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl overflow-hidden grid grid-cols-1 md:grid-cols-2 border border-white/20">
+            {/* Auth Card wrapper with elevated relative z-index */}
+            <div className="relative z-10 w-full bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl overflow-hidden grid grid-cols-1 md:grid-cols-2 border border-white/20 mt-10">
           
           {/* Left panel: Info Hub Brand PRAMA */}
           <div className="bg-gradient-to-br from-indigo-700 via-indigo-900 to-slate-900 p-8 text-white flex flex-col justify-between">
@@ -4008,6 +3978,8 @@ ${lastMsgText}`;
           </div>
 
         </div>
+      </div>
+    )}
       </div>
     );
   }

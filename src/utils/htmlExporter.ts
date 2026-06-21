@@ -493,8 +493,9 @@ export function exportToInteractiveHTML(
               <!-- 1. Portal Illustration Background -->
               <div class="absolute inset-0 w-full h-full overflow-hidden select-none z-0">
                 <img 
-                  src="\${window.location.origin}/pancaran_illustration.jpg" 
-                  alt="Pancaran Group Logistics Illustration" 
+                  src="${window.location.origin}/pancaran_illustration.jpg" 
+                  alt="" 
+                  onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1578575437130-527eed3abbec?q=80&w=1600';"
                   referrerpolicy="no-referrer"
                   class="w-full h-full object-cover origin-center z-0 scale-[1.00]"
                 />
@@ -559,8 +560,9 @@ export function exportToInteractiveHTML(
               <!-- 1. Portal Illustration Background -->
               <div class="absolute inset-0 w-full h-full overflow-hidden select-none z-0">
                 <img 
-                  src="\${window.location.origin}/pancaran_illustration.jpg" 
-                  alt="Pancaran Group Logistics Illustration" 
+                  src="${window.location.origin}/pancaran_illustration.jpg" 
+                  alt="" 
+                  onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1578575437130-527eed3abbec?q=80&w=1600';"
                   referrerpolicy="no-referrer"
                   class="w-full h-full object-cover origin-center z-0 scale-[1.00]"
                 />

@@ -8235,10 +8235,14 @@ ${lastMsgText}`;
                           {/* 1. Portal Illustration Background */}
                           <div className="absolute inset-0 w-full h-full overflow-hidden select-none z-0">
                             <img 
-                              src="/pancaran_illustration.jpg" 
-                              alt="Pancaran Group Logistics Illustration" 
+                              src={`${window.location.origin}/pancaran_illustration.jpg`}
+                              alt="" 
                               referrerPolicy="no-referrer"
                               className="w-full h-full object-cover origin-center z-0 scale-[1.00]"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).onerror = null;
+                                (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1578575437130-527eed3abbec?q=80&w=1600";
+                              }}
                             />
                             {/* Elegant dark overlay to ensure excellent readability of the white/green text */}
                             <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-[1px]" />
@@ -8302,10 +8306,14 @@ ${lastMsgText}`;
                       {/* 1. Portal Illustration Background */}
                       <div className="absolute inset-0 w-full h-full overflow-hidden select-none z-0">
                         <img 
-                          src="/pancaran_illustration.jpg" 
-                          alt="Pancaran Group Logistics Illustration" 
+                          src={`${window.location.origin}/pancaran_illustration.jpg`}
+                          alt="" 
                           referrerPolicy="no-referrer"
                           className="w-full h-full object-cover origin-center z-0 scale-[1.00]"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).onerror = null;
+                            (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1578575437130-527eed3abbec?q=80&w=1600";
+                          }}
                         />
                         {/* Elegant dark overlay to ensure excellent readability of the white/green text */}
                         <div className="absolute inset-0 bg-slate-950/75 backdrop-blur-[1px]" />

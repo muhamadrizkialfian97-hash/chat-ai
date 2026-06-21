@@ -678,10 +678,7 @@ export function exportToInteractiveHTML(
                 <div class="w-full h-full flex flex-col justify-center items-center gap-1.5">
                   <!-- Photo framed with green border -->
                   <div class="w-full h-[85%] border border-[#00D285] p-1 bg-white shadow-sm relative overflow-hidden rounded-md flex items-center justify-center">
-                    <img src="\${slide.imageUrl}" 
-                         alt="Ilustrasi Kajian PRAMA" 
-                         class="h-full w-full object-cover rounded border border-slate-100 shadow-sm"
-                         referrerpolicy="no-referrer" />
+                    <canvas id="slideIllustrationCanvas" class="w-full h-full block rounded border border-slate-100 shadow-sm transition-all duration-300"></canvas>
                   </div>
                   <span class="text-[8px] text-slate-400 italic font-bold tracking-wide text-center uppercase shrink-0">
                     ILUSTRASI STRATEGIS: \${slide.title ? slide.title.substring(0, 30) : "PRAMA ANALISA"}...
@@ -737,6 +734,12 @@ export function exportToInteractiveHTML(
             }\`;
           }
         });
+
+        // Draw the local dynamic canvas illustration
+        const slideIllustrationCanvas = document.getElementById("slideIllustrationCanvas");
+        if (slideIllustrationCanvas) {
+          drawStrategicIllustration(slideIllustrationCanvas, slide.title, activeSlideIndex);
+        }
 
         // Trigger TTS directly if auto-speech is active
         if (isTtsPlaying) {
@@ -958,6 +961,459 @@ export function exportToInteractiveHTML(
         }
       }
     }
+
+    function getCategoryFromTitle(slideTitle) {
+      var title = (slideTitle || "").toLowerCase();
+      if (
+        title.includes("forestry") ||
+        title.includes("forest") ||
+        title.includes("hutan") ||
+        title.includes("pulp") ||
+        title.includes("kayu") ||
+        title.includes("wood") ||
+        title.includes("timber") ||
+        title.includes("perkebunan") ||
+        title.includes("tanam") ||
+        title.includes("agro") ||
+        title.includes("reboisasi") ||
+        title.includes("plantation")
+      ) {
+        return { id: "forestry", title: "STRATEGI HUTAN INDUSTRI & LOGISTIK HIJAU" };
+      }
+      if (
+        title.includes("demograf") ||
+        title.includes("wilayah") ||
+        title.includes("geograf") ||
+        title.includes("peta") ||
+        title.includes("lokasi") ||
+        title.includes("daerah") ||
+        title.includes("pasar") ||
+        title.includes("target") ||
+        title.includes("penduduk") ||
+        title.includes("pesaing") ||
+        title.includes("sosial")
+      ) {
+        return { id: "demography", title: "PETA DEMOGRAFIS & DISPERSASI WILAYAH" };
+      }
+      if (
+        title.includes("finansial") ||
+        title.includes("biaya") ||
+        title.includes("investas") ||
+        title.includes("proyeksi") ||
+        title.includes("keuangan") ||
+        title.includes("untung") ||
+        title.includes("rugi") ||
+        title.includes("dana") ||
+        title.includes("modal") ||
+        title.includes("ekonomi") ||
+        title.includes("capex") ||
+        title.includes("opex")
+      ) {
+        return { id: "finance", title: "ANALISIS FINANSIAL & KELAYAKAN INVESTASI" };
+      }
+      if (
+        title.includes("logistik") ||
+        title.includes("armada") ||
+        title.includes("rute") ||
+        title.includes("transport") ||
+        title.includes("distribus") ||
+        title.includes("darat") ||
+        title.includes("laut") ||
+        title.includes("kapal") ||
+        title.includes("truk") ||
+        title.includes("cargo") ||
+        title.includes("limbah") ||
+        title.includes("jalan") ||
+        title.includes("operasi")
+      ) {
+        return { id: "logistics", title: "STRATEGI TRANSPORTASI & ARUS LOGISTIK" };
+      }
+      if (
+        title.includes("risiko") ||
+        title.includes("mitigasi") ||
+        title.includes("regulasi") ||
+        title.includes("patuh") ||
+        title.includes("keselamatan") ||
+        title.includes("hukum") ||
+        title.includes("aman") ||
+        title.includes("protek") ||
+        title.includes("audit") ||
+        title.includes("esg") ||
+        title.includes("bahaya")
+      ) {
+        return { id: "risk", title: "PETA RISIKO, MITIGASI & KEPATUHAN REGULASI" };
+      }
+      if (
+        title.includes("sistem") ||
+        title.includes("teknolog") ||
+        title.includes("digital") ||
+        title.includes("data") ||
+        title.includes("it") ||
+        title.includes("integras") ||
+        title.includes("software") ||
+        title.includes("hardware") ||
+        title.includes("portal") ||
+        title.includes("analitik")
+      ) {
+        return { id: "tech", title: "INTEGRASI SISTEM & ARSITEKTUR DIGITAL" };
+      }
+      return { id: "general", title: "ANALISIS STRATEGIS KOMPREHENSIF" };
+    }
+
+    function drawStrategicIllustration(canvas, slideTitle, slideIndex) {
+      if (!canvas) return;
+      var ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      var rect = canvas.getBoundingClientRect();
+      var w = rect.width || 400;
+      var h = rect.height || 280;
+      var dpr = window.devicePixelRatio || 1;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      ctx.scale(dpr, dpr);
+
+      var cat = getCategoryFromTitle(slideTitle);
+
+      var bgGrad = ctx.createLinearGradient(0, 0, w, h);
+      bgGrad.addColorStop(0, "#F8FAFC");
+      bgGrad.addColorStop(1, "#F1F5F9");
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, w, h);
+
+      ctx.strokeStyle = "#00D285";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(6, 6, w - 12, h - 12);
+
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.08)";
+      ctx.lineWidth = 1;
+      var gridSize = 25;
+      for (var xVal = gridSize; xVal < w; xVal += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(xVal, 0);
+        ctx.lineTo(xVal, h);
+        ctx.stroke();
+      }
+      for (var yVal = gridSize; yVal < h; yVal += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, yVal);
+        ctx.lineTo(w, yVal);
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = "#64748B";
+      ctx.font = "bold 8px monospace";
+      ctx.textAlign = "center";
+      ctx.fillText(cat.title, w / 2, 22);
+
+      if (cat.id === "forestry") {
+        ctx.strokeStyle = "rgba(0, 180, 114, 0.25)";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(80, h - 60);
+        ctx.lineTo(w / 2, h / 2 + 10);
+        ctx.lineTo(w - 80, h - 60);
+        ctx.moveTo(w / 2, 60);
+        ctx.lineTo(w / 2, h / 2 + 10);
+        ctx.stroke();
+
+        var nodes = [
+          { x: 80, y: h - 60, label: "HUTAN" },
+          { x: w / 2, y: h / 2 + 10, label: "DEPOT SEKAT" },
+          { x: w - 80, y: h - 60, label: "PABRIK PULP" },
+          { x: w / 2, y: 60, label: "DERMAGA" }
+        ];
+
+        nodes.forEach(function (n, idx) {
+          ctx.fillStyle = idx === 1 ? "#ECFDF5" : "#F0FDF4";
+          ctx.strokeStyle = idx === 1 ? "#00D285" : "#16A34A";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(n.x, n.y, 16, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = "#15803D";
+          ctx.beginPath();
+          ctx.moveTo(n.x, n.y - 8);
+          ctx.lineTo(n.x - 5, n.y + 2);
+          ctx.lineTo(n.x + 5, n.y + 2);
+          ctx.closePath();
+          ctx.fill();
+
+          ctx.fillStyle = "#1E293B";
+          ctx.font = "bold 6.5px sans-serif";
+          ctx.fillText(n.label, n.x, n.y + 24);
+        });
+
+      } else if (cat.id === "finance") {
+        var barW = 20;
+        var bHeight = [50, 75, 110, 95, 130];
+        var labels = ["T1", "T2", "T3", "T4", "OPTIMAL"];
+
+        bHeight.forEach(function (bh, i) {
+          var bx = 65 + i * (barW + 28);
+          var by = h - bh - 40;
+
+          ctx.fillStyle = i === 4 ? "rgba(0, 210, 133, 0.12)" : "rgba(100, 116, 139, 0.04)";
+          ctx.strokeStyle = i === 4 ? "#00D285" : "#94A3B8";
+          ctx.lineWidth = i === 4 ? 2 : 1;
+          
+          ctx.beginPath();
+          if (typeof ctx.roundRect === "function") {
+            ctx.roundRect(bx, by, barW, bh, [4, 4, 0, 0]);
+          } else {
+            ctx.rect(bx, by, barW, bh);
+          }
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = i === 4 ? "#059669" : "#475569";
+          ctx.font = "bold 6px monospace";
+          ctx.fillText("$" + bh + "M", bx + barW / 2, by - 6);
+
+          ctx.fillStyle = "#64748B";
+          ctx.font = "6px sans-serif";
+          ctx.fillText(labels[i], bx + barW / 2, h - 25);
+        });
+
+        ctx.strokeStyle = "#3B82F6";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        bHeight.forEach(function (bh, i) {
+          var bx = 65 + i * (barW + 28) + barW / 2;
+          var by = h - bh - 40;
+          if (i === 0) ctx.moveTo(bx, by + 10);
+          else ctx.lineTo(bx, by + 10);
+        });
+        ctx.stroke();
+
+      } else if (cat.id === "demography") {
+        var center = { x: w / 2, y: h / 2 + 10 };
+        var items = [
+          { x: center.x - 70, y: center.y - 35, r: 24, fill: "#EFF6FF", stroke: "#3B82F6", label: "MEDAN", sum: "18%" },
+          { x: center.x + 70, y: center.y - 25, r: 28, fill: "#FDF2F8", stroke: "#EC4899", label: "RIBER", sum: "24%" },
+          { x: center.x - 10, y: center.y + 40, r: 35, fill: "#ECFDF5", stroke: "#00D285", label: "DKI JAKARTA", sum: "58%" }
+        ];
+
+        ctx.strokeStyle = "rgba(100,116,139,0.15)";
+        ctx.lineWidth = 1;
+        items.forEach(function (it) {
+          ctx.beginPath();
+          ctx.moveTo(center.x, center.y);
+          ctx.lineTo(it.x, it.y);
+          ctx.stroke();
+        });
+
+        ctx.fillStyle = "#1E293B";
+        ctx.beginPath();
+        ctx.arc(center.x, center.y, 8, 0, Math.PI * 2);
+        ctx.fill();
+
+        items.forEach(function (it) {
+          ctx.fillStyle = it.fill;
+          ctx.strokeStyle = it.stroke;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(it.x, it.y, it.r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = "#1E293B";
+          ctx.font = "bold 7px sans-serif";
+          ctx.fillText(it.label, it.x, it.y - 2);
+          ctx.fillStyle = it.stroke;
+          ctx.font = "bold 8px monospace";
+          ctx.fillText(it.sum, it.x, it.y + 8);
+        });
+
+      } else if (cat.id === "logistics") {
+        var nodes = [
+          { x: 60, y: h / 2 + 20, label: "POOL AWAL", sub: "Pre-Ops" },
+          { x: w / 2, y: h / 2 - 25, label: "GPS HUB 1", sub: "Transit" },
+          { x: w - 60, y: h / 2 + 20, label: "BONGKAR", sub: "SLA 60m" }
+        ];
+
+        ctx.strokeStyle = "rgba(0, 210, 133, 0.25)";
+        ctx.lineWidth = 2.5;
+        if (typeof ctx.setLineDash === "function") {
+          ctx.setLineDash([5, 5]);
+        }
+        ctx.beginPath();
+        ctx.moveTo(nodes[0].x, nodes[0].y);
+        ctx.lineTo(nodes[1].x, nodes[1].y);
+        ctx.lineTo(nodes[2].x, nodes[2].y);
+        ctx.stroke();
+        if (typeof ctx.setLineDash === "function") {
+          ctx.setLineDash([]);
+        }
+
+        nodes.forEach(function (n, idx) {
+          ctx.fillStyle = "#FFFFFF";
+          ctx.strokeStyle = idx === 2 ? "#EF4444" : "#00D285";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(n.x, n.y, 18, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = idx === 2 ? "#EF4444" : "#00D285";
+          ctx.beginPath();
+          ctx.arc(n.x, n.y, 5, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = "#1E293B";
+          ctx.font = "bold 7px sans-serif";
+          ctx.fillText(n.label, n.x, n.y + 26);
+
+          ctx.fillStyle = "#64748B";
+          ctx.font = "5.5px monospace";
+          ctx.fillText(n.sub, n.x, n.y + 34);
+        });
+
+      } else if (cat.id === "risk") {
+        var cx = w / 2;
+        var cy = h / 2 + 10;
+
+        ctx.strokeStyle = "rgba(239, 68, 68, 0.06)";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 75, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.strokeStyle = "rgba(239, 68, 68, 0.15)";
+        ctx.beginPath();
+        ctx.arc(cx, cy, 45, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.fillStyle = "#FEF2F2";
+        ctx.strokeStyle = "#EF4444";
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 22, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = "#EF4444";
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - 8);
+        ctx.lineTo(cx - 2.5, cy + 1);
+        ctx.lineTo(cx + 2.5, cy + 1);
+        ctx.closePath();
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(cx, cy + 4, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#1E293B";
+        ctx.font = "bold 7.5px sans-serif";
+        ctx.fillText("RISK ASSESSMENT", cx, cy + 34);
+
+        ctx.fillStyle = "#EF4444";
+        ctx.font = "bold 6px monospace";
+        ctx.fillText("CRITICAL ZONE", cx, cy - 54);
+
+        ctx.fillStyle = "#16A34A";
+        ctx.font = "bold 6px monospace";
+        ctx.fillText("MITIGASI HIJAU", cx - 80, cy + 50);
+        ctx.fillText("SLA KETAT", cx + 80, cy + 50);
+
+      } else if (cat.id === "tech") {
+        var points = [
+          { x: 70, y: h / 2 - 25, title: "SENSORS" },
+          { x: 70, y: h / 2 + 35, title: "GPS GPS" },
+          { x: w / 2, y: h / 2 + 10, title: "PRAMA SERVER" },
+          { x: w - 70, y: h / 2 - 20, title: "RECORDS" },
+          { x: w - 70, y: h / 2 + 30, title: "PORTAL BI" }
+        ];
+
+        ctx.strokeStyle = "rgba(59, 130, 246, 0.2)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        ctx.lineTo(points[2].x, points[2].y);
+        ctx.lineTo(points[3].x, points[3].y);
+        ctx.moveTo(points[1].x, points[1].y);
+        ctx.lineTo(points[2].x, points[2].y);
+        ctx.lineTo(points[4].x, points[4].y);
+        ctx.stroke();
+
+        points.forEach(function (p, idx) {
+          ctx.fillStyle = idx === 2 ? "#EFF6FF" : "#FFFFFF";
+          ctx.strokeStyle = idx === 2 ? "#3B82F6" : "#475569";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          if (typeof ctx.roundRect === "function") {
+            ctx.roundRect(p.x - 22, p.y - 12, 44, 24, 4);
+          } else {
+            ctx.rect(p.x - 22, p.y - 12, 44, 24);
+          }
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = idx === 2 ? "#00D285" : "#64748B";
+          ctx.fillRect(p.x - 22, p.y + 8, 44, 2);
+
+          ctx.fillStyle = "#1E293B";
+          ctx.font = "bold 5.5px monospace";
+          ctx.textAlign = "center";
+          ctx.fillText(p.title, p.x, p.y + 2);
+        });
+
+      } else {
+        var cx = w / 2;
+        var cy = h / 2 + 10;
+
+        ctx.strokeStyle = "rgba(100,116,139,0.18)";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(cx - 95, cy);
+        ctx.lineTo(cx + 95, cy);
+        ctx.moveTo(cx, cy - 40);
+        ctx.lineTo(cx, cy + 40);
+        ctx.stroke();
+
+        var cells = [
+          { x: cx, y: cy, label: "STRATEGI", fill: "#ECFDF5", border: "#00D285" },
+          { x: cx - 95, y: cy, label: "INPUT DATA", fill: "#FFFFFF", border: "#94A3B8" },
+          { x: cx + 95, y: cy, label: "REKOMENDASI", fill: "#FFFFFF", border: "#94A3B8" },
+          { x: cx, y: cy - 40, label: "TINDAK LANJUT", fill: "#FFFFFF", border: "#94A3B8" },
+          { x: cx, y: cy + 40, label: "EVALUASI", fill: "#FFFFFF", border: "#94A3B8" }
+        ];
+
+        cells.forEach(function (c) {
+          ctx.fillStyle = c.fill;
+          ctx.strokeStyle = c.border;
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          if (typeof ctx.roundRect === "function") {
+            ctx.roundRect(c.x - 28, c.y - 11, 56, 22, 5);
+          } else {
+            ctx.rect(c.x - 28, c.y - 11, 56, 22);
+          }
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = "#1E293B";
+          ctx.font = "bold 5.5px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(c.label, c.x, c.y + 2);
+        });
+      }
+
+      ctx.fillStyle = "#94A3B8";
+      ctx.font = "5px monospace";
+      ctx.textAlign = "center";
+      ctx.fillText("✦ PRAMA COGNITIVE SYSTEM ENGINE ✦", w / 2, h - 16);
+    }
+    
+    window.addEventListener("resize", function() {
+      var slideIllustrationCanvas = document.getElementById("slideIllustrationCanvas");
+      if (slideIllustrationCanvas && activeSlideIndex > 0 && activeSlideIndex < slidesData.length - 1) {
+        var slide = slidesData[activeSlideIndex];
+        drawStrategicIllustration(slideIllustrationCanvas, slide.title, activeSlideIndex);
+      }
+    });
   </script>
 </body>
 </html>

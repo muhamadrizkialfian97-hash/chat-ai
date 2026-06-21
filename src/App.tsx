@@ -35,6 +35,57 @@ import Navbar from "./components/Navbar";
 import { PramaAnimatedIllustration } from "./components/PramaAnimatedIllustration";
 const pramaLogo = "https://lh3.googleusercontent.com/d/1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X";
 
+export const sanitizeJsonString = (str: string): string => {
+  let result = "";
+  let inString = false;
+  let escape = false;
+  for (let i = 0; i < str.length; i++) {
+    const char = str[i];
+    if (escape) {
+      result += char;
+      escape = false;
+      continue;
+    }
+    if (char === '\\') {
+      result += char;
+      escape = true;
+      continue;
+    }
+    if (char === '"') {
+      inString = !inString;
+      result += char;
+      continue;
+    }
+    if (inString) {
+      const code = char.charCodeAt(0);
+      if (code < 32) {
+        if (char === '\n') {
+          result += '\\n';
+        } else if (char === '\r') {
+          result += '\\r';
+        } else if (char === '\t') {
+          result += '\\t';
+        }
+      } else {
+        result += char;
+      }
+    } else {
+      result += char;
+    }
+  }
+  return result;
+};
+
+export const safeJsonParse = (str: string | null, fallback: any): any => {
+  if (!str) return fallback;
+  try {
+    return JSON.parse(sanitizeJsonString(str));
+  } catch (e) {
+    console.warn("Failed to parse JSON safely:", e);
+    return fallback;
+  }
+};
+
 export interface User {
   uid: string;
   email: string;
@@ -1740,8 +1791,8 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
         // Guest mode loads from client cache
         const localFiles = localStorage.getItem("gemini_mirror_files");
         const localChats = localStorage.getItem("gemini_mirror_chats");
-        setFiles(localFiles ? JSON.parse(localFiles) : []);
-        setChatMessages(localChats ? cleanChatMessages(JSON.parse(localChats)) : []);
+        setFiles(safeJsonParse(localFiles, []));
+        setChatMessages(cleanChatMessages(safeJsonParse(localChats, [])));
         return;
       }
 
@@ -1805,8 +1856,8 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
       // Offline mode: Load from localStorage
       const localFiles = localStorage.getItem("gemini_mirror_files");
       const localChats = localStorage.getItem("gemini_mirror_chats");
-      setFiles(localFiles ? JSON.parse(localFiles) : []);
-      setChatMessages(localChats ? cleanChatMessages(JSON.parse(localChats)) : []);
+      setFiles(safeJsonParse(localFiles, []));
+      setChatMessages(cleanChatMessages(safeJsonParse(localChats, [])));
     }
   }, [user, guestUser, authLoading, socketStatus]);
 
@@ -3207,7 +3258,7 @@ ${lastMsgText}`;
         throw new Error("Format JSON presentasi tidak ditemukan dalam respons.");
       }
 
-      const slidesData = JSON.parse(cleanText);
+      const slidesData = JSON.parse(sanitizeJsonString(cleanText));
       if (!Array.isArray(slidesData)) {
         throw new Error("Data hasil presentasi bukan merupakan sebuah list/array slide.");
       }
@@ -3468,13 +3519,16 @@ ${lastMsgText}`;
   if (showHeroLanding) {
     return (
       <div className="video-container" id="landing-hero-container">
-        <img 
-          src="/pancaran_illustration.jpg" 
-          alt="Pancaran Group Logistics Illustration" 
-          referrerPolicy="no-referrer"
-          className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 animate-fade-in scale-[1.00] origin-center"
-          style={{ zIndex: -1, opacity: 1.0 }}
-        />
+        <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ zIndex: -1 }}>
+          <iframe 
+            src="https://www.youtube.com/embed/2zUuSebtwfk?autoplay=1&mute=1&loop=1&playlist=2zUuSebtwfk&controls=0&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1"
+            title="Pancaran Group Dynamics Hero Video"
+            className="absolute top-1/2 left-1/2 w-[115%] h-[115%] -translate-x-1/2 -translate-y-1/2 border-0"
+            style={{ pointerEvents: 'none', minWidth: '100vw', minHeight: '100vh' }}
+            allow="autoplay; encrypted-media"
+          />
+          <div className="absolute inset-0 bg-slate-950/20" />
+        </div>
 
         {/* High-Resolution Corporate Logo overlay at top center removed as requested by user */}
 

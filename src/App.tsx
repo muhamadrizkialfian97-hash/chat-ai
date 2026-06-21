@@ -3705,27 +3705,6 @@ ${lastMsgText}`;
           }}
         />
 
-        {/* Floating Fullscreen Control Badge at Top Right - Elevated above touch shield */}
-        <div className="absolute top-6 right-6 select-none" style={{ zIndex: 30 }}>
-          <button
-            onClick={toggleFullscreen}
-            type="button"
-            className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/20 bg-slate-950/40 backdrop-blur-md text-white hover:bg-slate-900/60 transition-all duration-300 shadow-lg cursor-pointer text-xs font-mono font-bold tracking-wider"
-          >
-            {isFullscreen ? (
-              <>
-                <Minimize2 className="h-3.5 w-3.5 text-rose-400" />
-                <span>LAYAR NORMAL</span>
-              </>
-            ) : (
-              <>
-                <Maximize2 className="h-3.5 w-3.5 text-[#00D285]" />
-                <span>LAYAR PENUH</span>
-              </>
-            )}
-          </button>
-        </div>
-
         {/* High-Resolution Corporate Logo overlay at top center removed as requested by user */}
 
         {/* Menu content elevated above touch shield */}

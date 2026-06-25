@@ -12,7 +12,7 @@ interface SlideItem {
   imageUrl?: string;
 }
 
-export function exportToInteractiveHTML(
+export async function exportToInteractiveHTML(
   proyekTitle: string,
   slides: SlideItem[],
   divisiName: string = "PORTAL"
@@ -23,9 +23,33 @@ export function exportToInteractiveHTML(
     .replace(/^Presentasi_Kajian_/gi, "")
     .replace(/^Presentasi\s+Kajian\s+/gi, "")
     .replace(/^Presentasi\s+/gi, "")
+    .replace(/^Kajian\s+/gi, "")
+    .replace(/Presentasi Kajian Kajian/gi, "Presentasi Kajian")
+    .replace(/Kajian Kajian/gi, "Kajian")
+    .replace(/Presentasi Presentasi/gi, "Presentasi")
+    .replace(/Presentasi Kajian/gi, "")
+    .replace(/Presentasi/gi, "")
+    .replace(/Kajian/gi, "")
     .trim();
 
   const divisionText = divisiName.toUpperCase();
+
+  // Fetch pancaran_illustration.jpg as Base64 to make it self-contained
+  let base64Illustration = "";
+  try {
+    const res = await fetch("/pancaran_illustration.jpg");
+    if (res.ok) {
+      const blob = await res.blob();
+      base64Illustration = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    }
+  } catch (err) {
+    console.warn("Failed to fetch pancaran_illustration.jpg as Base64:", err);
+  }
 
   const slidesData = [
     {
@@ -147,10 +171,10 @@ export function exportToInteractiveHTML(
     }
   </style>
 </head>
-<body class="bg-brand-darkBg text-slate-100 min-h-screen font-sans flex flex-col antialiased overflow-hidden">
+<body class="bg-brand-darkBg text-slate-100 min-h-screen font-sans flex flex-col antialiased overflow-y-auto overflow-x-hidden">
 
   <!-- TOP HEADER PORTAL BAR -->
-  <header class="h-16 border-b border-slate-800 bg-slate-950 flex items-center justify-between px-6 shrink-0 z-30">
+  <header class="sticky top-0 h-16 border-b border-slate-800 bg-slate-950 flex items-center justify-between px-6 shrink-0 z-30">
     <div class="flex items-center gap-3">
       <!-- Embedded Corporate Logo -->
       <img src="https://lh3.googleusercontent.com/d/1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X" 
@@ -185,10 +209,10 @@ export function exportToInteractiveHTML(
   </header>
 
   <!-- SPLIT SCREEN PRESENTATION WORKSPACE -->
-  <main class="flex-1 flex min-h-0 relative">
+  <main class="flex-1 flex relative">
 
     <!-- LEFT SIDEBAR: INTERACTIVE INDEX LIST & SETTINGS (Cancellable/Collapsible) -->
-    <aside id="sidebarPanel" class="w-80 border-r border-slate-800 bg-slate-950/70 backdrop-blur-md flex flex-col shrink-0 transition-all duration-300 z-20">
+    <aside id="sidebarPanel" class="sticky top-16 h-[calc(100vh-64px)] w-80 border-r border-slate-800 bg-slate-950/70 backdrop-blur-md flex flex-col shrink-0 transition-all duration-300 z-20">
       
       <!-- Slide count & stats bar -->
       <div class="p-4 border-b border-slate-800/80 bg-slate-950/40 flex items-center justify-between shrink-0">
@@ -233,7 +257,7 @@ export function exportToInteractiveHTML(
     </aside>
 
     <!-- MAIN DISPLAY CANVAS AND VOICE DESCRIPTOR BOARD -->
-    <section class="flex-1 flex flex-col min-h-0 bg-slate-950 overflow-y-auto p-4 md:p-6 lg:p-8">
+    <section class="flex-1 flex flex-col bg-slate-950 p-4 md:p-6 lg:p-8">
       
       <!-- TOP CONTROL WIDGET FOR AUTOPLAY & TRANSITION STATUS -->
       <div class="flex flex-wrap items-center justify-between gap-4 mb-5 select-none bg-slate-900/50 p-3.5 rounded-2xl border border-slate-800">
@@ -344,6 +368,7 @@ export function exportToInteractiveHTML(
   <script>
     // Injection of clean slides
     const slidesData = ${slidesJsonString};
+    const bgIllustrationBase64 = "${base64Illustration}";
     
     // State machine
     let activeSlideIndex = 0;
@@ -493,9 +518,8 @@ export function exportToInteractiveHTML(
               <!-- 1. Portal Illustration Background -->
               <div class="absolute inset-0 w-full h-full overflow-hidden select-none z-0">
                 <img 
-                  src="${window.location.origin}/pancaran_illustration.jpg" 
-                  alt="" 
-                  onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1578575437130-527eed3abbec?q=80&w=1600';"
+                  src="\${bgIllustrationBase64 || window.location.origin + '/pancaran_illustration.jpg'}" 
+                  alt="Pancaran Group Logistics Illustration" 
                   referrerpolicy="no-referrer"
                   class="w-full h-full object-cover origin-center z-0 scale-[1.00]"
                 />
@@ -560,9 +584,8 @@ export function exportToInteractiveHTML(
               <!-- 1. Portal Illustration Background -->
               <div class="absolute inset-0 w-full h-full overflow-hidden select-none z-0">
                 <img 
-                  src="${window.location.origin}/pancaran_illustration.jpg" 
-                  alt="" 
-                  onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1578575437130-527eed3abbec?q=80&w=1600';"
+                  src="\${bgIllustrationBase64 || window.location.origin + '/pancaran_illustration.jpg'}" 
+                  alt="Pancaran Group Logistics Illustration" 
                   referrerpolicy="no-referrer"
                   class="w-full h-full object-cover origin-center z-0 scale-[1.00]"
                 />
@@ -680,7 +703,7 @@ export function exportToInteractiveHTML(
                 <div class="w-full h-full flex flex-col justify-center items-center gap-1.5">
                   <!-- Photo framed with green border -->
                   <div class="w-full h-[85%] border border-[#00D285] p-1 bg-white shadow-sm relative overflow-hidden rounded-md flex items-center justify-center">
-                    <canvas id="slideIllustrationCanvas" class="w-full h-full block rounded border border-slate-100 shadow-sm transition-all duration-300"></canvas>
+                    <canvas id="illustrationCanvas" class="w-full h-full block rounded transition-all duration-300"></canvas>
                   </div>
                   <span class="text-[8px] text-slate-400 italic font-bold tracking-wide text-center uppercase shrink-0">
                     ILUSTRASI STRATEGIS: \${slide.title ? slide.title.substring(0, 30) : "PRAMA ANALISA"}...
@@ -692,6 +715,18 @@ export function exportToInteractiveHTML(
         }
 
         container.innerHTML = contentHtml;
+
+        // Stop any previous canvas drawing animation loop
+        if (window.illustrationAnimId) {
+          cancelAnimationFrame(window.illustrationAnimId);
+          window.illustrationAnimId = null;
+        }
+
+        const canvas = document.getElementById("illustrationCanvas");
+        if (canvas) {
+          startIllustrationAnimation(canvas, slide.title, activeSlideIndex);
+        }
+
         container.classList.remove("slide-fade-enter");
         container.classList.add("slide-fade-active");
 
@@ -737,12 +772,6 @@ export function exportToInteractiveHTML(
           }
         });
 
-        // Draw the local dynamic canvas illustration
-        const slideIllustrationCanvas = document.getElementById("slideIllustrationCanvas");
-        if (slideIllustrationCanvas) {
-          drawStrategicIllustration(slideIllustrationCanvas, slide.title, activeSlideIndex);
-        }
-
         // Trigger TTS directly if auto-speech is active
         if (isTtsPlaying) {
           triggerSpeechSynthesis();
@@ -756,7 +785,8 @@ export function exportToInteractiveHTML(
       if (index < 0 || index >= slidesData.length) return;
       
       // Stop ongoing speech & auto-next countdown
-      stopSpeechAndTimers();
+      const wasPlaying = isTtsPlaying;
+      stopSpeechAndTimers(wasPlaying);
 
       activeSlideIndex = index;
       renderActiveSlide();
@@ -778,16 +808,16 @@ export function exportToInteractiveHTML(
     // TTS & AUTOPLAY CONTROL MECHANISM
     function handlePlayStopTTS() {
       if (isTtsPlaying) {
-        stopSpeechAndTimers();
+        stopSpeechAndTimers(false);
       } else {
         triggerSpeechSynthesis();
       }
     }
 
-    function stopSpeechAndTimers() {
+    function stopSpeechAndTimers(preservePlayingState = false) {
       // Clear timers
       if (autoNextTimeoutId) {
-        clearTimeout(autoNextTimeoutId);
+        clearInterval(autoNextTimeoutId);
         autoNextTimeoutId = null;
       }
       
@@ -796,18 +826,20 @@ export function exportToInteractiveHTML(
         window.speechSynthesis.cancel();
       }
 
-      isTtsPlaying = false;
-      document.getElementById("btnPlayTts").className = "flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#00D285] hover:bg-[#00B472] text-slate-950 font-black text-xs transition duration-200 shadow-lg cursor-pointer transform active:scale-95 select-none font-sans uppercase";
-      document.getElementById("textPlayTts").textContent = "MULAI AUDIO PRESENTASI";
-      
-      const btnIcon = document.querySelector("#btnPlayTts i");
-      if (btnIcon) {
-        btnIcon.setAttribute("data-lucide", "play");
-        lucide.createIcons();
-      }
+      if (!preservePlayingState) {
+        isTtsPlaying = false;
+        document.getElementById("btnPlayTts").className = "flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#00D285] hover:bg-[#00B472] text-slate-950 font-black text-xs transition duration-200 shadow-lg cursor-pointer transform active:scale-95 select-none font-sans uppercase";
+        document.getElementById("textPlayTts").textContent = "MULAI AUDIO PRESENTASI";
+        
+        const btnIcon = document.querySelector("#btnPlayTts i");
+        if (btnIcon) {
+          btnIcon.setAttribute("data-lucide", "play");
+          lucide.createIcons();
+        }
 
-      document.getElementById("equalizerIndicator").classList.add("hidden");
-      document.getElementById("autoNextCountdownBar").classList.add("hidden");
+        document.getElementById("equalizerIndicator").classList.add("hidden");
+        document.getElementById("autoNextCountdownBar").classList.add("hidden");
+      }
     }
 
     function triggerSpeechSynthesis() {
@@ -817,7 +849,7 @@ export function exportToInteractiveHTML(
       }
 
       // Stop previous
-      stopSpeechAndTimers();
+      stopSpeechAndTimers(true);
 
       const textToSpeak = document.getElementById("speakerNotesDisplay").textContent;
       
@@ -965,7 +997,8 @@ export function exportToInteractiveHTML(
     }
 
     function getCategoryFromTitle(slideTitle) {
-      var title = (slideTitle || "").toLowerCase();
+      const title = (slideTitle || "").toLowerCase();
+      
       if (
         title.includes("forestry") ||
         title.includes("forest") ||
@@ -980,8 +1013,9 @@ export function exportToInteractiveHTML(
         title.includes("reboisasi") ||
         title.includes("plantation")
       ) {
-        return { id: "forestry", title: "STRATEGI HUTAN INDUSTRI & LOGISTIK HIJAU" };
+        return { id: "forestry", title: "STRATEGI HUTAN INDUSTRI & LOGISTIK HIJAU", code: "HIJ" };
       }
+
       if (
         title.includes("demograf") ||
         title.includes("wilayah") ||
@@ -995,8 +1029,9 @@ export function exportToInteractiveHTML(
         title.includes("pesaing") ||
         title.includes("sosial")
       ) {
-        return { id: "demography", title: "PETA DEMOGRAFIS & DISPERSASI WILAYAH" };
+        return { id: "demography", title: "PETA DEMOGRAFIS & DISPERSASI WILAYAH", code: "DEM" };
       }
+
       if (
         title.includes("finansial") ||
         title.includes("biaya") ||
@@ -1011,8 +1046,9 @@ export function exportToInteractiveHTML(
         title.includes("capex") ||
         title.includes("opex")
       ) {
-        return { id: "finance", title: "ANALISIS FINANSIAL & KELAYAKAN INVESTASI" };
+        return { id: "finance", title: "ANALISIS FINANSIAL & KELAYAKAN INVESTASI", code: "FIN" };
       }
+
       if (
         title.includes("logistik") ||
         title.includes("armada") ||
@@ -1028,8 +1064,9 @@ export function exportToInteractiveHTML(
         title.includes("jalan") ||
         title.includes("operasi")
       ) {
-        return { id: "logistics", title: "STRATEGI TRANSPORTASI & ARUS LOGISTIK" };
+        return { id: "logistics", title: "STRATEGI TRANSPORTASI & ARUS LOGISTIK", code: "LOG" };
       }
+
       if (
         title.includes("risiko") ||
         title.includes("mitigasi") ||
@@ -1043,8 +1080,9 @@ export function exportToInteractiveHTML(
         title.includes("esg") ||
         title.includes("bahaya")
       ) {
-        return { id: "risk", title: "PETA RISIKO, MITIGASI & KEPATUHAN REGULASI" };
+        return { id: "risk", title: "PETA RISIKO, MITIGASI & KEPATUHAN REGULASI", code: "RSK" };
       }
+
       if (
         title.includes("sistem") ||
         title.includes("teknolog") ||
@@ -1057,365 +1095,512 @@ export function exportToInteractiveHTML(
         title.includes("portal") ||
         title.includes("analitik")
       ) {
-        return { id: "tech", title: "INTEGRASI SISTEM & ARSITEKTUR DIGITAL" };
+        return { id: "tech", title: "INTEGRASI SISTEM & ARSITEKTUR DIGITAL", code: "TEK" };
       }
-      return { id: "general", title: "ANALISIS STRATEGIS KOMPREHENSIF" };
+
+      return { id: "general", title: "ANALISIS STRATEGIS KOMPREHENSIF", code: "GEN" };
     }
 
-    function drawStrategicIllustration(canvas, slideTitle, slideIndex) {
-      if (!canvas) return;
-      var ctx = canvas.getContext("2d");
+    function startIllustrationAnimation(canvas, slideTitle, slideIndex) {
+      const ctx = canvas.getContext("2d");
       if (!ctx) return;
 
-      var rect = canvas.getBoundingClientRect();
-      var w = rect.width || 400;
-      var h = rect.height || 280;
-      var dpr = window.devicePixelRatio || 1;
-      canvas.width = w * dpr;
-      canvas.height = h * dpr;
-      ctx.scale(dpr, dpr);
+      let animationFrameId;
+      let frame = 0;
 
-      var cat = getCategoryFromTitle(slideTitle);
+      const cat = getCategoryFromTitle(slideTitle);
 
-      var bgGrad = ctx.createLinearGradient(0, 0, w, h);
-      bgGrad.addColorStop(0, "#F8FAFC");
-      bgGrad.addColorStop(1, "#F1F5F9");
-      ctx.fillStyle = bgGrad;
-      ctx.fillRect(0, 0, w, h);
+      function resizeAndPaint() {
+        const rect = canvas.getBoundingClientRect();
+        const width = rect.width || canvas.clientWidth || 400;
+        const height = rect.height || canvas.clientHeight || 280;
 
-      ctx.strokeStyle = "#00D285";
-      ctx.lineWidth = 3;
-      ctx.strokeRect(6, 6, w - 12, h - 12);
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        ctx.scale(dpr, dpr);
 
-      ctx.strokeStyle = "rgba(148, 163, 184, 0.08)";
-      ctx.lineWidth = 1;
-      var gridSize = 25;
-      for (var xVal = gridSize; xVal < w; xVal += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(xVal, 0);
-        ctx.lineTo(xVal, h);
-        ctx.stroke();
+        // Draw background
+        const bgGrad = ctx.createLinearGradient(0, 0, width, height);
+        bgGrad.addColorStop(0, "#F8FAFC");
+        bgGrad.addColorStop(1, "#F1F5F9");
+        ctx.fillStyle = bgGrad;
+        ctx.fillRect(0, 0, width, height);
+
+        // Branded Green Border
+        ctx.strokeStyle = "#00D285";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(8, 8, width - 16, height - 16);
+
+        // Grid lines
+        ctx.strokeStyle = "rgba(148, 163, 184, 0.08)";
+        ctx.lineWidth = 1;
+        const gridSize = 25;
+        for (let x = gridSize; x < width; x += gridSize) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, height);
+          ctx.stroke();
+        }
+        for (let y = gridSize; y < height; y += gridSize) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(width, y);
+          ctx.stroke();
+        }
+
+        // Bracket corners
+        ctx.strokeStyle = "rgba(0, 210, 133, 0.4)";
+        ctx.lineWidth = 2;
+        const bSize = 15;
+        // Top-Left
+        ctx.beginPath(); ctx.moveTo(15 + bSize, 15); ctx.lineTo(15, 15); ctx.lineTo(15, 15 + bSize); ctx.stroke();
+        // Top-Right
+        ctx.beginPath(); ctx.moveTo(width - 15 - bSize, 15); ctx.lineTo(width - 15, 15); ctx.lineTo(width - 15, 15 + bSize); ctx.stroke();
+        // Bottom-Left
+        ctx.beginPath(); ctx.moveTo(15 + bSize, height - 15); ctx.lineTo(15, height - 15); ctx.lineTo(15, height - 15 - bSize); ctx.stroke();
+        // Bottom-Right
+        ctx.beginPath(); ctx.moveTo(width - 15 - bSize, height - 15); ctx.lineTo(width - 15, height - 15); ctx.lineTo(width - 15, height - 15 - bSize); ctx.stroke();
+
+        // Footer Metadata Text
+        ctx.fillStyle = "#475569";
+        ctx.font = "bold 9px sans-serif";
+        ctx.textAlign = "left";
+        ctx.fillText("PRAMA COGNITIVE PORTAL", 25, 32);
+
+        ctx.fillStyle = "#94A3B8";
+        ctx.font = "bold 8px monospace";
+        ctx.fillText("ID: " + cat.code + "-" + (slideIndex + 1) + "-V" + (Math.floor(frame / 60) + 1), 25, height - 22);
+
+        // Header Title
+        ctx.fillStyle = "#0F172A";
+        ctx.font = "bold 13px sans-serif";
+        ctx.textAlign = "right";
+        ctx.fillText(cat.title, width - 25, 32);
+
+        // Draw Subcategory diagrams
+        if (cat.id === "logistics") {
+          drawLogistics(ctx, width, height, frame);
+        } else if (cat.id === "forestry") {
+          drawForestry(ctx, width, height, frame);
+        } else if (cat.id === "finance") {
+          drawFinance(ctx, width, height, frame);
+        } else if (cat.id === "demography") {
+          drawDemographics(ctx, width, height, frame);
+        } else if (cat.id === "risk") {
+          drawRisk(ctx, width, height, frame);
+        } else if (cat.id === "tech") {
+          drawTech(ctx, width, height, frame);
+        } else {
+          drawGeneral(ctx, width, height, frame);
+        }
       }
-      for (var yVal = gridSize; yVal < h; yVal += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(0, yVal);
-        ctx.lineTo(w, yVal);
-        ctx.stroke();
-      }
 
-      ctx.fillStyle = "#64748B";
-      ctx.font = "bold 8px monospace";
-      ctx.textAlign = "center";
-      ctx.fillText(cat.title, w / 2, 22);
-
-      if (cat.id === "forestry") {
-        ctx.strokeStyle = "rgba(0, 180, 114, 0.25)";
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(80, h - 60);
-        ctx.lineTo(w / 2, h / 2 + 10);
-        ctx.lineTo(w - 80, h - 60);
-        ctx.moveTo(w / 2, 60);
-        ctx.lineTo(w / 2, h / 2 + 10);
-        ctx.stroke();
-
-        var nodes = [
-          { x: 80, y: h - 60, label: "HUTAN" },
-          { x: w / 2, y: h / 2 + 10, label: "DEPOT SEKAT" },
-          { x: w - 80, y: h - 60, label: "PABRIK PULP" },
-          { x: w / 2, y: 60, label: "DERMAGA" }
+      function drawLogistics(ctx, w, h, frame) {
+        const centerY = h * 0.52;
+        const hubs = [
+          { x: w * 0.16, y: centerY - 35, label: "SUMATRA HUB" },
+          { x: w * 0.35, y: centerY + 45, label: "JAKARTA HQ" },
+          { x: w * 0.52, y: centerY + 15, label: "PORT SURABAYA" },
+          { x: w * 0.44, y: centerY - 50, label: "WEST KALIMANTAN" },
+          { x: w * 0.68, y: centerY - 20, label: "SULAWESI PORT" }
         ];
 
-        nodes.forEach(function (n, idx) {
-          ctx.fillStyle = idx === 1 ? "#ECFDF5" : "#F0FDF4";
-          ctx.strokeStyle = idx === 1 ? "#00D285" : "#16A34A";
+        ctx.strokeStyle = "rgba(100, 116, 139, 0.18)";
+        ctx.lineWidth = 2;
+        const connections = [[0, 1], [1, 2], [1, 3], [2, 4], [3, 4]];
+
+        connections.forEach(([from, to]) => {
+          ctx.beginPath();
+          ctx.moveTo(hubs[from].x, hubs[from].y);
+          ctx.lineTo(hubs[to].x, hubs[to].y);
+          ctx.stroke();
+
+          const dx = hubs[to].x - hubs[from].x;
+          const dy = hubs[to].y - hubs[from].y;
+          const ratio = ((frame * 0.012) + (from * 0.25)) % 1;
+          const bx = hubs[from].x + dx * ratio;
+          const by = hubs[from].y + dy * ratio;
+
+          ctx.fillStyle = "rgba(0, 210, 133, 0.45)";
+          ctx.beginPath(); ctx.arc(bx, by, 5, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = "#00D285";
+          ctx.beginPath(); ctx.arc(bx, by, 2.5, 0, Math.PI * 2); ctx.fill();
+        });
+
+        hubs.forEach((h, index) => {
+          const size = (index === 1) ? 9 : 6;
+          ctx.fillStyle = (index === 1) ? "#00D285" : "#3B82F6";
+          ctx.strokeStyle = "#FFFFFF";
           ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.arc(n.x, n.y, 16, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
+          ctx.beginPath(); ctx.arc(h.x, h.y, size, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
 
-          ctx.fillStyle = "#15803D";
-          ctx.beginPath();
-          ctx.moveTo(n.x, n.y - 8);
-          ctx.lineTo(n.x - 5, n.y + 2);
-          ctx.lineTo(n.x + 5, n.y + 2);
-          ctx.closePath();
-          ctx.fill();
-
-          ctx.fillStyle = "#1E293B";
-          ctx.font = "bold 6.5px sans-serif";
-          ctx.fillText(n.label, n.x, n.y + 24);
+          ctx.fillStyle = "#0F172A";
+          ctx.font = "bold 7px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(h.label, h.x, h.y - size - 4);
         });
 
-      } else if (cat.id === "finance") {
-        var barW = 20;
-        var bHeight = [50, 75, 110, 95, 130];
-        var labels = ["T1", "T2", "T3", "T4", "OPTIMAL"];
+        drawOverlayPanel(ctx, w, h, "OPTIMASI OPERASI", [
+          { title: "Rute Terkoneksi", text: "24 Jalur Logistik", pct: 92 },
+          { title: "Utilitas Fleet", text: "87% Optimal", pct: 87 },
+          { title: "Efisiensi Bahan Bakar", text: "Hemat 12.4%", pct: 75 }
+        ]);
+      }
 
-        bHeight.forEach(function (bh, i) {
-          var bx = 65 + i * (barW + 28);
-          var by = h - bh - 40;
+      function drawForestry(ctx, w, h, frame) {
+        const cx = w * 0.45;
+        const cy = h * 0.52;
 
-          ctx.fillStyle = i === 4 ? "rgba(0, 210, 133, 0.12)" : "rgba(100, 116, 139, 0.04)";
-          ctx.strokeStyle = i === 4 ? "#00D285" : "#94A3B8";
-          ctx.lineWidth = i === 4 ? 2 : 1;
-          
+        ctx.strokeStyle = "rgba(0, 210, 133, 0.15)";
+        ctx.lineWidth = 1;
+        for (let r = 20; r < 90; r += 20) {
+          ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+        }
+
+        const trees = [
+          { x: cx - 45, y: cy - 25, size: 10, lvl: 0.9 },
+          { x: cx + 35, y: cy - 40, size: 8, lvl: 0.7 },
+          { x: cx - 15, y: cy + 45, size: 12, lvl: 0.95 },
+          { x: cx + 55, y: cy + 20, size: 11, lvl: 0.8 },
+          { x: cx, y: cy - 10, size: 14, lvl: 0.85 }
+        ];
+
+        trees.forEach((t, idx) => {
+          const breathe = 1 + Math.sin(frame * 0.03 + idx) * 0.04;
+          const sz = t.size * breathe;
+
+          ctx.fillStyle = "rgba(0, 210, 133, 0.2)";
+          ctx.beginPath(); ctx.arc(t.x, t.y, sz * 1.5, 0, Math.PI * 2); ctx.fill();
+
+          ctx.fillStyle = "#00D285";
           ctx.beginPath();
-          if (typeof ctx.roundRect === "function") {
-            ctx.roundRect(bx, by, barW, bh, [4, 4, 0, 0]);
-          } else {
-            ctx.rect(bx, by, barW, bh);
-          }
-          ctx.fill();
-          ctx.stroke();
+          ctx.moveTo(t.x, t.y - sz);
+          ctx.lineTo(t.x - sz * 0.8, t.y + sz * 0.6);
+          ctx.lineTo(t.x + sz * 0.8, t.y + sz * 0.6);
+          ctx.closePath(); ctx.fill();
 
-          ctx.fillStyle = i === 4 ? "#059669" : "#475569";
-          ctx.font = "bold 6px monospace";
-          ctx.fillText("$" + bh + "M", bx + barW / 2, by - 6);
+          ctx.fillStyle = "#059669";
+          ctx.beginPath();
+          ctx.moveTo(t.x, t.y - sz * 0.4);
+          ctx.lineTo(t.x - sz * 0.6, t.y + sz * 0.8);
+          ctx.lineTo(t.x + sz * 0.6, t.y + sz * 0.8);
+          ctx.closePath(); ctx.fill();
 
-          ctx.fillStyle = "#64748B";
-          ctx.font = "6px sans-serif";
-          ctx.fillText(labels[i], bx + barW / 2, h - 25);
+          ctx.fillStyle = "#78350F";
+          ctx.fillRect(t.x - 2, t.y + sz * 0.8, 4, sz * 0.4);
         });
+
+        drawOverlayPanel(ctx, w, h, "PEMANTAUAN HUTAN", [
+          { title: "Kesehatan Kanopi", text: "94% Prima", pct: 94 },
+          { title: "Karbon Terserap", text: "1.2M Ton CO2e", pct: 82 },
+          { title: "Reboisasi Terjadwal", text: "12,450 Ha", pct: 60 }
+        ]);
+      }
+
+      function drawFinance(ctx, w, h, frame) {
+        const startX = w * 0.08;
+        const endX = w * 0.65;
+        const baseY = h * 0.8;
+        const maxY = h * 0.22;
+
+        ctx.strokeStyle = "rgba(148, 163, 184, 0.2)";
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(startX, baseY); ctx.lineTo(endX, baseY); ctx.stroke();
+
+        const points = [];
+        const numPoints = 8;
+        const dataVals = [20, 25, 42, 38, 55, 68, 85, 95];
+
+        for (let i = 0; i < numPoints; i++) {
+          const x = startX + (endX - startX) * (i / (numPoints - 1));
+          const wave = Math.sin(frame * 0.02 + i) * 1.5;
+          const y = baseY - (dataVals[i] / 100) * (baseY - maxY) + wave;
+          points.push({ x, y });
+        }
 
         ctx.strokeStyle = "#3B82F6";
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        bHeight.forEach(function (bh, i) {
-          var bx = 65 + i * (barW + 28) + barW / 2;
-          var by = h - bh - 40;
-          if (i === 0) ctx.moveTo(bx, by + 10);
-          else ctx.lineTo(bx, by + 10);
-        });
-        ctx.stroke();
-
-      } else if (cat.id === "demography") {
-        var center = { x: w / 2, y: h / 2 + 10 };
-        var items = [
-          { x: center.x - 70, y: center.y - 35, r: 24, fill: "#EFF6FF", stroke: "#3B82F6", label: "MEDAN", sum: "18%" },
-          { x: center.x + 70, y: center.y - 25, r: 28, fill: "#FDF2F8", stroke: "#EC4899", label: "RIBER", sum: "24%" },
-          { x: center.x - 10, y: center.y + 40, r: 35, fill: "#ECFDF5", stroke: "#00D285", label: "DKI JAKARTA", sum: "58%" }
-        ];
-
-        ctx.strokeStyle = "rgba(100,116,139,0.15)";
-        ctx.lineWidth = 1;
-        items.forEach(function (it) {
-          ctx.beginPath();
-          ctx.moveTo(center.x, center.y);
-          ctx.lineTo(it.x, it.y);
-          ctx.stroke();
-        });
-
-        ctx.fillStyle = "#1E293B";
-        ctx.beginPath();
-        ctx.arc(center.x, center.y, 8, 0, Math.PI * 2);
-        ctx.fill();
-
-        items.forEach(function (it) {
-          ctx.fillStyle = it.fill;
-          ctx.strokeStyle = it.stroke;
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.arc(it.x, it.y, it.r, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
-
-          ctx.fillStyle = "#1E293B";
-          ctx.font = "bold 7px sans-serif";
-          ctx.fillText(it.label, it.x, it.y - 2);
-          ctx.fillStyle = it.stroke;
-          ctx.font = "bold 8px monospace";
-          ctx.fillText(it.sum, it.x, it.y + 8);
-        });
-
-      } else if (cat.id === "logistics") {
-        var nodes = [
-          { x: 60, y: h / 2 + 20, label: "POOL AWAL", sub: "Pre-Ops" },
-          { x: w / 2, y: h / 2 - 25, label: "GPS HUB 1", sub: "Transit" },
-          { x: w - 60, y: h / 2 + 20, label: "BONGKAR", sub: "SLA 60m" }
-        ];
-
-        ctx.strokeStyle = "rgba(0, 210, 133, 0.25)";
-        ctx.lineWidth = 2.5;
-        if (typeof ctx.setLineDash === "function") {
-          ctx.setLineDash([5, 5]);
-        }
-        ctx.beginPath();
-        ctx.moveTo(nodes[0].x, nodes[0].y);
-        ctx.lineTo(nodes[1].x, nodes[1].y);
-        ctx.lineTo(nodes[2].x, nodes[2].y);
-        ctx.stroke();
-        if (typeof ctx.setLineDash === "function") {
-          ctx.setLineDash([]);
-        }
-
-        nodes.forEach(function (n, idx) {
-          ctx.fillStyle = "#FFFFFF";
-          ctx.strokeStyle = idx === 2 ? "#EF4444" : "#00D285";
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.arc(n.x, n.y, 18, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
-
-          ctx.fillStyle = idx === 2 ? "#EF4444" : "#00D285";
-          ctx.beginPath();
-          ctx.arc(n.x, n.y, 5, 0, Math.PI * 2);
-          ctx.fill();
-
-          ctx.fillStyle = "#1E293B";
-          ctx.font = "bold 7px sans-serif";
-          ctx.fillText(n.label, n.x, n.y + 26);
-
-          ctx.fillStyle = "#64748B";
-          ctx.font = "5.5px monospace";
-          ctx.fillText(n.sub, n.x, n.y + 34);
-        });
-
-      } else if (cat.id === "risk") {
-        var cx = w / 2;
-        var cy = h / 2 + 10;
-
-        ctx.strokeStyle = "rgba(239, 68, 68, 0.06)";
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.arc(cx, cy, 75, 0, Math.PI * 2);
-        ctx.stroke();
-
-        ctx.strokeStyle = "rgba(239, 68, 68, 0.15)";
-        ctx.beginPath();
-        ctx.arc(cx, cy, 45, 0, Math.PI * 2);
-        ctx.stroke();
-
-        ctx.fillStyle = "#FEF2F2";
-        ctx.strokeStyle = "#EF4444";
-        ctx.lineWidth = 2.5;
-        ctx.beginPath();
-        ctx.arc(cx, cy, 22, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-
-        ctx.fillStyle = "#EF4444";
-        ctx.beginPath();
-        ctx.moveTo(cx, cy - 8);
-        ctx.lineTo(cx - 2.5, cy + 1);
-        ctx.lineTo(cx + 2.5, cy + 1);
-        ctx.closePath();
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(cx, cy + 4, 1.5, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = "#1E293B";
-        ctx.font = "bold 7.5px sans-serif";
-        ctx.fillText("RISK ASSESSMENT", cx, cy + 34);
-
-        ctx.fillStyle = "#EF4444";
-        ctx.font = "bold 6px monospace";
-        ctx.fillText("CRITICAL ZONE", cx, cy - 54);
-
-        ctx.fillStyle = "#16A34A";
-        ctx.font = "bold 6px monospace";
-        ctx.fillText("MITIGASI HIJAU", cx - 80, cy + 50);
-        ctx.fillText("SLA KETAT", cx + 80, cy + 50);
-
-      } else if (cat.id === "tech") {
-        var points = [
-          { x: 70, y: h / 2 - 25, title: "SENSORS" },
-          { x: 70, y: h / 2 + 35, title: "GPS GPS" },
-          { x: w / 2, y: h / 2 + 10, title: "PRAMA SERVER" },
-          { x: w - 70, y: h / 2 - 20, title: "RECORDS" },
-          { x: w - 70, y: h / 2 + 30, title: "PORTAL BI" }
-        ];
-
-        ctx.strokeStyle = "rgba(59, 130, 246, 0.2)";
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.moveTo(points[0].x, points[0].y);
-        ctx.lineTo(points[2].x, points[2].y);
-        ctx.lineTo(points[3].x, points[3].y);
-        ctx.moveTo(points[1].x, points[1].y);
-        ctx.lineTo(points[2].x, points[2].y);
-        ctx.lineTo(points[4].x, points[4].y);
+        for (let i = 1; i < points.length; i++) {
+          const xc = (points[i - 1].x + points[i].x) / 2;
+          const yc = (points[i - 1].y + points[i].y) / 2;
+          ctx.quadraticCurveTo(points[i - 1].x, points[i - 1].y, xc, yc);
+        }
+        ctx.lineTo(points[points.length - 1].x, points[points.length - 1].y);
         ctx.stroke();
 
-        points.forEach(function (p, idx) {
-          ctx.fillStyle = idx === 2 ? "#EFF6FF" : "#FFFFFF";
-          ctx.strokeStyle = idx === 2 ? "#3B82F6" : "#475569";
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          if (typeof ctx.roundRect === "function") {
-            ctx.roundRect(p.x - 22, p.y - 12, 44, 24, 4);
-          } else {
-            ctx.rect(p.x - 22, p.y - 12, 44, 24);
+        const grad = ctx.createLinearGradient(0, maxY, 0, baseY);
+        grad.addColorStop(0, "rgba(59, 130, 246, 0.25)");
+        grad.addColorStop(1, "rgba(59, 130, 246, 0.00)");
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, baseY);
+        for (let i = 0; i < points.length; i++) {
+          ctx.lineTo(points[i].x, points[i].y);
+        }
+        ctx.lineTo(points[points.length - 1].x, baseY);
+        ctx.closePath(); ctx.fill();
+
+        points.forEach((p, idx) => {
+          if (idx === points.length - 1 || idx === 4) {
+            ctx.fillStyle = idx === 4 ? "#3B82F6" : "#00D285";
+            ctx.strokeStyle = "#FFFFFF";
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.arc(p.x, p.y, 5.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+
+            ctx.fillStyle = "#0F172A";
+            ctx.font = "bold 8px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText(dataVals[idx] + "%", p.x, p.y - 8);
           }
-          ctx.fill();
-          ctx.stroke();
-
-          ctx.fillStyle = idx === 2 ? "#00D285" : "#64748B";
-          ctx.fillRect(p.x - 22, p.y + 8, 44, 2);
-
-          ctx.fillStyle = "#1E293B";
-          ctx.font = "bold 5.5px monospace";
-          ctx.textAlign = "center";
-          ctx.fillText(p.title, p.x, p.y + 2);
         });
 
-      } else {
-        var cx = w / 2;
-        var cy = h / 2 + 10;
+        drawOverlayPanel(ctx, w, h, "PROYEKSI FINANSIAL", [
+          { title: "Net Present Value", text: "Rp 12.8 Miliar", pct: 90 },
+          { title: "Internal Rate (IRR)", text: "24.5% Hebat", pct: 85 },
+          { title: "Payback Period", text: "2.1 Tahun Efisien", pct: 70 }
+        ]);
+      }
 
-        ctx.strokeStyle = "rgba(100,116,139,0.18)";
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(cx - 95, cy);
-        ctx.lineTo(cx + 95, cy);
-        ctx.moveTo(cx, cy - 40);
-        ctx.lineTo(cx, cy + 40);
-        ctx.stroke();
+      function drawDemographics(ctx, w, h, frame) {
+        const cx = w * 0.38;
+        const cy = h * 0.55;
 
-        var cells = [
-          { x: cx, y: cy, label: "STRATEGI", fill: "#ECFDF5", border: "#00D285" },
-          { x: cx - 95, y: cy, label: "INPUT DATA", fill: "#FFFFFF", border: "#94A3B8" },
-          { x: cx + 95, y: cy, label: "REKOMENDASI", fill: "#FFFFFF", border: "#94A3B8" },
-          { x: cx, y: cy - 40, label: "TINDAK LANJUT", fill: "#FFFFFF", border: "#94A3B8" },
-          { x: cx, y: cy + 40, label: "EVALUASI", fill: "#FFFFFF", border: "#94A3B8" }
+        ctx.fillStyle = "rgba(59, 130, 246, 0.04)";
+        ctx.strokeStyle = "rgba(59, 130, 246, 0.15)";
+        ctx.lineWidth = 1;
+
+        ctx.beginPath(); ctx.ellipse(cx, cy, w * 0.28, h * 0.28, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+
+        const scatter = [
+          { x: cx - 40, y: cy - 20, size: 4, val: 30 },
+          { x: cx + 50, y: cy + 10, size: 7, val: 65 },
+          { x: cx - 10, y: cy + 30, size: 5, val: 45 },
+          { x: cx + 20, y: cy - 40, size: 8, val: 80 },
+          { x: cx - 70, y: cy + 20, size: 5, val: 35 }
         ];
 
-        cells.forEach(function (c) {
-          ctx.fillStyle = c.fill;
-          ctx.strokeStyle = c.border;
+        scatter.forEach((p, idx) => {
+          const rad = p.size + Math.sin(frame * 0.04 + idx) * 1.5;
+          ctx.fillStyle = "rgba(59, 130, 246, 0.15)";
+          ctx.beginPath(); ctx.arc(p.x, p.y, rad * 2, 0, Math.PI * 2); ctx.fill();
+
+          ctx.fillStyle = p.val > 60 ? "#00D285" : "#3B82F6";
+          ctx.beginPath(); ctx.arc(p.x, p.y, rad * 0.8, 0, Math.PI * 2); ctx.fill();
+
+          ctx.fillStyle = "rgba(15, 23, 42, 0.7)";
+          ctx.font = "bold 6.5px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText("CL-" + idx, p.x, p.y - rad - 3);
+        });
+
+        drawOverlayPanel(ctx, w, h, "PETA DEMOGRAFIS", [
+          { title: "Kepadatan Pasar", text: "Sangat Padat", pct: 88 },
+          { title: "Aksesibilitas Wilayah", text: "91% Terjangkau", pct: 91 },
+          { title: "Penetrasi Pelanggan", text: "45% Bertumbuh", pct: 45 }
+        ]);
+      }
+
+      function drawRisk(ctx, w, h, frame) {
+        const cx = w * 0.38;
+        const cy = h * 0.55;
+        const maxR = h * 0.3;
+
+        ctx.strokeStyle = "rgba(148, 163, 184, 0.15)";
+        ctx.lineWidth = 1;
+        for (let i = 1; i <= 4; i++) {
+          const radius = maxR * (i / 4);
+          ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.stroke();
+        }
+
+        ctx.beginPath(); ctx.moveTo(cx - maxR, cy); ctx.lineTo(cx + maxR, cy); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx, cy - maxR); ctx.lineTo(cx, cy + maxR); ctx.stroke();
+
+        const risks = [
+          { r: maxR * 0.4, th: 0.5, label: "Operasional" },
+          { r: maxR * 0.85, th: 2.2, label: "Finansial" },
+          { r: maxR * 0.6, th: 3.8, label: "Regulasi" },
+          { r: maxR * 0.5, th: 5.1, label: "Lingkungan" }
+        ];
+
+        ctx.fillStyle = "rgba(239, 68, 68, 0.04)";
+        ctx.beginPath(); ctx.arc(cx, cy, maxR, 0, Math.PI * 2); ctx.fill();
+
+        ctx.strokeStyle = "#EF4444";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        risks.forEach((rk, idx) => {
+          const breath = rk.r + Math.sin(frame * 0.02 + idx) * 4;
+          const x = cx + Math.cos(rk.th) * breath;
+          const y = cy + Math.sin(rk.th) * breath;
+          if (idx === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.closePath(); ctx.stroke();
+
+        risks.forEach((rk, idx) => {
+          const breath = rk.r + Math.sin(frame * 0.02 + idx) * 4;
+          const x = cx + Math.cos(rk.th) * breath;
+          const y = cy + Math.sin(rk.th) * breath;
+
+          ctx.fillStyle = rk.r > maxR * 0.7 ? "#EF4444" : "#F59E0B";
+          ctx.strokeStyle = "#FFFFFF";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+
+          ctx.fillStyle = "#0F172A";
+          ctx.font = "bold 7px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(rk.label, x, y - 8);
+        });
+
+        drawOverlayPanel(ctx, w, h, "PETA RISIKO & MITIGASI", [
+          { title: "Risiko Terdeteksi", text: "Rendah-Terkendali", pct: 35 },
+          { title: "Kepatuhan Hukum", text: "100% Selaras", pct: 100 },
+          { title: "Kesiapan Operasi", text: "95% Siaga", pct: 95 }
+        ]);
+      }
+
+      function drawTech(ctx, w, h, frame) {
+        const cx = w * 0.38;
+        const cy = h * 0.55;
+
+        const boxes = [
+          { x: cx - 65, y: cy - 40, label: "WEB CLOUD APP" },
+          { x: cx + 65, y: cy - 40, label: "PRAMA ENGINE" },
+          { x: cx, y: cy + 40, label: "POSTGRES DB" }
+        ];
+
+        ctx.strokeStyle = "rgba(100, 116, 139, 0.2)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(boxes[0].x, boxes[0].y); ctx.lineTo(boxes[1].x, boxes[1].y);
+        ctx.lineTo(boxes[2].x, boxes[2].y); ctx.lineTo(boxes[0].x, boxes[0].y);
+        ctx.stroke();
+
+        const flow = ((frame * 0.01) % 1);
+        const bx = boxes[0].x + (boxes[1].x - boxes[0].x) * flow;
+        const by = boxes[0].y + (boxes[1].y - boxes[0].y) * flow;
+        ctx.fillStyle = "#00D285";
+        ctx.beginPath(); ctx.arc(bx, by, 4, 0, Math.PI * 2); ctx.fill();
+
+        boxes.forEach((b) => {
+          ctx.fillStyle = "#FFFFFF";
+          ctx.strokeStyle = "#3B82F6";
           ctx.lineWidth = 1.5;
           ctx.beginPath();
-          if (typeof ctx.roundRect === "function") {
-            ctx.roundRect(c.x - 28, c.y - 11, 56, 22, 5);
-          } else {
-            ctx.rect(c.x - 28, c.y - 11, 56, 22);
-          }
-          ctx.fill();
-          ctx.stroke();
+          ctx.rect(b.x - 30, b.y - 12, 60, 24);
+          ctx.fill(); ctx.stroke();
 
-          ctx.fillStyle = "#1E293B";
-          ctx.font = "bold 5.5px sans-serif";
+          ctx.fillStyle = "#0F172A";
+          ctx.font = "bold 6.5px sans-serif";
           ctx.textAlign = "center";
-          ctx.fillText(c.label, c.x, c.y + 2);
+          ctx.fillText(b.label, b.x, b.y + 3);
+        });
+
+        drawOverlayPanel(ctx, w, h, "INTEGRASI SISTEM", [
+          { title: "Waktu Uptime", text: "99.98% Stabil", pct: 99 },
+          { title: "Latensi Jaringan", text: "12ms Sangat Cepat", pct: 95 },
+          { title: "Sinkronisasi Data", text: "Real-Time Aktif", pct: 100 }
+        ]);
+      }
+
+      function drawGeneral(ctx, w, h, frame) {
+        const cx = w * 0.38;
+        const cy = h * 0.55;
+
+        ctx.fillStyle = "rgba(0, 210, 133, 0.03)";
+        ctx.strokeStyle = "rgba(0, 210, 133, 0.15)";
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(cx, cy, h * 0.25, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+
+        const points = [];
+        const numSides = 6;
+        for (let i = 0; i < numSides; i++) {
+          const theta = (i / numSides) * Math.PI * 2 + (frame * 0.005);
+          const r = h * 0.22 * (0.85 + Math.sin(frame * 0.015 + i) * 0.1);
+          points.push({ x: cx + Math.cos(theta) * r, y: cy + Math.sin(theta) * r });
+        }
+
+        ctx.strokeStyle = "#00D285";
+        ctx.fillStyle = "rgba(0, 210, 133, 0.12)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+
+        points.forEach((p, i) => {
+          ctx.fillStyle = "#3B82F6";
+          ctx.strokeStyle = "#FFFFFF";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        });
+
+        drawOverlayPanel(ctx, w, h, "ANALISIS STRATEGIS", [
+          { title: "Skor Integrasi", text: "92/100 Unggul", pct: 92 },
+          { title: "Efisiensi Proses", text: "Hemat Waktu 30%", pct: 80 },
+          { title: "Faktor Keberhasilan", text: "Sangat Tinggi", pct: 85 }
+        ]);
+      }
+
+      function drawOverlayPanel(ctx, w, h, title, list) {
+        const ox = w * 0.72;
+        const oy = h * 0.18;
+        const ow = w * 0.23;
+        const oh = h * 0.65;
+
+        ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+        ctx.strokeStyle = "rgba(0, 210, 133, 0.2)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(ox, oy, ow, oh, 4); else ctx.rect(ox, oy, ow, oh);
+        ctx.fill(); ctx.stroke();
+
+        ctx.fillStyle = "#0F172A";
+        ctx.font = "bold 8.5px sans-serif";
+        ctx.textAlign = "left";
+        ctx.fillText(title, ox + 10, oy + 18);
+
+        list.forEach((item, idx) => {
+          const itemY = oy + 32 + (idx * 34);
+
+          ctx.fillStyle = "#475569";
+          ctx.font = "6.5px sans-serif";
+          ctx.fillText(item.title, ox + 10, itemY);
+
+          ctx.fillStyle = "#0F172A";
+          ctx.font = "bold 7px sans-serif";
+          ctx.fillText(item.text, ox + 10, itemY + 8);
+
+          // Mini progress bar
+          ctx.fillStyle = "rgba(148, 163, 184, 0.12)";
+          ctx.fillRect(ox + 10, itemY + 13, ow - 20, 2.5);
+
+          ctx.fillStyle = "#00D285";
+          ctx.fillRect(ox + 10, itemY + 13, (ow - 20) * (item.pct / 100), 2.5);
         });
       }
 
-      ctx.fillStyle = "#94A3B8";
-      ctx.font = "5px monospace";
-      ctx.textAlign = "center";
-      ctx.fillText("✦ PRAMA COGNITIVE SYSTEM ENGINE ✦", w / 2, h - 16);
-    }
-    
-    window.addEventListener("resize", function() {
-      var slideIllustrationCanvas = document.getElementById("slideIllustrationCanvas");
-      if (slideIllustrationCanvas && activeSlideIndex > 0 && activeSlideIndex < slidesData.length - 1) {
-        var slide = slidesData[activeSlideIndex];
-        drawStrategicIllustration(slideIllustrationCanvas, slide.title, activeSlideIndex);
+      function loop() {
+        frame++;
+        resizeAndPaint();
+        animationFrameId = requestAnimationFrame(loop);
       }
-    });
+
+      loop();
+
+      window.illustrationAnimId = animationFrameId;
+
+      const resizeListener = () => {
+        resizeAndPaint();
+      };
+      window.addEventListener("resize", resizeListener);
+
+      // Save listener reference to remove it cleanly if needed
+      window.illustrationResizeListener = resizeListener;
+    }
   </script>
 </body>
 </html>

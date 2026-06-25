@@ -193,27 +193,4 @@ textarea:focus-visible,
   box-shadow: none !important;
 }
 
-/* Force YouTube background player and its dynamic iframe to completely ignore clicks/touches */
-#landing-yt-player,
-#landing-yt-player iframe,
-#landing-yt-player object,
-#landing-yt-player embed,
-iframe[src*="youtube.com"],
-.ytp-chrome-top,
-.ytp-chrome-bottom,
-.ytp-gradient-top,
-.ytp-gradient-bottom,
-.video-stream,
-.html5-video-container {
-  pointer-events: none !important;
-  user-select: none !important;
-}
-
-/* Ensure no tap-highlights or focus indicators are sent */
-#landing-hero-container * {
-  -webkit-tap-highlight-color: transparent !important;
-  user-select: none;
-}
-
-
 

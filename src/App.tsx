@@ -35,57 +35,6 @@ import Navbar from "./components/Navbar";
 import { PramaAnimatedIllustration } from "./components/PramaAnimatedIllustration";
 const pramaLogo = "https://lh3.googleusercontent.com/d/1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X";
 
-export const sanitizeJsonString = (str: string): string => {
-  let result = "";
-  let inString = false;
-  let escape = false;
-  for (let i = 0; i < str.length; i++) {
-    const char = str[i];
-    if (escape) {
-      result += char;
-      escape = false;
-      continue;
-    }
-    if (char === '\\') {
-      result += char;
-      escape = true;
-      continue;
-    }
-    if (char === '"') {
-      inString = !inString;
-      result += char;
-      continue;
-    }
-    if (inString) {
-      const code = char.charCodeAt(0);
-      if (code < 32) {
-        if (char === '\n') {
-          result += '\\n';
-        } else if (char === '\r') {
-          result += '\\r';
-        } else if (char === '\t') {
-          result += '\\t';
-        }
-      } else {
-        result += char;
-      }
-    } else {
-      result += char;
-    }
-  }
-  return result;
-};
-
-export const safeJsonParse = (str: string | null, fallback: any): any => {
-  if (!str) return fallback;
-  try {
-    return JSON.parse(sanitizeJsonString(str));
-  } catch (e) {
-    console.warn("Failed to parse JSON safely:", e);
-    return fallback;
-  }
-};
-
 export interface User {
   uid: string;
   email: string;
@@ -407,148 +356,7 @@ export default function App() {
     return sessionStorage.getItem("prama_hero_dismissed") !== "true";
   });
 
-  const [landingVideoLoaded, setLandingVideoLoaded] = useState<boolean>(false);
-  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
-  // Fullscreen helper
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen()
-        .then(() => setIsFullscreen(true))
-        .catch(err => console.error("Error entering fullscreen:", err));
-    } else {
-      document.exitFullscreen()
-        .then(() => setIsFullscreen(false))
-        .catch(err => console.error("Error exiting fullscreen:", err));
-    }
-  };
-
-  useEffect(() => {
-    const handleFsChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-    document.addEventListener("fullscreenchange", handleFsChange);
-    return () => {
-      document.removeEventListener("fullscreenchange", handleFsChange);
-    };
-  }, []);
-
-  const ytPlayerRef = useRef<any>(null);
-  const playStateIntervalRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (!showHeroLanding && (user || guestUser)) return;
-
-    let playerInstance: any = null;
-
-    const initYTPlayer = () => {
-      const container = document.getElementById('landing-yt-player');
-      if (!container) return;
-
-      try {
-        playerInstance = new (window as any).YT.Player('landing-yt-player', {
-          videoId: '2zUuSebtwfk',
-          playerVars: {
-            autoplay: 1,
-            mute: 1,
-            controls: 0,
-            showinfo: 0,
-            rel: 0,
-            loop: 1,
-            playlist: '2zUuSebtwfk',
-            modestbranding: 1,
-            iv_load_policy: 3,
-            playsinline: 1,
-            disablekb: 1,
-            fs: 0,
-            autohide: 1,
-            vq: 'hd1080'
-          },
-          events: {
-            onReady: (event: any) => {
-              event.target.mute();
-              event.target.playVideo();
-              if (typeof event.target.setPlaybackQuality === 'function') {
-                event.target.setPlaybackQuality('hd1080');
-              }
-            },
-            onStateChange: (event: any) => {
-              // 1 is YT.PlayerState.PLAYING
-              if (event.data === 1) {
-                setLandingVideoLoaded(true);
-                startLoopPolling(event.target);
-              }
-              // 0 is YT.PlayerState.ENDED
-              if (event.data === 0) {
-                event.target.playVideo();
-              }
-            }
-          }
-        });
-        ytPlayerRef.current = playerInstance;
-      } catch (err) {
-        console.error("Youtube initialization failed:", err);
-      }
-    };
-
-    const startLoopPolling = (player: any) => {
-      if (playStateIntervalRef.current) {
-        clearInterval(playStateIntervalRef.current);
-      }
-      playStateIntervalRef.current = window.setInterval(() => {
-        try {
-          if (player && typeof player.getCurrentTime === 'function') {
-            const currentTime = player.getCurrentTime();
-            const duration = player.getDuration();
-            // Loop 0.8 seconds before video end to avoid the black frame delay
-            if (duration > 0 && currentTime >= duration - 0.8) {
-              player.seekTo(0.1, true);
-              player.playVideo();
-            }
-          }
-        } catch (e) {
-          // fail safe
-        }
-      }, 250);
-    };
-
-    // If script already loaded, initialize directly
-    if ((window as any).YT && (window as any).YT.Player) {
-      initYTPlayer();
-    } else {
-      // Register global callback
-      (window as any).onYouTubeIframeAPIReady = () => {
-        initYTPlayer();
-      };
-      
-      // Load script if not already loaded
-      if (!document.getElementById('yt-iframe-api-script')) {
-        const tag = document.createElement('script');
-        tag.id = 'yt-iframe-api-script';
-        tag.src = 'https://www.youtube.com/iframe_api';
-        const firstScriptTag = document.getElementsByTagName('script')[0];
-        if (firstScriptTag && firstScriptTag.parentNode) {
-          firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-        } else {
-          document.head.appendChild(tag);
-        }
-      }
-    }
-
-    return () => {
-      if (playStateIntervalRef.current) {
-        clearInterval(playStateIntervalRef.current);
-      }
-      try {
-        if (playerInstance && typeof playerInstance.destroy === 'function') {
-          playerInstance.destroy();
-        }
-      } catch (e) {
-        // fail safe
-      }
-      ytPlayerRef.current = null;
-    };
-  }, [showHeroLanding, user, guestUser]);
 
   const [heroBgType, setHeroBgType] = useState<"video" | "image" | "illustration">(() => {
     return (localStorage.getItem("prama_hero_bg_type") as "video" | "image" | "illustration") || "illustration";
@@ -814,7 +622,7 @@ export default function App() {
   const [authSubmitting, setAuthSubmitting] = useState(false);
 
   // Approval flow states for registration
-  const [userProfileStatus, setUserProfileStatus] = useState<"pending" | "approved" | null>("approved");
+  const [userProfileStatus, setUserProfileStatus] = useState<"pending" | "approved" | null>(null);
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
 
   // Active Division State
@@ -1778,8 +1586,17 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
 
     const reqDocRef = doc(db, "registration_requests", user.uid);
     const unsubscribe = onSnapshot(reqDocRef, (snap) => {
-      // Direct bypass to ensure standard users are never stuck in pending screen
-      setUserProfileStatus("approved");
+      if (snap.exists()) {
+        const data = snap.data();
+        if (data.status === "approved") {
+          setUserProfileStatus("approved");
+        } else {
+          setUserProfileStatus("pending");
+        }
+      } else {
+        // Safe fallback: default to approved if no request exists, to avoid locking out existing users
+        setUserProfileStatus("approved");
+      }
     }, (error) => {
       console.warn("Unable to watch registration status:", error);
       // Fallback
@@ -1923,8 +1740,8 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
         // Guest mode loads from client cache
         const localFiles = localStorage.getItem("gemini_mirror_files");
         const localChats = localStorage.getItem("gemini_mirror_chats");
-        setFiles(safeJsonParse(localFiles, []));
-        setChatMessages(cleanChatMessages(safeJsonParse(localChats, [])));
+        setFiles(localFiles ? JSON.parse(localFiles) : []);
+        setChatMessages(localChats ? cleanChatMessages(JSON.parse(localChats)) : []);
         return;
       }
 
@@ -1988,8 +1805,8 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
       // Offline mode: Load from localStorage
       const localFiles = localStorage.getItem("gemini_mirror_files");
       const localChats = localStorage.getItem("gemini_mirror_chats");
-      setFiles(safeJsonParse(localFiles, []));
-      setChatMessages(cleanChatMessages(safeJsonParse(localChats, [])));
+      setFiles(localFiles ? JSON.parse(localFiles) : []);
+      setChatMessages(localChats ? cleanChatMessages(JSON.parse(localChats)) : []);
     }
   }, [user, guestUser, authLoading, socketStatus]);
 
@@ -3390,7 +3207,7 @@ ${lastMsgText}`;
         throw new Error("Format JSON presentasi tidak ditemukan dalam respons.");
       }
 
-      const slidesData = JSON.parse(sanitizeJsonString(cleanText));
+      const slidesData = JSON.parse(cleanText);
       if (!Array.isArray(slidesData)) {
         throw new Error("Data hasil presentasi bukan merupakan sebuah list/array slide.");
       }
@@ -3485,7 +3302,7 @@ ${lastMsgText}`;
         displayName: fullName + (isAdminUser ? " (Admin)" : ""),
         email: lowerEmail,
         password: password,
-        status: "approved",
+        status: isAdminUser ? "approved" : "pending",
         updatedAt: Date.now()
       };
 
@@ -3647,112 +3464,79 @@ ${lastMsgText}`;
     );
   }
 
-  // Render 1.5: Cinematic Video Start Layout (No Static Images/Loading Spanners)
+  // Render 1.5: Cinematic Photo Landing/Intro Screen
+  if (showHeroLanding) {
+    return (
+      <div className="video-container" id="landing-hero-container">
+        <img 
+          src="/pancaran_illustration.jpg" 
+          alt="Pancaran Group Logistics Illustration" 
+          referrerPolicy="no-referrer"
+          className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 animate-fade-in scale-[1.00] origin-center"
+          style={{ zIndex: -1, opacity: 1.0 }}
+        />
+
+        {/* High-Resolution Corporate Logo overlay at top center removed as requested by user */}
+
+        <div className="menu-content" id="landing-menu-content">
+          <div className="flex justify-center w-full">
+            <button 
+              type="button"
+              className="font-sans font-bold select-none cursor-pointer tracking-wider uppercase transition-all duration-300 transform hover:-translate-y-1 active:scale-95 text-xs text-white flex items-center gap-2.5 px-9 py-4 bg-[#00D285] hover:bg-[#00BA74] rounded-full shadow-2xl mt-52 sm:mt-[25rem] md:mt-[31rem]" 
+              id="btn-mulai-jelajah"
+              style={{
+                backgroundImage: "linear-gradient(135deg, #00D285, #0056b3)",
+                boxShadow: "0 10px 25px -5px rgba(0, 210, 133, 0.4), 0 8px 10px -6px rgba(0, 86, 179, 0.3)"
+              }}
+              onClick={() => {
+                setShowHeroLanding(false);
+                sessionStorage.setItem("prama_hero_dismissed", "true");
+              }}
+            >
+              <Globe className="h-4 w-4 text-white" />
+              <span>JELAJAHI SISTEM PORTAL</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Render 2: Authentic Screen (Login & Register Form) - Theme: Light & Elegant with Brand Background Illustration
   if (!activeUser) {
     return (
-      <div className="relative min-h-screen w-full flex items-center justify-center font-sans overflow-hidden bg-[#030c1b]" id="landing-hero-container">
-        {/* Underlay brand illustration image - displayed immediately during load so the user experiences zero lag, black screens, or loading spinners */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center select-none z-0"
-          style={{ 
-            backgroundImage: "url('/pancaran_illustration.jpg')",
-            filter: "brightness(0.35) contrast(1.1)"
-          }}
-        />
-        {/* Subtle radial dark overlay over the loading underlay to blend with the app design */}
-        <div className="absolute inset-0 bg-indigo-950/20 backdrop-blur-[1px] z-10" />
-
-        {/* High-Definition Dynamic YouTube Cinematic Background Player - only visible when fully loaded and active */}
-        <div 
-          className={`absolute inset-0 overflow-hidden select-none transition-opacity duration-[1200ms] ease-in-out z-20 pointer-events-none ${
-            landingVideoLoaded ? "opacity-100 scale-100" : "opacity-0 scale-105"
-          }`}
-        >
-          <div 
-            id="landing-yt-player" 
-            className="absolute top-1/2 left-1/2 min-w-full min-h-full -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-            style={{ width: '135vw', height: '135vh' }}
+      <div className="relative min-h-screen flex items-center justify-center px-4 py-12 font-sans overflow-hidden">
+        {/* Brand Background Image */}
+        <div className="absolute inset-0 z-0">
+          <img 
+            src="/pancaran_illustration.jpg" 
+            alt="Pancaran Group Logistics Illustration" 
+            referrerPolicy="no-referrer"
+            className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 animate-fade-in scale-[1.00] origin-center"
+            style={{ zIndex: -1 }}
           />
+          {/* Elegant Dark/Blur Overlay to focus and elevate contrast */}
+          <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm" />
         </div>
 
-        {/* Dynamic Dark Dimming Backdrop - dims the background video to create depth and highlight the central exploration CTA */}
-        <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-[0.5px] z-30 pointer-events-none" />
+        {/* Small floating Back Button on the top left */}
+        <button
+          type="button"
+          id="btn-back-to-video"
+          onClick={() => {
+            setShowHeroLanding(true);
+            sessionStorage.removeItem("prama_hero_dismissed");
+          }}
+          className="absolute top-4 left-4 z-[999] flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/60 backdrop-blur-md border border-white/10 text-slate-300 hover:text-white transition duration-200 shadow-md select-none text-xs font-semibold cursor-pointer"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          <span>Kembali ke Lobi</span>
+        </button>
 
-        {/* Heavy-duty global transparent block shield that swallows all clicks and touches before they can reach the iframe */}
-        <div 
-          className="absolute inset-0 cursor-default pointer-events-auto select-none"
-          style={{ zIndex: 35, background: "rgba(0, 0, 0, 0)" }}
-          onClick={(e) => {
-            e.stopPropagation();
-            e.preventDefault();
-          }}
-          onTouchStart={(e) => {
-            e.stopPropagation();
-            if (e.cancelable) e.preventDefault();
-          }}
-          onTouchMove={(e) => {
-            e.stopPropagation();
-            if (e.cancelable) e.preventDefault();
-          }}
-          onTouchEnd={(e) => {
-            e.stopPropagation();
-            if (e.cancelable) e.preventDefault();
-          }}
-          onMouseDown={(e) => {
-            e.stopPropagation();
-            e.preventDefault();
-          }}
-          onMouseUp={(e) => {
-            e.stopPropagation();
-            e.preventDefault();
-          }}
-        />
 
-        {showHeroLanding ? (
-          /* MENU UTAMA / LOBBY LANDING SCREEN OVERLAY */
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-4 animate-fade-in" style={{ transform: 'translateZ(0)', zIndex: 50 }}>
-            {/* Menu content elevated above touch shield */}
-            <div className="menu-content" id="landing-menu-content" style={{ zIndex: 60 }}>
-              <div className="flex justify-center w-full">
-                <button 
-                  type="button"
-                  className="font-sans font-bold select-none cursor-pointer tracking-wider uppercase transition-all duration-300 transform hover:-translate-y-1 active:scale-95 text-xs text-white flex items-center gap-2.5 px-9 py-4 bg-[#00D285] hover:bg-[#00BA74] rounded-full shadow-2xl" 
-                  id="btn-mulai-jelajah"
-                  style={{
-                    backgroundImage: "linear-gradient(135deg, #00D285, #0056b3)",
-                    boxShadow: "0 10px 25px -5px rgba(0, 210, 133, 0.4), 0 8px 10px -6px rgba(0, 86, 179, 0.3)"
-                  }}
-                  onClick={() => {
-                     setShowHeroLanding(false);
-                     sessionStorage.setItem("prama_hero_dismissed", "true");
-                  }}
-                >
-                  <Globe className="h-4 w-4 text-white" />
-                  <span>JELAJAHI SISTEM PORTAL</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : (
-          /* AUTHENTIC FORM OVERLAY (LOGIN AND REGISTER CARD) */
-          <div className="relative w-full max-w-4xl px-4 py-8 sm:py-12 flex flex-col items-center justify-center animate-fade-in" style={{ transform: 'translateZ(0)', zIndex: 50 }}>
-            
-            {/* Small floating Back Button on the top left */}
-            <button
-              type="button"
-              id="btn-back-to-video"
-              onClick={() => {
-                setShowHeroLanding(true);
-                sessionStorage.removeItem("prama_hero_dismissed");
-              }}
-              className="absolute top-4 left-4 z-[999] flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/60 backdrop-blur-md border border-white/10 text-slate-300 hover:text-white transition duration-200 shadow-md select-none text-xs font-semibold cursor-pointer"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              <span>Kembali ke Lobi</span>
-            </button>
 
-            {/* Auth Card wrapper with elevated relative z-index */}
-            <div className="relative z-10 w-full bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl overflow-hidden grid grid-cols-1 md:grid-cols-2 border border-white/20 mt-10">
+        {/* Auth Card wrapper with elevated relative z-index */}
+        <div className="relative z-10 w-full max-w-4xl bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl overflow-hidden grid grid-cols-1 md:grid-cols-2 border border-white/20">
           
           {/* Left panel: Info Hub Brand PRAMA */}
           <div className="bg-gradient-to-br from-indigo-700 via-indigo-900 to-slate-900 p-8 text-white flex flex-col justify-between">
@@ -3994,8 +3778,6 @@ ${lastMsgText}`;
           </div>
 
         </div>
-      </div>
-    )}
       </div>
     );
   }
@@ -8226,14 +8008,10 @@ ${lastMsgText}`;
                           {/* 1. Portal Illustration Background */}
                           <div className="absolute inset-0 w-full h-full overflow-hidden select-none z-0">
                             <img 
-                              src={`${window.location.origin}/pancaran_illustration.jpg`}
-                              alt="" 
+                              src="/pancaran_illustration.jpg" 
+                              alt="Pancaran Group Logistics Illustration" 
                               referrerPolicy="no-referrer"
                               className="w-full h-full object-cover origin-center z-0 scale-[1.00]"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).onerror = null;
-                                (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1578575437130-527eed3abbec?q=80&w=1600";
-                              }}
                             />
                             {/* Elegant dark overlay to ensure excellent readability of the white/green text */}
                             <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-[1px]" />
@@ -8297,14 +8075,10 @@ ${lastMsgText}`;
                       {/* 1. Portal Illustration Background */}
                       <div className="absolute inset-0 w-full h-full overflow-hidden select-none z-0">
                         <img 
-                          src={`${window.location.origin}/pancaran_illustration.jpg`}
-                          alt="" 
+                          src="/pancaran_illustration.jpg" 
+                          alt="Pancaran Group Logistics Illustration" 
                           referrerPolicy="no-referrer"
                           className="w-full h-full object-cover origin-center z-0 scale-[1.00]"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).onerror = null;
-                            (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1578575437130-527eed3abbec?q=80&w=1600";
-                          }}
                         />
                         {/* Elegant dark overlay to ensure excellent readability of the white/green text */}
                         <div className="absolute inset-0 bg-slate-950/75 backdrop-blur-[1px]" />

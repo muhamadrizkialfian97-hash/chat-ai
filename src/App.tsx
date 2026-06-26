@@ -1736,12 +1736,21 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
     const activeUser = user || guestUser;
 
     if (activeUser) {
+      // Robust initial loading from local storage first to prevent initial empty flicker or offline wipe
+      const localFiles = localStorage.getItem("gemini_mirror_files");
+      const localChats = localStorage.getItem("gemini_mirror_chats");
+      if (localFiles) {
+        try {
+          setFiles(JSON.parse(localFiles));
+        } catch (e) {}
+      }
+      if (localChats) {
+        try {
+          setChatMessages(cleanChatMessages(JSON.parse(localChats)));
+        } catch (e) {}
+      }
+
       if (guestUser) {
-        // Guest mode loads from client cache
-        const localFiles = localStorage.getItem("gemini_mirror_files");
-        const localChats = localStorage.getItem("gemini_mirror_chats");
-        setFiles(localFiles ? JSON.parse(localFiles) : []);
-        setChatMessages(localChats ? cleanChatMessages(JSON.parse(localChats)) : []);
         return;
       }
 
@@ -1772,9 +1781,10 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
             });
           });
           setFiles(fetchedFiles);
+          localStorage.setItem("gemini_mirror_files", JSON.stringify(fetchedFiles));
         },
         (error) => {
-          handleFirestoreError(error, OperationType.LIST, filesPath);
+          console.warn("Firestore onSnapshot files subscription warning (relying on local storage fallback):", error);
         }
       );
 
@@ -1787,13 +1797,16 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
         (docSnap) => {
           if (docSnap.exists()) {
             const data = docSnap.data();
-            setChatMessages(cleanChatMessages(data.messages || []));
-          } else {
-            setChatMessages([]);
+            const firestoreMsgs = cleanChatMessages(data.messages || []);
+            // Only overwrite local state if Firestore actually contains message data to prevent rollback wipes
+            if (firestoreMsgs.length > 0) {
+              setChatMessages(firestoreMsgs);
+              localStorage.setItem("gemini_mirror_chats", JSON.stringify(firestoreMsgs));
+            }
           }
         },
         (error) => {
-          handleFirestoreError(error, OperationType.GET, `${chatsPath}/active_chat`);
+          console.warn("Firestore onSnapshot active_chat subscription warning (relying on local storage fallback):", error);
         }
       );
 
@@ -1812,15 +1825,11 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
 
   // Persist local state backup
   const persistLocalFiles = (updatedFiles: SavedFile[]) => {
-    if (!user) {
-      localStorage.setItem("gemini_mirror_files", JSON.stringify(updatedFiles));
-    }
+    localStorage.setItem("gemini_mirror_files", JSON.stringify(updatedFiles));
   };
 
   const persistLocalChats = (updatedChats: ChatMessage[]) => {
-    if (!user) {
-      localStorage.setItem("gemini_mirror_chats", JSON.stringify(updatedChats));
-    }
+    localStorage.setItem("gemini_mirror_chats", JSON.stringify(updatedChats));
   };
 
   // Get dynamic instructions based on active division
@@ -2259,16 +2268,16 @@ ${focusText}`;
     try {
       const activeUser = user || guestUser;
       
-      // Sync chat message user node to Firestore
+      // Sync chat message user node to Firestore (Non-blocking background update)
       if (user && activeUser) {
         const chatsPath = `users/${activeUser.uid}/chats`;
-        await setDoc(doc(db, chatsPath, "active_chat"), {
+        setDoc(doc(db, chatsPath, "active_chat"), {
           id: "active_chat",
           userId: activeUser.uid,
           title: "Sesi Aktif Gemini Workspace",
           messages: updatedMessages,
           updatedAt: serverTimestamp(),
-        });
+        }).catch(err => console.error("Sync active_chat user message failed:", err));
       }
 
       let mainAnswerText = "";
@@ -2526,13 +2535,13 @@ ${focusText}`;
 
       if (user && activeUser) {
         const chatsPath = `users/${activeUser.uid}/chats`;
-        await setDoc(doc(db, chatsPath, "active_chat"), {
+        setDoc(doc(db, chatsPath, "active_chat"), {
           id: "active_chat",
           userId: activeUser.uid,
           title: "Sesi Aktif Gemini Workspace",
           messages: finalMessagesList,
           updatedAt: serverTimestamp(),
-        });
+        }).catch(err => console.error("Sync active_chat final messages failed:", err));
       }
     } catch (err: any) {
       console.error(err);

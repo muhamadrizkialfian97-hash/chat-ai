@@ -1798,7 +1798,7 @@ export async function exportToPPTX(
   });
 
   // Top header in Cover
-  openingSlide.addText(`✦ PRAMA COGNITIVE PORTAL • ${cleanDisplayTitle.toUpperCase()}`, {
+  openingSlide.addText(`✦ ${cleanDisplayTitle.toUpperCase()}`, {
     x: 0.8,
     y: 0.7,
     w: 8.5,
@@ -1813,9 +1813,9 @@ export async function exportToPPTX(
   try {
     openingSlide.addImage({
       path: "https://lh3.googleusercontent.com/d/1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X",
-      x: 10.0,
+      x: 11.3,
       y: 0.5,
-      w: 2.5,
+      w: 1.2,
       h: 0.8
     });
   } catch (err) {
@@ -2118,9 +2118,9 @@ export async function exportToPPTX(
   try {
     closingSlide.addImage({
       path: "https://lh3.googleusercontent.com/d/1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X",
-      x: 5.415,
+      x: 6.065,
       y: 0.9,
-      w: 2.5,
+      w: 1.2,
       h: 0.8
     });
   } catch (err) {

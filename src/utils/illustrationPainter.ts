@@ -184,12 +184,6 @@ export function drawPramaCanvasIllustration(
   ctx.moveTo(w - 15 - bracketSize, h - 15); ctx.lineTo(w - 15, h - 15); ctx.lineTo(w - 15, h - 15 - bracketSize);
   ctx.stroke();
 
-  // Brand Header
-  ctx.fillStyle = "#475569"; // Slate 600
-  ctx.font = "bold 9px Arial";
-  ctx.textAlign = "left";
-  ctx.fillText("PRAMA COGNITIVE PORTAL", 25, 32);
-
   ctx.fillStyle = "#94A3B8"; // Slate 400
   ctx.font = "bold 8px Courier New";
   ctx.fillText(`ID: ${cat.id.toUpperCase()}-${index + 1}-V${Math.floor(frame / 60) + 1}`, 25, h - 22);

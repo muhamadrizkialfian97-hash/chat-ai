@@ -8063,7 +8063,7 @@ ${lastMsgText}`;
 
                           {/* 3. Header Info Left / Right */}
                           <div className="absolute top-6 left-6 right-6 flex justify-between items-center z-25 select-none">
-                            <span className="text-[8px] sm:text-[10px] font-mono font-black text-white/80 uppercase tracking-widest">PRAMA COGNITIVE PORTAL</span>
+                            <span className="text-[8px] sm:text-[10px] font-mono font-black text-[#00D285] uppercase tracking-widest">✦ {cleanTitle.toUpperCase() || "COMERCIAL STRATEGIS"}</span>
                             <div className="flex items-center gap-1.5">
                               <img 
                                 src={pramaLogo} 

@@ -591,9 +591,9 @@ export async function exportAllSectionsToPPTX(projectTitle: string, sectionsMap:
   try {
     slide1.addImage({
       path: "https://lh3.googleusercontent.com/d/1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X",
-      x: 10.0,
+      x: 11.3,
       y: 0.5,
-      w: 2.5,
+      w: 1.2,
       h: 0.8
     });
   } catch (err) {
@@ -740,9 +740,9 @@ export async function exportAllSectionsToPPTX(projectTitle: string, sectionsMap:
   try {
     closingSlide.addImage({
       path: "https://lh3.googleusercontent.com/d/1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X",
-      x: 5.415,
+      x: 6.065,
       y: 0.9,
-      w: 2.5,
+      w: 1.2,
       h: 0.8
     });
   } catch (err) {

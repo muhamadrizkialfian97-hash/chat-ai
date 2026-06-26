@@ -532,7 +532,7 @@ export async function exportToInteractiveHTML(
 
               <!-- 3. Header Info Left / Right -->
               <div class="absolute top-6 left-6 right-6 flex justify-between items-center z-25 select-none">
-                <span class="text-[8px] sm:text-[10px] font-mono font-black text-white/80 uppercase tracking-widest">PRAMA COGNITIVE PORTAL</span>
+                <span class="text-[8px] sm:text-[10px] font-mono font-black text-[#00D285] uppercase tracking-widest">✦ \${slide.subTitle ? slide.subTitle.toUpperCase() : "${cleanTitle.toUpperCase()}"}</span>
                 <div class="flex items-center gap-1.5">
                   <img 
                     src="https://lh3.googleusercontent.com/d/1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X" 
@@ -1163,11 +1163,6 @@ export async function exportToInteractiveHTML(
         ctx.beginPath(); ctx.moveTo(width - 15 - bSize, height - 15); ctx.lineTo(width - 15, height - 15); ctx.lineTo(width - 15, height - 15 - bSize); ctx.stroke();
 
         // Footer Metadata Text
-        ctx.fillStyle = "#475569";
-        ctx.font = "bold 9px sans-serif";
-        ctx.textAlign = "left";
-        ctx.fillText("PRAMA COGNITIVE PORTAL", 25, 32);
-
         ctx.fillStyle = "#94A3B8";
         ctx.font = "bold 8px monospace";
         ctx.fillText("ID: " + cat.code + "-" + (slideIndex + 1) + "-V" + (Math.floor(frame / 60) + 1), 25, height - 22);

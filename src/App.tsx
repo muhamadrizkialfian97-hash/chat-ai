@@ -7911,11 +7911,13 @@ ${lastMsgText}`;
 
       {/* 3. EXCEL WORKBOOK SIMULATOR INTERACTIVE MODAL */}
       <ExcelPreviewModal 
-        projectTitle={dashboardProjectTitle}
-        division={activeDivision || "Commercial"}
+        projectTitle={dashboardView === "chat_intelligence" ? (chatBIState.projectTitle || "Kajian Bisnis Intelijensi") : (dashboardProjectTitle || "Kajian 14 Pilar")}
+        division={dashboardView === "chat_intelligence" ? (chatBIState.division || "BD") : (activeDivision || "UMUM")}
         isOpen={isExcelPreviewOpen}
         onClose={() => setIsExcelPreviewOpen(false)}
-        initialCapex={chatBIState.initialCapex}
+        initialCapex={dashboardView === "chat_intelligence" ? chatBIState.initialCapex : undefined}
+        annualSavings={dashboardView === "chat_intelligence" ? chatBIState.annualSavings : undefined}
+        salesIncrease={dashboardView === "chat_intelligence" ? chatBIState.salesIncrease : undefined}
       />
       {false && (
         <div className="hidden">

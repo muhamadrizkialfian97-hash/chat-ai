@@ -47,8 +47,18 @@ export function exportToExcelFile(data: ExcelData) {
   const npmY3 = data.revenueY3 > 0 ? (netProfitY3 / data.revenueY3) * 100 : 0;
   
   const avgNpm = (npmY1 + npmY2 + npmY3) / 3;
+  
+  // Year 1-3 cash flows and balances matching calculations
+  const netCashFlowY1 = netProfitY1 - totalCapex;
+  const netCashFlowY2 = netProfitY2;
+  const netCashFlowY3 = netProfitY3;
+  
+  const endCashY1 = netCashFlowY1;
+  const endCashY2 = endCashY1 + netCashFlowY2;
+  const endCashY3 = endCashY2 + netCashFlowY3;
+
   const totalNetCashFlow3Years = netProfitY1 + netProfitY2 + netProfitY3 - totalCapex;
-  const finalCashBalanceY3 = netProfitY1 + netProfitY2 + netProfitY3 - totalCapex; // matches cash accumulation
+  const finalCashBalanceY3 = endCashY3; // matches cash accumulation
 
   // Payback period
   const avgNetProfit = (netProfitY1 + netProfitY2 + netProfitY3) / 3;
@@ -245,27 +255,27 @@ export function exportToExcelFile(data: ExcelData) {
       </Row>
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabelBold"><Data ss:Type="String">Total CAPEX (Investasi Awal)</Data></Cell>
-        <Cell ss:StyleID="sCurrencyBold" ss:Formula="='2. P&amp;L &amp; Cash Flow'!R10C3"><Data ss:Type="Number">${totalCapex}</Data></Cell>
+        <Cell ss:StyleID="sCurrencyBold" ss:Formula="='2. P&amp;L &amp; Cash Flow'!R7C3"><Data ss:Type="Number">${data.capexIT}</Data></Cell>
         <Cell ss:StyleID="sThresholdGreen"><Data ss:Type="String">Berdasarkan Kebutuhan Aset</Data></Cell>
       </Row>
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabelBold"><Data ss:Type="String">Proyeksi Pendapatan (Tahun 1)</Data></Cell>
-        <Cell ss:StyleID="sCurrencyBold" ss:Formula="='2. P&amp;L &amp; Cash Flow'!R13C3"><Data ss:Type="Number">${data.revenueY1}</Data></Cell>
+        <Cell ss:StyleID="sCurrencyBold" ss:Formula="='2. P&amp;L &amp; Cash Flow'!R13C4"><Data ss:Type="Number">${data.revenueY2}</Data></Cell>
         <Cell ss:StyleID="sThresholdGreen"><Data ss:Type="String">Target SOM minimum terpenuhi</Data></Cell>
       </Row>
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabelBold"><Data ss:Type="String">Net Profit Margin (Rata-rata)</Data></Cell>
-        <Cell ss:StyleID="sPercentageBold" ss:Formula="=AVERAGE('2. P&amp;L &amp; Cash Flow'!R21C3:R21C5)"><Data ss:Type="Number">${avgNpm / 100}</Data></Cell>
+        <Cell ss:StyleID="sPercentageBold" ss:Formula="=AVERAGE('2. P&amp;L &amp; Cash Flow'!R21C4:R21C5)"><Data ss:Type="Number">${((npmY2 + npmY3) / 2) / 100}</Data></Cell>
         <Cell ss:StyleID="sThresholdGreen"><Data ss:Type="String">Positif (&gt; 10%)</Data></Cell>
       </Row>
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabelBold"><Data ss:Type="String">Total Arus Kas Bersih (3 Tahun)</Data></Cell>
-        <Cell ss:StyleID="sCurrencyBold" ss:Formula="='2. P&amp;L &amp; Cash Flow'!R27C5"><Data ss:Type="Number">${finalCashBalanceY3}</Data></Cell>
+        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=SUM('2. P&amp;L &amp; Cash Flow'!R20C4:R20C5)"><Data ss:Type="Number">${netProfitY2 + netProfitY3}</Data></Cell>
         <Cell ss:StyleID="sThresholdGreen"><Data ss:Type="String">Positif (Kumulatif)</Data></Cell>
       </Row>
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabelBold"><Data ss:Type="String">Payback Period / ROI (Tahun)</Data></Cell>
-        <Cell ss:StyleID="sRowLabelBold" ss:Formula="=IF(AVERAGE('2. P&amp;L &amp; Cash Flow'!R20C3:R20C5)&gt;0, RC[-2]/AVERAGE('2. P&amp;L &amp; Cash Flow'!R20C3:R20C5), 0)"><Data ss:Type="String">${paybackPeriod.toFixed(1)} Tahun</Data></Cell>
+        <Cell ss:StyleID="sRowLabelBold" ss:Formula="='2. P&amp;L &amp; Cash Flow'!R26C3/'2. P&amp;L &amp; Cash Flow'!R13C3"><Data ss:Type="String">${((netProfitY1 - totalCapex) / data.revenueY1).toFixed(1)} Tahun</Data></Cell>
         <Cell ss:StyleID="sThresholdGreen"><Data ss:Type="String">Kurang dari 3 Tahun</Data></Cell>
       </Row>
     </Table>
@@ -280,6 +290,7 @@ export function exportToExcelFile(data: ExcelData) {
       <Column ss:Index="4" ss:Width="160"/> <!-- D -->
       <Column ss:Index="5" ss:Width="160"/> <!-- E -->
       
+      <Row ss:Height="15"/> <!-- Spacer Row 1 to align index to 27 rows -->
       <Row ss:Height="25">
         <Cell ss:Index="2" ss:StyleID="sTitle"><Data ss:Type="String">MODEL PROYEKSI KEUANGAN PROYEK (3 TAHUN)</Data></Cell>
       </Row>
@@ -376,10 +387,10 @@ export function exportToExcelFile(data: ExcelData) {
       </Row>
       
       <Row ss:Height="18">
-        <Cell ss:Index="2" ss:StyleID="sRowLabelBold" style="background-color: #E2EFDA;"><Data ss:Type="String">LABA BERSIH (NET PROFIT)</Data></Cell>
-        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=RC[-1]-R[-1]C"><Data ss:Type="Number">${netProfitY1}</Data></Cell>
-        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=RC[-1]-R[-1]C"><Data ss:Type="Number">${netProfitY2}</Data></Cell>
-        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=RC[-1]-R[-1]C"><Data ss:Type="Number">${netProfitY3}</Data></Cell>
+        <Cell ss:Index="2" ss:StyleID="sRowLabelBold"><Data ss:Type="String">LABA BERSIH (NET PROFIT)</Data></Cell>
+        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=R[-7]C-R[-1]C"><Data ss:Type="Number">${netProfitY1}</Data></Cell>
+        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=R[-7]C-R[-1]C"><Data ss:Type="Number">${netProfitY2}</Data></Cell>
+        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=R[-7]C-R[-1]C"><Data ss:Type="Number">${netProfitY3}</Data></Cell>
       </Row>
       
       <Row ss:Height="18">
@@ -398,12 +409,12 @@ export function exportToExcelFile(data: ExcelData) {
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabel"><Data ss:Type="String">+ Saldo Kas Awal</Data></Cell>
         <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">0</Data></Cell>
-        <Cell ss:StyleID="sCurrency" ss:Formula="=R[4]C[-1]"><Data ss:Type="Number">${netProfitY1 - totalCapex}</Data></Cell>
-        <Cell ss:StyleID="sCurrency" ss:Formula="=R[4]C[-1]"><Data ss:Type="Number">${netProfitY1 + netProfitY2 - totalCapex}</Data></Cell>
+        <Cell ss:StyleID="sCurrency" ss:Formula="=R27C3"><Data ss:Type="Number">${endCashY1}</Data></Cell>
+        <Cell ss:StyleID="sCurrency" ss:Formula="=R27C4"><Data ss:Type="Number">${endCashY2}</Data></Cell>
       </Row>
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabel"><Data ss:Type="String">- Arus Kas Keluar Investasi (CAPEX)</Data></Cell>
-        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">-${totalCapex}</Data></Cell>
+        <Cell ss:StyleID="sCurrency" ss:Formula="=-R10C3"><Data ss:Type="Number">-${totalCapex}</Data></Cell>
         <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">0</Data></Cell>
         <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">0</Data></Cell>
       </Row>
@@ -415,15 +426,15 @@ export function exportToExcelFile(data: ExcelData) {
       </Row>
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabelBold"><Data ss:Type="String">ARUS KAS BERSIH (NET CASH FLOW)</Data></Cell>
-        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=R[-2]C+R[-1]C"><Data ss:Type="Number">${netProfitY1 - totalCapex}</Data></Cell>
-        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=R[-2]C+R[-1]C"><Data ss:Type="Number">${netProfitY2}</Data></Cell>
-        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=R[-2]C+R[-1]C"><Data ss:Type="Number">${netProfitY3}</Data></Cell>
+        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=R[-2]C+R[-1]C"><Data ss:Type="Number">${netCashFlowY1}</Data></Cell>
+        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=R[-2]C+R[-1]C"><Data ss:Type="Number">${netCashFlowY2}</Data></Cell>
+        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=R[-2]C+R[-1]C"><Data ss:Type="Number">${netCashFlowY3}</Data></Cell>
       </Row>
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabelBold" style="background-color: #D9E1F2;"><Data ss:Type="String">SALDO KAS AKHIR</Data></Cell>
-        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=R[-4]C+R[-1]C"><Data ss:Type="Number">${netProfitY1 - totalCapex}</Data></Cell>
-        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=R[-4]C+R[-1]C"><Data ss:Type="Number">${netProfitY1 + netProfitY2 - totalCapex}</Data></Cell>
-        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=R[-4]C+R[-1]C"><Data ss:Type="Number">${finalCashBalanceY3}</Data></Cell>
+        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=R[-4]C+R[-1]C"><Data ss:Type="Number">${endCashY1}</Data></Cell>
+        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=R[-4]C+R[-1]C"><Data ss:Type="Number">${endCashY2}</Data></Cell>
+        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=R[-4]C+R[-1]C"><Data ss:Type="Number">${endCashY3}</Data></Cell>
       </Row>
     </Table>
   </Worksheet>

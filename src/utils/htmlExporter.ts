@@ -15,8 +15,9 @@ interface SlideItem {
 export async function exportToInteractiveHTML(
   proyekTitle: string,
   slides: SlideItem[],
-  divisiName: string = "PORTAL"
-) {
+  divisiName: string = "PORTAL",
+  returnStringOnly: boolean = false
+): Promise<string | void> {
   // Prep slides data with intro and conclusion
   const cleanTitle = proyekTitle
     .replace(/^KAJIAN STRATEGIS KOMPREHENSIF:\s*/i, "")
@@ -636,7 +637,7 @@ export async function exportToInteractiveHTML(
                 return \`
                   <div class="flex gap-2 items-start pl-0.5 shrink-0">
                     <span class="text-[#00D285] mt-0.5 shrink-0 font-extrabold select-none text-xs">&bull;</span>
-                    <p class="text-[10.5px] sm:text-xs text-slate-600 font-medium leading-relaxed select-text font-sans">
+                    <p class="text-[10.5px] sm:text-xs text-slate-600 font-medium leading-relaxed select-text font-sans flex-1 min-w-0 text-left">
                       \${formatBulletTextHtml(bulletClean)}
                     </p>
                   </div>
@@ -649,7 +650,7 @@ export async function exportToInteractiveHTML(
                 return \`
                   <div class="flex gap-2 items-start pl-0.5 shrink-0">
                     <span class="text-[#00D285] mt-0.5 shrink-0 font-extrabold select-none text-xs">&bull;</span>
-                    <p class="text-[10.5px] sm:text-xs text-slate-600 font-medium leading-relaxed select-text font-sans">
+                    <p class="text-[10.5px] sm:text-xs text-slate-600 font-medium leading-relaxed select-text font-sans flex-1 min-w-0 text-left">
                       \${formatBulletTextHtml(bulletClean)}
                     </p>
                   </div>
@@ -1600,6 +1601,10 @@ export async function exportToInteractiveHTML(
 </body>
 </html>
 `;
+
+  if (returnStringOnly) {
+    return htmlContent;
+  }
 
   // Download Blob in Browser
   const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });

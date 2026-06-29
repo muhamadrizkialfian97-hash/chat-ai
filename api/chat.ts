@@ -202,8 +202,9 @@ export default async function handler(req: any, res: any) {
 
 KETENTUAN INTERAKSI DAN KOMUNIKASI (WAJIB DIPATUHI):
 1. Anda diperbolehkan dan mampu menerima obrolan santai, sapaan (seperti halo, apa kabar, selamat pagi), atau interaksi kasual dari pengguna agar komunikasi terasa nyaman dan fleksibel. Balas sapaan tersebut dengan ramah, santai, namun tetap profesional.
-2. Ketika merespons obrolan santai tanpa topik proyek, ingatkan pengguna secara halus bahwa Anda selalu siap melakukan analisis mendalam begitu mereka memberikan topik proyek, judul bisnis, atau nama industri spesifik.
-3. Begitu pengguna memberikan sebuah topik, judul proyek, atau nama industri, Anda harus LANGSUNG MENJELASKAN SELURUH 14 POIN ruang lingkup di bawah ini dalam satu kali jawaban, kemudian wajib ditutup dengan sebuah KESIMPULAN strategis terkait pengambilan keputusan di bagian paling bawah. Jangan mencicil, jangan melewatkan satu poin pun, dan langsung masuk ke analisis yang kontekstual dengan topik tersebut.
+2. PENTING: Untuk pertama kali percakapan atau ketika pengguna baru menyapa Anda pertama kali (misalnya dengan "halo", "hai", dsb.), Anda HARUS menyapa balik secara hangat dan bertanya terlebih dahulu: "Proyek, industri, atau topik bisnis apa yang ingin kita bahas hari ini agar arah analisis kita menjadi jelas?".
+3. JANGAN langsung menyajikan analisis komprehensif 14 pilar untuk proyek default "Kajian Strategis: Forestry Management Transportation" kecuali jika pengguna secara eksplisit meminta proyek tersebut atau langsung memberikan detail topik proyek baru. Prioritaskan mengajak pengguna berdiskusi terlebih dahulu untuk memperjelas topik yang ingin dibahas.
+4. Begitu pengguna menjawab atau memberikan sebuah topik, judul proyek, atau nama industri baru, barulah Anda LANGSUNG MENJELASKAN SELURUH 14 POIN ruang lingkup di bawah ini dalam satu kali jawaban, kemudian wajib ditutup dengan sebuah KESIMPULAN strategis terkait pengambilan keputusan di bagian paling bawah. Jangan mencicil, jangan melewatkan satu poin pun, dan langsung masuk ke analisis yang kontekstual dengan topik tersebut.
 
 ATURAN FORMAT PENULISAN (SANGAT KETAT):
 - JANGAN PERNAH menggunakan simbol-simbol asing atau karakter Markdown seperti tanda bintang (*) untuk menebalkan teks atau pagar (#) untuk judul karena akan merusak sistem tampilan visual pengguna.
@@ -269,10 +270,10 @@ Gaya bahasa Anda harus formal, solutif, langsung ke inti masalah, singkat namun 
     }
 
     const modelsToTry = [
+      "gemini-2.5-flash",
+      "gemini-3.1-flash-lite",
       "gemini-3.5-flash",
       "gemini-flash-latest",
-      "gemini-3.1-flash-lite",
-      "gemini-2.5-flash",
       "gemini-2.5-pro",
       "gemini-3.1-pro-preview"
     ];
@@ -313,7 +314,11 @@ Gaya bahasa Anda harus formal, solutif, langsung ke inti masalah, singkat namun 
           }
         }
       } catch (err: any) {
-        console.warn(`Model ${modelName} failed or unavailable on Vercel:`, err.message || err);
+        const errMsg = err.message || (typeof err === "object" ? JSON.stringify(err) : String(err));
+        const diagnosticMessage = errMsg.includes("503") || errMsg.includes("UNAVAILABLE")
+          ? "Model temporarily unavailable (503 / High Demand)"
+          : errMsg;
+        console.log(`Model fallback info: ${modelName} status - ${diagnosticMessage}`);
         lastError = err;
       }
     }

@@ -959,3 +959,40 @@ export function generatePillarsForProject(projectName: string, fileContent?: str
 
   return pillars;
 }
+
+export function parseResponseToPillars(text: string): Record<number, string> {
+  const result: Record<number, string> = {};
+  const lines = text.split("\n");
+  let currentPilar = 0;
+  let currentContent: string[] = [];
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    // Regex matches "1.", "### 1.", "Pilar 1", "**1.", "Bagian 1", "Pilar 1:", etc.
+    const match = trimmed.match(/^(?:###\s*|\*\*\s*|)?(?:Pilar|PILAR|Bagian|BAGIAN)?\s*(1|2|3|4|5|6|7|8|9|10|11|12|13|14)\b[\.\s\:\-]*([A-Za-z0-9\/&\(\)\s,\|\+]{3,})/i);
+    
+    if (match) {
+      const pNum = parseInt(match[1]);
+      const isFalsePositive = trimmed.includes("Rp ") || trimmed.includes("Rp.") || (trimmed.toLowerCase().includes("capex") && pNum !== 3) || trimmed.includes("%");
+      if (!isFalsePositive) {
+        if (currentPilar > 0) {
+          result[currentPilar] = currentContent.join("\n").trim();
+        }
+        currentPilar = pNum;
+        currentContent = [line];
+        continue;
+      }
+    }
+    
+    if (currentPilar > 0) {
+      currentContent.push(line);
+    }
+  }
+  
+  if (currentPilar > 0) {
+    result[currentPilar] = currentContent.join("\n").trim();
+  }
+  
+  return result;
+}
+

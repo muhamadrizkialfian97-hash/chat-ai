@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { ChatMessage, SavedFile } from "../types";
-import { Send, FileText, Globe, CircleAlert, Cpu, Eye, EyeOff, Settings, Sparkles, Download, Printer, ArrowLeft, LogOut, Bell, HardDrive, Users, CheckCircle, X, Search } from "lucide-react";
+import { Send, FileText, Globe, CircleAlert, Cpu, Eye, EyeOff, Settings, Sparkles, Download, Printer, ArrowLeft, LogOut, Bell, HardDrive, Users, CheckCircle, X, Search, Table } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { exportToWord, exportToPDF, downloadPDFDirect } from "../utils/documentExporter";
 const pramaLogo = "https://lh3.googleusercontent.com/d/1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X";
@@ -30,6 +30,7 @@ interface ChatPanelProps {
   searchQuery?: string;
   onSearchQueryChange?: (query: string) => void;
   onOpenRightPillarPanel?: () => void;
+  onOpenExcelSimulator?: () => void;
 }
 
 export default function ChatPanel({
@@ -57,6 +58,7 @@ export default function ChatPanel({
   searchQuery: searchQueryProps,
   onSearchQueryChange: onSearchQueryChangeProps,
   onOpenRightPillarPanel,
+  onOpenExcelSimulator,
 }: ChatPanelProps) {
   const [input, setInput] = useState("");
   const [enableSearch, setEnableSearch] = useState(false);
@@ -718,6 +720,18 @@ export default function ChatPanel({
                                       >
                                         <Sparkles className="h-4 w-4 text-white animate-pulse" />
                                         <span>Lihat 14 Pilar</span>
+                                      </button>
+                                    )}
+
+                                    {onOpenExcelSimulator && (
+                                      <button
+                                        type="button"
+                                        onClick={onOpenExcelSimulator}
+                                        className="flex items-center gap-2 rounded-full bg-[#107c41] hover:bg-[#0d6434] text-white border-none px-4 py-2 text-xs font-bold transition cursor-pointer shadow-md shadow-emerald-100"
+                                        title="Buka Simulator Excel & Analisis Keuangan Interaktif"
+                                      >
+                                        <Table className="h-4 w-4 text-emerald-100" />
+                                        <span>Simulator Excel Finansial</span>
                                       </button>
                                     )}
                                   </div>

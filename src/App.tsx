@@ -22,7 +22,8 @@ import {
   exportSingleSectionToWord, 
   exportAllSectionsToWord, 
   exportAllSectionsToPPTX,
-  generatePillarsForProject
+  generatePillarsForProject,
+  parseResponseToPillars
 } from "./utils/projectDashboardHelper";
 import {
   ChatIntelligenceState,
@@ -33,6 +34,9 @@ import {
 } from "./utils/chatIntelligenceHelper";
 import Navbar from "./components/Navbar";
 import { PramaAnimatedIllustration } from "./components/PramaAnimatedIllustration";
+import { ArticlePreviewModal } from "./components/ArticlePreviewModal";
+import { PPTPreviewModal } from "./components/PPTPreviewModal";
+import { ExcelPreviewModal } from "./components/ExcelPreviewModal";
 const pramaLogo = "https://lh3.googleusercontent.com/d/1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X";
 
 export interface User {
@@ -101,9 +105,9 @@ import {
   Sun,
   Sunset,
   MessageSquareCode,
-  Key
+  Key,
+  Table
 } from "lucide-react";
-import { GoogleGenAI } from "@google/genai";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -791,7 +795,26 @@ export default function App() {
   // Active workspace states
   const [files, setFiles] = useState<SavedFile[]>([]);
   const [selectedFile, setSelectedFile] = useState<SavedFile | null>(null);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(() => {
+    const localChats = localStorage.getItem("gemini_mirror_chats");
+    if (localChats) {
+      try {
+        const parsed = JSON.parse(localChats);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return cleanChatMessages(parsed);
+        }
+      } catch (e) {}
+    }
+    return [
+      {
+        id: "init-msg",
+        role: "model",
+        text: "Halo! Saya PRAMA, konsultan manajemen proyek strategis Anda di Pancaran Group. Sebelum kita melangkah lebih jauh, boleh tahu proyek atau topik bisnis apa yang ingin kita bahas hari ini agar arah diskusi kita menjadi jelas?",
+        timestamp: Date.now(),
+        sender: "PRAMA AI"
+      }
+    ];
+  });
   const [chatLoading, setChatLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -1087,52 +1110,37 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
         "Bicara dengan ramah, informatif, singkat-padat (maksimal 3-4 kalimat agar nyaman didengar saat dibacakan suara), berbobot, dan santun. " +
         "Gunakan bahasa Indonesia yang baku namun bersahabat. Pengguna Anda saat ini adalah Muhamad (analis/pengelola utama).";
 
-      if (apiMode === "client" && clientApiKey) {
-        const aiBrowser = new GoogleGenAI({ apiKey: clientApiKey });
-        const formattedContents = robotChatMessages.slice(-6).map((msg: any) => ({
-          role: msg.role === "user" ? "user" : "model",
-          parts: [{ text: msg.text || "" }]
-        }));
-        formattedContents.push({
-          role: "user",
-          parts: [{ text: trimmedText }]
-        });
-        
-        const response = await aiBrowser.models.generateContent({
-          model: "gemini-3.5-flash",
-          contents: formattedContents,
-          config: { systemInstruction }
-        });
-        mainAnswerText = response.text || "";
-      } else {
-        const res = await fetch("/api/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            message: trimmedText,
-            history: robotChatMessages.slice(-6).map((msg: any) => ({
-              role: msg.role === "user" ? "user" : "model",
-              text: msg.text
-            })),
-            enableSearch: false,
-            customApiKey: clientApiKey || undefined,
-            systemInstruction
-          })
-        });
+      if (apiMode === "client" && !clientApiKey) {
+        throw new Error("API Key Gemini belum diatur. Masukkan API Key Gemini Anda di panel setelan atas.");
+      }
 
-        if (res && res.ok) {
-          const data = await res.json();
-          mainAnswerText = data.text || data.response || "";
-        } else {
-          let errorDetail = "Gagal memperoleh respons asisten.";
-          try {
-            const errData = await res.json();
-            if (errData && errData.error) {
-              errorDetail = errData.error;
-            }
-          } catch (e) {}
-          throw new Error(errorDetail);
-        }
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: trimmedText,
+          history: robotChatMessages.slice(-6).map((msg: any) => ({
+            role: msg.role === "user" ? "user" : "model",
+            text: msg.text
+          })),
+          enableSearch: false,
+          customApiKey: clientApiKey || undefined,
+          systemInstruction
+        })
+      });
+
+      if (res && res.ok) {
+        const data = await res.json();
+        mainAnswerText = data.text || data.response || "";
+      } else {
+        let errorDetail = "Gagal memperoleh respons asisten.";
+        try {
+          const errData = await res.json();
+          if (errData && errData.error) {
+            errorDetail = errData.error;
+          }
+        } catch (e) {}
+        throw new Error(errorDetail);
       }
 
       const modelMsg: ChatMessage = {
@@ -1231,15 +1239,33 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
   const [slideImageErrors, setSlideImageErrors] = useState<Record<number, boolean>>({});
 
   // Project Dashboard customized parameters
-  const [dashboardProjectTitle, setDashboardProjectTitle] = useState("Kajian Strategis: Forestry Management Transportation");
+  const [dashboardProjectTitle, setDashboardProjectTitle] = useState(() => {
+    return localStorage.getItem("prama_dashboard_project_title") || "Kajian Strategis: Forestry Management Transportation";
+  });
   const [activeDashboardSection, setActiveDashboardSection] = useState<number>(1);
   const [dashboardSectionsState, setDashboardSectionsState] = useState<Record<number, string>>(() => {
+    const saved = localStorage.getItem("prama_dashboard_sections");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        // fallback
+      }
+    }
     const initial: Record<number, string> = {};
     defaultDashboardSections.forEach((s) => {
       initial[s.number] = s.defaultContent;
     });
     return initial;
   });
+
+  useEffect(() => {
+    localStorage.setItem("prama_dashboard_project_title", dashboardProjectTitle);
+  }, [dashboardProjectTitle]);
+
+  useEffect(() => {
+    localStorage.setItem("prama_dashboard_sections", JSON.stringify(dashboardSectionsState));
+  }, [dashboardSectionsState]);
 
   // Right side Chat Menu state
   const [isDashboardChatOpen, setIsDashboardChatOpen] = useState<boolean>(true);
@@ -1263,8 +1289,10 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
   const [newDashboardPresetId, setNewDashboardPresetId] = useState<string>("forestry");
 
   // Customized states for Article mode, Web Previews, PowerPoint Presenter Voice and Workflows
-  const [workspaceViewState, setWorkspaceViewState] = useState<"editor" | "article" | "workflow">("editor");
-  const [webDocPreview, setWebDocPreview] = useState<"none" | "word" | "ppt">("none");
+  const [workspaceViewState, setWorkspaceViewState] = useState<"editor" | "article" | "workflow">("article");
+  const [webDocPreview, setWebDocPreview] = useState<"none" | "word" | "ppt" | "html">("none");
+  const [isExcelPreviewOpen, setIsExcelPreviewOpen] = useState<boolean>(false);
+  const [htmlPreviewContent, setHtmlPreviewContent] = useState<string>("");
   const [projectPptSlideIndex, setProjectPptSlideIndex] = useState<number>(0);
   const [isSpeechPresenterActive, setIsSpeechPresenterActive] = useState<boolean>(false);
   const [isPlayingSpeech, setIsPlayingSpeech] = useState<boolean>(false);
@@ -1802,7 +1830,38 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
             if (firestoreMsgs.length > 0) {
               setChatMessages(firestoreMsgs);
               localStorage.setItem("gemini_mirror_chats", JSON.stringify(firestoreMsgs));
+            } else {
+              const init = [
+                {
+                  id: "init-msg",
+                  role: "model",
+                  text: "Halo! Saya PRAMA, konsultan manajemen proyek strategis Anda di Pancaran Group. Sebelum kita melangkah lebih jauh, boleh tahu proyek atau topik bisnis apa yang ingin kita bahas hari ini agar arah diskusi kita menjadi jelas?",
+                  timestamp: Date.now(),
+                  sender: "PRAMA AI"
+                }
+              ];
+              setChatMessages(init);
+              localStorage.setItem("gemini_mirror_chats", JSON.stringify(init));
             }
+          } else {
+            const init = [
+              {
+                id: "init-msg",
+                role: "model",
+                text: "Halo! Saya PRAMA, konsultan manajemen proyek strategis Anda di Pancaran Group. Sebelum kita melangkah lebih jauh, boleh tahu proyek atau topik bisnis apa yang ingin kita bahas hari ini agar arah diskusi kita menjadi jelas?",
+                timestamp: Date.now(),
+                sender: "PRAMA AI"
+              }
+            ];
+            setChatMessages(init);
+            localStorage.setItem("gemini_mirror_chats", JSON.stringify(init));
+            setDoc(activeChatDoc, {
+              id: "active_chat",
+              userId: activeUser.uid,
+              title: "Sesi Aktif Gemini Workspace",
+              messages: init,
+              updatedAt: serverTimestamp(),
+            }).catch(err => console.error("Initial active_chat write failed:", err));
           }
         },
         (error) => {
@@ -1819,7 +1878,44 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
       const localFiles = localStorage.getItem("gemini_mirror_files");
       const localChats = localStorage.getItem("gemini_mirror_chats");
       setFiles(localFiles ? JSON.parse(localFiles) : []);
-      setChatMessages(localChats ? cleanChatMessages(JSON.parse(localChats)) : []);
+      if (localChats) {
+        try {
+          const parsed = JSON.parse(localChats);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setChatMessages(cleanChatMessages(parsed));
+          } else {
+            setChatMessages([
+              {
+                id: "init-msg",
+                role: "model",
+                text: "Halo! Saya PRAMA, konsultan manajemen proyek strategis Anda di Pancaran Group. Sebelum kita melangkah lebih jauh, boleh tahu proyek atau topik bisnis apa yang ingin kita bahas hari ini agar arah diskusi kita menjadi jelas?",
+                timestamp: Date.now(),
+                sender: "PRAMA AI"
+              }
+            ]);
+          }
+        } catch (e) {
+          setChatMessages([
+            {
+              id: "init-msg",
+              role: "model",
+              text: "Halo! Saya PRAMA, konsultan manajemen proyek strategis Anda di Pancaran Group. Sebelum kita melangkah lebih jauh, boleh tahu proyek atau topik bisnis apa yang ingin kita bahas hari ini agar arah diskusi kita menjadi jelas?",
+              timestamp: Date.now(),
+              sender: "PRAMA AI"
+            }
+          ]);
+        }
+      } else {
+        setChatMessages([
+          {
+            id: "init-msg",
+            role: "model",
+            text: "Halo! Saya PRAMA, konsultan manajemen proyek strategis Anda di Pancaran Group. Sebelum kita melangkah lebih jauh, boleh tahu proyek atau topik bisnis apa yang ingin kita bahas hari ini agar arah diskusi kita menjadi jelas?",
+            timestamp: Date.now(),
+            sender: "PRAMA AI"
+          }
+        ]);
+      }
     }
   }, [user, guestUser, authLoading, socketStatus]);
 
@@ -1864,8 +1960,9 @@ Jika menyarankan perubahan judul kajian, letakkan di dalam [UPDATE_JUDUL] judul 
 
 KETENTUAN INTERAKSI DAN KOMUNIKASI (WAJIB DIPATUHI):
 1. Anda diperbolehkan dan mampu menerima obrolan santai, sapaan (seperti halo, apa kabar, selamat pagi), atau interaksi kasual dari pengguna agar komunikasi terasa nyaman dan fleksibel. Balas sapaan tersebut dengan ramah, santai, namun tetap profesional.
-2. Ketika merespons obrolan santai tanpa topik proyek, ingatkan pengguna secara halus bahwa Anda selalu siap melakukan analisis mendalam begitu mereka memberikan topik proyek, judul bisnis, atau nama industri spesifik.
-3. Begitu pengguna memberikan sebuah topik, judul proyek, atau nama industri, Anda harus LANGSUNG MENJELASKAN SELURUH 14 POIN ruang lingkup di bawah ini dalam satu kali jawaban, kemudian wajib ditutup dengan sebuah KESIMPULAN strategis terkait pengambilan keputusan di bagian paling bawah. Jangan mencicil, jangan melewatkan satu poin pun, dan langsung masuk ke analisis yang kontekstual dengan topik tersebut.
+2. PENTING: Untuk pertama kali percakapan atau ketika pengguna baru menyapa Anda pertama kali (misalnya dengan "halo", "hai", dsb.), Anda HARUS menyapa balik secara hangat dan bertanya terlebih dahulu: "Proyek, industri, atau topik bisnis apa yang ingin kita bahas hari ini agar arah analisis kita menjadi jelas?".
+3. JANGAN langsung menyajikan analisis komprehensif 14 pilar untuk proyek default "Kajian Strategis: Forestry Management Transportation" kecuali jika pengguna secara eksplisit meminta proyek tersebut atau langsung memberikan detail topik proyek baru. Prioritaskan mengajak pengguna berdiskusi terlebih dahulu untuk memperjelas topik yang ingin dibahas.
+4. Begitu pengguna menjawab atau memberikan sebuah topik, judul proyek, atau nama industri baru, barulah Anda LANGSUNG MENJELASKAN SELURUH 14 POIN ruang lingkup di bawah ini dalam satu kali jawaban, kemudian wajib ditutup dengan sebuah KESIMPULAN strategis terkait pengambilan keputusan di bagian paling bawah. Jangan mencicil, jangan melewatkan satu poin pun, dan langsung masuk ke analisis yang kontekstual dengan topik tersebut.
 
 ATURAN FORMAT PENULISAN (SANGAT KETAT):
 - JANGAN PERNAH menggunakan simbol-simbol asing atau karakter Markdown seperti tanda bintang (*) untuk menebalkan teks atau pagar (#) untuk judul karena akan merusak sistem tampilan visual pengguna.
@@ -1928,8 +2025,18 @@ ${focusText}`;
   const handleNewChat = async () => {
     setSearchQuery("");
     setIsSearching(false);
-    setChatMessages([]);
-    localStorage.setItem("gemini_mirror_chats", JSON.stringify([]));
+    
+    const init = [
+      {
+        id: "init-msg",
+        role: "model",
+        text: "Halo! Saya PRAMA, konsultan manajemen proyek strategis Anda di Pancaran Group. Sebelum kita melangkah lebih jauh, boleh tahu proyek atau topik bisnis apa yang ingin kita bahas hari ini agar arah diskusi kita menjadi jelas?",
+        timestamp: Date.now(),
+        sender: "PRAMA AI"
+      }
+    ];
+    setChatMessages(init);
+    localStorage.setItem("gemini_mirror_chats", JSON.stringify(init));
     
     const activeUser = user || guestUser;
     if (activeUser) {
@@ -1940,7 +2047,7 @@ ${focusText}`;
           id: "active_chat",
           userId: activeUser.uid,
           title: "Sesi Aktif Gemini Workspace",
-          messages: [],
+          messages: init,
           updatedAt: serverTimestamp(),
         });
       } catch (err) {
@@ -2010,86 +2117,56 @@ ${focusText}`;
     try {
       let mainAnswerText = "";
       
-      if (apiMode === "client") {
-        if (!clientApiKey) {
-          throw new Error("API Key Gemini belum diatur. Masukkan API Key Gemini Anda di panel setelan atas untuk menggunakan Direct Client Mode.");
-        }
-        const aiBrowser = new GoogleGenAI({ apiKey: clientApiKey });
-        const formattedContents = dashboardChatMessages.slice(-6).map((msg: any) => ({
-          role: msg.role === "user" ? "user" : "model",
-          parts: [{ text: msg.text || "" }]
-        }));
-        formattedContents.push({
-          role: "user",
-          parts: [{ text: finalQuery }]
-        });
-        const config: any = {
-          systemInstruction: getDivisionSystemInstruction("spia"), 
-        };
-        const clientModelsToTry = [
-          "gemini-3.5-flash",
-          "gemini-flash-latest",
-          "gemini-3.1-flash-lite",
-          "gemini-2.5-flash"
-        ];
-        let response = null;
-        let lastClientError = null;
-        for (const modelName of clientModelsToTry) {
-          try {
-            response = await aiBrowser.models.generateContent({
-              model: modelName,
-              contents: formattedContents,
-              config,
-            });
-            if (response) break;
-          } catch (err: any) {
-            console.warn(`Browser-side model in right chat failed:`, err);
-            lastClientError = err;
-          }
-        }
-        if (!response) {
-          throw lastClientError || new Error("Semua model Gemini gagal merespons.");
-        }
-        mainAnswerText = response.text || "";
-      } else {
-        // Query server-side proxy
-        let res;
-        try {
-          res = await fetch("/api/chat", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              message: finalQuery,
-              history: dashboardChatMessages.slice(-6).map((msg: any) => ({
-                role: msg.role === "user" ? "user" : "model",
-                text: msg.text
-              })),
-              enableSearch: false,
-              customApiKey: clientApiKey || undefined,
-              systemInstruction: getDivisionSystemInstruction("spia"),
-            }),
-          });
-        } catch (fetchErr: any) {
-          throw new Error("Gagal menghubungi server proxy. Silakan periksa koneksi Anda.");
-        }
+      if (apiMode === "client" && !clientApiKey) {
+        throw new Error("API Key Gemini belum diatur. Masukkan API Key Gemini Anda di panel setelan atas.");
+      }
 
-        if (res && !res.ok) {
-          const responseText = await res.text();
-          let parsedData: any = null;
-          try {
-            parsedData = JSON.parse(responseText);
-          } catch(e) {}
-          let errorMsg = "Gagal memperoleh respons asisten.";
-          if (parsedData && parsedData.error) {
-            errorMsg = parsedData.error.message || JSON.stringify(parsedData.error);
-          } else {
-            errorMsg = responseText || errorMsg;
-          }
-          throw new Error(errorMsg);
-        } else if (res) {
-          const answerData = await res.json();
-          mainAnswerText = answerData.text || "";
+      // Query server-side proxy
+      let res;
+      try {
+        res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: finalQuery,
+            history: dashboardChatMessages.slice(-6).map((msg: any) => ({
+              role: msg.role === "user" ? "user" : "model",
+              text: msg.text
+            })),
+            enableSearch: false,
+            customApiKey: clientApiKey || undefined,
+            systemInstruction: getDivisionSystemInstruction("spia"),
+          }),
+        });
+      } catch (fetchErr: any) {
+        throw new Error("Gagal menghubungi server proxy. Silakan periksa koneksi Anda.");
+      }
+
+      if (res && !res.ok) {
+        const responseText = await res.text();
+        let parsedData: any = null;
+        try {
+          parsedData = JSON.parse(responseText);
+        } catch(e) {}
+        let errorMsg = "Gagal memperoleh respons asisten.";
+        if (parsedData && parsedData.error) {
+          errorMsg = parsedData.error.message || JSON.stringify(parsedData.error);
+        } else {
+          errorMsg = responseText || errorMsg;
         }
+        throw new Error(errorMsg);
+      } else if (res) {
+        const answerData = await res.json();
+        mainAnswerText = answerData.text || "";
+      }
+
+      // Automatically parse AI response for the 14 pillars and update the active division templates in the dashboard menu!
+      const parsedPillars = parseResponseToPillars(mainAnswerText);
+      if (Object.keys(parsedPillars).length > 0) {
+        setDashboardSectionsState((prev) => ({
+          ...prev,
+          ...parsedPillars
+        }));
       }
 
       // Keep tags and markdown formatting intact to support draft updates
@@ -2283,227 +2360,72 @@ ${focusText}`;
       let mainAnswerText = "";
       let searchSources: any[] = [];
 
-      if (apiMode === "client") {
-        if (!clientApiKey) {
-          throw new Error("API Key Gemini belum diatur. Masukkan API Key Gemini Anda di panel setelan atas untuk menggunakan Direct Client Mode.");
-        }
+      if (apiMode === "client" && !clientApiKey) {
+        throw new Error("API Key Gemini belum diatur. Masukkan API Key Gemini Anda di panel setelan atas.");
+      }
 
-        const aiBrowser = new GoogleGenAI({ apiKey: clientApiKey });
-        
-        // Standardize chat format for @google/genai SDK
-        const formattedContents = chatMessages.slice(-6).map((msg: any) => ({
-          role: msg.role === "user" ? "user" : "model",
-          parts: [{ text: msg.text || "" }]
-        }));
-
-        formattedContents.push({
-          role: "user",
-          parts: [{ text: finalQuery }]
-        });
-
-        const config: any = {
-          systemInstruction: getDivisionSystemInstruction(activeDivision || ""),
-        };
-
-        if (enableSearch) {
-          config.tools = [{ googleSearch: {} }];
-        }
-
-        const clientModelsToTry = [
-          "gemini-3.5-flash",
-          "gemini-flash-latest",
-          "gemini-3.1-flash-lite",
-          "gemini-2.5-flash"
-        ];
-
-        let response = null;
-        let lastClientError = null;
-
-        for (const modelName of clientModelsToTry) {
-          try {
-            response = await aiBrowser.models.generateContent({
-              model: modelName,
-              contents: formattedContents,
-              config,
-            });
-            if (response) {
-              break;
-            }
-          } catch (err: any) {
-            console.warn(`Browser-side model ${modelName} failed or unavailable:`, err.message || err);
-            lastClientError = err;
-          }
-        }
-
-        if (!response) {
-          throw lastClientError || new Error("Semua model Gemini gagal merespons.");
-        }
-
-        mainAnswerText = response.text || "";
-        const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
-        searchSources = groundingChunks.map((chunk: any) => ({
-          uri: chunk.web?.uri || "",
-          title: chunk.web?.title || ""
-        })).filter((source: any) => source.uri && source.title);
-
-      } else {
-        // Query server-side proxy
-        let res;
-        let useBrowserFallback = false;
-        try {
-          res = await fetch("/api/chat", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              message: finalQuery,
-              history: chatMessages.slice(-6),
-              enableSearch,
-              customApiKey: clientApiKey || undefined,
-              systemInstruction: getDivisionSystemInstruction(activeDivision || ""),
-            }),
-          });
-        } catch (fetchErr: any) {
-          if (clientApiKey) {
-            useBrowserFallback = true;
-          } else {
-            throw new Error("Gagal menghubungi server proxy. Silakan periksa koneksi Anda.");
-          }
-        }
-
-        if (useBrowserFallback) {
-          // Trigger direct client mode query as fallback
-          const aiBrowser = new GoogleGenAI({ apiKey: clientApiKey });
-          const formattedContents = chatMessages.slice(-6).map((msg: any) => ({
-            role: msg.role === "user" ? "user" : "model",
-            parts: [{ text: msg.text || "" }]
-          }));
-          formattedContents.push({
-            role: "user",
-            parts: [{ text: finalQuery }]
-          });
-          const config: any = {
+      let res;
+      try {
+        res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: finalQuery,
+            history: chatMessages.slice(-6).map((msg: any) => ({
+              role: msg.role === "user" ? "user" : "model",
+              text: msg.text
+            })),
+            enableSearch,
+            customApiKey: clientApiKey || undefined,
             systemInstruction: getDivisionSystemInstruction(activeDivision || ""),
-          };
-          if (enableSearch) {
-            config.tools = [{ googleSearch: {} }];
-          }
-          const clientModelsToTry = [
-            "gemini-3.5-flash",
-            "gemini-flash-latest",
-            "gemini-3.1-flash-lite",
-            "gemini-2.5-flash"
-          ];
-          let response = null;
-          let lastClientError = null;
-          for (const modelName of clientModelsToTry) {
-            try {
-              response = await aiBrowser.models.generateContent({
-                model: modelName,
-                contents: formattedContents,
-                config,
-              });
-              if (response) break;
-            } catch (err: any) {
-              console.warn(`Browser-side fallback model ${modelName} failed or unavailable:`, err.message || err);
-              lastClientError = err;
-            }
-          }
-          if (!response) {
-            throw lastClientError || new Error("Semua model Gemini gagal merespons.");
-          }
-          mainAnswerText = (response.text || "") + "\n\n*(Diproses via Direct Browser AI karena server offline)*";
-          const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
-          searchSources = groundingChunks.map((chunk: any) => ({
-            uri: chunk.web?.uri || "",
-            title: chunk.web?.title || ""
-          })).filter((source: any) => source.uri && source.title);
-        } else {
-          const responseText = await res.text();
-          let parsedData: any = null;
-          let isErrorResponse = !res.ok;
-          try {
-            parsedData = JSON.parse(responseText);
-            if (parsedData && (parsedData.isError || parsedData.error)) {
-              isErrorResponse = true;
-            }
-          } catch (e) {
-            // ignore
-          }
-          
-          if (isErrorResponse) {
-            // Check if we can fallback to clientApiKey if the proxy returned an API error (e.g., leaked key, PERMISSION_DENIED, or quota issue)
-            if (clientApiKey) {
-              const aiBrowser = new GoogleGenAI({ apiKey: clientApiKey });
-              const formattedContents = chatMessages.slice(-6).map((msg: any) => ({
-                role: msg.role === "user" ? "user" : "model",
-                parts: [{ text: msg.text || "" }]
-              }));
-              formattedContents.push({
-                role: "user",
-                parts: [{ text: finalQuery }]
-              });
-              const config: any = {
-                systemInstruction: getDivisionSystemInstruction(activeDivision || ""),
-              };
-              if (enableSearch) {
-                config.tools = [{ googleSearch: {} }];
-              }
-              const clientModelsToTry = [
-                "gemini-3.5-flash",
-                "gemini-flash-latest",
-                "gemini-3.1-flash-lite",
-                "gemini-2.5-flash",
-                "gemini-2.5-pro",
-                "gemini-3.1-pro-preview"
-              ];
-              let response = null;
-              let lastClientError = null;
-              for (const modelName of clientModelsToTry) {
-                try {
-                  response = await aiBrowser.models.generateContent({
-                    model: modelName,
-                    contents: formattedContents,
-                    config,
-                  });
-                  if (response) break;
-                } catch (err: any) {
-                  console.warn(`Browser-side fallback model ${modelName} failed or unavailable:`, err.message || err);
-                  lastClientError = err;
-                }
-              }
-              if (!response) {
-                throw lastClientError || new Error("Semua model Gemini gagal merespons.");
-              }
-              mainAnswerText = (response.text || "") + "\n\n*(Diproses via Direct Browser AI karena kendala server terbatas)*";
-              const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
-              searchSources = groundingChunks.map((chunk: any) => ({
-                uri: chunk.web?.uri || "",
-                title: chunk.web?.title || ""
-              })).filter((source: any) => source.uri && source.title);
-            } else {
-              let errorMsg = "Gagal memperoleh respons asisten.";
-              const errObj = parsedData;
-              if (errObj && typeof errObj === "object") {
-                if (errObj.error && typeof errObj.error === "object") {
-                  errorMsg = errObj.error.message || JSON.stringify(errObj.error);
-                } else if (typeof errObj.error === "string") {
-                  errorMsg = errObj.error;
-                } else if (errObj.message) {
-                  errorMsg = errObj.message;
-                } else {
-                  errorMsg = JSON.stringify(errObj);
-                }
-              } else {
-                errorMsg = responseText || errorMsg;
-              }
-              throw new Error(errorMsg);
-            }
-          } else {
-            const answerData = parsedData || JSON.parse(responseText);
-            mainAnswerText = answerData.text;
-            searchSources = answerData.sources || [];
-          }
+          }),
+        });
+      } catch (fetchErr: any) {
+        throw new Error("Gagal menghubungi server proxy. Silakan periksa koneksi Anda.");
+      }
+
+      const responseText = await res.text();
+      let parsedData: any = null;
+      let isErrorResponse = !res.ok;
+      try {
+        parsedData = JSON.parse(responseText);
+        if (parsedData && (parsedData.isError || parsedData.error)) {
+          isErrorResponse = true;
         }
+      } catch (e) {
+        // ignore
+      }
+
+      if (isErrorResponse) {
+        let errorMsg = "Gagal memperoleh respons asisten.";
+        const errObj = parsedData;
+        if (errObj && typeof errObj === "object") {
+          if (errObj.error && typeof errObj.error === "object") {
+            errorMsg = errObj.error.message || JSON.stringify(errObj.error);
+          } else if (typeof errObj.error === "string") {
+            errorMsg = errObj.error;
+          } else if (errObj.message) {
+            errorMsg = errObj.message;
+          } else {
+            errorMsg = JSON.stringify(errObj);
+          }
+        } else {
+          errorMsg = responseText || errorMsg;
+        }
+        throw new Error(errorMsg);
+      } else {
+        const answerData = parsedData || JSON.parse(responseText);
+        mainAnswerText = answerData.text;
+        searchSources = answerData.sources || [];
+      }
+
+      // Automatically parse AI response for the 14 pillars and update the active division templates in the dashboard menu!
+      const parsedPillars = parseResponseToPillars(mainAnswerText);
+      if (Object.keys(parsedPillars).length > 0) {
+        setDashboardSectionsState((prev) => ({
+          ...prev,
+          ...parsedPillars
+        }));
       }
 
       // Strip asterisks (*) and hash (#) symbols from the main assistant answer text to align with formatting rules
@@ -2833,131 +2755,49 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
   };
 
   const queryGeminiModel = async (customQuery: string, systemInstructionOverride?: string): Promise<string> => {
-    if (apiMode === "client") {
-      if (!clientApiKey) {
-        throw new Error("API Key Gemini belum diatur. Masukkan API Key Gemini Anda di panel setelan atas.");
-      }
-      const aiBrowser = new GoogleGenAI({ apiKey: clientApiKey });
-      const clientModelsToTry = [
-        "gemini-3.5-flash",
-        "gemini-flash-latest",
-        "gemini-3.1-flash-lite",
-        "gemini-2.5-flash"
-      ];
-      
-      let response = null;
-      let lastClientError = null;
-      for (const modelName of clientModelsToTry) {
-        try {
-          response = await aiBrowser.models.generateContent({
-            model: modelName,
-            contents: [{ role: "user", parts: [{ text: customQuery }] }],
-            config: {
-              systemInstruction: systemInstructionOverride || getDivisionSystemInstruction(activeDivision || ""),
-            }
-          });
-          if (response) break;
-        } catch (err: any) {
-          console.warn(`Browser-side model ${modelName} failed in custom query:`, err.message || err);
-          lastClientError = err;
-        }
-      }
-      if (!response) {
-        throw lastClientError || new Error("Semua model Gemini gagal merespons.");
-      }
-      return response.text || "";
-    } else {
-      // Query server-side proxy
-      let res;
-      try {
-        res = await fetch("/api/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            message: customQuery,
-            history: [],
-            enableSearch: false,
-            customApiKey: clientApiKey || undefined,
-            systemInstruction: systemInstructionOverride || getDivisionSystemInstruction(activeDivision || ""),
-          }),
-        });
-      } catch (fetchErr: any) {
-        if (clientApiKey) {
-          const aiBrowser = new GoogleGenAI({ apiKey: clientApiKey });
-          const clientModelsToTry = [
-            "gemini-3.5-flash",
-            "gemini-flash-latest",
-            "gemini-3.1-flash-lite",
-            "gemini-2.5-flash"
-          ];
-          let response = null;
-          for (const modelName of clientModelsToTry) {
-            try {
-              response = await aiBrowser.models.generateContent({
-                model: modelName,
-                contents: [{ role: "user", parts: [{ text: customQuery }] }],
-                config: {
-                  systemInstruction: systemInstructionOverride || getDivisionSystemInstruction(activeDivision || ""),
-                }
-              });
-              if (response) break;
-            } catch (err) {
-              // ignore
-            }
-          }
-          if (response) {
-            return response.text || "";
-          }
-        }
-        throw new Error("Gagal menghubungi server proxy.");
-      }
-      const responseText = await res.text();
-      let parsedData: any = null;
-      let isErrorResponse = !res.ok;
-      try {
-        parsedData = JSON.parse(responseText);
-        if (parsedData && (parsedData.isError || parsedData.error)) {
-          isErrorResponse = true;
-        }
-      } catch (e) {
-        // ignore
-      }
-
-      if (isErrorResponse) {
-        if (clientApiKey) {
-          const aiBrowser = new GoogleGenAI({ apiKey: clientApiKey });
-          const clientModelsToTry = [
-            "gemini-3.5-flash",
-            "gemini-flash-latest",
-            "gemini-3.1-flash-lite",
-            "gemini-2.5-flash",
-            "gemini-2.5-pro",
-            "gemini-3.1-pro-preview"
-          ];
-          let response = null;
-          for (const modelName of clientModelsToTry) {
-            try {
-              response = await aiBrowser.models.generateContent({
-                model: modelName,
-                contents: [{ role: "user", parts: [{ text: customQuery }] }],
-                config: {
-                  systemInstruction: systemInstructionOverride || getDivisionSystemInstruction(activeDivision || ""),
-                }
-              });
-              if (response) break;
-            } catch (err) {
-              // ignore
-            }
-          }
-          if (response) {
-            return response.text || "";
-          }
-        }
-        throw new Error("Gagal memperoleh respons dari server.");
-      }
-      const data = parsedData || JSON.parse(responseText);
-      return data.text || "";
+    if (apiMode === "client" && !clientApiKey) {
+      throw new Error("API Key Gemini belum diatur. Masukkan API Key Gemini Anda di panel setelan atas.");
     }
+
+    let res;
+    try {
+      res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: customQuery,
+          history: [],
+          enableSearch: false,
+          customApiKey: clientApiKey || undefined,
+          systemInstruction: systemInstructionOverride || getDivisionSystemInstruction(activeDivision || ""),
+        }),
+      });
+    } catch (fetchErr: any) {
+      throw new Error("Gagal menghubungi server proxy.");
+    }
+
+    const responseText = await res.text();
+    let parsedData: any = null;
+    let isErrorResponse = !res.ok;
+    try {
+      parsedData = JSON.parse(responseText);
+      if (parsedData && (parsedData.isError || parsedData.error)) {
+        isErrorResponse = true;
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    if (isErrorResponse) {
+      let errorMsg = "Gagal memperoleh respons dari server.";
+      if (parsedData && parsedData.error) {
+        errorMsg = typeof parsedData.error === "object" ? (parsedData.error.message || JSON.stringify(parsedData.error)) : parsedData.error;
+      }
+      throw new Error(errorMsg);
+    }
+
+    const data = parsedData || JSON.parse(responseText);
+    return data.text || "";
   };
 
   const getUnsplashUrl = (keyword: string, divId: string | null): string => {
@@ -4300,7 +4140,28 @@ ${lastMsgText}`;
                     <button
                       type="button"
                       onClick={() => {
-                        setWebDocPreview("ppt");
+                        const mappedSlides = defaultDashboardSections.map((sec) => {
+                          const rawContent = dashboardSectionsState[sec.number] || sec.defaultContent;
+                          const lines = rawContent.split("\n")
+                            .map(l => l.trim())
+                            .filter(l => l.length > 0 && !l.startsWith("###") && !l.startsWith("!"))
+                            .map(l => l.replace(/\*\*/g, "").replace(/^\*\s*/, "").replace(/^-\s*/, ""));
+                          const bullets = lines.slice(0, 5);
+                          const speakerNotes = `Membahas pilar strategi ${sec.number}: ${sec.title}. Analisis operasional merangkum: ${bullets.slice(0, 2).join(", ")}.`;
+                          const kw = sec.title || "";
+                          const imageUrl = getUnsplashUrl(kw, activeDivision);
+                          return {
+                            title: `Pilar ${sec.number}: ${sec.title}`,
+                            bullets: bullets.length > 0 ? bullets : ["Materi pilar pembahasan komprehensif."],
+                            speakerNotes,
+                            imageUrl: imageUrl || "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1200"
+                          };
+                        });
+                        setPptPreview({
+                          title: dashboardProjectTitle || "Kajian 14 Pilar",
+                          slides: mappedSlides,
+                          fileName: (dashboardProjectTitle || "Kajian_14_Pilar").toLowerCase().replace(/[^a-zA-Z0-9]/g, "_")
+                        });
                         setActiveSlideIndex(0);
                       }}
                       className="flex items-center gap-1.5 bg-sky-50 hover:bg-sky-100 text-sky-700 text-[10px] font-black rounded-xl px-3 py-2.5 transition shadow-sm cursor-pointer border border-sky-200"
@@ -4318,6 +4179,45 @@ ${lastMsgText}`;
                     >
                       <Presentation className="h-3.5 w-3.5 text-sky-100" />
                       <span>Unduh PPTX</span>
+                    </button>
+                  </div>
+
+                  {/* HTML Controls block */}
+                  <div className="flex items-center gap-1.5 bg-emerald-50/60 p-1.5 rounded-2xl border border-emerald-100">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const mappedSlides = defaultDashboardSections.map((sec) => {
+                          const rawContent = dashboardSectionsState[sec.number] || sec.defaultContent;
+                          const lines = rawContent.split("\n")
+                            .map(l => l.trim())
+                            .filter(l => l.length > 0 && !l.startsWith("###") && !l.startsWith("!"))
+                            .map(l => l.replace(/\*\*/g, "").replace(/^\*\s*/, "").replace(/^-\s*/, ""));
+                          const bullets = lines.slice(0, 5);
+                          const speakerNotes = `Membahas pilar strategi ${sec.number}: ${sec.title}. Analisis operasional merangkum: ${bullets.slice(0, 2).join(", ")}.`;
+                          return {
+                            title: `Pilar ${sec.number}: ${sec.title}`,
+                            bullets: bullets.length > 0 ? bullets : ["Materi pilar pembahasan komprehensif."],
+                            speakerNotes,
+                            imageUrl: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1200"
+                          };
+                        });
+                        const htmlString = await exportToInteractiveHTML(
+                          dashboardProjectTitle || "Kajian 14 Pilar",
+                          mappedSlides,
+                          activeDivision || "UMUM",
+                          true
+                        );
+                        if (typeof htmlString === "string") {
+                          setHtmlPreviewContent(htmlString);
+                          setWebDocPreview("html");
+                        }
+                      }}
+                      className="flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[10px] font-black rounded-xl px-3 py-2.5 transition shadow-sm cursor-pointer border border-emerald-200"
+                      title="Buka Pratinjau HTML Interaktif di Web"
+                    >
+                      <Eye className="h-3.5 w-3.5 text-emerald-500" />
+                      <span>Pratinjau HTML</span>
                     </button>
                     <button
                       onClick={() => {
@@ -4343,6 +4243,19 @@ ${lastMsgText}`;
                     >
                       <Download className="h-3.5 w-3.5 text-white" />
                       <span>Unduh HTML Interaktif</span>
+                    </button>
+                  </div>
+
+                  {/* EXCEL Financial Controls block */}
+                  <div className="flex items-center gap-1.5 bg-emerald-50/60 p-1.5 rounded-2xl border border-emerald-100 font-sans">
+                    <button
+                      type="button"
+                      onClick={() => setIsExcelPreviewOpen(true)}
+                      className="flex items-center gap-1.5 bg-[#107c41] hover:bg-[#0d6434] text-white text-[10.5px] font-black rounded-xl px-3.5 py-2.5 transition shadow-md cursor-pointer border border-[#0d6434]"
+                      title="Buka Simulator Excel & Analisis Keuangan Interaktif"
+                    >
+                      <Table className="h-3.5 w-3.5 text-emerald-100" />
+                      <span>Simulator Excel Finansial</span>
                     </button>
                   </div>
                 </div>
@@ -4549,7 +4462,6 @@ ${lastMsgText}`;
                                   <span className="text-[9px] font-mono font-black tracking-widest text-emerald-600 uppercase block mb-1">PRAMA MITRA EXCLUSIVE DOSSIER</span>
                                   <h2 className="text-xl md:text-2xl font-black text-slate-800 uppercase tracking-tight font-display">{activeSec.title}</h2>
                                   <div className="flex items-center gap-2.5 mt-2.5">
-                                    <div className="h-6 w-6 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-[10px] text-white font-serif">P</div>
                                     <div className="text-[11px] font-bold text-slate-500">
                                       Oleh <span className="text-slate-800 font-bold">PRAMA Strategic Advisor Team</span> • Diperbarui {new Date().toLocaleDateString("id-ID", { year: "numeric", month: "long" })}
                                     </div>
@@ -4580,18 +4492,6 @@ ${lastMsgText}`;
                                       }
 
                                       const strippedLine = textLine.replace(/\*\*/g, "");
-                                      // Apply beautiful drop caps for aesthetic purposes
-                                      if (isFirstParagraph && strippedLine.length > 30) {
-                                        isFirstParagraph = false;
-                                        const cap = strippedLine.charAt(0);
-                                        const tail = strippedLine.slice(1);
-                                        return (
-                                          <p key={sIdx} className="text-[11.5px] text-slate-600 leading-relaxed font-semibold my-3 text-justify font-sans">
-                                            <span className="float-left text-3xl font-serif font-black text-indigo-700 mr-2 mt-0.5 leading-none uppercase">{cap}</span>
-                                            {tail}
-                                          </p>
-                                        );
-                                      }
 
                                       return (
                                         <p key={sIdx} className={`text-[11.5px] leading-relaxed text-slate-650 ${textLine.startsWith("**") ? "font-black text-indigo-950 mt-4 border-l-2 border-indigo-200 pl-2" : "font-semibold"} my-2.5 text-justify font-sans`}>
@@ -5601,6 +5501,74 @@ ${lastMsgText}`;
                   </div>
                 </div>
               )}
+
+              {/* 🌐 HTML LIVE INTERACTIVE PRESENTATION DECK SIMULATOR OVERLAY */}
+              {webDocPreview === "html" && (
+                <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col justify-between text-white font-sans text-left">
+                  {/* Top Panel Control bar */}
+                  <div className="bg-slate-900 px-6 py-4 border-b border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shrink-0 shadow-xl">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl select-none">🌐</span>
+                      <div className="text-left">
+                        <span className="text-[9px] block font-black uppercase tracking-widest text-emerald-400 font-mono leading-none">PRATINJAU HTML INTERAKTIF</span>
+                        <h3 className="text-[13px] font-black uppercase tracking-tight text-white mt-1">
+                          {dashboardProjectTitle || "Kajian 14 Pilar"}
+                        </h3>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const mappedSlides = defaultDashboardSections.map((sec) => {
+                            const rawContent = dashboardSectionsState[sec.number] || sec.defaultContent;
+                            const lines = rawContent.split("\n")
+                              .map(l => l.trim())
+                              .filter(l => l.length > 0 && !l.startsWith("###") && !l.startsWith("!"))
+                              .map(l => l.replace(/\*\*/g, "").replace(/^\*\s*/, "").replace(/^-\s*/, ""));
+                            const bullets = lines.slice(0, 5);
+                            const speakerNotes = `Membahas pilar strategi ${sec.number}: ${sec.title}. Analisis operasional merangkum: ${bullets.slice(0, 2).join(", ")}.`;
+                            return {
+                              title: `Pilar ${sec.number}: ${sec.title}`,
+                              bullets: bullets.length > 0 ? bullets : ["Materi pilar pembahasan komprehensif."],
+                              speakerNotes,
+                              imageUrl: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1200"
+                            };
+                          });
+                          exportToInteractiveHTML(dashboardProjectTitle || "Kajian 14 Pilar", mappedSlides, activeDivision || "UMUM");
+                        }}
+                        className="bg-[#00D285] hover:bg-[#00B472] text-white text-[10.5px] font-black px-4 py-2.5 rounded-xl flex items-center gap-1.5 shadow-md transition cursor-pointer"
+                      >
+                        <Download className="h-3.5 w-3.5 text-white" />
+                        <span>Unduh File HTML</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setWebDocPreview("none")}
+                        className="bg-slate-800 hover:bg-slate-705 text-slate-300 hover:text-white text-[10.5px] font-black px-4 py-2.5 rounded-xl transition cursor-pointer border border-slate-700"
+                      >
+                        Tutup Pratinjau ✕
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* HTML Simulator Viewport in responsive iframe */}
+                  <div className="flex-grow bg-slate-900 p-2 md:p-6 flex items-center justify-center relative overflow-hidden">
+                    <iframe
+                      title="HTML Presentation Deck Live Viewer"
+                      srcDoc={htmlPreviewContent}
+                      className="w-full h-full bg-white rounded-2xl border border-slate-800 shadow-2xl"
+                      sandbox="allow-scripts allow-same-origin allow-downloads"
+                    />
+                  </div>
+
+                  {/* Bottom simple footer status bar */}
+                  <div className="bg-slate-900 border-t border-slate-800 text-[9.5px] text-slate-500 text-center py-2.5 font-mono select-none">
+                    PREVIEWER HTML INTERAKTIF MANDIRI &bull; SINKRONISASI 14 PILAR KAJIAN STRATEGIS &bull; PT PANCARAN GROUP
+                  </div>
+                </div>
+              )}
             </div>
           ) : dashboardView === "chat_intelligence" ? (
             <div className="max-w-full mx-auto text-left bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden w-full min-h-[680px] flex flex-col transition-all duration-300">
@@ -5695,6 +5663,17 @@ ${lastMsgText}`;
                   >
                     <Download className="h-3.5 w-3.5 text-white" />
                     <span>Unduh HTML Interaktif</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setIsExcelPreviewOpen(true);
+                    }}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#107c41] hover:bg-[#0d6434] text-white text-[10.5px] font-black rounded-xl transition shadow-md active:scale-97 cursor-pointer border border-[#0d6434]"
+                    title="Buka Simulator Excel & Analisis Keuangan Interaktif"
+                  >
+                    <Table className="h-3.5 w-3.5 text-emerald-100" />
+                    <span>Simulator Excel Finansial</span>
                   </button>
 
                   <button
@@ -7106,6 +7085,94 @@ ${lastMsgText}`;
           PT PANCARAN GROUP INDONESIA SERVICES | PRAMA COGNITIVE PORTAL v1.5
         </div>
 
+        {/* Modals for Render 3 (Lobby & Project Dashboard) */}
+        <ArticlePreviewModal 
+          articlePreview={articlePreview}
+          setArticlePreview={setArticlePreview}
+          copiedState={copiedState}
+          setCopiedState={setCopiedState}
+          activeDivision={activeDivision}
+          exportToWord={exportToWord}
+          downloadPDFDirect={downloadPDFDirect}
+          renderPreviewMarkdown={renderPreviewMarkdown}
+        />
+
+        <PPTPreviewModal 
+          pptPreview={pptPreview}
+          setPptPreview={setPptPreview}
+          activeSlideIndex={activeSlideIndex}
+          setActiveSlideIndex={setActiveSlideIndex}
+          isTtsAutoplay={isTtsAutoplay}
+          setIsTtsAutoplay={setIsTtsAutoplay}
+          isPptFullscreen={isPptFullscreen}
+          setIsPptFullscreen={setIsPptFullscreen}
+          activeDivision={activeDivision}
+          isTtsPlaying={isTtsPlaying}
+          stopTtsAndTimers={stopTtsAndTimers}
+          speakCurrentSlide={speakCurrentSlide}
+          exportToPPTX={exportToPPTX}
+          exportToInteractiveHTML={exportToInteractiveHTML}
+          ttsRate={ttsRate}
+          setTtsRate={setTtsRate}
+          ttsVolume={ttsVolume}
+          setTtsVolume={setTtsVolume}
+          pramaLogo={pramaLogo}
+        />
+
+        {isConfirmProjectUpdateOpen && (
+          <div className="fixed inset-0 z-55 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md animate-fade-in" style={{ zIndex: 9999 }}>
+            <div className="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl border border-slate-200 transition-all duration-300 transform scale-100 flex flex-col p-6 space-y-4">
+              
+              {/* Header */}
+              <div className="flex items-center gap-3.5 border-b border-slate-100 pb-3">
+                <div className="h-11 w-11 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+                  <span className="text-xl">🔄</span>
+                </div>
+                <div className="flex-1">
+                  <span className="font-mono text-[9px] font-black text-emerald-600 block uppercase tracking-widest">PRAMA STRATEGIC SYSTEM</span>
+                  <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-tight">Pergantian Proyek Terdeteksi</h3>
+                </div>
+              </div>
+
+              {/* Body */}
+              <div className="space-y-3 py-1 text-left">
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Asisten PRAMA mendeteksi instruksi penggantian pembahasan menuju proyek baru:
+                </p>
+                <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-3">
+                  <span className="font-mono text-[8px] font-bold text-emerald-600 block uppercase tracking-wider mb-0.5">Nama Proyek Baru:</span>
+                  <span className="text-xs font-black text-emerald-950 uppercase block leading-normal">
+                    {proposedNewProjectName}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-700 leading-relaxed font-semibold">
+                  Apakah Anda ingin mereset dan memperbarui seluruh isi 14 pilar strategis pada dashboard secara penuh agar selaras dengan proyek baru ini secara instan?
+                </p>
+                <div className="text-[10px] bg-slate-50 border border-slate-150 rounded-lg p-2.5 text-slate-500 leading-normal flex gap-2">
+                  <span className="text-emerald-600 shrink-0 font-bold select-none">•</span>
+                  <span><strong>Catatan:</strong> Jika Anda menyetujui, kalkulasi finansial, estimasi TAM/SAM/SOM, segmentasi pasar, SOP mitigasi risiko, and kualifikasi organisasi pada dashboard 14 pilar akan direkonstruksi menyesuaikan proyek baru <strong>&quot;{proposedNewProjectName}&quot;</strong>.</span>
+                </div>
+              </div>
+
+              {/* Footer buttons */}
+              <div className="flex gap-2.5 pt-2 justify-end border-t border-slate-100">
+                <button
+                  onClick={() => handleConfirmProjectUpdate(false)}
+                  className="px-4 py-2 text-xs font-extrabold text-slate-500 hover:text-slate-800 hover:bg-slate-50 border border-slate-200 rounded-xl transition cursor-pointer"
+                >
+                  Ganti Judul Saja
+                </button>
+                <button
+                  onClick={() => handleConfirmProjectUpdate(true)}
+                  className="px-4.5 py-2 text-xs font-extrabold bg-[#00D285] hover:bg-[#00b270] text-slate-900 rounded-xl transition cursor-pointer shadow-md shadow-emerald-50"
+                >
+                  Ya, Rekonstruksi 14 Pilar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     );
   }
@@ -7286,6 +7353,7 @@ ${lastMsgText}`;
               isSearchingMessages={isSearching}
               onToggleSearchMessages={setIsSearching}
               onOpenRightPillarPanel={() => setIsRightPillarPanelOpen(true)}
+              onOpenExcelSimulator={() => setIsExcelPreviewOpen(true)}
             />
 
             {/* Dynamic Floating indicator button removed as requested by user */}
@@ -7807,133 +7875,51 @@ ${lastMsgText}`;
       )}
 
       {/* 1. ARTICLE / DOCUMENT PREVIEW MODAL */}
-      {articlePreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs overflow-y-auto animate-fade-in">
-          <div className="flex flex-col bg-white rounded-3xl w-full max-w-4xl max-h-[92vh] shadow-2xl border border-slate-150 overflow-hidden">
-            {/* Modal Header */}
-            <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-violet-100 flex items-center justify-center text-violet-700">
-                  <FileText className="h-5 w-5" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-extrabold text-slate-800">PREVIEW LAPORAN STRATEGIS</h3>
-                  <p className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-widest">{articlePreview.fileName}</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(articlePreview.content);
-                    setCopiedState(true);
-                    setTimeout(() => setCopiedState(false), 2000);
-                  }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 rounded-xl transition cursor-pointer"
-                >
-                  {copiedState ? (
-                    <>
-                      <Check className="h-3.5 w-3.5 text-emerald-600" />
-                      <span>Tersalin!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-3.5 w-3.5" />
-                      <span>Salin Teks</span>
-                    </>
-                  )}
-                </button>
-
-                <button
-                  onClick={() => exportToWord(articlePreview.fileName, articlePreview.content, activeDivision || "PORTAL")}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-violet-600 text-white hover:bg-violet-700 rounded-xl transition cursor-pointer shadow-md shadow-violet-100"
-                  title="Unduh file Word (.doc)"
-                >
-                  <Download className="h-3.5 w-3.5" />
-                  <span>Unduh (.doc)</span>
-                </button>
-
-                <button
-                  onClick={() => downloadPDFDirect(articlePreview.fileName, articlePreview.content, activeDivision || "PORTAL")}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-rose-600 text-white hover:bg-rose-700 rounded-xl transition cursor-pointer shadow-md shadow-rose-100"
-                  title="Unduh file PDF (.pdf)"
-                >
-                  <Download className="h-3.5 w-3.5" />
-                  <span>Unduh PDF (.pdf)</span>
-                </button>
-
-                <button
-                  onClick={() => setArticlePreview(null)}
-                  className="h-8 w-8 flex items-center justify-center hover:bg-slate-200 text-slate-500 hover:text-slate-800 rounded-full transition cursor-pointer"
-                >
-                  <X className="h-4.5 w-4.5" />
-                </button>
-              </div>
-            </div>
-
-            {/* Modal content body styled beautifully like real MS Word A4 sheet */}
-            <div className="flex-1 overflow-y-auto bg-slate-100/60 p-6 sm:p-10 flex justify-center">
-              <div className="bg-white min-h-[70vh] w-full max-w-2xl rounded-2xl shadow-md border border-slate-200 p-8 sm:p-12 text-slate-700 relative overflow-hidden font-sans">
-                {/* Decorative corporate top header */}
-                <div className="flex justify-between items-center border-b-2 border-slate-800 pb-3 mb-6">
-                  <div>
-                    <div className="text-xs font-black tracking-widest text-slate-900 font-mono">PRAMA STRATEGIC SYSTEM</div>
-                    <div className="text-[8px] font-bold text-slate-400 font-mono uppercase tracking-widest">PANCARAN GROUP STRATEGIC CONSULTANCY SERVICES</div>
-                  </div>
-                  <div className="border border-slate-800 px-3 py-1 text-[8px] font-black text-center font-mono rounded tracking-wider uppercase text-indigo-700">
-                    PRAMA VERIFIED
-                  </div>
-                </div>
-
-                {/* Cover metadata card */}
-                <div className="bg-slate-50 border-l-4 border-slate-800 p-4 mb-8 text-[11px] text-slate-600 font-medium leading-relaxed rounded-r-lg">
-                  <div className="font-bold text-slate-800 font-mono text-[9px] uppercase tracking-wider mb-2 text-indigo-600">INFORMASI VERIFIKASI DOKUMEN:</div>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 font-mono">
-                    <div><span className="text-slate-400 font-bold">KATEGORI:</span> LAPORAN ANALISIS STRATEGIS</div>
-                    <div><span className="text-slate-400 font-bold">UNIT:</span> {(activeDivision || "ANALITIS").toUpperCase()} DIVISION</div>
-                    <div><span className="text-slate-400 font-bold">PROYEK:</span> {articlePreview.title.toUpperCase()}</div>
-                    <div><span className="text-slate-400 font-bold">STATUS:</span> INTERNAL VERIFIED (SECRET)</div>
-                  </div>
-                </div>
-
-                {/* Printable main headings and text */}
-                <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 border-b pb-2 mb-6 tracking-tight leading-snug">
-                  {articlePreview.title}
-                </h1>
-
-                {/* Beautiful clean parser */}
-                <div className="space-y-4 text-xs sm:text-sm leading-relaxed text-slate-850 font-normal">
-                  {renderPreviewMarkdown(articlePreview.content)}
-                </div>
-
-                {/* Footer decorator block */}
-                <div className="mt-12 border-t pt-4 text-[9px] text-slate-400 font-mono flex justify-between items-center">
-                  <span>PRAMA SYSTEM DIGITAL ARCHIVE SYSTEM &bull; PANCARAN GROUP</span>
-                  <span>© 2026 INTERNAL</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Modal Bottom control */}
-            <div className="bg-slate-50 border-t border-slate-200 px-6 py-3.5 flex justify-end gap-2.5 shrink-0">
-              <span className="self-center font-mono text-[9px] text-slate-450 font-bold uppercase tracking-widest mr-auto select-none">
-                VERIFIED STUDY SUITE
-              </span>
-              <button
-                onClick={() => setArticlePreview(null)}
-                className="px-5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 border border-slate-200 rounded-xl transition cursor-pointer"
-              >
-                Tutup
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ArticlePreviewModal 
+        articlePreview={articlePreview}
+        setArticlePreview={setArticlePreview}
+        copiedState={copiedState}
+        setCopiedState={setCopiedState}
+        activeDivision={activeDivision}
+        exportToWord={exportToWord}
+        downloadPDFDirect={downloadPDFDirect}
+        renderPreviewMarkdown={renderPreviewMarkdown}
+      />
 
       {/* 2. PPT SLIDESHOW PREVIEW INTERACTIVE MODAL */}
-      {pptPreview && (
-        <div className={`fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 backdrop-blur-md overflow-y-auto animate-fade-in text-slate-800 transition-all duration-300 ${isPptFullscreen ? "bg-[#020617] p-1 sm:p-2" : "bg-[#030712]/95"}`}>
-          <div className={`flex flex-col w-full shadow-2xl overflow-hidden border transition-all duration-300 ${isPptFullscreen ? "max-w-[98vw] h-[96vh] bg-slate-900 border-slate-800 shadow-slate-950/90 rounded-3xl" : "bg-white max-w-7xl border-slate-200 rounded-[2rem]"}`}>
+      <PPTPreviewModal 
+        pptPreview={pptPreview}
+        setPptPreview={setPptPreview}
+        activeSlideIndex={activeSlideIndex}
+        setActiveSlideIndex={setActiveSlideIndex}
+        isTtsAutoplay={isTtsAutoplay}
+        setIsTtsAutoplay={setIsTtsAutoplay}
+        isPptFullscreen={isPptFullscreen}
+        setIsPptFullscreen={setIsPptFullscreen}
+        activeDivision={activeDivision}
+        isTtsPlaying={isTtsPlaying}
+        stopTtsAndTimers={stopTtsAndTimers}
+        speakCurrentSlide={speakCurrentSlide}
+        exportToPPTX={exportToPPTX}
+        exportToInteractiveHTML={exportToInteractiveHTML}
+        ttsRate={ttsRate}
+        setTtsRate={setTtsRate}
+        ttsVolume={ttsVolume}
+        setTtsVolume={setTtsVolume}
+        pramaLogo={pramaLogo}
+      />
+
+      {/* 3. EXCEL WORKBOOK SIMULATOR INTERACTIVE MODAL */}
+      <ExcelPreviewModal 
+        projectTitle={dashboardProjectTitle}
+        division={activeDivision || "Commercial"}
+        isOpen={isExcelPreviewOpen}
+        onClose={() => setIsExcelPreviewOpen(false)}
+        initialCapex={chatBIState.initialCapex}
+      />
+      {false && (
+        <div className="hidden">
+          <div className="hidden">
             {/* Header toolbar */}
             <div className={`px-6 sm:px-8 py-4 sm:py-5 border-b flex items-center justify-between transition-all ${isPptFullscreen ? "bg-slate-950 border-slate-800" : "bg-white border-slate-100"}`}>
               <div className="flex items-center gap-3">
@@ -8225,7 +8211,7 @@ ${lastMsgText}`;
                                   return (
                                     <div key={bIdx} className="flex gap-2 items-start pl-0.5 shrink-0">
                                       <span className="text-[#00D285] mt-0.5 shrink-0 font-extrabold select-none text-[10px] sm:text-xs">•</span>
-                                      <p className="text-[10.5px] sm:text-xs text-slate-655 font-medium leading-relaxed select-text shrink-0">
+                                      <p className="text-[10.5px] sm:text-xs text-slate-600 font-medium leading-relaxed select-text flex-1 min-w-0 text-left">
                                         {formatBulletText(bulletClean)}
                                       </p>
                                     </div>

@@ -1157,7 +1157,130 @@ export function exportToWord(title: string, text: string, divisionName: string) 
     }
   }
 
-  const infographicUrl = generateWordInfographic(text, title, divisionName);
+  const { headings, stats } = extractKeyHeadingsAndStats(text);
+  const cat = getCategoryFromTitle(title);
+
+  // Determine palette themes dynamically matching the burnout poster style
+  let themePrimary = "#1e3a8a"; // Default deep navy
+  let themeAccent = "#10b981";  // Default green
+  let themeSecondary = "#0284c7"; // Default sky blue
+  let themeGlow = "#f0fdf4"; // Default mint backdrop
+  let alertColor = "#8b5cf6"; // Default purple
+  let complianceTag = "100% SECURE REGISTERED";
+
+  // Dynamically extract some facts from text to customize poster output
+  let locationName = "DESA BANGSALSARI";
+  const geoRaw = text.match(/(?:desa|kabupaten|kecamatan|kelurahan|daerah)\s+([A-Za-z]+)/i);
+  if (geoRaw) {
+    locationName = geoRaw[0].toUpperCase();
+  }
+
+  let parsedRt = "76";
+  let parsedRw = "36";
+  const rtMatch = text.match(/rt\s*[:\s]*\s*(\d+)/i) || text.match(/(\d+)\s*rt/i);
+  const rwMatch = text.match(/rw\s*[:\s]*\s*(\d+)/i) || text.match(/(\d+)\s*rw/i);
+  if (rtMatch) parsedRt = rtMatch[1];
+  if (rwMatch) parsedRw = rwMatch[1];
+
+  let parsedPoverty = "5,48%";
+  const povMatch = text.match(/(\d+[,.]\d+)\s*%/);
+  if (povMatch) parsedPoverty = povMatch[1] + "%";
+
+  if (cat.id === "forestry") {
+    themePrimary = "#064e3b"; // Forest green
+    themeAccent = "#10b981";  // Emerald green
+    themeSecondary = "#047857"; // Medium green
+    themeGlow = "#f0fdf4"; // Minty teal
+    alertColor = "#b45308"; // Amber wood
+    complianceTag = "100% CARGO & ESG SECURE";
+  } else if (cat.id === "demography") {
+    themePrimary = "#1e40af"; // Royal Blue Like Poster
+    themeAccent = "#0ea5e9";  // Sky Blue
+    themeSecondary = "#f59e0b"; // Golden Amber Accent
+    themeGlow = "#eff6ff"; // Soft blue canvas glow
+    alertColor = "#ef4444"; // Red for poverty highlight
+    complianceTag = "100% REGIONAL CENSUS REPORT";
+  } else if (cat.id === "logistics") {
+    themePrimary = "#0f172a"; // Slate dark
+    themeAccent = "#0ea5e9";  // Sky blue
+    themeSecondary = "#2563eb"; // Deep blue
+    themeGlow = "#f0f9ff"; // Soft blue sky
+    alertColor = "#d97706"; // Safety orange
+    complianceTag = "100% ROUTE OPTIMIZED";
+  } else if (cat.id === "tech") {
+    themePrimary = "#1e1b4b"; // Deep tech indigo
+    themeAccent = "#06b6d4";  // Cyan
+    themeSecondary = "#4f46e5"; // Indigo
+    themeGlow = "#f5f3ff"; // Lavender
+    alertColor = "#dc2626"; // Alert red
+    complianceTag = "SYSTEM API CONNECTED";
+  } else if (cat.id === "finance") {
+    themePrimary = "#1e1b4b";
+    themeAccent = "#d97706";  // Amber gold
+    themeSecondary = "#2563eb";
+    themeGlow = "#fffbeb"; // Soft yellow cream
+    alertColor = "#16a34a";
+    complianceTag = "AUDITED ROI CERTIFIED";
+  } else if (cat.id === "risk") {
+    themePrimary = "#111827";
+    themeAccent = "#e11d48";  // Crimson rose
+    themeSecondary = "#7c3aed";
+    themeGlow = "#fff5f5"; // Rose pastel tint
+    alertColor = "#ea580c";
+    complianceTag = "LOW RISK COMPLIANT";
+  } else {
+    themePrimary = "#1e293b";
+    themeAccent = "#0d9488";  // Teal
+    themeSecondary = "#0284c7";
+    themeGlow = "#f0fdfa"; // Soft clean teal-mint
+    alertColor = "#6366f1";
+    complianceTag = "PRAMA VERIFIED INTERNAL";
+  }
+
+  // Title contents adaptions
+  let title1 = "HAMBATAN BISNIS MENUMPUK?";
+  let title2 = "ATASI DENGAN PRAMA SYSTEM!";
+  let descText = "Ketimpangan koordinasi antar sektor dan minimnya akurasi telemetri intelijen dalam mengevaluasi metrik kinerja kelayakan utama.";
+  let statWord = "2 DARI 5 METRIK UTAMA";
+  let statParagraph = "memerlukan tinjauan ulang prioritas strategis guna menekan inefisiensi pengerjaan lintas unit kerja.";
+
+  if (cat.id === "forestry") {
+    title1 = "CONGESTI LOGISTIK HUTAN?";
+    title2 = "KELOLA DENGAN LESTARI!";
+    descText = "Inkonsistensi armada dan kelalaian monitoring kelestarian ESG rute tanam menghambat kelancaran operasional PT Pancaran Group.";
+    statWord = "2 DARI 5 DRIVER TRUK";
+    statParagraph = "mengalami keterlambatan pengiriman tong kayu akibat koordinasi rute tanam industri yang belum tersinkronisasi sempurna.";
+  } else if (cat.id === "demography") {
+    title1 = "DATA KEPENDUDUKAN KELAYAKAN?";
+    title2 = `ANALISA WILAYAH ${locationName}`;
+    descText = `Analisis dispersi demografi daerah, pemetaan sebaran kelompok umur dan kepadatan, serta pemenuhan sarana pemberdayaan kesejahteraan sosial secara merata.`;
+    statWord = `${parsedRt} RT & ${parsedRw} RW TERPETAKAN`;
+    statParagraph = `memerlukan audit dan restrukturisasi periodik yang presisi guna mengurangi inefisiensi penyaluran program sosial bagi kesejahteraan warga setempat.`;
+  } else if (cat.id === "logistics") {
+    title1 = "OPERASIONAL RUTE BOROS?";
+    title2 = "ATASI DENGAN EFISIEN!";
+    descText = "Ketidakefisienan alokasi armada dan muatan kosong balik yang berpotensi memicu lonjakan Capex/Opex transportasi komprehensif.";
+    statWord = "2 DARI 5 ARMADA JALAN";
+    statParagraph = "beroperasi dengan kapasitas muatan di bawah 65% yang menyebabkan pemborosan biaya solar operasional yang signifikan.";
+  } else if (cat.id === "tech") {
+    title1 = "SISTEM SERING DOWN?";
+    title2 = "OPTIMALKAN DENGAN DEVOPS!";
+    descText = "Kerentanan latensi sinkronisasi API and tumpang tindih mutasi basis data internal operasional menghambat uptime PT Pancaran Group.";
+    statWord = "2 DARI 5 KONEKSI SYSTEM API";
+    statParagraph = "gagal merespon di bawah batas latency 250ms pada jam sibuk pengiriman data muatan operasional real-time.";
+  } else if (cat.id === "finance") {
+    title1 = "ARUS KAS PROYEK NEGATIF?";
+    title2 = "SIAPKAN STRATEGI PERTUMBUHAN!";
+    descText = "Keterbatasan kas dan tingginya biaya investasi awal (Capex) membutuhkan perencanaan modal kerja yang matang.";
+    statWord = "PAYBACK PERIOD DI BAWAH 1 TAHUN";
+    statParagraph = "menunjukkan potensi pengembalian investasi awal yang sangat cepat dengan margin operasional yang tebal.";
+  } else if (cat.id === "risk") {
+    title1 = "ANCAMAN OPERASIONAL TINGGI?";
+    title2 = "TERAPKAN MANAJEMEN RISIKO!";
+    descText = "Kerugian akibat insiden operasional, fluktuasi harga energi, dan kendala regulasi lintas sektoral.";
+    statWord = "REDUKSI RISIKO HINGGA 45%";
+    statParagraph = "melalui implementasi protokol mitigasi PRAMA serta integrasi sensor keselamatan real-time.";
+  }
 
   const htmlContent = `
     <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
@@ -1262,14 +1385,76 @@ export function exportToWord(title: string, text: string, divisionName: string) 
           <strong>Klasifikasi:</strong> Terbatas / Rahasia Internal PT Pancaran Group
         </div>
 
-        ${infographicUrl ? `
-        <div style="text-align: center; margin-top: 15pt; margin-bottom: 25pt; page-break-inside: avoid;">
-          <img src="${infographicUrl}" width="600" height="390" style="width: 6.25in; height: 4.06in; max-width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; display: block; margin: 0 auto;" alt="Peta Visual Strategis PRAMA" />
-          <p style="font-size: 8.5pt; color: #64748b; font-style: italic; text-align: center; margin-top: 6pt; font-family: 'Segoe UI', Arial, sans-serif;">
-            Gambar 1.0: Peta Visual Strategis Terpadu PT Pancaran Group - Hasil Evaluasi Cognitive AI PRAMA
-          </p>
-        </div>
-        ` : ""}
+        <!-- EXECUTIVE SUMMARY BOX (NATIVE WORD TABLE) -->
+        <table style="width: 100%; border-collapse: collapse; margin-top: 18pt; margin-bottom: 24pt; border: 2px solid ${themePrimary}; font-family: 'Segoe UI', Arial, sans-serif;">
+          <!-- Header Banner -->
+          <tr style="background-color: ${themePrimary};">
+            <td colspan="2" style="padding: 12pt 16pt; color: #ffffff;">
+              <div style="font-size: 8.5pt; font-weight: bold; letter-spacing: 1.5px; text-transform: uppercase; color: ${themeAccent}; font-family: 'Segoe UI', Arial, sans-serif;">EXECUTIVE SUMMARY DASHBOARD</div>
+              <div style="font-size: 15pt; font-weight: bold; margin-top: 2px; font-family: 'Segoe UI', Arial, sans-serif;">${title2}</div>
+            </td>
+          </tr>
+          
+          <!-- Content Body -->
+          <tr>
+            <!-- Left Column: Metrics -->
+            <td style="width: 50%; padding: 16pt; vertical-align: top; border-right: 1px solid #e2e8f0; background-color: #f8fafc;">
+              <div style="font-size: 9.5pt; font-weight: bold; color: ${themePrimary}; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12pt; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; font-family: 'Segoe UI', Arial, sans-serif;">KEY PERFORMANCE METRICS</div>
+              
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 4pt 0; font-size: 10pt; color: #475569; font-family: 'Segoe UI', Arial, sans-serif;">Financial &amp; Technical Feasibility</td>
+                  <td style="padding: 4pt 0; font-size: 11pt; font-weight: bold; text-align: right; color: ${themePrimary}; font-family: 'Segoe UI', Arial, sans-serif;">${stats.feasibility}%</td>
+                </tr>
+                <tr>
+                  <td style="padding: 4pt 0; font-size: 10pt; color: #475569; font-family: 'Segoe UI', Arial, sans-serif;">Strategic Alignment</td>
+                  <td style="padding: 4pt 0; font-size: 11pt; font-weight: bold; text-align: right; color: ${themePrimary}; font-family: 'Segoe UI', Arial, sans-serif;">${stats.alignment}%</td>
+                </tr>
+                <tr>
+                  <td style="padding: 4pt 0; font-size: 10pt; color: #475569; font-family: 'Segoe UI', Arial, sans-serif;">Operational Readiness</td>
+                  <td style="padding: 4pt 0; font-size: 11pt; font-weight: bold; text-align: right; color: ${themePrimary}; font-family: 'Segoe UI', Arial, sans-serif;">${stats.readiness}%</td>
+                </tr>
+                <tr>
+                  <td style="padding: 4pt 0; font-size: 10pt; color: #475569; font-family: 'Segoe UI', Arial, sans-serif;">Efficiency Index</td>
+                  <td style="padding: 4pt 0; font-size: 11pt; font-weight: bold; text-align: right; color: ${themePrimary}; font-family: 'Segoe UI', Arial, sans-serif;">${stats.efficiencyIdx}%</td>
+                </tr>
+                <tr>
+                  <td style="padding: 4pt 0; font-size: 10pt; color: #475569; font-family: 'Segoe UI', Arial, sans-serif;">Risk Exposure Index</td>
+                  <td style="padding: 4pt 0; font-size: 11pt; font-weight: bold; text-align: right; color: #dc2626; font-family: 'Segoe UI', Arial, sans-serif;">${stats.riskIdx}%</td>
+                </tr>
+              </table>
+            </td>
+            
+            <!-- Right Column: Pillars -->
+            <td style="width: 50%; padding: 16pt; vertical-align: top; background-color: #ffffff;">
+              <div style="font-size: 9.5pt; font-weight: bold; color: ${themePrimary}; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12pt; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; font-family: 'Segoe UI', Arial, sans-serif;">STRATEGIC PILLARS &amp; FOCUS</div>
+              
+              <ul style="margin: 0; padding-left: 14pt; font-size: 10pt; color: #334155;">
+                ${headings.map(h => `<li style="margin-bottom: 6pt; font-family: 'Segoe UI', Arial, sans-serif;"><strong>${h}</strong></li>`).join("")}
+              </ul>
+            </td>
+          </tr>
+          
+          <!-- Bottom Insights Box -->
+          <tr style="background-color: ${themeGlow};">
+            <td colspan="2" style="padding: 12pt 16pt; border-top: 1px solid #e2e8f0;">
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="width: 35%; vertical-align: top; padding-right: 12pt;">
+                    <div style="font-size: 8pt; font-weight: bold; color: ${alertColor}; text-transform: uppercase; letter-spacing: 1px; font-family: 'Segoe UI', Arial, sans-serif;">KEY FINDING</div>
+                    <div style="font-size: 11pt; font-weight: bold; color: #0f172a; margin-top: 2px; font-family: 'Segoe UI', Arial, sans-serif;">${statWord}</div>
+                    <div style="font-size: 7.5pt; font-weight: bold; background-color: ${themePrimary}; color: #ffffff; padding: 2px 6px; display: inline-block; margin-top: 6px; letter-spacing: 0.5px; font-family: 'Segoe UI', Arial, sans-serif;">${complianceTag}</div>
+                  </td>
+                  <td style="width: 65%; vertical-align: top; font-size: 9.5pt; color: #334155; line-height: 1.5; border-left: 3px solid ${themeSecondary}; padding-left: 10pt; font-family: 'Segoe UI', Arial, sans-serif;">
+                    <strong style="color: ${themePrimary};">${title1}</strong><br>
+                    ${descText}<br>
+                    <span style="color: #475569; font-style: italic; font-size: 9pt; display: block; margin-top: 4px;">*${statParagraph}</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
 
         <div class="document-body">
           ${formattedHtml}

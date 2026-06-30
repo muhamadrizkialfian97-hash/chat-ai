@@ -876,6 +876,12 @@ export function generatePillarsForProject(projectName: string, fileContent?: str
     materialName = "BBM komanditer / gas cair terkompresi";
     extraDetail1 = "Distribusi pasokan energi dari depo kilang pengolahan Pertamina menuju terminal SPBU atau tangki industri.";
     extraDetail2 = "Unit wajib mengaplikasikan sistem pemutus arus listrik darurat, fire blanket sasis, dan sensor deteksi gas bocor otomatis.";
+  } else if (lower.includes("waste") || lower.includes("limbah") || lower.includes("sampah") || lower.includes("b3") || lower.includes("environmental") || lower.includes("environment")) {
+    industry = "pengangkutan & pengelolaan limbah industri / B3 (Waste Management Transportation)";
+    regulations = "**UU No. 18 Tahun 2008** tentang Pengelolaan Sampah, **PP No. 22 Tahun 2021** tentang Penyelenggaraan Perlindungan Pengelolaan Lingkungan Hidup, serta standar KLHK & Kemenhub";
+    materialName = "limbah B3 industri (cair & padat)";
+    extraDetail1 = "Penyediaan armada transporter tersertifikasi izin khusus angkutan B3 dari Ditjen Perhubungan Darat dan rekomendasi KLHK.";
+    extraDetail2 = "Integrasi sistem pelacakan elektronik manifest Festronik terhubung langsung ke server sistem pemantauan KLHK.";
   }
 
   // File parser overrides if real content is provided!
@@ -966,33 +972,174 @@ export function parseResponseToPillars(text: string): Record<number, string> {
   let currentPilar = 0;
   let currentContent: string[] = [];
 
-  for (const line of lines) {
-    const trimmed = line.trim();
-    // Regex matches "1.", "### 1.", "Pilar 1", "**1.", "Bagian 1", "Pilar 1:", etc.
-    const match = trimmed.match(/^(?:###\s*|\*\*\s*|)?(?:Pilar|PILAR|Bagian|BAGIAN)?\s*(1|2|3|4|5|6|7|8|9|10|11|12|13|14)\b[\.\s\:\-]*([A-Za-z0-9\/&\(\)\s,\|\+]{3,})/i);
+  const headerToPillarMap: Record<string, number> = {
+    "GLOBAL/NAT OVERVIEW": 1,
+    "GLOBAL / NAT OVERVIEW": 1,
+    "GLOBAL/NATIONAL OVERVIEW": 1,
+    "GLOBAL / NATIONAL OVERVIEW": 1,
+    "GLOBAL OVERVIEW": 1,
+    "NATIONAL OVERVIEW": 1,
+    "GLOBAL NAT OVERVIEW": 1,
+    "GLOBAL NATIONAL OVERVIEW": 1,
     
-    if (match) {
-      const pNum = parseInt(match[1]);
+    "MARKET OPPORTUNITY": 2,
+    "PELUANG PASAR": 2,
+    "CERUK PASAR": 2,
+    "MARKET OPPORTUNITIES": 2,
+    
+    "FINANCIAL": 3,
+    "FINANCIALS": 3,
+    "FINANSIAL": 3,
+    "KEUANGAN": 3,
+    "FINANCIAL ANALYSIS": 3,
+    
+    "SUPPLY AND DEMAND": 4,
+    "SUPPLY & DEMAND": 4,
+    "SUPPLY AND DEMAND ANALYSIS": 4,
+    "PENAWARAN DAN PERMINTAAN": 4,
+    "PENAWARAN & PERMINTAAN": 4,
+    "SUPPLY & DEMAND ANALYSIS": 4,
+    
+    "STRUCTURE": 5,
+    "STRUKTUR": 5,
+    "PROJECT STRUCTURE": 5,
+    "STRUKTUR PROYEK": 5,
+    
+    "ORGANIZATION": 6,
+    "ORGANISASI": 6,
+    "ORGANIZATION STRATEGY": 6,
+    "STRATEGI ORGANISASI": 6,
+    
+    "TRANSITION MODEL": 7,
+    "MODEL TRANSISI": 7,
+    "TRANSISI": 7,
+    "STRATEGI TRANSISI": 7,
+    
+    "GO TO MARKET STRATEGY": 8,
+    "GO-TO-MARKET STRATEGY": 8,
+    "GO TO MARKET": 8,
+    "STRATEGI GO TO MARKET": 8,
+    "GTM STRATEGY": 8,
+    
+    "OPS MODEL": 9,
+    "OPERATIONAL MODEL": 9,
+    "MODEL OPERASIONAL": 9,
+    "OPS MODEL ANALYSIS": 9,
+    
+    "RISK MANAGEMENT": 10,
+    "MANAJEMEN RISIKO": 10,
+    "MANAJEMEN RESIKO": 10,
+    "MITIGASI RISIKO": 10,
+    "MITIGASI RESIKO": 10,
+    
+    "DIGITAL COVERAGE": 11,
+    "DIGITALISASI": 11,
+    "CAKUPAN DIGITAL": 11,
+    "TEKNOLOGI DIGITAL": 11,
+    
+    "COMPETITOR": 12,
+    "COMPETITORS": 12,
+    "PESAING": 12,
+    "KOMPETITOR": 12,
+    "ANALISIS PESAING": 12,
+    
+    "TAM, SAM, SOM": 13,
+    "TAM SAM SOM": 13,
+    "TAM, SAM DAN SOM": 13,
+    "MARKET SIZING": 13,
+    "TAM/SAM/SOM": 13,
+    
+    "CAC, LTV": 14,
+    "CAC LTV": 14,
+    "CAC & LTV": 14,
+    "CAC AND LTV": 14,
+    "CAC/LTV": 14,
+    "CUSTOMER ACQUISITION COST": 14,
+  };
+
+  const getPillarFromLine = (line: string): number | null => {
+    const trimmed = line.trim();
+    if (!trimmed) return null;
+
+    // 1. Check direct regex match with number (1-14)
+    const numMatch = trimmed.match(/^(?:###\s*|\*\*\s*|)?(?:Pilar|PILAR|Bagian|BAGIAN)?\s*(1|2|3|4|5|6|7|8|9|10|11|12|13|14)\b[\.\s\:\-]*([A-Za-z0-9\/&\(\)\s,\|\+\-]{3,})/i);
+    if (numMatch) {
+      const pNum = parseInt(numMatch[1], 10);
       const isFalsePositive = trimmed.includes("Rp ") || trimmed.includes("Rp.") || (trimmed.toLowerCase().includes("capex") && pNum !== 3) || trimmed.includes("%");
       if (!isFalsePositive) {
-        if (currentPilar > 0) {
-          result[currentPilar] = currentContent.join("\n").trim();
-        }
-        currentPilar = pNum;
-        currentContent = [line];
-        continue;
+        return pNum;
       }
     }
-    
-    if (currentPilar > 0) {
+
+    // 2. Short header keyword match (case-insensitive)
+    if (trimmed.length > 70) return null;
+
+    const cleaned = trimmed
+      .replace(/^(?:###\s*|\*\*\s*|)?(?:Pilar|PILAR|Bagian|BAGIAN)?\s*/i, "")
+      .replace(/^\d+[\s\.\-\:]+/, "")
+      .replace(/[^A-Za-z0-9\/\s,&+\-]/g, "")
+      .replace(/\s+/g, " ")
+      .toUpperCase()
+      .trim();
+
+    if (cleaned in headerToPillarMap) {
+      return headerToPillarMap[cleaned];
+    }
+
+    // Direct string match of major uppercase sections in the text
+    for (const key of Object.keys(headerToPillarMap)) {
+      if (cleaned === key || cleaned.includes(key) && key.length >= 10) {
+        return headerToPillarMap[key];
+      }
+    }
+
+    return null;
+  };
+
+  for (const line of lines) {
+    const matchedPNum = getPillarFromLine(line);
+    if (matchedPNum !== null) {
+      if (currentPilar > 0) {
+        result[currentPilar] = currentContent.join("\n").trim();
+      }
+      currentPilar = matchedPNum;
+      
+      let formattedHeader = line.trim();
+      if (!formattedHeader.startsWith("###") && !formattedHeader.startsWith("#")) {
+        const defSec = defaultDashboardSections.find(s => s.number === matchedPNum);
+        if (defSec) {
+          formattedHeader = `### ${matchedPNum}. ${defSec.title}`;
+        } else {
+          formattedHeader = `### ${formattedHeader}`;
+        }
+      }
+      
+      currentContent = [formattedHeader];
+    } else if (currentPilar > 0) {
       currentContent.push(line);
     }
   }
-  
+
   if (currentPilar > 0) {
     result[currentPilar] = currentContent.join("\n").trim();
   }
-  
+
   return result;
+}
+
+export function extractProjectTitleFromAI(text: string): string | null {
+  // Pattern 1: proyek yang sedang kita analisis adalah "..."
+  const p1 = text.match(/proyek yang sedang kita analisis adalah\s*(?:"|'|«|“|`|')?([^"'\n\.«“”`\(\)]+)/i);
+  if (p1 && p1[1] && p1[1].trim().length > 3) {
+    return p1[1].trim();
+  }
+  
+  // Pattern 2: Kajian Strategis: ...
+  const p2 = text.match(/Kajian Strategis:\s*([^\n\.\"\']+)/i);
+  if (p2 && p2[1] && p2[1].trim().length > 3) {
+    return p2[1].trim();
+  }
+  
+  return null;
 }
 

@@ -345,7 +345,7 @@ export function ExcelPreviewModal({
                   <td className="border border-slate-300"></td>
                   <td className="border border-slate-300 px-3 font-bold text-left">TAM (Total Addressable Market)</td>
                   <td className="border border-slate-300 px-3 text-slate-600 text-left">Total seluruh potensi pasar logistik di wilayah target (misal: Seluruh Indonesia/Provinsi)</td>
-                  <td className="border border-slate-300 px-3 text-right bg-white select-text">
+                  <td className="border border-slate-300 p-0 text-right bg-white select-text h-7">
                     <input 
                       type="number"
                       value={tam}
@@ -355,7 +355,7 @@ export function ExcelPreviewModal({
                         setTam(val);
                         setSelectedCell(prev => prev.row === 7 && prev.col === "D" ? { ...prev, val: val.toString() } : prev);
                       }}
-                      className="w-full text-right outline-none border-none p-0 focus:ring-1 focus:ring-emerald-500 text-xs font-mono"
+                      className="w-full h-full text-right outline-none border-none px-3 py-1 focus:bg-emerald-50 focus:ring-1 focus:ring-emerald-500 text-xs font-mono cursor-pointer"
                     />
                   </td>
                   <td colSpan={3} className="border border-slate-200 bg-[#fafafa]"></td>
@@ -367,7 +367,7 @@ export function ExcelPreviewModal({
                   <td className="border border-slate-300"></td>
                   <td className="border border-slate-300 px-3 font-bold text-left">SAM (Serviceable Addressable Market)</td>
                   <td className="border border-slate-300 px-3 text-slate-600 text-left">Pangsa pasar TAM yang sesuai dengan model bisnis &amp; jangkauan armada Anda</td>
-                  <td className="border border-slate-300 px-3 text-right bg-white select-text">
+                  <td className="border border-slate-300 p-0 text-right bg-white select-text h-7">
                     <input 
                       type="number"
                       value={sam}
@@ -377,7 +377,7 @@ export function ExcelPreviewModal({
                         setSam(val);
                         setSelectedCell(prev => prev.row === 8 && prev.col === "D" ? { ...prev, val: val.toString() } : prev);
                       }}
-                      className="w-full text-right outline-none border-none p-0 focus:ring-1 focus:ring-emerald-500 text-xs font-mono"
+                      className="w-full h-full text-right outline-none border-none px-3 py-1 focus:bg-emerald-50 focus:ring-1 focus:ring-emerald-500 text-xs font-mono cursor-pointer"
                     />
                   </td>
                   <td colSpan={3} className="border border-slate-200 bg-[#fafafa]"></td>
@@ -389,7 +389,7 @@ export function ExcelPreviewModal({
                   <td className="border border-slate-300"></td>
                   <td className="border border-slate-300 px-3 font-bold text-left">SOM (Serviceable Obtainable Market)</td>
                   <td className="border border-slate-300 px-3 text-slate-600 text-left">Target nyata pangsa pasar yang sanggup dilayani oleh kapasitas operasional Anda saat ini</td>
-                  <td className="border border-slate-300 px-3 text-right bg-white select-text">
+                  <td className="border border-slate-300 p-0 text-right bg-white select-text h-7">
                     <input 
                       type="number"
                       value={som}
@@ -399,7 +399,7 @@ export function ExcelPreviewModal({
                         setSom(val);
                         setSelectedCell(prev => prev.row === 9 && prev.col === "D" ? { ...prev, val: val.toString() } : prev);
                       }}
-                      className="w-full text-right outline-none border-none p-0 focus:ring-1 focus:ring-emerald-500 text-xs font-mono"
+                      className="w-full h-full text-right outline-none border-none px-3 py-1 focus:bg-emerald-50 focus:ring-1 focus:ring-emerald-500 text-xs font-mono cursor-pointer"
                     />
                   </td>
                   <td colSpan={3} className="border border-slate-200 bg-[#fafafa]"></td>

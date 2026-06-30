@@ -23,7 +23,8 @@ import {
   exportAllSectionsToWord, 
   exportAllSectionsToPPTX,
   generatePillarsForProject,
-  parseResponseToPillars
+  parseResponseToPillars,
+  extractProjectTitleFromAI
 } from "./utils/projectDashboardHelper";
 import {
   ChatIntelligenceState,
@@ -918,6 +919,14 @@ export default function App() {
   }, []);
 
   const [showRobotKey, setShowRobotKey] = useState<boolean>(false);
+  const [showCalibrationPanel, setShowCalibrationPanel] = useState<boolean>(() => {
+    const saved = localStorage.getItem("show_calibration_panel");
+    return saved !== "false";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("show_calibration_panel", String(showCalibrationPanel));
+  }, [showCalibrationPanel]);
 
   const speakTextFromParent = (txt: string) => {
     if (robotIframeRef.current && robotIframeRef.current.contentWindow) {
@@ -1247,7 +1256,26 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
     const saved = localStorage.getItem("prama_dashboard_sections");
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        const savedTitle = localStorage.getItem("prama_dashboard_project_title") || "Kajian Strategis: Forestry Management Transportation";
+        const isWaste = savedTitle.toLowerCase().includes("waste") || savedTitle.toLowerCase().includes("limbah") || savedTitle.toLowerCase().includes("sampah");
+        const p2 = parsed[2] || "";
+        const isCorrupted = p2.includes("Baik, terima kasih") || p2.includes("GLOBAL/NAT OVERVIEW") || p2.trim().length === 0;
+        if (isWaste && isCorrupted) {
+          parsed[2] = `### 2. Market Opportunity
+
+**Analisis Potensi Pasar & Gap Analisis:**
+Pasar transportasi limbah industri, terutama limbah Bahan Berbahaya dan Beracun (B3), memiliki tingkat marjin keuntungan yang jauh lebih tinggi daripada logistik general cargo biasa karena regulasi ketat, pengawasan lingkungan hidup, dan persyaratan armada yang spesifik.
+
+**Kesenjangan Layanan (Service Gaps):**
+* **Izin Khusus Terbatas:** Sangat sedikit operator logistik nasional yang memiliki lisensi pengangkutan terpadu (Kemenhub + KLHK) berskala armada besar untuk melayani rute kawasan industri Jawa Barat (Cikarang, Karawang).
+* **Integrasi Digital & Festronik:** Mayoritas transporter limbah konvensional masih mengandalkan manifest fisik kertas, sementara emiten/perusahaan multinasional membutuhkan pelaporan manifest digital terintegrasi (Festronik) untuk kepatuhan ESG.
+
+**Strategi Eksploitasi Ceruk Pasar:**
+* **Armada B3 Tersertifikasi:** Mempersiapkan armada tangki/box BRAMA dengan kelayakan uji kir, safety check, asuransi, serta sopir berlisensi BII Umum bersertifikat khusus.
+* **Kemitraan Aliansi Pengolahan:** Bekerja sama dengan Pihak Ketiga (fasilitas pengolahan akhir berizin seperti PPLI) untuk menawarkan jasa bundling hulu-ke-hilir (*end-to-end service*).`;
+        }
+        return parsed;
       } catch (e) {
         // fallback
       }
@@ -1266,6 +1294,41 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
   useEffect(() => {
     localStorage.setItem("prama_dashboard_sections", JSON.stringify(dashboardSectionsState));
   }, [dashboardSectionsState]);
+
+  // Automated sanitization and optimization for Market Opportunity (Pillar 2)
+  useEffect(() => {
+    const isWaste = dashboardProjectTitle.toLowerCase().includes("waste") || 
+                    dashboardProjectTitle.toLowerCase().includes("limbah") || 
+                    dashboardProjectTitle.toLowerCase().includes("sampah");
+    
+    setDashboardSectionsState((prev) => {
+      const p2 = prev[2] || "";
+      const isCorrupted = p2.includes("Baik, terima kasih") || 
+                          p2.includes("GLOBAL/NAT OVERVIEW") || 
+                          p2.includes("### 1. Global") || 
+                          p2.trim() === "" || 
+                          p2.trim() === "### 2. Market Opportunity";
+      
+      if (isWaste && isCorrupted) {
+        return {
+          ...prev,
+          2: `### 2. Market Opportunity
+
+**Analisis Potensi Pasar & Gap Analisis:**
+Pasar transportasi limbah industri, terutama limbah Bahan Berbahaya dan Beracun (B3), memiliki tingkat marjin keuntungan yang jauh lebih tinggi daripada logistik general cargo biasa karena regulasi ketat, pengawasan lingkungan hidup, dan persyaratan armada yang spesifik.
+
+**Kesenjangan Layanan (Service Gaps):**
+* **Izin Khusus Terbatas:** Sangat sedikit operator logistik nasional yang memiliki lisensi pengangkutan terpadu (Kemenhub + KLHK) berskala armada besar untuk melayani rute kawasan industri Jawa Barat (Cikarang, Karawang).
+* **Integrasi Digital & Festronik:** Mayoritas transporter limbah konvensional masih mengandalkan manifest fisik kertas, sementara emiten/perusahaan multinasional membutuhkan pelaporan manifest digital terintegrasi (Festronik) untuk kepatuhan ESG.
+
+**Strategi Eksploitasi Ceruk Pasar:**
+* **Armada B3 Tersertifikasi:** Mempersiapkan armada tangki/box BRAMA dengan kelayakan uji kir, safety check, asuransi, serta sopir berlisensi BII Umum bersertifikat khusus.
+* **Kemitraan Aliansi Pengolahan:** Bekerja sama dengan Pihak Ketiga (fasilitas pengolahan akhir berizin seperti PPLI) untuk menawarkan jasa bundling hulu-ke-hilir (*end-to-end service*).`
+        };
+      }
+      return prev;
+    });
+  }, [dashboardProjectTitle]);
 
   // Right side Chat Menu state
   const [isDashboardChatOpen, setIsDashboardChatOpen] = useState<boolean>(true);
@@ -2162,7 +2225,18 @@ ${focusText}`;
 
       // Automatically parse AI response for the 14 pillars and update the active division templates in the dashboard menu!
       const parsedPillars = parseResponseToPillars(mainAnswerText);
-      if (Object.keys(parsedPillars).length > 0) {
+      const extractedTitle = extractProjectTitleFromAI(mainAnswerText);
+      
+      if (extractedTitle && extractedTitle.toLowerCase() !== dashboardProjectTitle.toLowerCase()) {
+        setDashboardProjectTitle(extractedTitle);
+        // Generate baseline pillars for the new project title
+        const basePillars = generatePillarsForProject(extractedTitle, mainAnswerText);
+        setDashboardSectionsState((prev) => ({
+          ...prev,
+          ...basePillars,
+          ...parsedPillars
+        }));
+      } else if (Object.keys(parsedPillars).length > 0) {
         setDashboardSectionsState((prev) => ({
           ...prev,
           ...parsedPillars
@@ -2221,6 +2295,24 @@ ${focusText}`;
       } else {
         const fallbackPayload = generateLocalSmartResponse(finalQuery, "spia", newMsgs);
         fallbackText = fallbackPayload.text;
+      }
+
+      const fallbackParsed = parseResponseToPillars(fallbackText);
+      const fallbackExtractedTitle = extractProjectTitleFromAI(fallbackText);
+      
+      if (fallbackExtractedTitle && fallbackExtractedTitle.toLowerCase() !== dashboardProjectTitle.toLowerCase()) {
+        setDashboardProjectTitle(fallbackExtractedTitle);
+        const basePillars = generatePillarsForProject(fallbackExtractedTitle, fallbackText);
+        setDashboardSectionsState((prev) => ({
+          ...prev,
+          ...basePillars,
+          ...fallbackParsed
+        }));
+      } else if (Object.keys(fallbackParsed).length > 0) {
+        setDashboardSectionsState((prev) => ({
+          ...prev,
+          ...fallbackParsed
+        }));
       }
 
       const errorModelMsg: ChatMessage = {
@@ -2421,7 +2513,18 @@ ${focusText}`;
 
       // Automatically parse AI response for the 14 pillars and update the active division templates in the dashboard menu!
       const parsedPillars = parseResponseToPillars(mainAnswerText);
-      if (Object.keys(parsedPillars).length > 0) {
+      const extractedTitle = extractProjectTitleFromAI(mainAnswerText);
+      
+      if (extractedTitle && extractedTitle.toLowerCase() !== dashboardProjectTitle.toLowerCase()) {
+        setDashboardProjectTitle(extractedTitle);
+        // Generate baseline pillars for the new project title
+        const basePillars = generatePillarsForProject(extractedTitle, mainAnswerText);
+        setDashboardSectionsState((prev) => ({
+          ...prev,
+          ...basePillars,
+          ...parsedPillars
+        }));
+      } else if (Object.keys(parsedPillars).length > 0) {
         setDashboardSectionsState((prev) => ({
           ...prev,
           ...parsedPillars
@@ -2629,6 +2732,24 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
         // Generate highly intelligent Indonesian response tailored to the user's specific text + active division
         const fallbackPayload = generateLocalSmartResponse(text, activeDivision, updatedMessages);
         finalResponseText = fallbackPayload.text;
+      }
+
+      const fallbackParsed = parseResponseToPillars(finalResponseText);
+      const fallbackExtractedTitle = extractProjectTitleFromAI(finalResponseText);
+      
+      if (fallbackExtractedTitle && fallbackExtractedTitle.toLowerCase() !== dashboardProjectTitle.toLowerCase()) {
+        setDashboardProjectTitle(fallbackExtractedTitle);
+        const basePillars = generatePillarsForProject(fallbackExtractedTitle, finalResponseText);
+        setDashboardSectionsState((prev) => ({
+          ...prev,
+          ...basePillars,
+          ...fallbackParsed
+        }));
+      } else if (Object.keys(fallbackParsed).length > 0) {
+        setDashboardSectionsState((prev) => ({
+          ...prev,
+          ...fallbackParsed
+        }));
       }
 
       const activeUser = user || guestUser;
@@ -6580,171 +6701,194 @@ ${lastMsgText}`;
                 <div className="bg-white rounded-3xl border border-slate-200 shadow-xl p-5 flex flex-col gap-3 shrink-0">
                   
                   {/* Calibrator Header */}
-                  <div className="flex items-center gap-2 border-b border-slate-150 pb-2.5 shrink-0">
-                    <Sliders className="h-4 w-4 text-slate-400 stroke-[2.2]" />
-                    <span className="font-mono text-[9px] font-black text-slate-700 tracking-wider">
-                      MATRIKS KALIBRASI SUARA & AI ENGINE
-                    </span>
-                  </div>
-
-                  {/* AI Connection Settings */}
-                  <div className="bg-gradient-to-r from-indigo-50/70 to-blue-50/50 rounded-2xl border border-indigo-100/60 p-3.5 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Key className="h-3 w-3 text-indigo-500" />
-                        <span className="font-mono text-[8.5px] font-extrabold uppercase text-indigo-950 tracking-wider">
-                          Koneksi AI Engine (Gemini)
-                        </span>
-                      </div>
-                      <span className={`text-[7.5px] font-mono px-2 py-0.5 rounded-full font-bold uppercase border ${
-                        apiMode === "client" && clientApiKey
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                          : "bg-amber-50 text-amber-700 border-amber-250"
-                      }`}>
-                        {apiMode === "client" && clientApiKey ? "API Key Aktif" : "Proxy Server"}
+                  <div className="flex items-center justify-between border-b border-slate-150 pb-2.5 shrink-0">
+                    <div className="flex items-center gap-2">
+                      <Sliders className="h-4 w-4 text-slate-400 stroke-[2.2]" />
+                      <span className="font-mono text-[9px] font-black text-slate-700 tracking-wider">
+                        MATRIKS KALIBRASI SUARA & AI ENGINE
                       </span>
                     </div>
-
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setApiMode("proxy")}
-                        className={`flex-1 py-1.5 rounded-lg text-[8.5px] font-extrabold uppercase transition border ${
-                          apiMode === "proxy"
-                            ? "bg-slate-900 border-slate-900 text-white shadow-sm"
-                            : "bg-white border-slate-200 text-slate-500 hover:text-slate-800"
-                        }`}
-                      >
-                        Bawaan (Proxy)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setApiMode("client")}
-                        className={`flex-1 py-1.5 rounded-lg text-[8.5px] font-extrabold uppercase transition border ${
-                          apiMode === "client"
-                            ? "bg-indigo-600 border-indigo-600 text-white shadow-sm"
-                            : "bg-white border-slate-200 text-slate-500 hover:text-slate-800"
-                        }`}
-                      >
-                        Kunci Sendiri (API Key)
-                      </button>
-                    </div>
-
-                    <div className="space-y-1 text-left">
-                      <span className="block text-[8px] font-black uppercase text-slate-500 tracking-wider">
-                        Ubah Gemini API Key Pribadi Anda:
-                      </span>
-                      <div className="relative flex items-center bg-white border border-slate-200 hover:border-slate-350 rounded-xl overflow-hidden px-3 h-9 transition focus-within:ring-2 focus-within:ring-indigo-100 focus-within:border-indigo-400">
-                        <input
-                          type={showRobotKey ? "text" : "password"}
-                          value={clientApiKey || ""}
-                          onChange={(e) => {
-                            const cleanedVal = e.target.value.trim();
-                            setClientApiKey(cleanedVal);
-                            if (cleanedVal) {
-                              setApiMode("client");
-                            }
-                          }}
-                          placeholder={clientApiKey ? "••••••••••••••••••••" : "Ubah API Key Anda disini..."}
-                          className="w-full bg-transparent border-none text-[10px] text-slate-800 focus:outline-none focus:ring-0 py-1 font-mono font-bold"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowRobotKey(!showRobotKey)}
-                          className="text-slate-400 hover:text-slate-600 px-1 cursor-pointer"
-                        >
-                          {showRobotKey ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                        </button>
-                      </div>
-                      <p className="text-[7px] text-slate-400 leading-tight font-medium font-mono uppercase mt-1">
-                        *Masukkan API Key Anda sendiri bila API Key bawaan mengalami pemblokiran/limitasi kuota.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Dropdown voice speaker selection */}
-                  <div className="space-y-1 text-left shrink-0">
-                    <span className="block text-[8px] font-black uppercase text-slate-400 tracking-wider">
-                      Pilihan Suara (TTS Speaker):
-                    </span>
-                    <select
-                      value={selectedVoiceName}
-                      onChange={(e) => setSelectedVoiceName(e.target.value)}
-                      className="w-full bg-slate-50 block border border-slate-200 hover:border-slate-350 px-3 py-2.5 rounded-xl text-xs text-slate-700 outline-none font-bold transition duration-200 focus:ring-2 focus:ring-emerald-500/10 cursor-pointer"
-                    >
-                      {availableVoices.length > 0 ? (
-                        availableVoices.map((voice) => (
-                          <option key={voice.name} value={voice.name}>
-                            {voice.name} ({voice.lang})
-                          </option>
-                        ))
-                      ) : (
-                        <option value="">Browser Default (Indonesian)</option>
-                      )}
-                    </select>
-                  </div>
-
-                  {/* Sliders Grid */}
-                  <div className="grid grid-cols-2 gap-4 shrink-0 text-left pt-0.5">
-                    
-                    {/* Speed Slider */}
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between text-[8px] font-black uppercase text-slate-400 tracking-wider">
-                        <span>Kecepatan:</span>
-                        <span className="font-mono text-indigo-600 font-bold">{robotTtsSpeed}x</span>
-                      </div>
-                      <input
-                        type="range"
-                        min="0.5"
-                        max="1.8"
-                        step="0.05"
-                        value={robotTtsSpeed}
-                        onChange={(e) => setRobotTtsSpeed(parseFloat(e.target.value))}
-                        className="w-full accent-slate-900 cursor-pointer h-1 bg-slate-100 rounded-lg appearance-none"
-                      />
-                    </div>
-
-                    {/* Pitch / Jaw Slider */}
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between text-[8px] font-black uppercase text-slate-400 tracking-wider">
-                        <span>Gerak Mulut (Jaw):</span>
-                        <span className="font-mono text-indigo-600 font-bold">{robotTtsPitch}x</span>
-                      </div>
-                      <input
-                        type="range"
-                        min="0.6"
-                        max="1.5"
-                        step="0.05"
-                        value={robotTtsPitch}
-                        onChange={(e) => setRobotTtsPitch(parseFloat(e.target.value))}
-                        className="w-full accent-slate-900 cursor-pointer h-1 bg-slate-100 rounded-lg appearance-none"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Actions / Calibration bottom row */}
-                  <div className="flex justify-between items-center text-[10px] pt-1 border-t border-slate-150 font-mono text-slate-500 shrink-0 font-bold">
                     <button
                       type="button"
-                      onClick={() => {
-                        setRobotTtsSpeed(1.05);
-                        setRobotTtsPitch(1.1);
-                        if (availableVoices.length > 0) {
-                          const idVoice = availableVoices.find(v => v.lang.toLowerCase().includes("id") || v.lang.toLowerCase().includes("id-id"));
-                          if (idVoice) setSelectedVoiceName(idVoice.name);
-                        }
-                      }}
-                      className="flex items-center gap-1.5 hover:text-slate-800 text-[9px] transition cursor-pointer select-none uppercase tracking-wider"
+                      onClick={() => setShowCalibrationPanel(!showCalibrationPanel)}
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] font-mono font-black uppercase text-indigo-600 bg-indigo-50 hover:bg-indigo-100 transition cursor-pointer select-none border border-indigo-100"
                     >
-                      <RefreshCw className="h-3 w-3 text-slate-400 shrink-0" />
-                      <span>Riset Matriks</span>
+                      {showCalibrationPanel ? (
+                        <>
+                          <EyeOff className="h-3 w-3" />
+                          <span>Sembunyikan</span>
+                        </>
+                      ) : (
+                        <>
+                          <Eye className="h-3 w-3" />
+                          <span>Tampilkan</span>
+                        </>
+                      )}
                     </button>
-                    
-                    <div className="flex items-center gap-1.5 text-emerald-600 font-extrabold uppercase text-[9px] tracking-wider">
-                      <Volume2 className="h-3.5 w-3.5" />
-                      <span>Suara: Aktif</span>
-                    </div>
                   </div>
+
+                  {showCalibrationPanel && (
+                    <>
+                      {/* AI Connection Settings */}
+                      <div className="bg-gradient-to-r from-indigo-50/70 to-blue-50/50 rounded-2xl border border-indigo-100/60 p-3.5 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Key className="h-3 w-3 text-indigo-500" />
+                            <span className="font-mono text-[8.5px] font-extrabold uppercase text-indigo-950 tracking-wider">
+                              Koneksi AI Engine (Gemini)
+                            </span>
+                          </div>
+                          <span className={`text-[7.5px] font-mono px-2 py-0.5 rounded-full font-bold uppercase border ${
+                            apiMode === "client" && clientApiKey
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              : "bg-amber-50 text-amber-700 border-amber-250"
+                          }`}>
+                            {apiMode === "client" && clientApiKey ? "API Key Aktif" : "Proxy Server"}
+                          </span>
+                        </div>
+
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setApiMode("proxy")}
+                            className={`flex-1 py-1.5 rounded-lg text-[8.5px] font-extrabold uppercase transition border ${
+                              apiMode === "proxy"
+                                ? "bg-slate-900 border-slate-900 text-white shadow-sm"
+                                : "bg-white border-slate-200 text-slate-500 hover:text-slate-800"
+                            }`}
+                          >
+                            Bawaan (Proxy)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setApiMode("client")}
+                            className={`flex-1 py-1.5 rounded-lg text-[8.5px] font-extrabold uppercase transition border ${
+                              apiMode === "client"
+                                ? "bg-indigo-600 border-indigo-600 text-white shadow-sm"
+                                : "bg-white border-slate-200 text-slate-500 hover:text-slate-800"
+                            }`}
+                          >
+                            Kunci Sendiri (API Key)
+                          </button>
+                        </div>
+
+                        <div className="space-y-1 text-left">
+                          <span className="block text-[8px] font-black uppercase text-slate-500 tracking-wider">
+                            Ubah Gemini API Key Pribadi Anda:
+                          </span>
+                          <div className="relative flex items-center bg-white border border-slate-200 hover:border-slate-350 rounded-xl overflow-hidden px-3 h-9 transition focus-within:ring-2 focus-within:ring-indigo-100 focus-within:border-indigo-400">
+                            <input
+                              type={showRobotKey ? "text" : "password"}
+                              value={clientApiKey || ""}
+                              onChange={(e) => {
+                                const cleanedVal = e.target.value.trim();
+                                setClientApiKey(cleanedVal);
+                                if (cleanedVal) {
+                                  setApiMode("client");
+                                }
+                              }}
+                              placeholder={clientApiKey ? "••••••••••••••••••••" : "Ubah API Key Anda disini..."}
+                              className="w-full bg-transparent border-none text-[10px] text-slate-800 focus:outline-none focus:ring-0 py-1 font-mono font-bold"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowRobotKey(!showRobotKey)}
+                              className="text-slate-400 hover:text-slate-600 px-1 cursor-pointer"
+                            >
+                              {showRobotKey ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                            </button>
+                          </div>
+                          <p className="text-[7px] text-slate-400 leading-tight font-medium font-mono uppercase mt-1">
+                            *Masukkan API Key Anda sendiri bila API Key bawaan mengalami pemblokiran/limitasi kuota.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Dropdown voice speaker selection */}
+                      <div className="space-y-1 text-left shrink-0">
+                        <span className="block text-[8px] font-black uppercase text-slate-400 tracking-wider">
+                          Pilihan Suara (TTS Speaker):
+                        </span>
+                        <select
+                          value={selectedVoiceName}
+                          onChange={(e) => setSelectedVoiceName(e.target.value)}
+                          className="w-full bg-slate-50 block border border-slate-200 hover:border-slate-350 px-3 py-2.5 rounded-xl text-xs text-slate-700 outline-none font-bold transition duration-200 focus:ring-2 focus:ring-emerald-500/10 cursor-pointer"
+                        >
+                          {availableVoices.length > 0 ? (
+                            availableVoices.map((voice) => (
+                              <option key={voice.name} value={voice.name}>
+                                {voice.name} ({voice.lang})
+                              </option>
+                            ))
+                          ) : (
+                            <option value="">Browser Default (Indonesian)</option>
+                          )}
+                        </select>
+                      </div>
+
+                      {/* Sliders Grid */}
+                      <div className="grid grid-cols-2 gap-4 shrink-0 text-left pt-0.5">
+                        
+                        {/* Speed Slider */}
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-[8px] font-black uppercase text-slate-400 tracking-wider">
+                            <span>Kecepatan:</span>
+                            <span className="font-mono text-indigo-600 font-bold">{robotTtsSpeed}x</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="0.5"
+                            max="1.8"
+                            step="0.05"
+                            value={robotTtsSpeed}
+                            onChange={(e) => setRobotTtsSpeed(parseFloat(e.target.value))}
+                            className="w-full accent-slate-900 cursor-pointer h-1 bg-slate-100 rounded-lg appearance-none"
+                          />
+                        </div>
+
+                        {/* Pitch / Jaw Slider */}
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-[8px] font-black uppercase text-slate-400 tracking-wider">
+                            <span>Gerak Mulut (Jaw):</span>
+                            <span className="font-mono text-indigo-600 font-bold">{robotTtsPitch}x</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="0.6"
+                            max="1.5"
+                            step="0.05"
+                            value={robotTtsPitch}
+                            onChange={(e) => setRobotTtsPitch(parseFloat(e.target.value))}
+                            className="w-full accent-slate-900 cursor-pointer h-1 bg-slate-100 rounded-lg appearance-none"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Actions / Calibration bottom row */}
+                      <div className="flex justify-between items-center text-[10px] pt-1 border-t border-slate-150 font-mono text-slate-500 shrink-0 font-bold">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRobotTtsSpeed(1.05);
+                            setRobotTtsPitch(1.1);
+                            if (availableVoices.length > 0) {
+                              const idVoice = availableVoices.find(v => v.lang.toLowerCase().includes("id") || v.lang.toLowerCase().includes("id-id"));
+                              if (idVoice) setSelectedVoiceName(idVoice.name);
+                            }
+                          }}
+                          className="flex items-center gap-1.5 hover:text-slate-800 text-[9px] transition cursor-pointer select-none uppercase tracking-wider"
+                        >
+                          <RefreshCw className="h-3 w-3 text-slate-400 shrink-0" />
+                          <span>Riset Matriks</span>
+                        </button>
+                        
+                        <div className="flex items-center gap-1.5 text-emerald-600 font-extrabold uppercase text-[9px] tracking-wider">
+                          <Volume2 className="h-3.5 w-3.5" />
+                          <span>Suara: Aktif</span>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

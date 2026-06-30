@@ -208,6 +208,7 @@ export function exportToExcelFile(data: ExcelData) {
       <Column ss:Index="2" ss:Width="250"/> <!-- B -->
       <Column ss:Index="3" ss:Width="450"/> <!-- C -->
       <Column ss:Index="4" ss:Width="160"/> <!-- D -->
+      <Column ss:Index="5" ss:Width="250"/> <!-- E -->
       
       <Row ss:Height="25">
         <Cell ss:Index="2" ss:StyleID="sTitle"><Data ss:Type="String">ANALISIS KELAYAKAN PROYEK LOGISTIK</Data></Cell>
@@ -250,32 +251,38 @@ export function exportToExcelFile(data: ExcelData) {
       </Row>
       <Row ss:Height="20">
         <Cell ss:Index="2" ss:StyleID="sTableHeader"><Data ss:Type="String">Indikator Keuangan</Data></Cell>
-        <Cell ss:StyleID="sTableHeader"><Data ss:Type="String">Nilai</Data></Cell>
-        <Cell ss:StyleID="sTableHeader"><Data ss:Type="String">Ambang Batas Kelayakan</Data></Cell>
+        <Cell ss:StyleID="sTableHeader"><Data ss:Type="String"></Data></Cell> <!-- Column C Spacer -->
+        <Cell ss:StyleID="sTableHeader"><Data ss:Type="String">Nilai</Data></Cell> <!-- Column D -->
+        <Cell ss:StyleID="sTableHeader"><Data ss:Type="String">Ambang Batas Kelayakan</Data></Cell> <!-- Column E -->
       </Row>
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabelBold"><Data ss:Type="String">Total CAPEX (Investasi Awal)</Data></Cell>
-        <Cell ss:StyleID="sCurrencyBold" ss:Formula="='2. P&amp;L &amp; Cash Flow'!R7C3"><Data ss:Type="Number">${data.capexIT}</Data></Cell>
+        <Cell ss:StyleID="sRowLabel"/> <!-- Column C Spacer -->
+        <Cell ss:StyleID="sCurrencyBold" ss:Formula="='2. P&amp;L &amp; Cash Flow'!R10C3"><Data ss:Type="Number">${totalCapex}</Data></Cell>
         <Cell ss:StyleID="sThresholdGreen"><Data ss:Type="String">Berdasarkan Kebutuhan Aset</Data></Cell>
       </Row>
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabelBold"><Data ss:Type="String">Proyeksi Pendapatan (Tahun 1)</Data></Cell>
-        <Cell ss:StyleID="sCurrencyBold" ss:Formula="='2. P&amp;L &amp; Cash Flow'!R13C4"><Data ss:Type="Number">${data.revenueY2}</Data></Cell>
+        <Cell ss:StyleID="sRowLabel"/> <!-- Column C Spacer -->
+        <Cell ss:StyleID="sCurrencyBold" ss:Formula="='2. P&amp;L &amp; Cash Flow'!R13C3"><Data ss:Type="Number">${data.revenueY1}</Data></Cell>
         <Cell ss:StyleID="sThresholdGreen"><Data ss:Type="String">Target SOM minimum terpenuhi</Data></Cell>
       </Row>
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabelBold"><Data ss:Type="String">Net Profit Margin (Rata-rata)</Data></Cell>
-        <Cell ss:StyleID="sPercentageBold" ss:Formula="=AVERAGE('2. P&amp;L &amp; Cash Flow'!R21C4:R21C5)"><Data ss:Type="Number">${((npmY2 + npmY3) / 2) / 100}</Data></Cell>
+        <Cell ss:StyleID="sRowLabel"/> <!-- Column C Spacer -->
+        <Cell ss:StyleID="sPercentageBold" ss:Formula="=AVERAGE('2. P&amp;L &amp; Cash Flow'!R21C3:R21C5)"><Data ss:Type="Number">${(npmY1 + npmY2 + npmY3) / 3 / 100}</Data></Cell>
         <Cell ss:StyleID="sThresholdGreen"><Data ss:Type="String">Positif (&gt; 10%)</Data></Cell>
       </Row>
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabelBold"><Data ss:Type="String">Total Arus Kas Bersih (3 Tahun)</Data></Cell>
-        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=SUM('2. P&amp;L &amp; Cash Flow'!R20C4:R20C5)"><Data ss:Type="Number">${netProfitY2 + netProfitY3}</Data></Cell>
+        <Cell ss:StyleID="sRowLabel"/> <!-- Column C Spacer -->
+        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=SUM('2. P&amp;L &amp; Cash Flow'!R26C3:R26C5)"><Data ss:Type="Number">${netCashFlowY1 + netCashFlowY2 + netCashFlowY3}</Data></Cell>
         <Cell ss:StyleID="sThresholdGreen"><Data ss:Type="String">Positif (Kumulatif)</Data></Cell>
       </Row>
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabelBold"><Data ss:Type="String">Payback Period / ROI (Tahun)</Data></Cell>
-        <Cell ss:StyleID="sRowLabelBold" ss:Formula="='2. P&amp;L &amp; Cash Flow'!R26C3/'2. P&amp;L &amp; Cash Flow'!R13C3"><Data ss:Type="String">${((netProfitY1 - totalCapex) / data.revenueY1).toFixed(1)} Tahun</Data></Cell>
+        <Cell ss:StyleID="sRowLabelBold"/> <!-- Column C Spacer -->
+        <Cell ss:StyleID="sRowLabelBold" ss:Formula="='2. P&amp;L &amp; Cash Flow'!R10C3/AVERAGE('2. P&amp;L &amp; Cash Flow'!R20C3:R20C5)"><Data ss:Type="String">${paybackPeriod.toFixed(1)} Tahun</Data></Cell>
         <Cell ss:StyleID="sThresholdGreen"><Data ss:Type="String">Kurang dari 3 Tahun</Data></Cell>
       </Row>
     </Table>

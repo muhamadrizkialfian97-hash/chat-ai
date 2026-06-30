@@ -814,6 +814,30 @@ export default function ChatPanel({
                                     <Download className="h-3.5 w-3.5 text-red-650" />
                                     <span>Unduh PDF</span>
                                   </button>
+
+                                  {onOpenRightPillarPanel && (
+                                    <button
+                                      type="button"
+                                      onClick={onOpenRightPillarPanel}
+                                      className="flex items-center gap-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 border border-indigo-150 px-2.5 py-1 text-[11px] font-bold text-indigo-700 transition cursor-pointer shadow-3sm"
+                                      title="Buka Panel 14 Pilar Strategis"
+                                    >
+                                      <Sparkles className="h-3.5 w-3.5 text-indigo-500" />
+                                      <span>14 Pilar</span>
+                                    </button>
+                                  )}
+
+                                  {onOpenExcelSimulator && (
+                                    <button
+                                      type="button"
+                                      onClick={onOpenExcelSimulator}
+                                      className="flex items-center gap-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-150 px-2.5 py-1 text-[11px] font-bold text-emerald-700 transition cursor-pointer shadow-3sm"
+                                      title="Buka Simulator Excel & Analisis Keuangan Interaktif"
+                                    >
+                                      <Table className="h-3.5 w-3.5 text-emerald-600" />
+                                      <span>Excel</span>
+                                    </button>
+                                  )}
                                 </div>
                               </div>
                             )}

@@ -1,10 +1,17 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { initializeFirestore, getFirestore, persistentLocalCache, doc, getDocFromServer } from 'firebase/firestore';
+import { initializeFirestore, getFirestore, persistentLocalCache, doc, getDocFromServer, setLogLevel } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import firebaseConfig from '../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
+
+// Silence benign future update warnings and verbose logs from the SDK
+try {
+  setLogLevel('error');
+} catch (e) {
+  // Ignore fallback if unsupported
+}
 
 // Resilient Firestore initialization wrapping persistent local cache in a try-catch to support restricted sandbox/iframes
 let tempDb;

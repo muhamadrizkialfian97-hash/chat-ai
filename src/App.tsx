@@ -1146,7 +1146,7 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
         try {
           const errData = await res.json();
           if (errData && errData.error) {
-            errorDetail = errData.error;
+            errorDetail = typeof errData.error === "object" ? (errData.error.message || JSON.stringify(errData.error)) : errData.error;
           }
         } catch (e) {}
         throw new Error(errorDetail);
@@ -2213,7 +2213,7 @@ ${focusText}`;
         } catch(e) {}
         let errorMsg = "Gagal memperoleh respons asisten.";
         if (parsedData && parsedData.error) {
-          errorMsg = parsedData.error.message || JSON.stringify(parsedData.error);
+          errorMsg = typeof parsedData.error === "object" ? (parsedData.error.message || JSON.stringify(parsedData.error)) : parsedData.error;
         } else {
           errorMsg = responseText || errorMsg;
         }

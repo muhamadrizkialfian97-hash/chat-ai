@@ -42,7 +42,6 @@ import { ExcelPreviewModal } from "./components/ExcelPreviewModal";
 import { PramaFlowchartHub } from "./components/PramaFlowchartHub";
 import { InteractiveFinancialSimulator } from "./components/InteractiveFinancialSimulator";
 const pramaLogo = "https://lh3.googleusercontent.com/d/1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X";
-import { saveAssetToLocalDB, getAssetFromLocalDB, removeAssetFromLocalDB } from "./utils/dbHelper";
 
 export interface User {
   uid: string;
@@ -368,7 +367,7 @@ export default function App() {
 
 
   const [heroBgType, setHeroBgType] = useState<"video" | "image" | "illustration">(() => {
-    return (localStorage.getItem("prama_hero_bg_type") as "video" | "image" | "illustration") || "video";
+    return (localStorage.getItem("prama_hero_bg_type") as "video" | "image" | "illustration") || "illustration";
   });
 
   const [isBgSettingsCollapsed, setIsBgSettingsCollapsed] = useState<boolean>(true);
@@ -376,7 +375,6 @@ export default function App() {
 
   const [customVideoUrl, setCustomVideoUrl] = useState<string | null>(null);
   const [videoSrc, setVideoSrc] = useState<string>("/custom-video.mp4");
-  const [isUploadingVideo, setIsUploadingVideo] = useState<boolean>(false);
 
   const [customImageUrl, setCustomImageUrl] = useState<string | null>(null);
   const [imageSrc, setImageSrc] = useState<string>("https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ");
@@ -427,84 +425,37 @@ export default function App() {
 
   // Synchronize background settings across ALL deploys (Local, Vercel, GitHub) via Firestore settings doc
   useEffect(() => {
-    // 1. Initial run: Load locally cached assets from IndexedDB first for instant rendering
-    async function loadInitialLocalAssets() {
-      try {
-        const cachedVideo = await getAssetFromLocalDB("lobby_video");
-        if (cachedVideo) {
-          const url = URL.createObjectURL(cachedVideo);
-          setVideoSrc(url);
-          setCustomVideoUrl(url);
-          console.log("Loaded startup lobby video from IndexedDB:", url);
-        }
-        const cachedImage = await getAssetFromLocalDB("lobby_image");
-        if (cachedImage) {
-          const url = URL.createObjectURL(cachedImage);
-          setImageSrc(url);
-          setCustomImageUrl(url);
-          console.log("Loaded startup lobby image from IndexedDB:", url);
-        }
-      } catch (err) {
-        console.warn("Error reading custom backgrounds from IndexedDB on startup:", err);
-      }
-    }
-    loadInitialLocalAssets();
-
     const settingsDocRef = doc(db, "settings", "lobby_background");
-    const unsubscribe = onSnapshot(settingsDocRef, async (snapshot) => {
+    const unsubscribe = onSnapshot(settingsDocRef, (snapshot) => {
       if (snapshot.exists()) {
         const data = snapshot.data();
         console.log("Firestore background settings updated:", data);
         
+        // Honor stored background type settings correctly without hard overrides
         if (data.bgType) {
           setHeroBgType(data.bgType);
         } else {
-          setHeroBgType("video");
+          setHeroBgType("illustration");
         }
 
-        // Process Video
-        if (data.videoUrl && data.videoUrl.startsWith("http")) {
-          // Prioritize actual web URL from Firebase Storage
+        if (data.videoUrl && data.videoUrl !== "/PixVerse_V6_Extend_540P_buat_video_lebih_panja (1).mp4" && data.videoUrl !== "/custom-video.mp4" && data.videoUrl !== "") {
           setVideoSrc(data.videoUrl);
           setCustomVideoUrl(data.videoUrl);
         } else {
-          // Fallback to IndexedDB local cache if not uploaded to cloud yet
-          const cachedVideo = await getAssetFromLocalDB("lobby_video");
-          if (cachedVideo) {
-            const localUrl = URL.createObjectURL(cachedVideo);
-            setVideoSrc(localUrl);
-            setCustomVideoUrl(localUrl);
-          } else if (data.videoUrl && data.videoUrl !== "/PixVerse_V6_Extend_540P_buat_video_lebih_panja (1).mp4" && data.videoUrl !== "/custom-video.mp4" && data.videoUrl !== "" && data.videoUrl !== "local") {
-            setVideoSrc(data.videoUrl);
-            setCustomVideoUrl(data.videoUrl);
-          } else {
-            setVideoSrc("/custom-video.mp4");
-            setCustomVideoUrl(null);
-          }
+          setVideoSrc("/custom-video.mp4");
+          setCustomVideoUrl(null);
         }
-
-        // Process Image
-        if (data.imageUrl && data.imageUrl.startsWith("http") && data.imageUrl !== "https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ") {
+        if (data.imageUrl && data.imageUrl !== "https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ" && data.imageUrl !== "") {
           setImageSrc(data.imageUrl);
           setCustomImageUrl(data.imageUrl);
         } else {
-          const cachedImage = await getAssetFromLocalDB("lobby_image");
-          if (cachedImage) {
-            const localUrl = URL.createObjectURL(cachedImage);
-            setImageSrc(localUrl);
-            setCustomImageUrl(localUrl);
-          } else if (data.imageUrl && data.imageUrl !== "https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ" && data.imageUrl !== "" && data.imageUrl !== "local") {
-            setImageSrc(data.imageUrl);
-            setCustomImageUrl(data.imageUrl);
-          } else {
-            setImageSrc("https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ");
-            setCustomImageUrl(null);
-          }
+          setImageSrc("https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ");
+          setCustomImageUrl(null);
         }
       } else {
-        // Seed default in Firestore as "video" with intelligent default for maximum auto-consistency
+        // Seed default in Firestore as "illustration" with intelligent default for maximum auto-consistency
         setDoc(settingsDocRef, {
-          bgType: "video",
+          bgType: "illustration",
           videoUrl: "/custom-video.mp4",
           imageUrl: "https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ",
           lastUpdated: serverTimestamp()
@@ -534,73 +485,46 @@ export default function App() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 100 * 1024 * 1024) {
-      alert("Ukuran file terlalu besar. Batas maksimal yang diperbolehkan adalah 100MB.");
+    if (file.size > 80 * 1024 * 1024) {
+      alert("Ukuran file terlalu besar. Batas maksimal yang diperbolehkan adalah 80MB.");
       return;
     }
 
-    setIsUploadingVideo(true);
     try {
-      // 1. Instantly create and set the local preview URL for immediate rendering in the browser
+      // Local preview blob URL only for instant responsive UX while the upload proceeds
       const tempUrl = URL.createObjectURL(file);
       setVideoSrc(tempUrl);
-      setCustomVideoUrl(tempUrl);
-      setHeroBgType("video");
-      console.log("Instant local preview set:", tempUrl);
 
-      // 2. Persist to local IndexedDB database in the background without blocking the UI flow
-      try {
-        await saveAssetToLocalDB("lobby_video", file);
-        console.log("Successfully cached custom video to local IndexedDB.");
-      } catch (idbErr) {
-        console.warn("Skipping IndexedDB local persistence due to browser/iframe restrictions:", idbErr);
-      }
+      console.log("Uploading custom video to Firebase Storage...");
+      const storageRef = ref(storage, "backgrounds/lobby_video.mp4");
+      const uploadResult = await uploadBytes(storageRef, file);
+      const downloadUrl = await getDownloadURL(uploadResult.ref);
+      console.log("Uploaded successfully! Download URL:", downloadUrl);
 
-      // 3. Write basic metadata to Firestore to synchronize state immediately across other tabs
+      // Save global cloud downloadUrl to settings/lobby_background document in Firestore
       const settingsDocRef = doc(db, "settings", "lobby_background");
       try {
         await setDoc(settingsDocRef, {
           bgType: "video",
-          videoUrl: "local",
-          lastUpdated: serverTimestamp()
-        }, { merge: true });
-      } catch (fErr) {
-        console.warn("Gagal sinkronisasi tipe ke Firestore:", fErr);
-      }
-
-      // 4. Upload to Firebase Storage with a generous 60s background timeout so large videos succeed
-      console.log("Uploading custom video to Firebase Storage in background...");
-      try {
-        const uploadPromise = (async () => {
-          const storageRef = ref(storage, `backgrounds/lobby_video_${Date.now()}.mp4`);
-          const uploadResult = await uploadBytes(storageRef, file);
-          return await getDownloadURL(uploadResult.ref);
-        })();
-
-        // 60 seconds timeout to give plenty of time for video upload over slower networks
-        const timeoutPromise = new Promise<string>((_, reject) => 
-          setTimeout(() => reject(new Error("Firebase Storage Timeout after 60 seconds")), 60000)
-        );
-
-        const downloadUrl = await Promise.race([uploadPromise, timeoutPromise]);
-        console.log("Uploaded successfully to cloud storage! URL:", downloadUrl);
-
-        // Update Firestore settings doc with the real cloud URL for multi-session support
-        await setDoc(settingsDocRef, {
           videoUrl: downloadUrl,
           lastUpdated: serverTimestamp()
         }, { merge: true });
-
-      } catch (storageErr) {
-        console.warn("Cloud storage upload bypassed or timed out, relying on robust local browser storage/IndexedDB:", storageErr);
+      } catch (firestoreErr) {
+        handleFirestoreError(firestoreErr, OperationType.WRITE, "settings/lobby_background");
       }
 
-      alert("Video latar belakang berhasil diunggah dan disimpan ke Firebase!");
+      setCustomVideoUrl(downloadUrl);
+      setVideoSrc(downloadUrl);
+      
+      // Revoke temporal local blob URL safely
+      if (tempUrl && !tempUrl.startsWith("http")) {
+        URL.revokeObjectURL(tempUrl);
+      }
+
+      alert("Video latar belakang berhasil disimpan di Firebase dan disinkronkan ke Cloud! Video ini akan tampil untuk seluruh pengunjung website (Vercel).");
     } catch (err) {
-      console.error("Gagal memproses unggahan video:", err);
-      alert("Gagal mengunggah video: " + (err instanceof Error ? err.message : String(err)));
-    } finally {
-      setIsUploadingVideo(false);
+      console.error("Gagal menyimpan video ke Firebase Storage:", err);
+      alert("Gagal mengunggah video ke Cloud Server: " + (err instanceof Error ? err.message : String(err)));
     }
   };
 
@@ -608,7 +532,6 @@ export default function App() {
     try {
       setCustomVideoUrl(null);
       setVideoSrc("/custom-video.mp4");
-      await removeAssetFromLocalDB("lobby_video");
 
       // Reset in Firestore with standard error handling
       const settingsDocRef = doc(db, "settings", "lobby_background");
@@ -618,7 +541,7 @@ export default function App() {
           lastUpdated: serverTimestamp()
         }, { merge: true });
       } catch (firestoreErr) {
-        console.warn("Firestore reset video url warn:", firestoreErr);
+        handleFirestoreError(firestoreErr, OperationType.WRITE, "settings/lobby_background");
       }
 
       alert("Video latar belakang direset ke default.");
@@ -638,53 +561,40 @@ export default function App() {
     }
 
     try {
-      // 1. Instantly save to IndexedDB
-      await saveAssetToLocalDB("lobby_image", file);
+      // Local preview blob URL only for instant responsive UX while the upload proceeds
       const tempUrl = URL.createObjectURL(file);
       setImageSrc(tempUrl);
-      setCustomImageUrl(tempUrl);
-      setHeroBgType("image");
 
-      // 2. Write metadata to Firestore
+      console.log("Uploading custom image to Firebase Storage...");
+      const storageRef = ref(storage, "backgrounds/lobby_image.png");
+      const uploadResult = await uploadBytes(storageRef, file);
+      const downloadUrl = await getDownloadURL(uploadResult.ref);
+      console.log("Uploaded successfully! Download URL:", downloadUrl);
+
+      // Save global cloud downloadUrl to settings/lobby_background document in Firestore
       const settingsDocRef = doc(db, "settings", "lobby_background");
       try {
         await setDoc(settingsDocRef, {
           bgType: "image",
-          imageUrl: "local",
-          lastUpdated: serverTimestamp()
-        }, { merge: true });
-      } catch (firestoreErr) {
-        console.warn("Firestore image write metadata error:", firestoreErr);
-      }
-
-      // 3. Attempt uploading to Firebase Storage in background with timeout
-      try {
-        const uploadPromise = (async () => {
-          const storageRef = ref(storage, `backgrounds/lobby_image_${Date.now()}.png`);
-          const uploadResult = await uploadBytes(storageRef, file);
-          return await getDownloadURL(uploadResult.ref);
-        })();
-
-        const timeoutPromise = new Promise<string>((_, reject) => 
-          setTimeout(() => reject(new Error("Firebase Storage Timeout")), 8000)
-        );
-
-        const downloadUrl = await Promise.race([uploadPromise, timeoutPromise]);
-        console.log("Uploaded image successfully to cloud storage! URL:", downloadUrl);
-
-        await setDoc(settingsDocRef, {
           imageUrl: downloadUrl,
           lastUpdated: serverTimestamp()
         }, { merge: true });
-
-      } catch (storageErr) {
-        console.warn("Cloud image upload bypassed or timed out, relying on robust local IndexedDB storage:", storageErr);
+      } catch (firestoreErr) {
+        handleFirestoreError(firestoreErr, OperationType.WRITE, "settings/lobby_background");
       }
 
-      alert("Foto latar belakang berhasil disimpan.");
+      setCustomImageUrl(downloadUrl);
+      setImageSrc(downloadUrl);
+
+      // Revoke temporal local blob URL safely
+      if (tempUrl && !tempUrl.startsWith("http")) {
+        URL.revokeObjectURL(tempUrl);
+      }
+
+      alert("Foto latar belakang berhasil disimpan di Firebase dan disinkronkan ke Cloud! Foto ini akan tampil untuk seluruh pengunjung website (Vercel).");
     } catch (err) {
-      console.error("Gagal menyimpan foto:", err);
-      alert("Gagal mengunggah foto: " + (err instanceof Error ? err.message : String(err)));
+      console.error("Gagal menyimpan foto ke Firebase Storage:", err);
+      alert("Gagal mengunggah foto ke Cloud Server: " + (err instanceof Error ? err.message : String(err)));
     }
   };
 
@@ -692,7 +602,6 @@ export default function App() {
     try {
       setCustomImageUrl(null);
       setImageSrc("https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ");
-      await removeAssetFromLocalDB("lobby_image");
 
       // Reset in Firestore with standard error handling
       const settingsDocRef = doc(db, "settings", "lobby_background");
@@ -702,7 +611,7 @@ export default function App() {
           lastUpdated: serverTimestamp()
         }, { merge: true });
       } catch (firestoreErr) {
-        console.warn("Firestore reset image url warn:", firestoreErr);
+        handleFirestoreError(firestoreErr, OperationType.WRITE, "settings/lobby_background");
       }
 
       alert("Foto latar belakang direset ke default.");
@@ -3593,47 +3502,23 @@ ${lastMsgText}`;
   if (showHeroLanding) {
     return (
       <div className="video-container" id="landing-hero-container">
-        {heroBgType === "video" ? (
-          <video
-            id="bg-video"
-            ref={landingVideoRef}
-            src={videoSrc}
-            autoPlay
-            loop
-            muted
-            playsInline
-          />
-        ) : (
+        {/* Google Drive Video Background - Autoplays, loops, muted, scaled to fit screen */}
+        <div className="absolute inset-0 w-full h-full overflow-hidden z-[-1] bg-slate-950">
+          {/* Fallback logistics background image */}
           <img 
             src="https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ" 
-            alt="Pancaran Group Logistics Illustration" 
+            alt="Pancaran Group Logistics Illustration Fallback" 
             referrerPolicy="no-referrer"
-            className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 animate-fade-in scale-[1.00] origin-center"
-            style={{ zIndex: -1, opacity: 1.0 }}
+            className="absolute inset-0 w-full h-full object-cover opacity-20 transition-all duration-1000"
           />
-        )}
-
-        {/* Top-Right Floating Video Upload Controls */}
-        <div className="absolute top-6 right-6 z-30 flex items-center gap-2">
-          {isUploadingVideo ? (
-            <div className="flex items-center gap-2 bg-slate-950/80 backdrop-blur-md px-3.5 py-2 rounded-full border border-slate-800 shadow-xl text-white font-mono text-[10px] sm:text-xs font-bold animate-pulse">
-              <RefreshCw className="h-3.5 w-3.5 animate-spin text-[#00D285]" />
-              <span>SINKRONISASI PORTAL...</span>
-            </div>
-          ) : (
-            <label className="flex items-center justify-center h-10 w-10 sm:h-11 sm:w-11 rounded-full cursor-pointer bg-slate-950/60 hover:bg-slate-950/80 backdrop-blur-md border border-white/10 hover:border-white/20 shadow-2xl transition-all duration-300 hover:scale-105 group active:scale-95" title="Unggah Video Latar Belakang Baru (Cloud/Firebase)">
-              <input
-                type="file"
-                accept="video/*"
-                onChange={handleVideoUpload}
-                className="hidden"
-              />
-              <Upload className="h-4.5 w-4.5 sm:h-5 sm:w-5 text-white/90 group-hover:text-white transition-colors" />
-            </label>
-          )}
+          <iframe
+            src="https://drive.google.com/file/d/1NZI_GzfppD9YX3bouJ7KeApvwwK1mWYq/preview?autoplay=1&mute=1&loop=1&controls=0&playlist=1NZI_GzfppD9YX3bouJ7KeApvwwK1mWYq"
+            title="PRAMA Background Video"
+            className="absolute top-1/2 left-1/2 w-[100vw] h-[56.25vw] min-h-[100vh] min-w-[177.77vh] -translate-x-1/2 -translate-y-1/2 border-none pointer-events-none scale-105"
+            allow="autoplay; encrypted-media; picture-in-picture"
+            allowFullScreen
+          />
         </div>
-
-        {/* High-Resolution Corporate Logo overlay at top center removed as requested by user */}
 
         <div className="menu-content" id="landing-menu-content">
           <div className="flex justify-center w-full">
@@ -3663,28 +3548,15 @@ ${lastMsgText}`;
   if (!activeUser) {
     return (
       <div className="relative min-h-screen flex items-center justify-center px-4 py-12 font-sans overflow-hidden">
-        {/* Brand Background */}
+        {/* Brand Background Image */}
         <div className="absolute inset-0 z-0">
-          {heroBgType === "video" ? (
-            <video
-              ref={authVideoRef}
-              src={videoSrc}
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 animate-fade-in"
-              style={{ zIndex: -1, pointerEvents: "none" }}
-            />
-          ) : (
-            <img 
-              src="https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ" 
-              alt="Pancaran Group Logistics Illustration" 
-              referrerPolicy="no-referrer"
-              className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 animate-fade-in scale-[1.00] origin-center"
-              style={{ zIndex: -1 }}
-            />
-          )}
+          <img 
+            src="https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ" 
+            alt="Pancaran Group Logistics Illustration" 
+            referrerPolicy="no-referrer"
+            className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 animate-fade-in scale-[1.00] origin-center"
+            style={{ zIndex: -1 }}
+          />
           {/* Elegant Dark/Blur Overlay to focus and elevate contrast */}
           <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm" />
         </div>

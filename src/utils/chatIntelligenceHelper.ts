@@ -463,10 +463,7 @@ export async function exportChatBIToPPTX(state: ChatIntelligenceState) {
   const slide1 = pptx.addSlide();
   
   // Set background to the Pancaran Group Illustration
-  let bgPath = "/pancaran_illustration.jpg";
-  if (typeof window !== "undefined" && window.location) {
-    bgPath = window.location.origin + bgPath;
-  }
+  let bgPath = "https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ";
   slide1.background = { path: bgPath };
 
   // Semi-transparent dark overlay rectangle for perfect text contrast

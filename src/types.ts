@@ -31,3 +31,19 @@ export interface SearchSource {
   uri: string;
   title: string;
 }
+
+export interface CompetitorIntel {
+  id: string;
+  name: string;
+  projectHistory: string;
+  marketShare: number;
+  status: "Incumbent" | "Bidding" | "Inactive" | "Displaced";
+  strengths: string;
+  weaknesses: string;
+  explanation: string;
+  armadaScale: string;
+  digitalSystems: "Sangat Baik" | "Standar" | "Sangat Minim";
+  pricePoint: "Sangat Mahal" | "Menengah" | "Sangat Murah";
+  safetyIndex: number;
+}
+

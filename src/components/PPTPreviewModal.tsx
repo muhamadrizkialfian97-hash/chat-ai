@@ -183,7 +183,7 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
                       {/* 1. Portal Illustration Background */}
                       <div className="absolute inset-0 w-full h-full overflow-hidden select-none z-0">
                         <img 
-                          src="/pancaran_illustration.jpg" 
+                          src="https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ" 
                           alt="Pancaran Group Logistics Illustration" 
                           referrerPolicy="no-referrer"
                           className="w-full h-full object-cover origin-center z-0 scale-[1.00]"
@@ -246,7 +246,7 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
                 <div className="flex-1 flex flex-col justify-center items-center p-6 sm:p-10 text-center select-none relative w-full h-full bg-slate-950 overflow-hidden">
                   <div className="absolute inset-0 w-full h-full overflow-hidden select-none z-0">
                     <img 
-                      src="/pancaran_illustration.jpg" 
+                      src="https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ" 
                       alt="Pancaran Group Logistics Illustration" 
                       className="w-full h-full object-cover origin-center scale-[1.00] z-0 opacity-25"
                       referrerPolicy="no-referrer"

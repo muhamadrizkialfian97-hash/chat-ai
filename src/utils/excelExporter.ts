@@ -206,9 +206,8 @@ export function exportToExcelFile(data: ExcelData) {
     <Table ss:ExpandedColumnCount="10" ss:ExpandedRowCount="25" x:FullColumns="1" x:FullRows="1">
       <Column ss:Index="1" ss:Width="30"/> <!-- Spacer Column A -->
       <Column ss:Index="2" ss:Width="250"/> <!-- B -->
-      <Column ss:Index="3" ss:Width="30"/> <!-- C Spacer -->
-      <Column ss:Index="4" ss:Width="160"/> <!-- D -->
-      <Column ss:Index="5" ss:Width="450"/> <!-- E -->
+      <Column ss:Index="3" ss:Width="160"/> <!-- C -->
+      <Column ss:Index="4" ss:Width="450"/> <!-- D -->
       
       <Row ss:Height="25">
         <Cell ss:Index="2" ss:StyleID="sTitle"><Data ss:Type="String">ANALISIS KELAYAKAN PROYEK LOGISTIK</Data></Cell>
@@ -224,27 +223,23 @@ export function exportToExcelFile(data: ExcelData) {
       </Row>
       <Row ss:Height="20">
         <Cell ss:Index="2" ss:StyleID="sTableHeader"><Data ss:Type="String">Metrik</Data></Cell>
-        <Cell ss:StyleID="sTableHeader"/> <!-- Column C Spacer -->
-        <Cell ss:StyleID="sTableHeader"><Data ss:Type="String">Nilai Per Tahun (IDR)</Data></Cell> <!-- Column D -->
-        <Cell ss:StyleID="sTableHeader"><Data ss:Type="String">Deskripsi / Cakupan</Data></Cell> <!-- Column E -->
+        <Cell ss:StyleID="sTableHeader"><Data ss:Type="String">Nilai Per Tahun (IDR)</Data></Cell> <!-- Column C -->
+        <Cell ss:StyleID="sTableHeader"><Data ss:Type="String">Deskripsi / Cakupan</Data></Cell> <!-- Column D -->
       </Row>
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabelBold"><Data ss:Type="String">TAM (Total Addressable Market)</Data></Cell>
-        <Cell ss:StyleID="sRowLabel"/> <!-- Column C Spacer -->
-        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">${data.tamValue}</Data></Cell> <!-- Column D -->
-        <Cell ss:StyleID="sRowLabel"><Data ss:Type="String">Total seluruh potensi pasar logistik di wilayah target (misal: Seluruh Indonesia/Provinsi)</Data></Cell> <!-- Column E -->
+        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">${data.tamValue}</Data></Cell> <!-- Column C -->
+        <Cell ss:StyleID="sRowLabel"><Data ss:Type="String">Total seluruh potensi pasar logistik di wilayah target (misal: Seluruh Indonesia/Provinsi)</Data></Cell> <!-- Column D -->
       </Row>
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabelBold"><Data ss:Type="String">SAM (Serviceable Addressable Market)</Data></Cell>
-        <Cell ss:StyleID="sRowLabel"/> <!-- Column C Spacer -->
-        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">${data.samValue}</Data></Cell> <!-- Column D -->
-        <Cell ss:StyleID="sRowLabel"><Data ss:Type="String">Pangsa pasar TAM yang sesuai dengan model bisnis &amp; jangkauan armada Anda</Data></Cell> <!-- Column E -->
+        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">${data.samValue}</Data></Cell> <!-- Column C -->
+        <Cell ss:StyleID="sRowLabel"><Data ss:Type="String">Pangsa pasar TAM yang sesuai dengan model bisnis &amp; jangkauan armada Anda</Data></Cell> <!-- Column D -->
       </Row>
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabelBold"><Data ss:Type="String">SOM (Serviceable Obtainable Market)</Data></Cell>
-        <Cell ss:StyleID="sRowLabel"/> <!-- Column C Spacer -->
-        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">${data.somValue}</Data></Cell> <!-- Column D -->
-        <Cell ss:StyleID="sRowLabel"><Data ss:Type="String">Target nyata pangsa pasar yang sanggup dilayani oleh kapasitas operasional Anda saat ini</Data></Cell> <!-- Column E -->
+        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">${data.somValue}</Data></Cell> <!-- Column C -->
+        <Cell ss:StyleID="sRowLabel"><Data ss:Type="String">Target nyata pangsa pasar yang sanggup dilayani oleh kapasitas operasional Anda saat ini</Data></Cell> <!-- Column D -->
       </Row>
       
       <Row ss:Height="18"/>
@@ -255,38 +250,32 @@ export function exportToExcelFile(data: ExcelData) {
       </Row>
       <Row ss:Height="20">
         <Cell ss:Index="2" ss:StyleID="sTableHeader"><Data ss:Type="String">Indikator Keuangan</Data></Cell>
-        <Cell ss:StyleID="sTableHeader"><Data ss:Type="String"></Data></Cell> <!-- Column C Spacer -->
-        <Cell ss:StyleID="sTableHeader"><Data ss:Type="String">Nilai</Data></Cell> <!-- Column D -->
-        <Cell ss:StyleID="sTableHeader"><Data ss:Type="String">Ambang Batas Kelayakan</Data></Cell> <!-- Column E -->
+        <Cell ss:StyleID="sTableHeader"><Data ss:Type="String">Nilai</Data></Cell> <!-- Column C -->
+        <Cell ss:StyleID="sTableHeader"><Data ss:Type="String">Ambang Batas Kelayakan</Data></Cell> <!-- Column D -->
       </Row>
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabelBold"><Data ss:Type="String">Total CAPEX (Investasi Awal)</Data></Cell>
-        <Cell ss:StyleID="sRowLabel"/> <!-- Column C Spacer -->
-        <Cell ss:StyleID="sCurrencyBold" ss:Formula="='2. P&amp;L &amp; Cash Flow'!R10C4"><Data ss:Type="Number">${totalCapex}</Data></Cell>
+        <Cell ss:StyleID="sCurrencyBold" ss:Formula="='2. P&amp;L &amp; Cash Flow'!R10C3"><Data ss:Type="Number">${totalCapex}</Data></Cell>
         <Cell ss:StyleID="sThresholdGreen"><Data ss:Type="String">Berdasarkan Kebutuhan Aset</Data></Cell>
       </Row>
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabelBold"><Data ss:Type="String">Proyeksi Pendapatan (Tahun 1)</Data></Cell>
-        <Cell ss:StyleID="sRowLabel"/> <!-- Column C Spacer -->
-        <Cell ss:StyleID="sCurrencyBold" ss:Formula="='2. P&amp;L &amp; Cash Flow'!R13C4"><Data ss:Type="Number">${data.revenueY1}</Data></Cell>
+        <Cell ss:StyleID="sCurrencyBold" ss:Formula="='2. P&amp;L &amp; Cash Flow'!R13C3"><Data ss:Type="Number">${data.revenueY1}</Data></Cell>
         <Cell ss:StyleID="sThresholdGreen"><Data ss:Type="String">Target SOM minimum terpenuhi</Data></Cell>
       </Row>
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabelBold"><Data ss:Type="String">Net Profit Margin (Rata-rata)</Data></Cell>
-        <Cell ss:StyleID="sRowLabel"/> <!-- Column C Spacer -->
-        <Cell ss:StyleID="sPercentageBold" ss:Formula="=AVERAGE('2. P&amp;L &amp; Cash Flow'!R21C4:R21C6)"><Data ss:Type="Number">${(npmY1 + npmY2 + npmY3) / 3 / 100}</Data></Cell>
+        <Cell ss:StyleID="sPercentageBold" ss:Formula="=AVERAGE('2. P&amp;L &amp; Cash Flow'!R21C3:R21C5)"><Data ss:Type="Number">${(npmY1 + npmY2 + npmY3) / 3 / 100}</Data></Cell>
         <Cell ss:StyleID="sThresholdGreen"><Data ss:Type="String">Positif (&gt; 10%)</Data></Cell>
       </Row>
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabelBold"><Data ss:Type="String">Total Arus Kas Bersih (3 Tahun)</Data></Cell>
-        <Cell ss:StyleID="sRowLabel"/> <!-- Column C Spacer -->
-        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=SUM('2. P&amp;L &amp; Cash Flow'!R26C4:R26C6)"><Data ss:Type="Number">${netCashFlowY1 + netCashFlowY2 + netCashFlowY3}</Data></Cell>
+        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=SUM('2. P&amp;L &amp; Cash Flow'!R26C3:R26C5)"><Data ss:Type="Number">${netCashFlowY1 + netCashFlowY2 + netCashFlowY3}</Data></Cell>
         <Cell ss:StyleID="sThresholdGreen"><Data ss:Type="String">Positif (Kumulatif)</Data></Cell>
       </Row>
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabelBold"><Data ss:Type="String">Payback Period / ROI (Tahun)</Data></Cell>
-        <Cell ss:StyleID="sRowLabelBold"/> <!-- Column C Spacer -->
-        <Cell ss:StyleID="sRowLabelBold" ss:Formula="='2. P&amp;L &amp; Cash Flow'!R10C4/AVERAGE('2. P&amp;L &amp; Cash Flow'!R20C4:R20C6)"><Data ss:Type="String">${paybackPeriod.toFixed(1)} Tahun</Data></Cell>
+        <Cell ss:StyleID="sRowLabelBold" ss:Formula="='2. P&amp;L &amp; Cash Flow'!R10C3/AVERAGE('2. P&amp;L &amp; Cash Flow'!R20C3:R20C5)"><Data ss:Type="String">${paybackPeriod.toFixed(1)} Tahun</Data></Cell>
         <Cell ss:StyleID="sThresholdGreen"><Data ss:Type="String">Kurang dari 3 Tahun</Data></Cell>
       </Row>
     </Table>
@@ -297,10 +286,9 @@ export function exportToExcelFile(data: ExcelData) {
     <Table ss:ExpandedColumnCount="10" ss:ExpandedRowCount="35" x:FullColumns="1" x:FullRows="1">
       <Column ss:Index="1" ss:Width="30"/> <!-- Spacer A -->
       <Column ss:Index="2" ss:Width="250"/> <!-- B -->
-      <Column ss:Index="3" ss:Width="30"/> <!-- C Spacer -->
+      <Column ss:Index="3" ss:Width="160"/> <!-- C -->
       <Column ss:Index="4" ss:Width="160"/> <!-- D -->
       <Column ss:Index="5" ss:Width="160"/> <!-- E -->
-      <Column ss:Index="6" ss:Width="160"/> <!-- F -->
       
       <Row ss:Height="15"/> <!-- Spacer Row 1 to align index to 27 rows -->
       <Row ss:Height="25">
@@ -314,39 +302,33 @@ export function exportToExcelFile(data: ExcelData) {
       </Row>
       <Row ss:Height="20">
         <Cell ss:Index="2" ss:StyleID="sTableHeader"><Data ss:Type="String">Komponen Investasi Awal</Data></Cell>
-        <Cell ss:StyleID="sTableHeader"/> <!-- Column C Spacer -->
-        <Cell ss:StyleID="sTableHeader"><Data ss:Type="String">Nilai (IDR)</Data></Cell> <!-- Column D -->
-        <Cell ss:StyleID="sTableHeader"><Data ss:Type="String">Keterangan</Data></Cell> <!-- Column E -->
+        <Cell ss:StyleID="sTableHeader"><Data ss:Type="String">Nilai (IDR)</Data></Cell> <!-- Column C -->
+        <Cell ss:StyleID="sTableHeader"><Data ss:Type="String">Keterangan</Data></Cell> <!-- Column D -->
       </Row>
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabel"><Data ss:Type="String">Armada Truk Logistik (DP / Pembelian Cash)</Data></Cell>
-        <Cell ss:StyleID="sRowLabel"/> <!-- Column C Spacer -->
-        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">${data.capexTrucks}</Data></Cell> <!-- Column D -->
-        <Cell ss:StyleID="sRowLabel"><Data ss:Type="String">Misal: 3 Unit Truk Engkel</Data></Cell> <!-- Column E -->
+        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">${data.capexTrucks}</Data></Cell> <!-- Column C -->
+        <Cell ss:StyleID="sRowLabel"><Data ss:Type="String">Misal: 3 Unit Truk Engkel</Data></Cell> <!-- Column D -->
       </Row>
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabel"><Data ss:Type="String">Sistem IT / Transport Management System (TMS)</Data></Cell>
-        <Cell ss:StyleID="sRowLabel"/> <!-- Column C Spacer -->
-        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">${data.capexIT}</Data></Cell> <!-- Column D -->
-        <Cell ss:StyleID="sRowLabel"><Data ss:Type="String">Lisensi &amp; Setup Awal</Data></Cell> <!-- Column E -->
+        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">${data.capexIT}</Data></Cell> <!-- Column C -->
+        <Cell ss:StyleID="sRowLabel"><Data ss:Type="String">Lisensi &amp; Setup Awal</Data></Cell> <!-- Column D -->
       </Row>
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabel"><Data ss:Type="String">Peralatan Gudang &amp; Pallet</Data></Cell>
-        <Cell ss:StyleID="sRowLabel"/> <!-- Column C Spacer -->
-        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">${data.capexGudang}</Data></Cell> <!-- Column D -->
-        <Cell ss:StyleID="sRowLabel"><Data ss:Type="String">Rak, Hand Pallet, Safety Tools</Data></Cell> <!-- Column E -->
+        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">${data.capexGudang}</Data></Cell> <!-- Column C -->
+        <Cell ss:StyleID="sRowLabel"><Data ss:Type="String">Rak, Hand Pallet, Safety Tools</Data></Cell> <!-- Column D -->
       </Row>
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabel"><Data ss:Type="String">Perizinan &amp; Legalitas Proyek</Data></Cell>
-        <Cell ss:StyleID="sRowLabel"/> <!-- Column C Spacer -->
-        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">${data.capexIzin}</Data></Cell> <!-- Column D -->
-        <Cell ss:StyleID="sRowLabel"><Data ss:Type="String">Sertifikasi &amp; izin jalan armada</Data></Cell> <!-- Column E -->
+        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">${data.capexIzin}</Data></Cell> <!-- Column C -->
+        <Cell ss:StyleID="sRowLabel"><Data ss:Type="String">Sertifikasi &amp; izin jalan armada</Data></Cell> <!-- Column D -->
       </Row>
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabelBold"><Data ss:Type="String">TOTAL CAPEX</Data></Cell>
-        <Cell ss:StyleID="sRowLabelBold"/> <!-- Column C Spacer -->
-        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=SUM(R[-4]C:R[-1]C)"><Data ss:Type="Number">${totalCapex}</Data></Cell> <!-- Column D -->
-        <Cell ss:StyleID="sRowLabelBold"/> <!-- Column E -->
+        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=SUM(R[-4]C:R[-1]C)"><Data ss:Type="Number">${totalCapex}</Data></Cell> <!-- Column C -->
+        <Cell ss:StyleID="sRowLabelBold"/> <!-- Column D -->
       </Row>
       
       <Row ss:Height="18"/>
@@ -354,121 +336,105 @@ export function exportToExcelFile(data: ExcelData) {
       <!-- 2. LAPORAN KEUANGAN -->
       <Row ss:Height="20">
         <Cell ss:Index="2" ss:StyleID="sTableHeader"><Data ss:Type="String">Item Laporan Keuangan</Data></Cell>
-        <Cell ss:StyleID="sTableHeader"/> <!-- Column C Spacer -->
-        <Cell ss:StyleID="sTableHeader"><Data ss:Type="String">Tahun 1 (IDR)</Data></Cell> <!-- Column D -->
-        <Cell ss:StyleID="sTableHeader"><Data ss:Type="String">Tahun 2 (IDR)</Data></Cell> <!-- Column E -->
-        <Cell ss:StyleID="sTableHeader"><Data ss:Type="String">Tahun 3 (IDR)</Data></Cell> <!-- Column F -->
+        <Cell ss:StyleID="sTableHeader"><Data ss:Type="String">Tahun 1 (IDR)</Data></Cell> <!-- Column C -->
+        <Cell ss:StyleID="sTableHeader"><Data ss:Type="String">Tahun 2 (IDR)</Data></Cell> <!-- Column D -->
+        <Cell ss:StyleID="sTableHeader"><Data ss:Type="String">Tahun 3 (IDR)</Data></Cell> <!-- Column E -->
       </Row>
       
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabelBold"><Data ss:Type="String">PENDAPATAN (REVENUE)</Data></Cell>
-        <Cell ss:StyleID="sRowLabelBold"/> <!-- Column C Spacer -->
-        <Cell ss:StyleID="sCurrencyBold"><Data ss:Type="Number">${data.revenueY1}</Data></Cell> <!-- Column D -->
-        <Cell ss:StyleID="sCurrencyBold"><Data ss:Type="Number">${data.revenueY2}</Data></Cell> <!-- Column E -->
-        <Cell ss:StyleID="sCurrencyBold"><Data ss:Type="Number">${data.revenueY3}</Data></Cell> <!-- Column F -->
+        <Cell ss:StyleID="sCurrencyBold"><Data ss:Type="Number">${data.revenueY1}</Data></Cell> <!-- Column C -->
+        <Cell ss:StyleID="sCurrencyBold"><Data ss:Type="Number">${data.revenueY2}</Data></Cell> <!-- Column D -->
+        <Cell ss:StyleID="sCurrencyBold"><Data ss:Type="Number">${data.revenueY3}</Data></Cell> <!-- Column E -->
       </Row>
       
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabelBold"><Data ss:Type="String">BIAYA OPERASIONAL (OPEX)</Data></Cell>
-        <Cell ss:StyleID="sRowLabelBold"/> <!-- Column C Spacer -->
+        <Cell ss:StyleID="sRowLabelBold"/> <!-- Column C -->
         <Cell ss:StyleID="sRowLabelBold"/> <!-- Column D -->
         <Cell ss:StyleID="sRowLabelBold"/> <!-- Column E -->
-        <Cell ss:StyleID="sRowLabelBold"/> <!-- Column F -->
       </Row>
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabel"><Data ss:Type="String">- Gaji Sopir &amp; Kru</Data></Cell>
-        <Cell ss:StyleID="sRowLabel"/> <!-- Column C Spacer -->
-        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">${data.gajiY1}</Data></Cell> <!-- Column D -->
-        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">${data.gajiY2}</Data></Cell> <!-- Column E -->
-        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">${data.gajiY3}</Data></Cell> <!-- Column F -->
+        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">${data.gajiY1}</Data></Cell> <!-- Column C -->
+        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">${data.gajiY2}</Data></Cell> <!-- Column D -->
+        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">${data.gajiY3}</Data></Cell> <!-- Column E -->
       </Row>
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabel"><Data ss:Type="String">- BBM &amp; Tol</Data></Cell>
-        <Cell ss:StyleID="sRowLabel"/> <!-- Column C Spacer -->
-        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">${data.bbmY1}</Data></Cell>
-        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">${data.bbmY2}</Data></Cell>
-        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">${data.bbmY3}</Data></Cell>
+        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">${data.bbmY1}</Data></Cell> <!-- Column C -->
+        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">${data.bbmY2}</Data></Cell> <!-- Column D -->
+        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">${data.bbmY3}</Data></Cell> <!-- Column E -->
       </Row>
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabel"><Data ss:Type="String">- Maintenance &amp; Servis Armada</Data></Cell>
-        <Cell ss:StyleID="sRowLabel"/> <!-- Column C Spacer -->
-        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">${data.maintY1}</Data></Cell>
-        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">${data.maintY2}</Data></Cell>
-        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">${data.maintY3}</Data></Cell>
+        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">${data.maintY1}</Data></Cell> <!-- Column C -->
+        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">${data.maintY2}</Data></Cell> <!-- Column D -->
+        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">${data.maintY3}</Data></Cell> <!-- Column E -->
       </Row>
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabel"><Data ss:Type="String">- Sewa Kantor/Gudang &amp; Admin</Data></Cell>
-        <Cell ss:StyleID="sRowLabel"/> <!-- Column C Spacer -->
-        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">${data.sewaY1}</Data></Cell>
-        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">${data.sewaY2}</Data></Cell>
-        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">${data.sewaY3}</Data></Cell>
+        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">${data.sewaY1}</Data></Cell> <!-- Column C -->
+        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">${data.sewaY2}</Data></Cell> <!-- Column D -->
+        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">${data.sewaY3}</Data></Cell> <!-- Column E -->
       </Row>
       
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabelBold"><Data ss:Type="String">TOTAL OPEX</Data></Cell>
-        <Cell ss:StyleID="sRowLabelBold"/> <!-- Column C Spacer -->
-        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=SUM(R[-4]C:R[-1]C)"><Data ss:Type="Number">${opexY1}</Data></Cell>
-        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=SUM(R[-4]C:R[-1]C)"><Data ss:Type="Number">${opexY2}</Data></Cell>
-        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=SUM(R[-4]C:R[-1]C)"><Data ss:Type="Number">${opexY3}</Data></Cell>
+        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=SUM(R[-4]C:R[-1]C)"><Data ss:Type="Number">${opexY1}</Data></Cell> <!-- Column C -->
+        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=SUM(R[-4]C:R[-1]C)"><Data ss:Type="Number">${opexY2}</Data></Cell> <!-- Column D -->
+        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=SUM(R[-4]C:R[-1]C)"><Data ss:Type="Number">${opexY3}</Data></Cell> <!-- Column E -->
       </Row>
       
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabelBold"><Data ss:Type="String">LABA BERSIH (NET PROFIT)</Data></Cell>
-        <Cell ss:StyleID="sRowLabelBold"/> <!-- Column C Spacer -->
-        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=R[-7]C-R[-1]C"><Data ss:Type="Number">${netProfitY1}</Data></Cell>
-        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=R[-7]C-R[-1]C"><Data ss:Type="Number">${netProfitY2}</Data></Cell>
-        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=R[-7]C-R[-1]C"><Data ss:Type="Number">${netProfitY3}</Data></Cell>
+        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=R[-7]C-R[-1]C"><Data ss:Type="Number">${netProfitY1}</Data></Cell> <!-- Column C -->
+        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=R[-7]C-R[-1]C"><Data ss:Type="Number">${netProfitY2}</Data></Cell> <!-- Column D -->
+        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=R[-7]C-R[-1]C"><Data ss:Type="Number">${netProfitY3}</Data></Cell> <!-- Column E -->
       </Row>
       
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabelBold"><Data ss:Type="String">NET PROFIT MARGIN (%)</Data></Cell>
-        <Cell ss:StyleID="sRowLabelBold"/> <!-- Column C Spacer -->
-        <Cell ss:StyleID="sPercentageBold" ss:Formula="=R[-1]C/R[-8]C"><Data ss:Type="Number">${npmY1 / 100}</Data></Cell>
-        <Cell ss:StyleID="sPercentageBold" ss:Formula="=R[-1]C/R[-8]C"><Data ss:Type="Number">${npmY2 / 100}</Data></Cell>
-        <Cell ss:StyleID="sPercentageBold" ss:Formula="=R[-1]C/R[-8]C"><Data ss:Type="Number">${npmY3 / 100}</Data></Cell>
+        <Cell ss:StyleID="sPercentageBold" ss:Formula="=R[-1]C/R[-8]C"><Data ss:Type="Number">${npmY1 / 100}</Data></Cell> <!-- Column C -->
+        <Cell ss:StyleID="sPercentageBold" ss:Formula="=R[-1]C/R[-8]C"><Data ss:Type="Number">${npmY2 / 100}</Data></Cell> <!-- Column D -->
+        <Cell ss:StyleID="sPercentageBold" ss:Formula="=R[-1]C/R[-8]C"><Data ss:Type="Number">${npmY3 / 100}</Data></Cell> <!-- Column E -->
       </Row>
       
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabelBold"><Data ss:Type="String">ARUS KAS (CASH FLOW)</Data></Cell>
-        <Cell ss:StyleID="sRowLabelBold"/> <!-- Column C Spacer -->
-        <Cell ss:StyleID="sRowLabelBold"/>
-        <Cell ss:StyleID="sRowLabelBold"/>
-        <Cell ss:StyleID="sRowLabelBold"/>
+        <Cell ss:StyleID="sRowLabelBold"/> <!-- Column C -->
+        <Cell ss:StyleID="sRowLabelBold"/> <!-- Column D -->
+        <Cell ss:StyleID="sRowLabelBold"/> <!-- Column E -->
       </Row>
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabel"><Data ss:Type="String">+ Saldo Kas Awal</Data></Cell>
-        <Cell ss:StyleID="sRowLabel"/> <!-- Column C Spacer -->
-        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">0</Data></Cell>
-        <Cell ss:StyleID="sCurrency" ss:Formula="=R27C4"><Data ss:Type="Number">${endCashY1}</Data></Cell>
-        <Cell ss:StyleID="sCurrency" ss:Formula="=R27C5"><Data ss:Type="Number">${endCashY2}</Data></Cell>
+        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">0</Data></Cell> <!-- Column C -->
+        <Cell ss:StyleID="sCurrency" ss:Formula="=R27C3"><Data ss:Type="Number">${endCashY1}</Data></Cell> <!-- Column D -->
+        <Cell ss:StyleID="sCurrency" ss:Formula="=R27C4"><Data ss:Type="Number">${endCashY2}</Data></Cell> <!-- Column E -->
       </Row>
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabel"><Data ss:Type="String">- Arus Kas Keluar Investasi (CAPEX)</Data></Cell>
-        <Cell ss:StyleID="sRowLabel"/> <!-- Column C Spacer -->
-        <Cell ss:StyleID="sCurrency" ss:Formula="=-R10C4"><Data ss:Type="Number">-${totalCapex}</Data></Cell>
-        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">0</Data></Cell>
-        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">0</Data></Cell>
+        <Cell ss:StyleID="sCurrency" ss:Formula="=-R10C3"><Data ss:Type="Number">-${totalCapex}</Data></Cell> <!-- Column C -->
+        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">0</Data></Cell> <!-- Column D -->
+        <Cell ss:StyleID="sCurrency"><Data ss:Type="Number">0</Data></Cell> <!-- Column E -->
       </Row>
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabel"><Data ss:Type="String">+ Masukan Kas Operasional (Net Profit)</Data></Cell>
-        <Cell ss:StyleID="sRowLabel"/> <!-- Column C Spacer -->
-        <Cell ss:StyleID="sCurrency" ss:Formula="=R[-5]C"><Data ss:Type="Number">${netProfitY1}</Data></Cell>
-        <Cell ss:StyleID="sCurrency" ss:Formula="=R[-5]C"><Data ss:Type="Number">${netProfitY2}</Data></Cell>
-        <Cell ss:StyleID="sCurrency" ss:Formula="=R[-5]C"><Data ss:Type="Number">${netProfitY3}</Data></Cell>
+        <Cell ss:StyleID="sCurrency" ss:Formula="=R[-5]C"><Data ss:Type="Number">${netProfitY1}</Data></Cell> <!-- Column C -->
+        <Cell ss:StyleID="sCurrency" ss:Formula="=R[-5]C"><Data ss:Type="Number">${netProfitY2}</Data></Cell> <!-- Column D -->
+        <Cell ss:StyleID="sCurrency" ss:Formula="=R[-5]C"><Data ss:Type="Number">${netProfitY3}</Data></Cell> <!-- Column E -->
       </Row>
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabelBold"><Data ss:Type="String">ARUS KAS BERSIH (NET CASH FLOW)</Data></Cell>
-        <Cell ss:StyleID="sRowLabelBold"/> <!-- Column C Spacer -->
-        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=R[-2]C+R[-1]C"><Data ss:Type="Number">${netCashFlowY1}</Data></Cell>
-        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=R[-2]C+R[-1]C"><Data ss:Type="Number">${netCashFlowY2}</Data></Cell>
-        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=R[-2]C+R[-1]C"><Data ss:Type="Number">${netCashFlowY3}</Data></Cell>
+        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=R[-2]C+R[-1]C"><Data ss:Type="Number">${netCashFlowY1}</Data></Cell> <!-- Column C -->
+        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=R[-2]C+R[-1]C"><Data ss:Type="Number">${netCashFlowY2}</Data></Cell> <!-- Column D -->
+        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=R[-2]C+R[-1]C"><Data ss:Type="Number">${netCashFlowY3}</Data></Cell> <!-- Column E -->
       </Row>
       <Row ss:Height="18">
         <Cell ss:Index="2" ss:StyleID="sRowLabelBold" style="background-color: #D9E1F2;"><Data ss:Type="String">SALDO KAS AKHIR</Data></Cell>
-        <Cell ss:StyleID="sRowLabelBold"/> <!-- Column C Spacer -->
-        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=R[-4]C+R[-1]C"><Data ss:Type="Number">${endCashY1}</Data></Cell>
-        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=R[-4]C+R[-1]C"><Data ss:Type="Number">${endCashY2}</Data></Cell>
-        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=R[-4]C+R[-1]C"><Data ss:Type="Number">${endCashY3}</Data></Cell>
+        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=R[-4]C+R[-1]C"><Data ss:Type="Number">${endCashY1}</Data></Cell> <!-- Column C -->
+        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=R[-4]C+R[-1]C"><Data ss:Type="Number">${endCashY2}</Data></Cell> <!-- Column D -->
+        <Cell ss:StyleID="sCurrencyBold" ss:Formula="=R[-4]C+R[-1]C"><Data ss:Type="Number">${endCashY3}</Data></Cell> <!-- Column E -->
       </Row>
     </Table>
   </Worksheet>

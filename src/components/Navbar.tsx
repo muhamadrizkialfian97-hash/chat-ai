@@ -63,21 +63,15 @@ export default function Navbar({
         
         {/* Brand & Left Navigation */}
         <div className="flex items-center gap-3">
-          <a
-            href="https://aistudio.google.com/apps/d4e73b8b-0ce8-482c-838c-fcfa6d09b5b3?showAssistant=true&showPreview=true"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex h-10 w-10 items-center justify-center rounded-xl overflow-hidden bg-slate-50 border border-slate-200 shadow-md transition hover:scale-105 active:scale-95"
-            title="Buka Google AI Studio Workspace"
-          >
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl overflow-hidden bg-white border border-slate-200 shadow-sm">
             <img 
               id="prama-header-logo"
-              src={pramaLogo} 
+              src="https://lh3.googleusercontent.com/d/1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X" 
               alt="PRAMA Logo" 
-              className="h-full w-full object-cover"
+              className="h-full w-full object-contain p-1"
               referrerPolicy="no-referrer"
             />
-          </a>
+          </div>
           <div>
             <div className="flex items-center gap-2">
               <h1 className="font-display font-extrabold text-base leading-none tracking-tight text-slate-900 md:text-lg">

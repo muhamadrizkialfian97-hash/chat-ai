@@ -35,10 +35,10 @@ export async function exportToInteractiveHTML(
 
   const divisionText = divisiName.toUpperCase();
 
-  // Fetch pancaran_illustration.jpg as Base64 to make it self-contained
+  // Fetch the Pancaran illustration as Base64 to make it self-contained
   let base64Illustration = "";
   try {
-    const res = await fetch("/pancaran_illustration.jpg");
+    const res = await fetch("https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ");
     if (res.ok) {
       const blob = await res.blob();
       base64Illustration = await new Promise<string>((resolve, reject) => {
@@ -519,7 +519,7 @@ export async function exportToInteractiveHTML(
               <!-- 1. Portal Illustration Background -->
               <div class="absolute inset-0 w-full h-full overflow-hidden select-none z-0">
                 <img 
-                  src="\${bgIllustrationBase64 || window.location.origin + '/pancaran_illustration.jpg'}" 
+                  src="\${bgIllustrationBase64 || 'https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ'}" 
                   alt="Pancaran Group Logistics Illustration" 
                   referrerpolicy="no-referrer"
                   class="w-full h-full object-cover origin-center z-0 scale-[1.00]"
@@ -585,7 +585,7 @@ export async function exportToInteractiveHTML(
               <!-- 1. Portal Illustration Background -->
               <div class="absolute inset-0 w-full h-full overflow-hidden select-none z-0">
                 <img 
-                  src="\${bgIllustrationBase64 || window.location.origin + '/pancaran_illustration.jpg'}" 
+                  src="\${bgIllustrationBase64 || 'https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ'}" 
                   alt="Pancaran Group Logistics Illustration" 
                   referrerpolicy="no-referrer"
                   class="w-full h-full object-cover origin-center z-0 scale-[1.00]"

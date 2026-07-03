@@ -4,6 +4,7 @@
  */
 
 import pptxgen from "pptxgenjs";
+import { CompetitorIntel } from "../types";
 
 export interface DashboardSection {
   number: number;
@@ -568,10 +569,7 @@ export async function exportAllSectionsToPPTX(projectTitle: string, sectionsMap:
   const slide1 = pptx.addSlide();
   
   // Set background to the Pancaran Group Illustration
-  let bgPath = "/pancaran_illustration.jpg";
-  if (typeof window !== "undefined" && window.location) {
-    bgPath = window.location.origin + bgPath;
-  }
+  let bgPath = "https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ";
   slide1.background = { path: bgPath };
 
   // Semi-transparent dark overlay rectangle for perfect text contrast
@@ -716,10 +714,7 @@ export async function exportAllSectionsToPPTX(projectTitle: string, sectionsMap:
   const closingSlide = pptx.addSlide();
   
   // Set background to the Pancaran Group Illustration for maximum visual brand impact
-  let closingBgPathPrj = "/pancaran_illustration.jpg";
-  if (typeof window !== "undefined" && window.location) {
-    closingBgPathPrj = window.location.origin + closingBgPathPrj;
-  }
+  let closingBgPathPrj = "https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ";
   closingSlide.background = { path: closingBgPathPrj };
 
   // Semi-transparent dark overlay rectangle to guarantee pristine contrast and legibility
@@ -938,7 +933,62 @@ export function generatePillarsForProject(projectName: string, fileContent?: str
 
     2: `### 2. Market Opportunity\n\n**Analisis Kesenjangan & Ceruk Pasar Proyek:**\nProyek **"${pName}"** menyasar sektor logistik premium di mana terdapat gap atau kesenjangan besar antara transporter berlisensi standar dengan kebutuhan armada yang sangat andal.\n\n**Metode Eksploitasi Ceruk Pasar:**\n* **Sertifikasi Khusus:** Menyediakan lisensi operasional eksklusif untuk pengangkutan tipe ${materialName}.\n* **Dukungan Korporat:** Memosisikan Pancaran Group sebagai satu-satunya mitra strategis berskala nasional yang mampu memberikan jaminan keamanan berkas kargo bernilai tinggi secara konsisten.`,
 
-    3: `### 3. Financial (Capex, Opex, P&L, Cash Flow, ROI)\n\n**Analisis Kelayakan Finansial Proyek:**\n\nProyeksi arus kas dan pengembalian modal diestimasi secara cermat khusus untuk kajian **"${pName}"**:\n\n**A. Capital Expenditure (Capex):**\n* Pembelian Armada Baru (${unitsText}): **Rp ${numericCapex.toLocaleString("id-ID")}**\n* Sistem IoT Telematika & Sertifikasi Awak: **Rp 350.000.000**\n* *Total Alokasi Investasi:* **Rp ${(numericCapex + 350000000).toLocaleString("id-ID")}**\n\n**B. Operational Expenditure (Opex) Bulanan:**\n* BBM Industri, Biaya Tol, & Perawatan Rutin Sasis: **Rp ${numericOpex.toLocaleString("id-ID")}**\n* Gaji & Premi Keselamatan Pengemudi: **Rp 60.000.000**\n* *Total Pengeluaran Rutin:* **Rp ${(numericOpex + 60000000).toLocaleString("id-ID")} / Bulan**\n\n**C. Analisis Profitabilitas (P&L):**\n* Target Pendapatan Operasional: **Rp ${monthlyRev.toLocaleString("id-ID")} / Bulan**\n* Target Gross Margin (45%): **Rp ${Math.round(monthlyRev * 0.45).toLocaleString("id-ID")} / Bulan**\n* **Payback Period (PBP):** **${defaultPbp} Tahun**\n* **Return on Investment (ROI):** **${defaultRoi}%** (Tahun ke-3)\n* **Internal Rate of Return (IRR):** **${defaultIrr}%**`,
+    3: (() => {
+      const unitCount = defaultUnitsCount;
+      const avgUnitCost = Math.round(numericCapex / unitCount);
+      
+      let opexDetails = "";
+      if (lower.includes("batubara") || lower.includes("coal") || lower.includes("tambang") || lower.includes("mineral") || lower.includes("batu bara")) {
+        opexDetails = `* **Bahan Bakar Solar Industri (Non-Subsidi):** **Rp ${Math.round(numericOpex * 0.55).toLocaleString("id-ID")}** per bulan (asumsi harga solar industri Rp 19.500/liter dengan konsumsi rute hauling berat).
+* **Gaji, Premi Rit, & Tunjangan K3 Pengemudi:** **Rp ${Math.round(numericOpex * 0.20).toLocaleString("id-ID")}** per bulan (standar pengemudi hauling tersertifikasi K3 pertambangan).
+* **Pemeliharaan Rutin, Ban, & Suku Cadang Sasis:** **Rp ${Math.round(numericOpex * 0.15).toLocaleString("id-ID")}** per bulan (ban khusus medan off-road berlumpur).
+* **Perizinan Dispensation Rute & HSE Audit:** **Rp ${Math.round(numericOpex * 0.10).toLocaleString("id-ID")}** per bulan.`;
+      } else if (lower.includes("dingin") || lower.includes("cold") || lower.includes("farmasi") || lower.includes("vaksin") || lower.includes("makanan") || lower.includes("boga") || lower.includes("fresh") || lower.includes("reefer")) {
+        opexDetails = `* **Bahan Bakar Solar & Operasional Kompresor Pendingin:** **Rp ${Math.round(numericOpex * 0.45).toLocaleString("id-ID")}** per bulan (konsumsi solar diesel tambahan untuk genset ThermoKing boks reefer).
+* **Gaji Pengemudi & Kru (Standar Mutu CDOB BPOM):** **Rp ${Math.round(numericOpex * 0.25).toLocaleString("id-ID")}** per bulan (menerapkan premi kebersihan & jaminan suhu).
+* **Kalibrasi Sensor Suhu IoT & Perawatan Chiller:** **Rp ${Math.round(numericOpex * 0.15).toLocaleString("id-ID")}** per bulan.
+* **Biaya Asuransi Kerusakan Kargo Sensitif:** **Rp ${Math.round(numericOpex * 0.15).toLocaleString("id-ID")}** per bulan.`;
+      } else if (lower.includes("waste") || lower.includes("limbah") || lower.includes("sampah") || lower.includes("b3") || lower.includes("environmental") || lower.includes("environment")) {
+        opexDetails = `* **Bahan Bakar Solar Industri & Tol Trans-Jawa:** **Rp ${Math.round(numericOpex * 0.45).toLocaleString("id-ID")}** per bulan (solar non-subsidi untuk rute Cikarang/Karawang menuju TPA B3).
+* **Gaji & Tunjangan Risiko Kimia Pengemudi:** **Rp ${Math.round(numericOpex * 0.25).toLocaleString("id-ID")}** per bulan (sertifikasi B2 Umum & lisensi penanganan bahan kimia berbahaya B3).
+* **Pemeliharaan Berkala Tangki/Boks Vacuum & Katup Pneumatik:** **Rp ${Math.round(numericOpex * 0.15).toLocaleString("id-ID")}** per bulan.
+* **Biaya Kepatuhan Festronik, KIR, & Izin KLHK/Kemenhub:** **Rp ${Math.round(numericOpex * 0.15).toLocaleString("id-ID")}** per bulan.`;
+      } else {
+        opexDetails = `* **Bahan Bakar Solar Industri & Biaya Gerbang Tol:** **Rp ${Math.round(numericOpex * 0.50).toLocaleString("id-ID")}** per bulan.
+* **Gaji & Premi Ritase Pengemudi Sasis:** **Rp ${Math.round(numericOpex * 0.25).toLocaleString("id-ID")}** per bulan (standar UMR regional ditambah insentif ketepatan waktu).
+* **Perawatan Sasis, Ban, & Suku Cadang Mesin:** **Rp ${Math.round(numericOpex * 0.15).toLocaleString("id-ID")}** per bulan.
+* **Biaya Asuransi Kehilangan & Perizinan KIR Rutin:** **Rp ${Math.round(numericOpex * 0.10).toLocaleString("id-ID")}** per bulan.`;
+      }
+
+      return `### 3. Financial (Capex, Opex, P&L, Cash Flow, ROI)
+
+**Analisis Kelayakan Finansial Proyek Komprehensif:**
+
+Rancangan anggaran biaya dan proyeksi finansial di bawah ini diformulasikan secara presisi untuk mengkaji tingkat pengembalian modal proyek **"${pName}"** agar sesuai dengan kelayakan standar logistik di Indonesia:
+
+**A. Alokasi Capital Expenditure (Capex):**
+Investasi awal diperlukan untuk memastikan kesiapan armada premium berstandar keselamatan tinggi:
+* **Pengadaan Unit Armada Baru (${unitsText}):** **Rp ${numericCapex.toLocaleString("id-ID")}** (estimasi Rp ${(avgUnitCost / 1000000).toFixed(0)} Juta per unit sasis truk berstandar dekarbonisasi).
+* **Instalasi Smart Telematics & Sensor IoT Terintegrasi:** **Rp 150.000.000** (pemasangan GPS tracker, sensor berat suspensi anti-ODOL, dan sensor tangki).
+* **Sertifikasi Awak & Lisensi Hukum Legalitas Rute Perdana:** **Rp 200.000.000** (pengurusan AMDAL, rekomendasi rute Kemenhub, dan training penanganan darurat).
+* **Total Kebutuhan Capex Awal:** **Rp ${(numericCapex + 350000000).toLocaleString("id-ID")}**
+
+**B. Operational Expenditure (Opex) Bulanan:**
+Biaya operasional rutin dirancang menggunakan asumsi harga bahan bakar solar industri non-subsidi yang berlaku saat ini di Indonesia:
+${opexDetails}
+* **Total Opex Bulanan:** **Rp ${(numericOpex + 60000000).toLocaleString("id-ID")} / Bulan**
+
+**C. Proyeksi Profit & Loss (P&L) & ROI:**
+* **Target Pendapatan Operasional:** **Rp ${monthlyRev.toLocaleString("id-ID")} / Bulan** (asumsi utilisasi triplat armada rata-rata 85% dengan sistem billing kontrak tahunan berkelanjutan).
+* **Target Gross Profit Margin:** **Rp ${Math.round(monthlyRev * 0.45).toLocaleString("id-ID")} / Bulan (45.0% Margin)**.
+* **Target EBITDA / Net Profit Margin (Bersih setelah Depresiasi & Pajak): 32% - 35%**.
+* **Payback Period (PBP): ${defaultPbp} Tahun** (Sangat cepat untuk ukuran investasi armada logistik di Indonesia, berkat marjin tinggi dari segmen logistik premium).
+* **Return on Investment (ROI) Tahun ke-3: ${defaultRoi}%**
+* **Internal Rate of Return (IRR): ${defaultIrr}%** (Melampaui tingkat suku bunga pinjaman modal/WACC rata-rata perbankan di Indonesia sebesar ~9-11%, menandakan proyek ini sangat layak secara finansial).
+
+**D. Manajemen Cash Flow & Modal Kerja (Working Capital):**
+* Mengingat standar pembayaran (*Term of Payment*) korporasi besar (B2B) di Indonesia biasanya berkisar antara **60 s.d. 90 hari**, unit bisnis wajib menyiapkan dana cadangan modal kerja (*Working Capital Buffer*) minimal sebesar 3 bulan Opex (**Rp ${Math.round((numericOpex + 60000000) * 3).toLocaleString("id-ID")}**) guna menjaga kelancaran operasional (pembelian solar harian & gaji supir) sebelum termin pembayaran tagihan dari klien cair.`;
+    })(),
 
     4: `### 4. Supply & Demand\n\n**Analisis Dinamika Pasar Proyek:**\n\n* **Sisi Permintaan (Demand):** Volume pengangkutan untuk ${materialName} pada skala regional mengalami lonjakan karena bertumbuhnya aktivitas B2B di koridor operasional proyek **"${pName}"**.\n* **Sisi Penawaran (Supply):** Berdasarkan intelijen pasar, terdapat kelangkaan operator armada lokal yang memiliki sertifikasi kepatuhan dekarbonisasi penuh. Keadaan surplus permintaan ini menguntungkan posisi pricing power milik Pancaran Group.`,
 
@@ -956,9 +1006,47 @@ export function generatePillarsForProject(projectName: string, fileContent?: str
 
     11: `### 11. Digital Coverage (Tools, Method, IoT, Tech)\n\n**Strategi Digitalisasi Logistik 4.0:**\n\nProyek khusus **"${pName}"** memanfaatkan tumpukan teknologi kognitif tercanggih:\n\n* **Prama Smart Telematics:** GPS presisi tinggi yang dikombinasikan dengan sensor diagnostik sasis CAN bus untuk memprediksi kerusakan mekanis.\n* **Electronic Load Sensor:** Pengaman suspensi otomatis guna mendeteksi kecenderungan muatan berlebih (kelebihan tonase) secara real-time demi mematuhi aturan anti-ODOL.`,
 
-    12: `### 12. Competitor\n\n**Lansekap Kompetitif & Keunggulan Pesaing:**\n\n* **Kekuatan Kompetitor Regional:** Kebanyakan adalah operator konvensional skala kecil yang mengandalkan tarif murah namun mengabaikan komitmen perlindungan lingkungan.\n* **Keunggulan Kompetitif Pancaran Group:** Reputasi korporasi kokoh, kepemilikan sistem monitoring digital mandiri, jaminan ketersediaan armada cadangan, serta sertifikasi keselamatan kerja standar internasional.`,
+    12: (() => {
+      const comps = getDefaultCompetitorsForProject(pName);
+      let text = "### 12. Competitor Analysis & Market Landscape\n\n";
+      text += "Dalam pelaksanaan proyek **\"" + pName + "\"" + " di Indonesia, persaingan tender dan operasional melibatkan beberapa pemain kunci. Berikut adalah rincian kompetitor yang aktif memperebutkan dan mengambil proyek sejenis beserta posisinya di pasar:\n\n";
+      comps.forEach((c, idx) => {
+        text += "**" + (idx + 1) + ". " + c.name + " (" + c.status + ")**\n";
+        text += "* **Skala Armada:** " + c.armadaScale + " | **Indeks Keamanan (HSE):** " + c.safetyIndex + "%\n";
+        text += "* **Rekam Jejak Proyek:** " + c.projectHistory + "\n";
+        text += "* **Kekuatan Utama:** " + c.strengths + "\n";
+        text += "* **Kelemahan & Celah Pasar:** " + c.weaknesses + "\n";
+        text += "* **Analisis Penetrasi Pancaran:** " + c.explanation + "\n\n";
+      });
+      text += "**Strategi Kemenangan Pancaran Group:**\n";
+      text += "Pancaran Group berada di posisi unik \"Value Frontier\" di Indonesia, di mana kita mengawinkan kepatuhan standar internasional (HSE & ESG) serta integrasi teknologi IoT Smart Telematics, namun mempertahankan tarif lokal yang kompetitif dan fleksibilitas jadwal yang tidak dimiliki oleh perusahaan multinasional besar (seperti PPLI atau RAPP Logistics).";
+      return text;
+    })(),
 
-    13: `### 13. Market Sizing (TAM, SAM, SOM)\n\n**Estimasi Skala Pasar Sektor Terkait:**\n\n* **Total Addressable Market (TAM):** ${tamFormatted} (potensi industri terkait skala nasional)\n* **Serviceable Addressable Market (SAM):** ${samFormatted} (permintaan pengangkutan spesifik di wilayah operasional koridor)\n* **Serviceable Obtainable Market (SOM):** ${somFormatted} (target perolehan kontrak tahunan realistis oleh unit Pancaran Group)`,
+    13: (() => {
+      let explanationText = "";
+      if (lower.includes("batubara") || lower.includes("coal") || lower.includes("tambang") || lower.includes("mineral") || lower.includes("batu bara")) {
+        explanationText = "TAM mencakup seluruh volume pengangkutan batu bara nasional di Pulau Kalimantan dan Sumatera (est. 600 juta ton/tahun). SAM difokuskan pada koridor pengangkutan hauling jalan darat khusus dari konsesi tambang (IUP) aktif berjarak < 80 km ke Jetty pelabuhan muat. SOM ditargetkan pada 3-5 produsen batu bara menengah-besar (IUP Mandiri) yang membutuhkan jaminan armada anti-breakdown demi kelancaran rantai pasok ekspor.";
+      } else if (lower.includes("dingin") || lower.includes("cold") || lower.includes("farmasi") || lower.includes("vaksin") || lower.includes("makanan") || lower.includes("boga") || lower.includes("fresh") || lower.includes("reefer")) {
+        explanationText = "TAM mencakup seluruh pasar cold-chain logistics nasional Indonesia untuk produk makanan beku, farmasi, susu, dan bahan segar. SAM difokuskan pada pasar distribusi berpendingin premium lintas koridor tol trans-Jawa dan penyeberangan ke Sumatera Selatan yang mewajibkan sertifikasi suhu konstan. SOM dirancang untuk memenangkan kontrak distribusi dari 8 produsen FMCG makanan beku dan jaringan ritel modern besar.";
+      } else if (lower.includes("waste") || lower.includes("limbah") || lower.includes("sampah") || lower.includes("b3") || lower.includes("environmental") || lower.includes("environment")) {
+        explanationText = "TAM dihitung berdasarkan total volume limbah B3 (cair, padat, medis, sludge) yang diproduksi oleh seluruh industri manufaktur di 5 kawasan industri utama Indonesia (Karawang, Cikarang, Cilegon, Gresik, & Medan). SAM difokuskan pada rute pengangkutan berizin KLHK menuju TPA/fasilitas pengolahan akhir resmi (seperti PPLI). SOM menargetkan perolehan kontrak tetap dari 15 emiten industri besar manufaktur tekstil, kimia, dan otomotif.";
+      } else if (lower.includes("cpo") || lower.includes("sawit") || lower.includes("palm oil") || lower.includes("minyak")) {
+        explanationText = "TAM mencakup seluruh kapasitas pengangkutan minyak kelapa sawit mentah (Crude Palm Oil) dari pabrik kelapa sawit (PKS) menuju refinery atau pelabuhan bulking station di Riau, Jambi, Sumut, dan Kalteng. SAM difokuskan pada rute transportasi sasis tangki Food Grade berkapasitas 25-30 ton. SOM menargetkan kontrak eksklusif dari 3 grup perkebunan sawit besar independen di wilayah operasional Pancaran.";
+      } else {
+        explanationText = "TAM didasarkan pada total volume logistik general cargo & kontainer intermodal di koridor utama Indonesia (Jawa-Sumatera). SAM difokuskan pada segmen industri manufaktur bernilai tinggi yang menuntut ketepatan SLA pengangkutan di atas 98%. SOM menargetkan konversi kontrak tahunan dari beberapa distributor regional utama dan emiten FMCG.";
+      }
+
+      return "### 13. Market Sizing (TAM, SAM, SOM)\n\n" +
+        "**Estimasi Skala & Struktur Potensi Pasar Sektor Terkait di Indonesia:**\n\n" +
+        "Dalam merumuskan kelayakan proyek **\"" + pName + "\"**, tim Business Intelligence PRAMA melakukan pemetaan ukuran pasar (Market Sizing) secara berjenjang guna mengukur seberapa besar kue bisnis yang dapat dijangkau dan dikuasai secara realistis:\n\n" +
+        "* **Total Addressable Market (TAM): " + tamFormatted + " per tahun**\n" +
+        "  * *Penjelasan:* Merupakan total potensi belanja (spending) logistik dan transportasi secara keseluruhan di Indonesia untuk sektor " + industry + ". Angka ini mencerminkan volume industri raksasa berskala nasional, didorong oleh pertumbuhan manufaktur, ketatnya regulasi pemerintah, dan ekspansi infrastruktur koridor logistik.\n\n" +
+        "* **Serviceable Addressable Market (SAM): " + samFormatted + " per tahun**\n" +
+        "  * *Penjelasan:* Porsi dari TAM yang secara geografis dan regulasi dapat dilayani secara langsung oleh jaringan operasional, izin trayek, serta armada tersertifikasi Pancaran Group. " + explanationText.split(". ")[0] + ".\n\n" +
+        "* **Serviceable Obtainable Market (SOM): " + somFormatted + " per tahun**\n" +
+        "  * *Penjelasan:* Target pangsa pasar riil yang sangat optimis dan realistis untuk dimenangkan oleh unit bisnis Pancaran Group dalam jangka waktu 3 tahun pertama operasional proyek. Ini dihitung bersandarkan kapasitas penyerapan kontrak tender tahunan, ketersediaan unit armada baru (" + unitsText + "), serta skema pricing yang kompetitif. " + (explanationText.split(". ")[1] || "") + ".";
+    })(),
 
     14: `### 14. Customer Acquisition Cost (CAC) & Lifetime Value (LTV)\n\n**Metrik Nilai Ekonomi Pelanggan:**\n\n* **Customer Acquisition Cost (CAC):** ${cacFormatted} per korporasi (termasuk biaya proses negosiasi, analisis kelayakan, & adaptasi operasional rute awal).\n* **Customer Lifetime Value (LTV):** ${ltvFormatted} (bersandarkan retensi rata-rata kontrak berdurasi 3 tahun).\n* **Rasio LTV/CAC:** **${ratioValue}x** (Rasio sangat sehat dan sangat menguntungkan di atas rerata industri logistik).`
   };
@@ -1141,5 +1229,250 @@ export function extractProjectTitleFromAI(text: string): string | null {
   }
   
   return null;
+}
+
+export function getDefaultCompetitorsForProject(projectName: string): CompetitorIntel[] {
+  const nameLower = projectName.toLowerCase();
+  
+  if (nameLower.includes("waste") || nameLower.includes("limbah") || nameLower.includes("sampah")) {
+    return [
+      {
+        id: "comp-w-1",
+        name: "PT Prasadha Pamunah Limbah Industri (PPLI)",
+        projectHistory: "Menguasai rute pembuangan minyak lumpur (sludge) Pertamina & pengolahan kimia B3 Cikarang.",
+        marketShare: 45,
+        status: "Incumbent",
+        strengths: "Memiliki fasilitas pemrosesan terintegrasi (landfill khusus B3) berskala sangat besar dan armada berstandar internasional.",
+        weaknesses: "Tarif sewa & pembuangan sangat mahal, birokrasi kontrak sangat kaku, serta respon lambat untuk permintaan armada dadakan.",
+        explanation: "PPLI adalah pemimpin pasar pengolahan limbah industri di Indonesia. Mereka memenangkan tender korporasi multinasional besar. Namun, Pancaran dapat masuk melalui strategi fleksibilitas tarif dan respon pemuatan instan.",
+        armadaScale: "250+ Unit Vacuum/Box",
+        digitalSystems: "Sangat Baik",
+        pricePoint: "Sangat Mahal",
+        safetyIndex: 96
+      },
+      {
+        id: "comp-w-2",
+        name: "PT Wastec International",
+        projectHistory: "Pernah mengambil kontrak pengangkutan sludge pabrik kimia Cilegon & insinerasi Tangerang.",
+        marketShare: 25,
+        status: "Bidding",
+        strengths: "Memiliki insinerator modern berkapasitas tinggi di Banten dan Jawa Timur, serta kuat di jaringan pabrik tekstil/manufaktur.",
+        weaknesses: "Jumlah armada truk logistik mandiri terbatas, sering mensubkontrakkan rute angkutan ke transporter pihak ketiga yang kurang andal.",
+        explanation: "Wastec memegang kendali atas banyak limbah yang butuh dimusnahkan secara termal (insinerasi). Kelemahan mereka ada pada lini transportasi darat yang tidak seandal Pancaran Group.",
+        armadaScale: "60+ Unit Armored Box",
+        digitalSystems: "Standar",
+        pricePoint: "Menengah",
+        safetyIndex: 88
+      },
+      {
+        id: "comp-w-3",
+        name: "PT Arahi Indonesia (Logistics Division)",
+        projectHistory: "Mengambil proyek transporter limbah Fly Ash & Bottom Ash (FABA) Pembangkit Listrik Jawa.",
+        marketShare: 15,
+        status: "Inactive",
+        strengths: "Tarif angkut sangat murah, memiliki kedekatan dengan regulator daerah setempat, dan sangat lincah menegosiasikan harga kargo.",
+        weaknesses: "Manajemen K3 sangat buruk, armada truk tua yang sering mogok, tidak memiliki sistem telemetri digital real-time.",
+        explanation: "Arahi memenangkan tender karena perang tarif miring. Namun, mereka rentan didiskualifikasi oleh klien B2B karena melanggar standar HSE lingkungan.",
+        armadaScale: "35+ Dump Truck",
+        digitalSystems: "Sangat Minim",
+        pricePoint: "Sangat Murah",
+        safetyIndex: 64
+      },
+      {
+        id: "comp-w-4",
+        name: "Transporter Logistik Lokal / Konvensional (Non-Izin)",
+        projectHistory: "Mengambil proyek pengangkutan limbah padat & tekstil eceran Jawa Barat tanpa kontrak formal.",
+        marketShare: 10,
+        status: "Displaced",
+        strengths: "Tidak terikat kontrak hukum formal, harga sangat fleksibel (transaksi tunai langsung), serta bisa beroperasi kapan saja.",
+        weaknesses: "Izin AMDAL tidak sah/bodong, berisiko tinggi terkena razia atau tuntutan pidana lingkungan hidup.",
+        explanation: "Pemain eceran ini mengambil kargo dari industri kecil. Pancaran Swarnadwipa dapat mendisrupsi mereka dengan menawarkan edukasi legalitas dan kepatuhan hukum total.",
+        armadaScale: "Truk Bak Terbuka Eceran",
+        digitalSystems: "Sangat Minim",
+        pricePoint: "Sangat Murah",
+        safetyIndex: 40
+      }
+    ];
+  } else if (nameLower.includes("forestry") || nameLower.includes("kehutanan") || nameLower.includes("wood") || nameLower.includes("pulp") || nameLower.includes("logging") || nameLower.includes("kayu")) {
+    return [
+      {
+        id: "comp-f-1",
+        name: "PT Riau Andalan Pulp & Paper (RAPP) Logistics",
+        projectHistory: "Mengambil proyek hauling logging internal Riau & Jambi Pulp Estate.",
+        marketShare: 50,
+        status: "Incumbent",
+        strengths: "Armada logistik internal berskala raksasa, memiliki rute hauling privat terisolasi, serta efisiensi biaya luar biasa.",
+        weaknesses: "Hanya berfokus melayani grup holding sendiri, sangat tidak fleksibel untuk melayani pemegang konsesi kecil di luar grup.",
+        explanation: "RAPP Logistics mendominasi Sumatera bagian tengah. Pancaran Group dapat masuk untuk memenangkan tender dari pemegang konsesi kayu independen atau perkebunan sekunder yang tidak tertampung oleh armada RAPP.",
+        armadaScale: "500+ Logging Trucks",
+        digitalSystems: "Sangat Baik",
+        pricePoint: "Sangat Mahal",
+        safetyIndex: 94
+      },
+      {
+        id: "comp-f-2",
+        name: "PT Tanjung Enim Lestari (TEL) Transporter Division",
+        projectHistory: "Mengambil proyek pengangkutan kayu gelondongan Sumsel & Muara Enim.",
+        marketShare: 20,
+        status: "Bidding",
+        strengths: "Memiliki rute tetap berizin pemda, armada kuat tipe multi-axle, serta jaringan sopir lokal yang terlatih.",
+        weaknesses: "Pemanfaatan sistem tracking masih manual, sering mengalami kehilangan solar (fuel theft) di rute terpencil karena minim IoT.",
+        explanation: "TEL menguasai area Sumatera Selatan. Kelemahan operasional mereka dalam mencegah kecurangan solar dan pemantauan timbangan dapat dikalahkan oleh sistem IoT Smart Telematics Pancaran.",
+        armadaScale: "80+ Truk Tronton",
+        digitalSystems: "Standar",
+        pricePoint: "Menengah",
+        safetyIndex: 82
+      },
+      {
+        id: "comp-f-3",
+        name: "Kontraktor Angkutan Logging Independen (Lokal)",
+        projectHistory: "Mengambil proyek distribusi kayu hutan rakyat & supplier sawit regional secara musiman.",
+        marketShare: 15,
+        status: "Inactive",
+        strengths: "Sangat murah, bersedia melibas jalur berlumpur ekstrem tanpa asuransi kargo, serta syarat kerja sangat fleksibel.",
+        weaknesses: "Sering melanggar batas muatan (ODOL), truk sering terbalik di jalur hutan, dan tidak memiliki standar K3.",
+        explanation: "Pemain lokal ini menguasai angkutan kecil-kecil namun sering membuat jalan umum rusak karena overload. Mereka rentan terkena sanksi razia timbangan berat dari dinas perhubungan.",
+        armadaScale: "Truk Engkel / Dump Tua",
+        digitalSystems: "Sangat Minim",
+        pricePoint: "Sangat Murah",
+        safetyIndex: 55
+      }
+    ];
+  } else if (nameLower.includes("cold") || nameLower.includes("reefer") || nameLower.includes("food") || nameLower.includes("boga") || nameLower.includes("pharmacy") || nameLower.includes("obat")) {
+    return [
+      {
+        id: "comp-c-1",
+        name: "PT MGM Bosco Logistik",
+        projectHistory: "Mengambil proyek logistik rantai dingin McDonalds, Unilever Walls, & importir daging utama.",
+        marketShare: 40,
+        status: "Incumbent",
+        strengths: "Memiliki cold storage raksasa di berbagai kota besar terintegrasi armada pendingin termodern nasional.",
+        weaknesses: "Armada sering fully-booked untuk korporasi raksasa, tarif sewa harian sangat mahal, tidak melayani rute fleksibel sekunder.",
+        explanation: "MGM Bosco adalah penguasa mutlak cold chain premium. Namun, Pancaran dapat menawarkan keunggulan berupa ketersediaan armada instan untuk rute point-to-point cepat tanpa syarat volume minimum ekstrem.",
+        armadaScale: "300+ Reefer Trucks",
+        digitalSystems: "Sangat Baik",
+        pricePoint: "Sangat Mahal",
+        safetyIndex: 95
+      },
+      {
+        id: "comp-c-2",
+        name: "PT Iron Bird Cold Chain (Blue Bird Group)",
+        projectHistory: "Mengambil proyek distribusi bahan baku restoran cepat saji Jabodetabek & Jawa Barat.",
+        marketShare: 20,
+        status: "Bidding",
+        strengths: "Didukung oleh manajemen profesional grup Blue Bird, keandalan sopir luar biasa, serta jaminan asuransi kargo 100%.",
+        weaknesses: "Fokus utama masih di wilayah perkotaan (urban logistics), rute antar-pulau atau lintas Sumatera sangat terbatas.",
+        explanation: "Iron Bird memiliki reputasi korporasi yang sangat baik tapi jangkauan geografis mereka di luar pulau Jawa belum optimal. Ini adalah peluang besar bagi rute antarpulau Pancaran.",
+        armadaScale: "120+ Reefer Vans",
+        digitalSystems: "Sangat Baik",
+        pricePoint: "Sangat Mahal",
+        safetyIndex: 93
+      },
+      {
+        id: "comp-c-3",
+        name: "Transporter Reefer Sewaan Mandiri (Perorangan)",
+        projectHistory: "Mengambil proyek logistik es kristal & hasil tangkapan laut lokal secara harian.",
+        marketShare: 20,
+        status: "Displaced",
+        strengths: "Harga sewa sangat murah, bisa dinegosiasikan langsung dengan pemilik truk, tanpa syarat admin berbelit.",
+        weaknesses: "Mesin termoregulasi sering mati di tengah rute menyebabkan fluktuasi suhu ekstrim, merusak kargo boga/obat sensitif.",
+        explanation: "Seringkali kompresor AC truk mereka tua dan tidak memiliki alarm peringatan suhu. Pancaran dapat merebut pasar dengan sistem jaminan suhu konstan (SLA Zero Defect).",
+        armadaScale: "Sasis Colt Diesel Pendingin",
+        digitalSystems: "Sangat Minim",
+        pricePoint: "Sangat Murah",
+        safetyIndex: 60
+      }
+    ];
+  } else if (nameLower.includes("coal") || nameLower.includes("batubara") || nameLower.includes("hauling") || nameLower.includes("mining") || nameLower.includes("tambang")) {
+    return [
+      {
+        id: "comp-m-1",
+        name: "PT Petrosea Tbk (Mining Logistics Division)",
+        projectHistory: "Mengambil kontrak hauling batubara Adaro & Kideco Jaya Agung Kalimantan.",
+        marketShare: 35,
+        status: "Incumbent",
+        strengths: "Memiliki armada alat berat & heavy-duty dump trucks tercanggih, standar keselamatan tambang internasional tinggi.",
+        weaknesses: "Tarif sewa per ton-kilometer (ton-km) sangat mahal, mobilisasi unit ke lokasi tambang baru membutuhkan waktu sangat lama.",
+        explanation: "Petrosea adalah raksasa tambang terkemuka. Keunggulan Pancaran Group terletak pada kecepatan mobilisasi unit armada tipper baru berkat logistik internal yang cepat dan efisiensi biaya opex.",
+        armadaScale: "180+ Scania Heavy Dumpers",
+        digitalSystems: "Sangat Baik",
+        pricePoint: "Sangat Mahal",
+        safetyIndex: 97
+      },
+      {
+        id: "comp-m-2",
+        name: "PT Kaltim Prima Coal (KPC) Internal Transporter",
+        projectHistory: "Mengambil proyek hauling batubara tambang Sangatta Kalimantan Timur secara eksklusif.",
+        marketShare: 30,
+        status: "Inactive",
+        strengths: "Menguasai infrastruktur jalan hauling tambang milik sendiri, koordinasi operasi lokal sangat mulus.",
+        weaknesses: "Rigid dan tidak diperbolehkan menerima pengangkutan batubara dari konsesi kecil pihak ketiga (IUP mandiri) di sekitarnya.",
+        explanation: "KPC memfokuskan armadanya khusus untuk konsumsi grup pertambangan mereka sendiri. IUP-IUP kecil di sekitarnya terlantar tanpa transporter andal, yang merupakan target SOM sempurna bagi Pancaran.",
+        armadaScale: "250+ Caterpillar Dumpers",
+        digitalSystems: "Sangat Baik",
+        pricePoint: "Sangat Mahal",
+        safetyIndex: 95
+      },
+      {
+        id: "comp-m-3",
+        name: "Transporter Hauling Lokal Tradisional (Koperasi Tambang)",
+        projectHistory: "Mengambil proyek pengangkutan batubara IUP rakyat & stockpile pelabuhan darat lokal.",
+        marketShare: 20,
+        status: "Bidding",
+        strengths: "Didukung oleh serikat pekerja lokal dan pemuka adat setempat, biaya operasi minimal karena upah rendah.",
+        weaknesses: "Sering overload (ODOL), kecelakaan kerja tinggi karena ketiadaan APD, dan armada sering amblas di rute lumpur tambang.",
+        explanation: "Pemain lokal ini memegang kendali atas kedekatan sosial. Pancaran dapat bermitra dengan koperasi lokal ini sebagai subkontrak pengemudi namun dengan pengawasan K3 serta standar armada dari Pancaran.",
+        armadaScale: "Truk Tipper Rakitan Lokal",
+        digitalSystems: "Sangat Minim",
+        pricePoint: "Sangat Murah",
+        safetyIndex: 50
+      }
+    ];
+  } else {
+    return [
+      {
+        id: "comp-g-1",
+        name: "PT Dunia Express (Dunex Logistics)",
+        projectHistory: "Mengambil proyek logistik FMCG Mayora, Astra Honda, & pergudangan Karawang.",
+        marketShare: 35,
+        status: "Incumbent",
+        strengths: "Memiliki ribuan unit truk box, depo peti kemas berfasilitas lengkap, serta sistem ERP pergudangan canggih.",
+        weaknesses: "Fokus utamanya adalah logistik general cargo jalan raya (on-road), kurang berpengalaman untuk jalur off-road ekstrim atau muatan B3.",
+        explanation: "Dunex adalah raksasa kargo umum Jawa. Namun, untuk proyek logistik khusus yang membutuhkan sertifikasi AMDAL, penanganan material berbahaya, atau medan tambang, keahlian khusus Pancaran jauh lebih unggul.",
+        armadaScale: "800+ Box/Wingbox",
+        digitalSystems: "Sangat Baik",
+        pricePoint: "Menengah",
+        safetyIndex: 92
+      },
+      {
+        id: "comp-g-2",
+        name: "PT Lookman Djaja",
+        projectHistory: "Mengambil proyek rantai logistik manufaktur koridor Jakarta-Surabaya (Pantura).",
+        marketShare: 25,
+        status: "Bidding",
+        strengths: "Tarif sangat kompetitif untuk volume besar, memiliki cabang kantor operasional di sepanjang jalur Pantura Jawa.",
+        weaknesses: "Kurang memiliki instrumentasi IoT khusus seperti sensor suspensi anti-ODOL, serta kurangnya sertifikasi ESG emisi.",
+        explanation: "Lookman Djaja adalah transporter andalan lintas Jawa. Untuk menandingi mereka, Pancaran Group mengedepankan diferensiasi berupa integrasi kontrol sensor IoT real-time.",
+        armadaScale: "400+ Truk Fuso",
+        digitalSystems: "Standar",
+        pricePoint: "Menengah",
+        safetyIndex: 85
+      },
+      {
+        id: "comp-g-3",
+        name: "Perusahaan Ekspedisi Skala Kecil & Makelar Truk",
+        projectHistory: "Mengambil proyek pengiriman bahan bangunan & komoditas pasar tradisional secara eceran.",
+        marketShare: 25,
+        status: "Inactive",
+        strengths: "Harga sangat fleksibel, bersedia disewa kapan saja untuk sekali jalan tanpa komitmen kontrak formal.",
+        weaknesses: "Ketersediaan unit sangat tidak menentu (spot market), dokumen legalitas rapuh, tidak ada jaminan keamanan jika barang hilang.",
+        explanation: "Sering digunakan oleh industri kecil menengah. Klien korporat besar pasti menghindari broker ini demi kepatuhan audit legalitas finansial perusahaan.",
+        armadaScale: "Sasis Truk Tua Variatif",
+        digitalSystems: "Sangat Minim",
+        pricePoint: "Sangat Murah",
+        safetyIndex: 50
+      }
+    ];
+  }
 }
 

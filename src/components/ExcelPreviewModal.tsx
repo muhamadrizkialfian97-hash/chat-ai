@@ -437,13 +437,13 @@ export function ExcelPreviewModal({
                 </tr>
 
                 {/* Row 14: CAPEX Row */}
-                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 14, col: "D", val: capexIT.toString(), formula: "='2. P&L & Cash Flow'!C7"})}>
+                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 14, col: "D", val: totalCapex.toString(), formula: "='2. P&L & Cash Flow'!C7"})}>
                   <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">14</td>
                   <td className="border border-slate-300"></td>
                   <td className="border border-slate-300 px-3 font-bold text-left">Total CAPEX (Investasi Awal)</td>
                   <td className="border border-slate-300"></td>
                   <td className="border border-slate-300 px-3 text-right bg-slate-50 font-bold font-mono text-slate-900 text-xs">
-                    Rp {formatIDR(capexIT)}
+                    Rp {formatIDR(totalCapex)}
                   </td>
                   <td className="border border-slate-300 px-3 text-left bg-[#e2efda] text-[#385723] font-bold">
                     Berdasarkan Kebutuhan Aset
@@ -452,13 +452,13 @@ export function ExcelPreviewModal({
                 </tr>
 
                 {/* Row 15: Pendapatan Row */}
-                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 15, col: "D", val: revenueY2.toString(), formula: "='2. P&L & Cash Flow'!D13"})}>
+                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 15, col: "D", val: revenueY1.toString(), formula: "='2. P&L & Cash Flow'!C13"})}>
                   <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">15</td>
                   <td className="border border-slate-300"></td>
                   <td className="border border-slate-300 px-3 font-bold text-left">Proyeksi Pendapatan (Tahun 1)</td>
                   <td className="border border-slate-300"></td>
                   <td className="border border-slate-300 px-3 text-right bg-slate-50 font-bold font-mono text-slate-900 text-xs">
-                    Rp {formatIDR(revenueY2)}
+                    Rp {formatIDR(revenueY1)}
                   </td>
                   <td className="border border-slate-300 px-3 text-left bg-[#e2efda] text-[#385723] font-bold">
                     Target SOM minimum terpenuhi
@@ -467,13 +467,13 @@ export function ExcelPreviewModal({
                 </tr>
 
                 {/* Row 16: NPM Row */}
-                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 16, col: "D", val: ((npmY2 + npmY3) / 2).toFixed(1) + "%", formula: "=AVERAGE('2. P&L & Cash Flow'!D21:E21)"})}>
+                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 16, col: "D", val: averageNpm.toFixed(1) + "%", formula: "=AVERAGE('2. P&L & Cash Flow'!C21:E21)"})}>
                   <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">16</td>
                   <td className="border border-slate-300"></td>
                   <td className="border border-slate-300 px-3 font-bold text-left">Net Profit Margin (Rata-rata)</td>
                   <td className="border border-slate-300"></td>
                   <td className="border border-slate-300 px-3 text-right bg-slate-50 font-bold font-mono text-slate-900 text-xs">
-                    {((npmY2 + npmY3) / 2).toFixed(1)}%
+                    {averageNpm.toFixed(1)}%
                   </td>
                   <td className="border border-slate-300 px-3 text-left bg-[#e2efda] text-[#385723] font-bold">
                     Positif (&gt; 10%)
@@ -482,13 +482,13 @@ export function ExcelPreviewModal({
                 </tr>
 
                 {/* Row 17: Cash Flow Row */}
-                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 17, col: "D", val: (netProfitY2 + netProfitY3).toString(), formula: "=SUM('2. P&L & Cash Flow'!D20:E20)"})}>
+                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 17, col: "D", val: (netCashFlowY1 + netCashFlowY2 + netCashFlowY3).toString(), formula: "=SUM('2. P&L & Cash Flow'!C26:E26)"})}>
                   <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">17</td>
                   <td className="border border-slate-300"></td>
                   <td className="border border-slate-300 px-3 font-bold text-left">Total Arus Kas Bersih (3 Tahun)</td>
                   <td className="border border-slate-300"></td>
                   <td className="border border-slate-300 px-3 text-right bg-slate-50 font-bold font-mono text-slate-900 text-xs">
-                    Rp {formatIDR(netProfitY2 + netProfitY3)}
+                    Rp {formatIDR(netCashFlowY1 + netCashFlowY2 + netCashFlowY3)}
                   </td>
                   <td className="border border-slate-300 px-3 text-left bg-[#e2efda] text-[#385723] font-bold">
                     Positif (Kumulatif)
@@ -497,13 +497,13 @@ export function ExcelPreviewModal({
                 </tr>
 
                 {/* Row 18: Payback Row */}
-                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 18, col: "D", val: (netCashFlowY1 / revenueY1).toFixed(1) + " Tahun", formula: "='2. P&L & Cash Flow'!C26/'2. P&L & Cash Flow'!C13"})}>
+                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 18, col: "D", val: paybackPeriodVal.toFixed(1) + " Tahun", formula: "=C14/AVERAGE('2. P&L & Cash Flow'!C20:E20)"})}>
                   <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">18</td>
                   <td className="border border-slate-300"></td>
                   <td className="border border-slate-300 px-3 font-bold text-left">Payback Period / ROI (Tahun)</td>
                   <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-3 text-right bg-slate-50 font-bold font-mono text-[#dc2626] text-xs">
-                    {(netCashFlowY1 / revenueY1).toFixed(1)} Tahun
+                  <td className="border border-slate-300 px-3 text-right bg-slate-50 font-bold font-mono text-[#385723] text-xs">
+                    {paybackPeriodVal.toFixed(1)} Tahun
                   </td>
                   <td className="border border-slate-300 px-3 text-left bg-[#e2efda] text-[#385723] font-bold">
                     Kurang dari 3 Tahun

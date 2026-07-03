@@ -1956,10 +1956,7 @@ export async function exportToPPTX(
   const openingSlide = pptx.addSlide();
   
   // Set background to the Pancaran Group Illustration
-  let bgPath = "/pancaran_illustration.jpg";
-  if (typeof window !== "undefined" && window.location) {
-    bgPath = window.location.origin + bgPath;
-  }
+  let bgPath = "https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ";
   openingSlide.background = { path: bgPath };
 
   // Semi-transparent dark overlay rectangle for perfect text contrast
@@ -2274,10 +2271,7 @@ export async function exportToPPTX(
   const closingSlide = pptx.addSlide();
   
   // Set background to the Pancaran Group Illustration for maximum visual brand impact
-  let closingBgPath = "/pancaran_illustration.jpg";
-  if (typeof window !== "undefined" && window.location) {
-    closingBgPath = window.location.origin + closingBgPath;
-  }
+  let closingBgPath = "https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ";
   closingSlide.background = { path: closingBgPath };
 
   // Semi-transparent dark overlay rectangle to guarantee pristine contrast and legibility

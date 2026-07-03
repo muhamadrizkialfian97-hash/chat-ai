@@ -13,7 +13,7 @@ import {
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage, handleFirestoreError, OperationType } from "./firebase";
-import { ChatMessage, SavedFile } from "./types";
+import { ChatMessage, SavedFile, CompetitorIntel } from "./types";
 import { generateLocalSmartResponse, cleanChatMessages } from "./utils/localAssistant";
 import { exportToWord, exportToPPTX, extractProjectTitle, downloadPDFDirect } from "./utils/documentExporter";
 import { exportToInteractiveHTML } from "./utils/htmlExporter";
@@ -24,7 +24,8 @@ import {
   exportAllSectionsToPPTX,
   generatePillarsForProject,
   parseResponseToPillars,
-  extractProjectTitleFromAI
+  extractProjectTitleFromAI,
+  getDefaultCompetitorsForProject
 } from "./utils/projectDashboardHelper";
 import {
   ChatIntelligenceState,
@@ -38,6 +39,8 @@ import { PramaAnimatedIllustration } from "./components/PramaAnimatedIllustratio
 import { ArticlePreviewModal } from "./components/ArticlePreviewModal";
 import { PPTPreviewModal } from "./components/PPTPreviewModal";
 import { ExcelPreviewModal } from "./components/ExcelPreviewModal";
+import { PramaFlowchartHub } from "./components/PramaFlowchartHub";
+import { InteractiveFinancialSimulator } from "./components/InteractiveFinancialSimulator";
 const pramaLogo = "https://lh3.googleusercontent.com/d/1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X";
 
 export interface User {
@@ -374,11 +377,11 @@ export default function App() {
   const [videoSrc, setVideoSrc] = useState<string>("/custom-video.mp4");
 
   const [customImageUrl, setCustomImageUrl] = useState<string | null>(null);
-  const [imageSrc, setImageSrc] = useState<string>("https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8");
+  const [imageSrc, setImageSrc] = useState<string>("https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ");
 
   const slideshowImages = useMemo(() => {
     const list = [
-      "https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8",
+      "https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ",
       "https://lh3.googleusercontent.com/d/1nSoJB2pwraTTxpz_AdyLUsPE7ofF2bff",
       "https://lh3.googleusercontent.com/d/1jMchFR980yIMX2HGoGAWT3DjTkAm4Cyo",
       "https://lh3.googleusercontent.com/d/18BXAcvgkENCAyNpgOvdekd3HE1JfCILc"
@@ -442,11 +445,11 @@ export default function App() {
           setVideoSrc("/custom-video.mp4");
           setCustomVideoUrl(null);
         }
-        if (data.imageUrl && data.imageUrl !== "https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8" && data.imageUrl !== "") {
+        if (data.imageUrl && data.imageUrl !== "https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ" && data.imageUrl !== "") {
           setImageSrc(data.imageUrl);
           setCustomImageUrl(data.imageUrl);
         } else {
-          setImageSrc("https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8");
+          setImageSrc("https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ");
           setCustomImageUrl(null);
         }
       } else {
@@ -454,7 +457,7 @@ export default function App() {
         setDoc(settingsDocRef, {
           bgType: "illustration",
           videoUrl: "/custom-video.mp4",
-          imageUrl: "https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8",
+          imageUrl: "https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ",
           lastUpdated: serverTimestamp()
         }, { merge: true }).catch((err) => {
           console.warn("Seeding default lobby background failed:", err);
@@ -598,7 +601,7 @@ export default function App() {
   const handleResetImage = async () => {
     try {
       setCustomImageUrl(null);
-      setImageSrc("https://lh3.googleusercontent.com/d/1AFSngIVwqt7PMNtcTA92z68iGk4z_ng8");
+      setImageSrc("https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ");
 
       // Reset in Firestore with standard error handling
       const settingsDocRef = doc(db, "settings", "lobby_background");
@@ -1287,8 +1290,36 @@ Pasar transportasi limbah industri, terutama limbah Bahan Berbahaya dan Beracun 
     return initial;
   });
 
+  const [competitors, setCompetitors] = useState<CompetitorIntel[]>(() => {
+    const saved = localStorage.getItem("prama_competitors");
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    const initialTitle = localStorage.getItem("prama_dashboard_project_title") || "Kajian Strategis: Forestry Management Transportation";
+    return getDefaultCompetitorsForProject(initialTitle);
+  });
+
+  const [selectedCompetitorId, setSelectedCompetitorId] = useState<string | null>(null);
+  const [isAddingCompetitor, setIsAddingCompetitor] = useState<boolean>(false);
+  const [newCompName, setNewCompName] = useState<string>("");
+  const [newCompHistory, setNewCompHistory] = useState<string>("");
+  const [newCompShare, setNewCompShare] = useState<number>(10);
+  const [newCompStatus, setNewCompStatus] = useState<"Incumbent" | "Bidding" | "Inactive" | "Displaced">("Bidding");
+  const [newCompStrengths, setNewCompStrengths] = useState<string>("");
+  const [newCompWeaknesses, setNewCompWeaknesses] = useState<string>("");
+  const [newCompExpl, setNewCompExpl] = useState<string>("");
+  const [newCompArmada, setNewCompArmada] = useState<string>("");
+  const [newCompDigital, setNewCompDigital] = useState<"Sangat Baik" | "Standar" | "Sangat Minim">("Standar");
+  const [newCompPrice, setNewCompPrice] = useState<"Sangat Mahal" | "Menengah" | "Sangat Murah">("Menengah");
+  const [newCompSafety, setNewCompSafety] = useState<number>(80);
+
+  useEffect(() => {
+    localStorage.setItem("prama_competitors", JSON.stringify(competitors));
+  }, [competitors]);
+
   useEffect(() => {
     localStorage.setItem("prama_dashboard_project_title", dashboardProjectTitle);
+    setCompetitors(getDefaultCompetitorsForProject(dashboardProjectTitle));
   }, [dashboardProjectTitle]);
 
   useEffect(() => {
@@ -1353,6 +1384,7 @@ Pasar transportasi limbah industri, terutama limbah Bahan Berbahaya dan Beracun 
 
   // Customized states for Article mode, Web Previews, PowerPoint Presenter Voice and Workflows
   const [workspaceViewState, setWorkspaceViewState] = useState<"editor" | "article" | "workflow">("article");
+  const [isWorkspaceExpanded, setIsWorkspaceExpanded] = useState<boolean>(false);
   const [webDocPreview, setWebDocPreview] = useState<"none" | "word" | "ppt" | "html">("none");
   const [isExcelPreviewOpen, setIsExcelPreviewOpen] = useState<boolean>(false);
   const [htmlPreviewContent, setHtmlPreviewContent] = useState<string>("");
@@ -3471,7 +3503,7 @@ ${lastMsgText}`;
     return (
       <div className="video-container" id="landing-hero-container">
         <img 
-          src="/pancaran_illustration.jpg" 
+          src="https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ" 
           alt="Pancaran Group Logistics Illustration" 
           referrerPolicy="no-referrer"
           className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 animate-fade-in scale-[1.00] origin-center"
@@ -3511,7 +3543,7 @@ ${lastMsgText}`;
         {/* Brand Background Image */}
         <div className="absolute inset-0 z-0">
           <img 
-            src="/pancaran_illustration.jpg" 
+            src="https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ" 
             alt="Pancaran Group Logistics Illustration" 
             referrerPolicy="no-referrer"
             className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 animate-fade-in scale-[1.00] origin-center"
@@ -4385,7 +4417,8 @@ ${lastMsgText}`;
               {/* Split Body Layout */}
               <div className="flex-grow flex flex-col lg:flex-row min-h-0 bg-slate-50/50">
                 {/* LEFT LIST PANEL: 14 PILLARS MENUS (Scrollable) */}
-                <div className="w-full lg:w-80 border-r border-slate-200 shrink-0 bg-white flex flex-col overflow-y-auto max-h-[300px] lg:max-h-[600px]">
+                {!isWorkspaceExpanded && (
+                  <div className="w-full lg:w-80 border-r border-slate-200 shrink-0 bg-white flex flex-col overflow-y-auto max-h-[300px] lg:max-h-[600px]">
                   <div className="bg-slate-50 border-b border-slate-200 p-3 flex items-center justify-between shrink-0">
                     <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest font-mono">
                       Daftar 14 Pilar Strategi
@@ -4444,6 +4477,7 @@ ${lastMsgText}`;
                     })}
                   </div>
                 </div>
+                )}
 
                 {/* RIGHT EXPLORER & EDITING WORKSPACE CANVAS */}
                 <div className="flex-grow p-6 flex flex-col min-h-0 bg-slate-50">
@@ -4451,6 +4485,29 @@ ${lastMsgText}`;
                     const activeSec = defaultDashboardSections.find(s => s.number === activeDashboardSection);
                     if (!activeSec) return null;
                     const val = dashboardSectionsState[activeDashboardSection] || "";
+                    const isSectionEmpty = !val.trim() || 
+                                           val.trim() === `### ${activeSec.number}. ${activeSec.title}` || 
+                                           val.trim() === `${activeSec.title}` ||
+                                           val.trim() === `### ${activeSec.number}. Global / National (NAT) Overview` ||
+                                           val.trim() === `### 1. Global / National (NAT) Overview` ||
+                                           val.trim() === `### 1. Global/NAT Overview` ||
+                                           val.trim() === `### 1. Global / National (NAT) Overview\n\n` ||
+                                           val.trim() === `1. GLOBAL/NAT OVERVIEW` ||
+                                           val.trim() === `GLOBAL/NAT OVERVIEW` ||
+                                           val.includes("[Tulis ulasan") || 
+                                           val.includes("[Tulis riset") || 
+                                           val.includes("[Tulis rincian") || 
+                                           val.includes("[Tulis ulasan penawaran") || 
+                                           val.includes("[Tulis bagan") || 
+                                           val.includes("[Tulis syarat") || 
+                                           val.includes("[Tulis milestones") || 
+                                           val.includes("[Tulis strategi") || 
+                                           val.includes("[Tulis workflow") || 
+                                           val.includes("[Tulis matriks") || 
+                                           val.includes("[Tulis pemanfaatan") || 
+                                           val.includes("[Tulis komparasi") || 
+                                           val.includes("[Tulis hitungan") || 
+                                           val.includes("[Tulis analisis");
 
                     return (
                       <div className="flex-1 flex flex-col gap-5 min-h-0">
@@ -4474,12 +4531,27 @@ ${lastMsgText}`;
                           </div>
 
                           {/* Individual Export in Selected Workspace */}
-                          <div className="shrink-0 flex gap-2">
+                          <div className="shrink-0 flex flex-wrap gap-2">
+                            <button
+                              onClick={() => {
+                                const generated = generatePillarsForProject(dashboardProjectTitle)[activeSec.number];
+                                setDashboardSectionsState(prev => ({
+                                  ...prev,
+                                  [activeSec.number]: generated
+                                }));
+                                alert(`Konten Pilar ${activeSec.number} berhasil diisi dengan draf kustom rekomendasi AI PRAMA!`);
+                              }}
+                              className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-[10.5px] text-white rounded-xl px-4.5 py-2 font-black shadow-sm transition cursor-pointer border-none"
+                              title="Tulis ulang bagian ini dengan draf analisa rekomendasi AI PRAMA"
+                            >
+                              <Sparkles className="h-3.5 w-3.5 animate-pulse" />
+                              <span>Isi Draf AI PRAMA</span>
+                            </button>
                             <button
                               onClick={() => {
                                 exportSingleSectionToWord(dashboardProjectTitle, activeSec, val);
                               }}
-                              className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-[10.5px] text-white rounded-xl px-4 py-2 font-black shadow-sm transition cursor-pointer"
+                              className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-[10.5px] text-white rounded-xl px-4 py-2 font-black shadow-sm transition cursor-pointer border-none"
                             >
                               <FileText className="h-3.5 w-3.5" />
                               <span>Unduh Bab Word Ini (.doc)</span>
@@ -4488,44 +4560,70 @@ ${lastMsgText}`;
                         </div>
 
                         {/* Tab Switcher for Editor vs Article View vs Workflow Skema */}
-                        <div className="flex border-b border-slate-200 gap-1.5 shrink-0 overflow-x-auto select-none bg-slate-100 p-1.5 rounded-2xl">
-                          <button
-                            type="button"
-                            onClick={() => setWorkspaceViewState("editor")}
-                            className={`flex items-center gap-1.5 px-3.5 py-2.5 text-[10.5px] font-black rounded-xl transition ${
-                              workspaceViewState === "editor"
-                                ? "bg-white text-slate-800 border border-slate-200 shadow-sm"
-                                : "text-slate-500 hover:bg-slate-200 hover:text-slate-700"
-                            }`}
-                          >
-                            <SquarePen className="h-3.5 w-3.5 text-indigo-505" />
-                            <span>✏️ Formulasi Draf (Editor)</span>
-                          </button>
+                        <div className="flex items-center justify-between border-b border-slate-200 gap-1.5 shrink-0 select-none bg-slate-100 p-1.5 rounded-2xl">
+                          <div className="flex gap-1.5 overflow-x-auto">
+                            <button
+                              type="button"
+                              onClick={() => setWorkspaceViewState("editor")}
+                              className={`flex items-center gap-1.5 px-3.5 py-2.5 text-[10.5px] font-black rounded-xl transition ${
+                                workspaceViewState === "editor"
+                                  ? "bg-white text-slate-800 border border-slate-200 shadow-sm"
+                                  : "text-slate-500 hover:bg-slate-200 hover:text-slate-700"
+                              }`}
+                            >
+                              <SquarePen className="h-3.5 w-3.5" />
+                              <span>✏️ Formulasi Draf (Editor)</span>
+                            </button>
 
-                          <button
-                            type="button"
-                            onClick={() => setWorkspaceViewState("article")}
-                            className={`flex items-center gap-1.5 px-3.5 py-2.5 text-[10.5px] font-black rounded-xl transition ${
-                              workspaceViewState === "article"
-                                ? "bg-white text-emerald-800 border border-slate-200 shadow-sm"
-                                : "text-slate-500 hover:bg-slate-200 hover:text-emerald-700"
-                            }`}
-                          >
-                            <BookOpen className="h-3.5 w-3.5 text-emerald-550" />
-                            <span>📰 Elegansi Artikel (Tipografi)</span>
-                          </button>
+                            <button
+                              type="button"
+                              onClick={() => setWorkspaceViewState("article")}
+                              className={`flex items-center gap-1.5 px-3.5 py-2.5 text-[10.5px] font-black rounded-xl transition ${
+                                workspaceViewState === "article"
+                                  ? "bg-white text-emerald-800 border border-slate-200 shadow-sm"
+                                  : "text-slate-500 hover:bg-slate-200 hover:text-emerald-700"
+                              }`}
+                            >
+                              <BookOpen className="h-3.5 w-3.5" />
+                              <span>📰 Elegansi Artikel (Tipografi)</span>
+                            </button>
 
+                            <button
+                              type="button"
+                              onClick={() => setWorkspaceViewState("workflow")}
+                              className={`flex items-center gap-1.5 px-3.5 py-2.5 text-[10.5px] font-black rounded-xl transition ${
+                                workspaceViewState === "workflow"
+                                  ? "bg-white text-indigo-850 border border-slate-200 shadow-sm"
+                                  : "text-slate-500 hover:bg-slate-200 hover:text-indigo-800"
+                              }`}
+                            >
+                              <Grid className="h-3.5 w-3.5 text-indigo-500" />
+                              <span>📊 Skema Alur Workflow {activeSec.number === 5 ? "(Pilar 5 Struktur)" : ""}</span>
+                            </button>
+                          </div>
+
+                          {/* Full Screen / Expand View Toggle Button */}
                           <button
                             type="button"
-                            onClick={() => setWorkspaceViewState("workflow")}
-                            className={`flex items-center gap-1.5 px-3.5 py-2.5 text-[10.5px] font-black rounded-xl transition ${
-                              workspaceViewState === "workflow"
-                                ? "bg-white text-indigo-850 border border-slate-200 shadow-sm"
-                                : "text-slate-500 hover:bg-slate-200 hover:text-indigo-800"
+                            onClick={() => setIsWorkspaceExpanded(!isWorkspaceExpanded)}
+                            className={`flex items-center gap-1.5 px-3.5 py-2.5 text-[10.5px] font-black rounded-xl transition shrink-0 ${
+                              isWorkspaceExpanded
+                                ? "bg-indigo-600 text-white shadow-md hover:bg-indigo-700"
+                                : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 shadow-sm"
                             }`}
+                            title={isWorkspaceExpanded ? "Kembali ke tampilan standar" : "Tampilkan pilar ini secara penuh (Layar Penuh)"}
                           >
-                            <Grid className="h-3.5 w-3.5 text-indigo-500" />
-                            <span>📊 Skema Alur Workflow {activeSec.number === 5 ? "(Pilar 5 Struktur)" : ""}</span>
+                            {isWorkspaceExpanded ? (
+                              <>
+                                <Minimize2 className="h-3.5 w-3.5 animate-pulse" />
+                                <span className="hidden md:inline">Tampilan Standar</span>
+                              </>
+                            ) : (
+                              <>
+                                <Maximize2 className="h-3.5 w-3.5" />
+                                <span className="hidden md:inline">Tampilan Penuh (Full)</span>
+                              </>
+                            )}
                           </button>
                         </div>
 
@@ -4534,26 +4632,79 @@ ${lastMsgText}`;
                           {/* Conditional Workspace View */}
                           {workspaceViewState === "editor" ? (
                             /* Live Text Area Editor */
-                            <div className="xl:col-span-8 flex flex-col min-h-[300px]">
+                            <div className={`${isWorkspaceExpanded ? "xl:col-span-12" : "xl:col-span-8"} flex flex-col min-h-[300px]`}>
                               <div className="flex items-center justify-between px-3.5 py-2 bg-slate-800 rounded-t-xl text-white text-[9.5px] font-bold font-mono tracking-widest shrink-0">
                                 <span>WORKSPACE EDITOR PRAMA ADVISOR</span>
                                 <span className="text-emerald-400">BAHASA INDONESIA</span>
                               </div>
-                              <textarea
-                                value={val}
-                                onChange={(e) => {
-                                  setDashboardSectionsState(prev => ({
-                                    ...prev,
-                                    [activeDashboardSection]: e.target.value
-                                  }));
-                                }}
-                                className="w-full h-full min-h-[250px] p-4 text-xs font-mono bg-slate-900 text-slate-100 rounded-b-xl border border-slate-800 outline-none leading-relaxed resize-none shadow-inner"
-                                placeholder="Ketik draf di sini..."
-                              />
+                              {isSectionEmpty ? (
+                                <div className="w-full h-full min-h-[250px] p-6 bg-slate-900 rounded-b-xl border border-slate-800 flex flex-col items-center justify-center text-center">
+                                  <div className="h-10 w-10 rounded-full bg-indigo-950 flex items-center justify-center text-indigo-400 mb-3 border border-indigo-900 shadow-lg">
+                                    <Sparkles className="h-5 w-5 animate-pulse" />
+                                  </div>
+                                  <h5 className="text-xs font-extrabold text-slate-200 uppercase tracking-tight">Draf Pilar Ini Belum Diisi / Masih Kosong</h5>
+                                  <p className="text-[10.5px] text-slate-400 max-w-sm mt-1.5 leading-relaxed font-semibold">
+                                    PRAMA AI Strategic Advisor mendeteksi bahwa bagian ini masih berupa draf kosong. Silakan pilih metode pengisian draf di bawah:
+                                  </p>
+                                  <div className="flex flex-wrap gap-2 mt-4 justify-center">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const generated = generatePillarsForProject(dashboardProjectTitle)[activeSec.number];
+                                        setDashboardSectionsState(prev => ({
+                                          ...prev,
+                                          [activeSec.number]: generated
+                                        }));
+                                      }}
+                                      className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-[10px] font-black rounded-lg transition cursor-pointer border-none"
+                                    >
+                                      <Sparkles className="h-3 w-3" />
+                                      <span>Gunakan Draf PRAMA AI</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setDashboardSectionsState(prev => ({
+                                          ...prev,
+                                          [activeSec.number]: activeSec.defaultContent
+                                        }));
+                                      }}
+                                      className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-750 active:scale-95 text-slate-300 text-[10px] font-black rounded-lg transition cursor-pointer border border-slate-700"
+                                    >
+                                      <FileText className="h-3 w-3 text-slate-400" />
+                                      <span>Template Bawaan</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setDashboardSectionsState(prev => ({
+                                          ...prev,
+                                          [activeSec.number]: `### ${activeSec.number}. ${activeSec.title}\n\n`
+                                        }));
+                                      }}
+                                      className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-850 hover:bg-slate-800 active:scale-95 text-slate-400 text-[10px] font-black rounded-lg transition cursor-pointer border-none"
+                                    >
+                                      <span>Tulis Manual</span>
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <textarea
+                                  value={val}
+                                  onChange={(e) => {
+                                    setDashboardSectionsState(prev => ({
+                                      ...prev,
+                                      [activeDashboardSection]: e.target.value
+                                    }));
+                                  }}
+                                  className={`w-full h-full ${isWorkspaceExpanded ? "min-h-[500px]" : "min-h-[250px]"} p-4 text-xs font-mono bg-slate-900 text-slate-100 rounded-b-xl border border-slate-800 outline-none leading-relaxed resize-none shadow-inner`}
+                                  placeholder="Ketik draf di sini..."
+                                />
+                              )}
                             </div>
                           ) : workspaceViewState === "article" ? (
                             /* Classic Typography Article Layout Viewer */
-                            <div className="xl:col-span-8 bg-white border border-slate-205 border-slate-200 rounded-2xl p-6 md:p-8 flex flex-col overflow-y-auto max-h-[500px] shadow-sm relative text-left">
+                            <div className={`${isWorkspaceExpanded ? "xl:col-span-12 max-h-none min-h-[500px]" : "xl:col-span-8 max-h-[500px]"} bg-white border border-slate-205 border-slate-200 rounded-2xl p-6 md:p-8 flex flex-col overflow-y-auto shadow-sm relative text-left`}>
                               {/* Glowing Reading progress top handle */}
                               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-indigo-500 rounded-t-2xl" />
 
@@ -4578,51 +4729,472 @@ ${lastMsgText}`;
                               </div>
 
                               {/* Typography content wrapper */}
-                              <div className="flex-grow">
-                                <div className="mb-5">
-                                  <span className="text-[9px] font-mono font-black tracking-widest text-emerald-600 uppercase block mb-1">PRAMA MITRA EXCLUSIVE DOSSIER</span>
-                                  <h2 className="text-xl md:text-2xl font-black text-slate-800 uppercase tracking-tight font-display">{activeSec.title}</h2>
-                                  <div className="flex items-center gap-2.5 mt-2.5">
-                                    <div className="text-[11px] font-bold text-slate-500">
-                                      Oleh <span className="text-slate-800 font-bold">PRAMA Strategic Advisor Team</span> • Diperbarui {new Date().toLocaleDateString("id-ID", { year: "numeric", month: "long" })}
-                                    </div>
+                              {isSectionEmpty ? (
+                                <div className="flex-grow flex flex-col items-center justify-center py-10 text-center">
+                                  <div className="h-12 w-12 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 mb-4 shadow-sm border border-indigo-100">
+                                    <Sparkles className="h-6 w-6 animate-pulse" />
+                                  </div>
+                                  <h4 className="text-sm font-extrabold text-slate-800 uppercase tracking-tight">Draf Pilar Ini Belum Diisi / Masih Kosong</h4>
+                                  <p className="text-xs text-slate-500 max-w-sm mt-2 leading-relaxed font-semibold">
+                                    AI PRAMA Strategic Advisor mendeteksi bahwa bagian ini masih berupa draf kosong. Silakan pilih metode pengisian draf di bawah:
+                                  </p>
+                                  <div className="flex flex-wrap gap-2 mt-5 justify-center">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const generated = generatePillarsForProject(dashboardProjectTitle)[activeSec.number];
+                                        setDashboardSectionsState(prev => ({
+                                          ...prev,
+                                          [activeSec.number]: generated
+                                        }));
+                                      }}
+                                      className="flex items-center gap-1.5 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs font-black rounded-xl shadow-md shadow-indigo-100 transition cursor-pointer border-none"
+                                    >
+                                      <Sparkles className="h-3.5 w-3.5" />
+                                      <span>Gunakan Draf PRAMA AI</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setDashboardSectionsState(prev => ({
+                                          ...prev,
+                                          [activeSec.number]: activeSec.defaultContent
+                                        }));
+                                      }}
+                                      className="flex items-center gap-1.5 px-4 py-2.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-700 border border-slate-205 text-xs font-black rounded-xl shadow-sm transition cursor-pointer"
+                                    >
+                                      <FileText className="h-3.5 w-3.5 text-slate-500" />
+                                      <span>Template Bawaan</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setDashboardSectionsState(prev => ({
+                                          ...prev,
+                                          [activeSec.number]: `### ${activeSec.number}. ${activeSec.title}\n\nMasukkan draf kajian Anda di sini...`
+                                        }));
+                                      }}
+                                      className="flex items-center gap-1.5 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-600 text-xs font-black rounded-xl transition cursor-pointer border-none"
+                                    >
+                                      <span>Tulis Manual</span>
+                                    </button>
                                   </div>
                                 </div>
+                              ) : (
+                                <div className="flex-grow">
+                                  <div className="mb-5">
+                                    <span className="text-[9px] font-mono font-black tracking-widest text-emerald-600 uppercase block mb-1">PRAMA MITRA EXCLUSIVE DOSSIER</span>
+                                    <h2 className="text-xl md:text-2xl font-black text-slate-800 uppercase tracking-tight font-display">{activeSec.title}</h2>
+                                    <div className="flex items-center gap-2.5 mt-2.5">
+                                      <div className="text-[11px] font-bold text-slate-500">
+                                        Oleh <span className="text-slate-800 font-bold">PRAMA Strategic Advisor Team</span> • Diperbarui {new Date().toLocaleDateString("id-ID", { year: "numeric", month: "long" })}
+                                      </div>
+                                    </div>
+                                  </div>
 
-                                <div className="prose prose-sm max-w-none text-slate-700 leading-relaxed font-sans mt-4">
-                                  {(() => {
-                                    const paragraphs = val.split("\n").map(p => p.trim()).filter(Boolean);
-                                    let isFirstParagraph = true;
-                                    return paragraphs.map((textLine, sIdx) => {
-                                      if (textLine.startsWith("###")) {
+                                  <div className="prose prose-sm max-w-none text-slate-700 leading-relaxed font-sans mt-4">
+                                    {(() => {
+                                      const paragraphs = val.split("\n").map(p => p.trim()).filter(Boolean);
+                                      let isFirstParagraph = true;
+                                      return paragraphs.map((textLine, sIdx) => {
+                                        if (textLine.startsWith("###")) {
+                                          return (
+                                            <h4 key={sIdx} className="text-[13px] font-black text-indigo-900 border-b border-indigo-100 pb-1 mt-5 mb-2 uppercase tracking-wide">
+                                              {textLine.replace(/^###\s*/, "")}
+                                            </h4>
+                                          );
+                                        }
+                                        if (textLine.startsWith("* ") || textLine.startsWith("- ")) {
+                                          return (
+                                            <div key={sIdx} className="flex gap-2 items-start pl-4 py-1.5 border-l-2 border-emerald-500 bg-slate-50 rounded-r-lg my-1.5 font-sans">
+                                              <span className="text-emerald-500 font-bold text-[10px] select-none">✓</span>
+                                              <p className="text-[11px] font-bold text-slate-600 m-0 animate-none">
+                                                {textLine.replace(/^[\*\-]\s*/, "").replace(/\*\*/g, "")}
+                                              </p>
+                                            </div>
+                                          );
+                                        }
+
+                                        const strippedLine = textLine.replace(/\*\*/g, "");
+
                                         return (
-                                          <h4 key={sIdx} className="text-[13px] font-black text-indigo-900 border-b border-indigo-100 pb-1 mt-5 mb-2 uppercase tracking-wide">
-                                            {textLine.replace(/^###\s*/, "")}
-                                          </h4>
+                                          <p key={sIdx} className={`text-[11.5px] leading-relaxed text-slate-650 ${textLine.startsWith("**") ? "font-black text-indigo-950 mt-4 border-l-2 border-indigo-200 pl-2" : "font-semibold"} my-2.5 text-justify font-sans`}>
+                                            {strippedLine}
+                                          </p>
                                         );
-                                      }
-                                      if (textLine.startsWith("* ") || textLine.startsWith("- ")) {
-                                        return (
-                                          <div key={sIdx} className="flex gap-2 items-start pl-4 py-1.5 border-l-2 border-emerald-500 bg-slate-50 rounded-r-lg my-1.5 font-sans">
-                                            <span className="text-emerald-500 font-bold text-[10px] select-none">✓</span>
-                                            <p className="text-[11px] font-bold text-slate-600 m-0 animate-none">
-                                              {textLine.replace(/^[\*\-]\s*/, "").replace(/\*\*/g, "")}
+                                      });
+                                    })()}
+                                  </div>
+
+                                  {/* PRAMA LIVE FLOWCHART HUB (PILAR 6 ONLY) */}
+                                  {activeDashboardSection === 6 && (
+                                    <div className="mt-8 pt-6 border-t border-slate-200">
+                                      <PramaFlowchartHub projectTitle={dashboardProjectTitle} />
+                                    </div>
+                                  )}
+
+                                  {/* INTERACTIVE FINANCIAL SIMULATOR (PILAR 3 & 13 ONLY) */}
+                                  {(activeDashboardSection === 3 || activeDashboardSection === 13) && (
+                                    <div className="mt-8 pt-6 border-t border-slate-200">
+                                      <InteractiveFinancialSimulator 
+                                        projectTitle={dashboardProjectTitle} 
+                                        division={activeDivision || "Logistics Swarnadwipa"}
+                                        initialCapex={chatBIState.initialCapex || 550}
+                                        salesIncrease={chatBIState.salesIncrease || 1200}
+                                      />
+                                    </div>
+                                  )}
+
+                                  {/* PRAMA LIVE COMPETITOR INTELLIGENCE HUB (PILAR 12 ONLY) */}
+                                  {activeDashboardSection === 12 && (
+                                    <div className="mt-8 pt-6 border-t border-slate-200">
+                                      <div className="bg-gradient-to-r from-violet-600 to-indigo-700 rounded-2xl p-5 text-white shadow-md relative overflow-hidden mb-6">
+                                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-10 -mt-10 blur-xl" />
+                                        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                          <div>
+                                            <span className="text-[10px] font-mono font-black tracking-widest text-violet-200 uppercase block mb-1">
+                                              PRAMA BUSINESS INTELLIGENCE
+                                            </span>
+                                            <h3 className="text-base md:text-lg font-black uppercase tracking-tight">
+                                              Competitor Intelligence & Project Grab Tracker
+                                            </h3>
+                                            <p className="text-xs text-indigo-100 font-semibold mt-1">
+                                              Analisis pemain logistik yang menguasai/mengincar proyek serupa serta rencana penetrasi eksploitasi celah Pancaran Group.
                                             </p>
                                           </div>
+                                          <button
+                                            type="button"
+                                            onClick={() => setIsAddingCompetitor(!isAddingCompetitor)}
+                                            className="px-4 py-2 bg-white hover:bg-slate-50 active:scale-95 text-indigo-900 text-xs font-black rounded-xl transition shadow-sm cursor-pointer border-none flex items-center gap-1.5 self-start md:self-auto"
+                                          >
+                                            <span>{isAddingCompetitor ? "Tutup Form Intel" : "Tambah Intel"}</span>
+                                          </button>
+                                        </div>
+                                      </div>
+
+                                      {/* ADD NEW COMPETITOR FORM */}
+                                      {isAddingCompetitor && (
+                                        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 mb-6 text-xs text-slate-700 animate-fadeIn">
+                                          <h4 className="font-extrabold text-slate-800 uppercase tracking-tight mb-4 border-b border-slate-200 pb-2">
+                                            Tambah Data Profil Kompetitor Baru
+                                          </h4>
+                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                              <label className="block font-bold text-slate-600 mb-1">Nama Kompetitor</label>
+                                              <input
+                                                type="text"
+                                                value={newCompName}
+                                                onChange={(e) => setNewCompName(e.target.value)}
+                                                placeholder="e.g. PT Samudera Logistik Indonesia"
+                                                className="w-full p-2.5 border border-slate-205 rounded-xl bg-white outline-none focus:border-indigo-500 font-semibold"
+                                              />
+                                            </div>
+                                            <div>
+                                              <label className="block font-bold text-slate-600 mb-1">Proyek Terkait / yang Pernah Diambil</label>
+                                              <input
+                                                type="text"
+                                                value={newCompHistory}
+                                                onChange={(e) => setNewCompHistory(e.target.value)}
+                                                placeholder="e.g. Kontrak Angkutan Pabrik Keramik Karawang"
+                                                className="w-full p-2.5 border border-slate-205 rounded-xl bg-white outline-none focus:border-indigo-500 font-semibold"
+                                              />
+                                            </div>
+                                            <div>
+                                              <label className="block font-bold text-slate-600 mb-1">Pangsa Pasar (%)</label>
+                                              <input
+                                                type="number"
+                                                value={newCompShare}
+                                                onChange={(e) => setNewCompShare(parseInt(e.target.value) || 0)}
+                                                className="w-full p-2.5 border border-slate-205 rounded-xl bg-white outline-none focus:border-indigo-500 font-semibold"
+                                                min="0"
+                                                max="100"
+                                              />
+                                            </div>
+                                            <div>
+                                              <label className="block font-bold text-slate-600 mb-1">Status Keberadaan Proyek</label>
+                                              <select
+                                                value={newCompStatus}
+                                                onChange={(e: any) => setNewCompStatus(e.target.value)}
+                                                className="w-full p-2.5 border border-slate-205 rounded-xl bg-white outline-none focus:border-indigo-500 font-bold"
+                                              >
+                                                <option value="Incumbent">Incumbent (Menguasai Kontrak)</option>
+                                                <option value="Bidding">Bidding (Mengincar Tender)</option>
+                                                <option value="Inactive">Inactive (Kurang Aktif)</option>
+                                                <option value="Displaced">Displaced (Berhasil Tergeser)</option>
+                                              </select>
+                                            </div>
+                                            <div>
+                                              <label className="block font-bold text-slate-600 mb-1">Kekuatan Utama</label>
+                                              <input
+                                                type="text"
+                                                value={newCompStrengths}
+                                                onChange={(e) => setNewCompStrengths(e.target.value)}
+                                                placeholder="e.g. Armada sangat melimpah, kedekatan pemda"
+                                                className="w-full p-2.5 border border-slate-205 rounded-xl bg-white outline-none focus:border-indigo-500 font-semibold"
+                                              />
+                                            </div>
+                                            <div>
+                                              <label className="block font-bold text-slate-600 mb-1">Kelemahan Terdeteksi</label>
+                                              <input
+                                                type="text"
+                                                value={newCompWeaknesses}
+                                                onChange={(e) => setNewCompWeaknesses(e.target.value)}
+                                                placeholder="e.g. Sistem manual, tidak ada manifes digital"
+                                                className="w-full p-2.5 border border-slate-205 rounded-xl bg-white outline-none focus:border-indigo-500 font-semibold"
+                                              />
+                                            </div>
+                                            <div>
+                                              <label className="block font-bold text-slate-600 mb-1">Skala Armada</label>
+                                              <input
+                                                type="text"
+                                                value={newCompArmada}
+                                                onChange={(e) => setNewCompArmada(e.target.value)}
+                                                placeholder="e.g. 50+ Unit Box, 10 Tronton"
+                                                className="w-full p-2.5 border border-slate-205 rounded-xl bg-white outline-none focus:border-indigo-500 font-semibold"
+                                              />
+                                            </div>
+                                            <div>
+                                              <label className="block font-bold text-slate-600 mb-1">Skor Kepatuhan Safety / K3 (0-100)</label>
+                                              <input
+                                                type="number"
+                                                value={newCompSafety}
+                                                onChange={(e) => setNewCompSafety(parseInt(e.target.value) || 0)}
+                                                className="w-full p-2.5 border border-slate-205 rounded-xl bg-white outline-none focus:border-indigo-500 font-semibold"
+                                                min="0"
+                                                max="100"
+                                              />
+                                            </div>
+                                          </div>
+                                          <div className="mt-4">
+                                            <label className="block font-bold text-slate-600 mb-1">Penjelasan Detail & Profil Strategis</label>
+                                            <textarea
+                                              value={newCompExpl}
+                                              onChange={(e) => setNewCompExpl(e.target.value)}
+                                              placeholder="Jelaskan detail profil kompetitor ini dan mengapa Pancaran bisa merebut pasarnya..."
+                                              className="w-full h-20 p-2.5 border border-slate-205 rounded-xl bg-white outline-none focus:border-indigo-500 font-semibold resize-none"
+                                            />
+                                          </div>
+                                          <div className="flex justify-end gap-2 mt-4">
+                                            <button
+                                              type="button"
+                                              onClick={() => setIsAddingCompetitor(false)}
+                                              className="px-4 py-2 bg-slate-200 hover:bg-slate-300 rounded-xl font-bold text-slate-700 transition cursor-pointer"
+                                            >
+                                              Batal
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                if (!newCompName.trim()) {
+                                                  alert("Mohon isi nama kompetitor!");
+                                                  return;
+                                                }
+                                                const added: CompetitorIntel = {
+                                                  id: `comp-custom-${Date.now()}`,
+                                                  name: newCompName,
+                                                  projectHistory: newCompHistory || "Mengincar proyek saat ini.",
+                                                  marketShare: newCompShare,
+                                                  status: newCompStatus,
+                                                  strengths: newCompStrengths || "Tidak dicantumkan.",
+                                                  weaknesses: newCompWeaknesses || "Tidak dicantumkan.",
+                                                  explanation: newCompExpl || "Data profil intel kompetitor khusus.",
+                                                  armadaScale: newCompArmada || "Tidak terdefinisi.",
+                                                  digitalSystems: newCompDigital,
+                                                  pricePoint: newCompPrice,
+                                                  safetyIndex: newCompSafety
+                                                };
+                                                setCompetitors(prev => [...prev, added]);
+                                                setIsAddingCompetitor(false);
+                                                // reset form
+                                                setNewCompName("");
+                                                setNewCompHistory("");
+                                                setNewCompShare(10);
+                                                setNewCompStrengths("");
+                                                setNewCompWeaknesses("");
+                                                setNewCompExpl("");
+                                                setNewCompArmada("");
+                                                setNewCompSafety(80);
+                                                alert("Berhasil menyimpan intel kompetitor baru!");
+                                              }}
+                                              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black shadow-sm transition cursor-pointer border-none"
+                                            >
+                                              Simpan Intel
+                                            </button>
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {/* COMPETITORS CARD GRID */}
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {competitors.map((comp) => {
+                                          const isSelected = selectedCompetitorId === comp.id;
+                                          return (
+                                            <div
+                                              key={comp.id}
+                                              onClick={() => setSelectedCompetitorId(isSelected ? null : comp.id)}
+                                              className={`border p-4.5 rounded-2xl transition cursor-pointer text-left relative overflow-hidden flex flex-col justify-between ${
+                                                isSelected
+                                                  ? "bg-violet-50/50 border-violet-400 shadow-md ring-1 ring-violet-400"
+                                                  : "bg-white hover:bg-slate-50 border-slate-200 shadow-sm"
+                                              }`}
+                                            >
+                                              <div>
+                                                <div className="flex justify-between items-start gap-2 mb-2">
+                                                  <div className="min-w-0">
+                                                    <h4 className="font-extrabold text-slate-800 text-[12px] uppercase tracking-tight truncate">
+                                                      {comp.name}
+                                                    </h4>
+                                                    <span className="text-[10px] text-slate-500 font-bold block truncate mt-0.5">
+                                                      {comp.projectHistory}
+                                                    </span>
+                                                  </div>
+                                                  <span
+                                                    className={`px-2 py-0.5 text-[8.5px] font-black rounded-full uppercase tracking-wider shrink-0 font-mono ${
+                                                      comp.status === "Incumbent"
+                                                        ? "bg-rose-100 text-rose-700"
+                                                        : comp.status === "Bidding"
+                                                        ? "bg-amber-100 text-amber-700"
+                                                        : comp.status === "Displaced"
+                                                        ? "bg-emerald-100 text-emerald-700"
+                                                        : "bg-slate-100 text-slate-600"
+                                                    }`}
+                                                  >
+                                                    {comp.status === "Incumbent"
+                                                      ? "Incumbent"
+                                                      : comp.status === "Bidding"
+                                                      ? "Bidding"
+                                                      : comp.status === "Displaced"
+                                                      ? "Tergeser"
+                                                      : "Inactive"}
+                                                  </span>
+                                                </div>
+
+                                                {/* Market share progress bar */}
+                                                <div className="mb-3.5 bg-slate-100 rounded-full h-2 overflow-hidden flex">
+                                                  <div
+                                                    className={`h-full rounded-full ${
+                                                      comp.status === "Incumbent" ? "bg-rose-500" : "bg-indigo-500"
+                                                    }`}
+                                                    style={{ width: `${comp.marketShare}%` }}
+                                                  />
+                                                </div>
+
+                                                <div className="grid grid-cols-2 gap-2 text-[10px] font-bold text-slate-500 mb-3.5 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                                                  <div>
+                                                    <span className="text-slate-400 block text-[8px] uppercase tracking-wider">Armada</span>
+                                                    <span className="text-slate-700">{comp.armadaScale}</span>
+                                                  </div>
+                                                  <div>
+                                                    <span className="text-slate-400 block text-[8px] uppercase tracking-wider">Safety Index</span>
+                                                    <span className="text-emerald-650">{comp.safetyIndex}% K3</span>
+                                                  </div>
+                                                </div>
+
+                                                {/* Strengths & Weaknesses snippets */}
+                                                <div className="space-y-1.5 text-[10.5px]">
+                                                  <div className="flex gap-1.5 items-start">
+                                                    <span className="text-emerald-500 font-black">✓</span>
+                                                    <p className="m-0 text-slate-600 leading-tight">
+                                                      <strong className="text-slate-700">Kekuatan:</strong> {comp.strengths}
+                                                    </p>
+                                                  </div>
+                                                  <div className="flex gap-1.5 items-start">
+                                                    <span className="text-rose-500 font-black">✗</span>
+                                                    <p className="m-0 text-slate-600 leading-tight">
+                                                      <strong className="text-slate-700">Kelemahan:</strong> {comp.weaknesses}
+                                                    </p>
+                                                  </div>
+                                                </div>
+                                              </div>
+
+                                              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[10px] font-black">
+                                                <span className="text-violet-600 hover:text-violet-800 flex items-center gap-1">
+                                                  <span>{isSelected ? "Tutup Detail" : "Buka Analisis Eksploitasi"}</span>
+                                                  <span>➔</span>
+                                                </span>
+                                                <button
+                                                  type="button"
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    if (confirm(`Hapus intel kompetitor "${comp.name}"?`)) {
+                                                      setCompetitors(prev => prev.filter(c => c.id !== comp.id));
+                                                      if (selectedCompetitorId === comp.id) {
+                                                        setSelectedCompetitorId(null);
+                                                      }
+                                                    }
+                                                  }}
+                                                  className="text-slate-400 hover:text-rose-600 transition bg-transparent border-none p-1 cursor-pointer"
+                                                  title="Hapus Intel"
+                                                >
+                                                  <Trash2 className="h-3.5 w-3.5" />
+                                                </button>
+                                              </div>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+
+                                      {/* EXPANDED DRILLDOWN OF SELECTED COMPETITOR */}
+                                      {(() => {
+                                        const selectedComp = competitors.find(c => c.id === selectedCompetitorId);
+                                        if (!selectedComp) return null;
+                                        return (
+                                          <div className="mt-6 bg-slate-900 text-white rounded-2xl p-5 border border-slate-800 shadow-xl animate-fadeIn text-left">
+                                            <div className="flex justify-between items-start gap-4 mb-4 border-b border-slate-800 pb-3">
+                                              <div>
+                                                <span className="text-[8px] font-mono font-black tracking-widest text-emerald-400 uppercase bg-emerald-950 border border-emerald-900 rounded px-2 py-0.5 inline-block mb-1.5">
+                                                  RENCANA EXPLOITASI CELAH PASAR PANCARAN SWARNADWIPA
+                                                </span>
+                                                <h4 className="text-xs md:text-sm font-extrabold uppercase tracking-tight">
+                                                  ANALISIS STRATEGIS BEATING {selectedComp.name}
+                                                </h4>
+                                              </div>
+                                              <button
+                                                type="button"
+                                                onClick={() => setSelectedCompetitorId(null)}
+                                                className="text-slate-400 hover:text-white bg-slate-800 p-1.5 rounded-lg transition cursor-pointer border-none font-bold text-xs"
+                                              >
+                                                Tutup
+                                              </button>
+                                            </div>
+
+                                            <p className="text-xs text-slate-300 leading-relaxed mb-4">
+                                              {selectedComp.explanation}
+                                            </p>
+
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 text-xs">
+                                              <div className="bg-white/5 p-3 rounded-xl border border-white/5">
+                                                <span className="text-indigo-300 block text-[9px] uppercase font-bold tracking-wider mb-1">
+                                                  Celah yang Diambil
+                                                </span>
+                                                <p className="m-0 text-slate-200 font-semibold leading-relaxed text-[10.5px]">
+                                                  Mengeksploitasi kelemahan pesaing pada aspek <strong>{selectedComp.weaknesses}</strong>.
+                                                </p>
+                                              </div>
+                                              <div className="bg-white/5 p-3 rounded-xl border border-white/5">
+                                                <span className="text-indigo-300 block text-[9px] uppercase font-bold tracking-wider mb-1">
+                                                  Pemicu Diferensiasi Pancaran
+                                                </span>
+                                                <p className="m-0 text-slate-200 font-semibold leading-relaxed text-[10.5px]">
+                                                  Teknologi IoT real-time, manifest tanpa kertas, serta asuransi Cargo Liability penuh.
+                                                </p>
+                                              </div>
+                                              <div className="bg-white/5 p-3 rounded-xl border border-white/5">
+                                                <span className="text-indigo-300 block text-[9px] uppercase font-bold tracking-wider mb-1">
+                                                  Target Konversi Pangsa Pasar
+                                                </span>
+                                                <p className="m-0 text-emerald-400 font-black leading-relaxed text-[10.5px]">
+                                                  Mengambil alih {(selectedComp.marketShare * 0.35).toFixed(0)}% pangsa dari {selectedComp.name} dalam 18 bulan.
+                                                </p>
+                                              </div>
+                                            </div>
+                                          </div>
                                         );
-                                      }
-
-                                      const strippedLine = textLine.replace(/\*\*/g, "");
-
-                                      return (
-                                        <p key={sIdx} className={`text-[11.5px] leading-relaxed text-slate-650 ${textLine.startsWith("**") ? "font-black text-indigo-950 mt-4 border-l-2 border-indigo-200 pl-2" : "font-semibold"} my-2.5 text-justify font-sans`}>
-                                          {strippedLine}
-                                        </p>
-                                      );
-                                    });
-                                  })()}
+                                      })()}
+                                    </div>
+                                  )}
                                 </div>
-                              </div>
+                              )}
 
                               {/* Approved electronic seal watermark */}
                               <div className="mt-6 pt-5 border-t border-slate-100 flex flex-wrap justify-between items-center gap-4 bg-slate-50 p-4 rounded-xl shrink-0 select-none">
@@ -4641,7 +5213,7 @@ ${lastMsgText}`;
                             </div>
                           ) : (
                             /* Live Interactive Workflow Diagram Scheme */
-                            <div className="xl:col-span-8 flex flex-col bg-slate-900 border border-slate-800 rounded-2xl p-5 min-h-[300px] text-white relative overflow-hidden select-none text-left">
+                            <div className={`${isWorkspaceExpanded ? "xl:col-span-12 min-h-[500px]" : "xl:col-span-8 min-h-[300px]"} flex flex-col bg-slate-900 border border-slate-800 rounded-2xl p-5 text-white relative overflow-hidden select-none text-left`}>
                               {/* Ambient style background animation */}
                               <style>{`
                                 @keyframes dash {
@@ -4779,48 +5351,50 @@ ${lastMsgText}`;
                           )}
 
                           {/* Interactive Preview & Guidelines Container */}
-                          <div className="xl:col-span-4 flex flex-col gap-4">
-                            {/* Executive Guideline Card */}
-                            <div className="bg-slate-900 text-white rounded-2xl p-4 border border-indigo-950 flex flex-col flex-grow text-xs leading-relaxed overflow-y-auto max-h-[320px] shadow-sm">
-                              <span className="text-[8px] font-mono font-black text-amber-400 tracking-widest uppercase mb-1">
-                                INDIKATOR KEPATUHAN & PEDOMAN
-                              </span>
-                              <h5 className="font-extrabold text-[12px] text-slate-200 mb-2 uppercase">
-                                Instruksi Panduan Kelayakan
-                              </h5>
-                              <p className="text-slate-300 text-[11px] mb-3 leading-normal font-semibold">
-                                Pastikan artikel memuat spesifikasi logistik logis PT Pancaran Group. Untuk bagian finansial, detail perhitungan amortisasi armada vacuum truck dan target margin ROI diestimasi 35% dekarbonisasi.
-                              </p>
-                              <div className="mt-auto pt-3 border-t border-slate-800 flex flex-col gap-2 font-mono text-[9px] text-slate-400">
-                                <div className="flex justify-between">
-                                  <span>Tingkat Risiko:</span>
-                                  <span className="text-rose-400 font-extrabold">TERKENDALIKAN</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span>Otoritas Timbang:</span>
-                                  <span className="text-indigo-400 font-extrabold">FESTRONIK INTEGRATED</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span>Standar Sertifikasi:</span>
-                                  <span className="text-emerald-400 font-extrabold">AMDAL / ISO 14001</span>
+                          {!isWorkspaceExpanded && (
+                            <div className="xl:col-span-4 flex flex-col gap-4">
+                              {/* Executive Guideline Card */}
+                              <div className="bg-slate-900 text-white rounded-2xl p-4 border border-indigo-950 flex flex-col flex-grow text-xs leading-relaxed overflow-y-auto max-h-[320px] shadow-sm">
+                                <span className="text-[8px] font-mono font-black text-amber-400 tracking-widest uppercase mb-1">
+                                  INDIKATOR KEPATUHAN & PEDOMAN
+                                </span>
+                                <h5 className="font-extrabold text-[12px] text-slate-200 mb-2 uppercase">
+                                  Instruksi Panduan Kelayakan
+                                </h5>
+                                <p className="text-slate-300 text-[11px] mb-3 leading-normal font-semibold">
+                                  Pastikan artikel memuat spesifikasi logistik logis PT Pancaran Group. Untuk bagian finansial, detail perhitungan amortisasi armada vacuum truck dan target margin ROI diestimasi 35% dekarbonisasi.
+                                </p>
+                                <div className="mt-auto pt-3 border-t border-slate-800 flex flex-col gap-2 font-mono text-[9px] text-slate-400">
+                                  <div className="flex justify-between">
+                                    <span>Tingkat Risiko:</span>
+                                    <span className="text-rose-400 font-extrabold">TERKENDALIKAN</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span>Otoritas Timbang:</span>
+                                    <span className="text-indigo-400 font-extrabold">FESTRONIK INTEGRATED</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span>Standar Sertifikasi:</span>
+                                    <span className="text-emerald-400 font-extrabold">AMDAL / ISO 14001</span>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
 
-                            {/* Reset state */}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setDashboardSectionsState(prev => ({
-                                  ...prev,
-                                  [activeDashboardSection]: activeSec.defaultContent
-                                }));
-                              }}
-                              className="w-full py-2 bg-slate-200 hover:bg-slate-300 active:scale-97 border border-slate-300 text-slate-700 font-bold text-[10.5px] rounded-xl cursor-pointer transition shadow-sm"
-                            >
-                              Pulihkan Teks Bawaan Pabrik
-                            </button>
-                          </div>
+                              {/* Reset state */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setDashboardSectionsState(prev => ({
+                                    ...prev,
+                                    [activeDashboardSection]: activeSec.defaultContent
+                                  }));
+                                }}
+                                className="w-full py-2 bg-slate-200 hover:bg-slate-300 active:scale-97 border border-slate-300 text-slate-700 font-bold text-[10.5px] rounded-xl cursor-pointer transition shadow-sm"
+                              >
+                                Pulihkan Teks Bawaan Pabrik
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
@@ -7263,6 +7837,16 @@ ${lastMsgText}`;
           pramaLogo={pramaLogo}
         />
 
+        <ExcelPreviewModal 
+          projectTitle={dashboardView === "chat_intelligence" ? (chatBIState.projectTitle || "Kajian Bisnis Intelijensi") : (dashboardProjectTitle || "Kajian 14 Pilar")}
+          division={dashboardView === "chat_intelligence" ? (chatBIState.division || "BD") : (activeDivision || "UMUM")}
+          isOpen={isExcelPreviewOpen}
+          onClose={() => setIsExcelPreviewOpen(false)}
+          initialCapex={dashboardView === "chat_intelligence" ? chatBIState.initialCapex : undefined}
+          annualSavings={dashboardView === "chat_intelligence" ? chatBIState.annualSavings : undefined}
+          salesIncrease={dashboardView === "chat_intelligence" ? chatBIState.salesIncrease : undefined}
+        />
+
         {isConfirmProjectUpdateOpen && (
           <div className="fixed inset-0 z-55 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md animate-fade-in" style={{ zIndex: 9999 }}>
             <div className="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl border border-slate-200 transition-all duration-300 transform scale-100 flex flex-col p-6 space-y-4">
@@ -8181,7 +8765,7 @@ ${lastMsgText}`;
                           {/* 1. Portal Illustration Background */}
                           <div className="absolute inset-0 w-full h-full overflow-hidden select-none z-0">
                             <img 
-                              src="/pancaran_illustration.jpg" 
+                              src="https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ" 
                               alt="Pancaran Group Logistics Illustration" 
                               referrerPolicy="no-referrer"
                               className="w-full h-full object-cover origin-center z-0 scale-[1.00]"
@@ -8248,7 +8832,7 @@ ${lastMsgText}`;
                       {/* 1. Portal Illustration Background */}
                       <div className="absolute inset-0 w-full h-full overflow-hidden select-none z-0">
                         <img 
-                          src="/pancaran_illustration.jpg" 
+                          src="https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ" 
                           alt="Pancaran Group Logistics Illustration" 
                           referrerPolicy="no-referrer"
                           className="w-full h-full object-cover origin-center z-0 scale-[1.00]"

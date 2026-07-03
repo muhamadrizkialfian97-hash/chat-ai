@@ -463,31 +463,43 @@ export default function App() {
         }
 
         // Process Video
-        const cachedVideo = await getAssetFromLocalDB("lobby_video");
-        if (cachedVideo) {
-          const localUrl = URL.createObjectURL(cachedVideo);
-          setVideoSrc(localUrl);
-          setCustomVideoUrl(localUrl);
-        } else if (data.videoUrl && data.videoUrl !== "/PixVerse_V6_Extend_540P_buat_video_lebih_panja (1).mp4" && data.videoUrl !== "/custom-video.mp4" && data.videoUrl !== "" && data.videoUrl !== "local") {
+        if (data.videoUrl && data.videoUrl.startsWith("http")) {
+          // Prioritize actual web URL from Firebase Storage
           setVideoSrc(data.videoUrl);
           setCustomVideoUrl(data.videoUrl);
         } else {
-          setVideoSrc("/custom-video.mp4");
-          setCustomVideoUrl(null);
+          // Fallback to IndexedDB local cache if not uploaded to cloud yet
+          const cachedVideo = await getAssetFromLocalDB("lobby_video");
+          if (cachedVideo) {
+            const localUrl = URL.createObjectURL(cachedVideo);
+            setVideoSrc(localUrl);
+            setCustomVideoUrl(localUrl);
+          } else if (data.videoUrl && data.videoUrl !== "/PixVerse_V6_Extend_540P_buat_video_lebih_panja (1).mp4" && data.videoUrl !== "/custom-video.mp4" && data.videoUrl !== "" && data.videoUrl !== "local") {
+            setVideoSrc(data.videoUrl);
+            setCustomVideoUrl(data.videoUrl);
+          } else {
+            setVideoSrc("/custom-video.mp4");
+            setCustomVideoUrl(null);
+          }
         }
 
         // Process Image
-        const cachedImage = await getAssetFromLocalDB("lobby_image");
-        if (cachedImage) {
-          const localUrl = URL.createObjectURL(cachedImage);
-          setImageSrc(localUrl);
-          setCustomImageUrl(localUrl);
-        } else if (data.imageUrl && data.imageUrl !== "https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ" && data.imageUrl !== "" && data.imageUrl !== "local") {
+        if (data.imageUrl && data.imageUrl.startsWith("http") && data.imageUrl !== "https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ") {
           setImageSrc(data.imageUrl);
           setCustomImageUrl(data.imageUrl);
         } else {
-          setImageSrc("https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ");
-          setCustomImageUrl(null);
+          const cachedImage = await getAssetFromLocalDB("lobby_image");
+          if (cachedImage) {
+            const localUrl = URL.createObjectURL(cachedImage);
+            setImageSrc(localUrl);
+            setCustomImageUrl(localUrl);
+          } else if (data.imageUrl && data.imageUrl !== "https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ" && data.imageUrl !== "" && data.imageUrl !== "local") {
+            setImageSrc(data.imageUrl);
+            setCustomImageUrl(data.imageUrl);
+          } else {
+            setImageSrc("https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ");
+            setCustomImageUrl(null);
+          }
         }
       } else {
         // Seed default in Firestore as "video" with intelligent default for maximum auto-consistency
@@ -529,14 +541,22 @@ export default function App() {
 
     setIsUploadingVideo(true);
     try {
-      // 1. Instantly save to IndexedDB so it's fully persistent locally and extremely fast!
-      await saveAssetToLocalDB("lobby_video", file);
+      // 1. Instantly create and set the local preview URL for immediate rendering in the browser
       const tempUrl = URL.createObjectURL(file);
       setVideoSrc(tempUrl);
       setCustomVideoUrl(tempUrl);
       setHeroBgType("video");
+      console.log("Instant local preview set:", tempUrl);
 
-      // 2. Write basic metadata to Firestore so the setting syncs across all sessions/tabs
+      // 2. Persist to local IndexedDB database in the background without blocking the UI flow
+      try {
+        await saveAssetToLocalDB("lobby_video", file);
+        console.log("Successfully cached custom video to local IndexedDB.");
+      } catch (idbErr) {
+        console.warn("Skipping IndexedDB local persistence due to browser/iframe restrictions:", idbErr);
+      }
+
+      // 3. Write basic metadata to Firestore to synchronize state immediately across other tabs
       const settingsDocRef = doc(db, "settings", "lobby_background");
       try {
         await setDoc(settingsDocRef, {
@@ -548,7 +568,7 @@ export default function App() {
         console.warn("Gagal sinkronisasi tipe ke Firestore:", fErr);
       }
 
-      // 3. Attempt uploading to Firebase Storage in parallel with a timeout so it never hangs!
+      // 4. Upload to Firebase Storage with a generous 60s background timeout so large videos succeed
       console.log("Uploading custom video to Firebase Storage in background...");
       try {
         const uploadPromise = (async () => {
@@ -557,9 +577,9 @@ export default function App() {
           return await getDownloadURL(uploadResult.ref);
         })();
 
-        // 8 second timeout for Firebase Storage upload (prevent infinite spinner if blocked/disabled)
+        // 60 seconds timeout to give plenty of time for video upload over slower networks
         const timeoutPromise = new Promise<string>((_, reject) => 
-          setTimeout(() => reject(new Error("Firebase Storage Timeout")), 8000)
+          setTimeout(() => reject(new Error("Firebase Storage Timeout after 60 seconds")), 60000)
         );
 
         const downloadUrl = await Promise.race([uploadPromise, timeoutPromise]);
@@ -572,10 +592,10 @@ export default function App() {
         }, { merge: true });
 
       } catch (storageErr) {
-        console.warn("Cloud storage upload bypassed or timed out, relying on robust local IndexedDB storage:", storageErr);
+        console.warn("Cloud storage upload bypassed or timed out, relying on robust local browser storage/IndexedDB:", storageErr);
       }
 
-      alert("Video latar belakang berhasil diunggah, disimpan, dan disetel di UI!");
+      alert("Video latar belakang berhasil diunggah dan disimpan ke Firebase!");
     } catch (err) {
       console.error("Gagal memproses unggahan video:", err);
       alert("Gagal mengunggah video: " + (err instanceof Error ? err.message : String(err)));

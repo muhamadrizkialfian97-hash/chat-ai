@@ -5,22 +5,45 @@ const DB_VERSION = 1;
 
 function getDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-    
-    request.onupgradeneeded = (event) => {
-      const db = request.result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME);
+    // 800ms safety timeout to prevent hanging in sandboxed or cross-origin iframes
+    const timeout = setTimeout(() => {
+      reject(new Error("IndexedDB connection timeout (sandboxed iframe constraint)"));
+    }, 800);
+
+    try {
+      if (!window.indexedDB) {
+        clearTimeout(timeout);
+        reject(new Error("IndexedDB is not supported in this browser/context"));
+        return;
       }
-    };
-    
-    request.onsuccess = () => {
-      resolve(request.result);
-    };
-    
-    request.onerror = () => {
-      reject(request.error);
-    };
+      
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      
+      request.onupgradeneeded = (event) => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+          db.createObjectStore(STORE_NAME);
+        }
+      };
+      
+      request.onsuccess = () => {
+        clearTimeout(timeout);
+        resolve(request.result);
+      };
+      
+      request.onerror = () => {
+        clearTimeout(timeout);
+        reject(request.error || new Error("IndexedDB open error"));
+      };
+      
+      request.onblocked = () => {
+        clearTimeout(timeout);
+        reject(new Error("IndexedDB open blocked"));
+      };
+    } catch (err) {
+      clearTimeout(timeout);
+      reject(err);
+    }
   });
 }
 

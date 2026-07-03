@@ -3502,23 +3502,15 @@ ${lastMsgText}`;
   if (showHeroLanding) {
     return (
       <div className="video-container" id="landing-hero-container">
-        {/* Google Drive Video Background - Autoplays, loops, muted, scaled to fit screen */}
-        <div className="absolute inset-0 w-full h-full overflow-hidden z-[-1] bg-slate-950">
-          {/* Fallback logistics background image */}
-          <img 
-            src="https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ" 
-            alt="Pancaran Group Logistics Illustration Fallback" 
-            referrerPolicy="no-referrer"
-            className="absolute inset-0 w-full h-full object-cover opacity-20 transition-all duration-1000"
-          />
-          <iframe
-            src="https://drive.google.com/file/d/1NZI_GzfppD9YX3bouJ7KeApvwwK1mWYq/preview?autoplay=1&mute=1&loop=1&controls=0&playlist=1NZI_GzfppD9YX3bouJ7KeApvwwK1mWYq"
-            title="PRAMA Background Video"
-            className="absolute top-1/2 left-1/2 w-[100vw] h-[56.25vw] min-h-[100vh] min-w-[177.77vh] -translate-x-1/2 -translate-y-1/2 border-none pointer-events-none scale-105"
-            allow="autoplay; encrypted-media; picture-in-picture"
-            allowFullScreen
-          />
-        </div>
+        <img 
+          src="https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ" 
+          alt="Pancaran Group Logistics Illustration" 
+          referrerPolicy="no-referrer"
+          className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 animate-fade-in scale-[1.00] origin-center"
+          style={{ zIndex: -1, opacity: 1.0 }}
+        />
+
+        {/* High-Resolution Corporate Logo overlay at top center removed as requested by user */}
 
         <div className="menu-content" id="landing-menu-content">
           <div className="flex justify-center w-full">

@@ -1,6 +1,6 @@
 {
-  "name": "PRAMA",
-  "description": "Project Management Analitic",
+  "name": "Prama Ai Agent Project Management",
+  "description": "Prama AI Agent - Project Management Analytics",
   "requestFramePermissions": ["microphone"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

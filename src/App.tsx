@@ -3675,7 +3675,7 @@ ${lastMsgText}`;
                 className="font-display text-4xl md:text-6xl lg:text-7xl font-semibold tracking-tight text-white leading-[1.1] mb-6 max-w-4xl"
                 style={{ height: "230px", width: "2000px" }}
               >
-                Proyek Lancar, Anggaran Aman dengan <span className="font-serif italic font-normal text-indigo-300">Prama AI Agent!</span> 💼✨
+                Proyek Lancar, Anggaran Aman dengan <span className="font-serif italic font-normal text-indigo-300">Prama AI Agent!</span>
               </h1>
 
               {/* Paragraph Description */}

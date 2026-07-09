@@ -82,6 +82,7 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Copy,
   Check,
   FileText,
@@ -110,7 +111,11 @@ import {
   Sunset,
   MessageSquareCode,
   Key,
-  Table
+  Table,
+  Rocket,
+  LayoutGrid,
+  Orbit,
+  Compass
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -364,6 +369,43 @@ export default function App() {
     return sessionStorage.getItem("prama_hero_dismissed") !== "true";
   });
 
+  const [landingActiveTab, setLandingActiveTab] = useState<"home" | "missions" | "technology">("home");
+
+  const scrollToSection = (sectionId: "home" | "missions" | "technology") => {
+    const el = document.getElementById(`section-${sectionId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
+  useEffect(() => {
+    if (!showHeroLanding) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const id = entry.target.id;
+            if (id === "section-home") setLandingActiveTab("home");
+            if (id === "section-missions") setLandingActiveTab("missions");
+            if (id === "section-technology") setLandingActiveTab("technology");
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
+
+    const home = document.getElementById("section-home");
+    const missions = document.getElementById("section-missions");
+    const tech = document.getElementById("section-technology");
+
+    if (home) observer.observe(home);
+    if (missions) observer.observe(missions);
+    if (tech) observer.observe(tech);
+
+    return () => observer.disconnect();
+  }, [showHeroLanding]);
+
 
 
   const [heroBgType, setHeroBgType] = useState<"video" | "image" | "illustration">(() => {
@@ -408,20 +450,18 @@ export default function App() {
 
   // Force autoplay under modern browser autoplay policies (Chrome, Safari, Firefox, Edge, and iOS/Android)
   useEffect(() => {
-    if (heroBgType === "video") {
-      if (showHeroLanding && landingVideoRef.current) {
-        landingVideoRef.current.muted = true;
-        landingVideoRef.current.play().catch((playErr) => {
-          console.log("Landing video automatic playback started or pending user interaction:", playErr);
-        });
-      } else if (!showHeroLanding && !user && authVideoRef.current) {
-        authVideoRef.current.muted = true;
-        authVideoRef.current.play().catch((playErr) => {
-          console.log("Auth video automatic playback started or pending user interaction:", playErr);
-        });
-      }
+    if (showHeroLanding && landingVideoRef.current) {
+      landingVideoRef.current.muted = true;
+      landingVideoRef.current.play().catch((playErr) => {
+        console.log("Landing video automatic playback started or pending user interaction:", playErr);
+      });
+    } else if (!showHeroLanding && !user && authVideoRef.current) {
+      authVideoRef.current.muted = true;
+      authVideoRef.current.play().catch((playErr) => {
+        console.log("Auth video automatic playback started or pending user interaction:", playErr);
+      });
     }
-  }, [heroBgType, videoSrc, showHeroLanding, user]);
+  }, [showHeroLanding, landingActiveTab, user]);
 
   // Synchronize background settings across ALL deploys (Local, Vercel, GitHub) via Firestore settings doc
   useEffect(() => {
@@ -3538,43 +3578,438 @@ ${lastMsgText}`;
     );
   }
 
-  // Render 1.5: Cinematic Photo Landing/Intro Screen
+  // Render 1.5: Cinematic Photo Landing/Intro Screen with Snap Scroll Navigation
   if (showHeroLanding) {
     return (
-      <div className="video-container" id="landing-hero-container">
-        <video 
-          id="bg-video"
-          src="https://res.cloudinary.com/x6bejifd/video/upload/v1783584845/PixVerse_V6_Extend_540P_buat_video_lebih_panja_1_online-video-cutter.com_1_lzv2t0.mp4"
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 animate-fade-in"
-          style={{ zIndex: -1, opacity: 1.0, objectFit: "cover" }}
-        />
-
-        {/* High-Resolution Corporate Logo overlay at top center removed as requested by user */}
-
-        <div className="menu-content" id="landing-menu-content">
-          <div className="flex justify-center w-full">
-            <button 
-              type="button"
-              className="font-sans font-bold select-none cursor-pointer tracking-wider uppercase transition-all duration-300 transform hover:-translate-y-1 active:scale-95 text-xs text-white flex items-center gap-2.5 px-9 py-4 bg-[#00D285] hover:bg-[#00BA74] rounded-full shadow-2xl mt-52 sm:mt-[25rem] md:mt-[31rem]" 
-              id="btn-mulai-jelajah"
-              style={{
-                backgroundImage: "linear-gradient(135deg, #00D285, #0056b3)",
-                boxShadow: "0 10px 25px -5px rgba(0, 210, 133, 0.4), 0 8px 10px -6px rgba(0, 86, 179, 0.3)"
-              }}
-              onClick={() => {
-                setShowHeroLanding(false);
-                sessionStorage.setItem("prama_hero_dismissed", "true");
-              }}
-            >
-              <Globe className="h-4 w-4 text-white" />
-              <span>JELAJAHI SISTEM PORTAL</span>
-            </button>
+      <div 
+        className="w-full h-screen overflow-y-auto snap-y snap-mandatory scroll-smooth bg-slate-950 relative select-none" 
+        id="landing-scroll-container"
+      >
+        {/* Pinned Navigation Header */}
+        <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-5 md:px-16 w-full bg-gradient-to-b from-slate-950/80 to-transparent backdrop-blur-xs">
+          {/* Brand/Logo Left */}
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-indigo-500/10 rounded-lg border border-indigo-500/30 backdrop-blur-sm shadow-inner">
+              <Sun className="h-5 w-5 text-indigo-400 animate-[spin_12s_linear_infinite]" />
+            </div>
+            <span className="font-display font-bold text-sm tracking-[0.2em] text-white">
+              CORE AEROSPACE
+            </span>
           </div>
-        </div>
+
+          {/* Navigation Pill Center */}
+          <nav className="hidden md:flex items-center gap-8 bg-slate-950/60 backdrop-blur-md border border-slate-800/60 rounded-full px-8 py-2.5 text-[11px] font-semibold tracking-wider text-slate-300">
+            <button 
+              onClick={() => scrollToSection("home")} 
+              className={`hover:text-white transition-colors cursor-pointer relative uppercase ${landingActiveTab === "home" ? "text-white" : "text-slate-400"}`}
+            >
+              HOME
+              {landingActiveTab === "home" && (
+                <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse"></span>
+              )}
+            </button>
+            <button 
+              onClick={() => scrollToSection("missions")} 
+              className={`hover:text-white transition-colors cursor-pointer relative uppercase ${landingActiveTab === "missions" ? "text-white" : "text-slate-400"}`}
+            >
+              MISSIONS
+              {landingActiveTab === "missions" && (
+                <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse"></span>
+              )}
+            </button>
+            <button 
+              onClick={() => scrollToSection("technology")} 
+              className={`hover:text-white transition-colors cursor-pointer relative uppercase ${landingActiveTab === "technology" ? "text-white" : "text-slate-400"}`}
+            >
+              TECHNOLOGY
+              {landingActiveTab === "technology" && (
+                <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse"></span>
+              )}
+            </button>
+          </nav>
+
+          {/* Menu Button Right */}
+          <button 
+            onClick={() => {
+              setShowHeroLanding(false);
+              sessionStorage.setItem("prama_hero_dismissed", "true");
+            }}
+            className="group bg-slate-950/60 hover:bg-indigo-600 text-white px-5 py-2.5 rounded-full text-xs font-semibold tracking-wider flex items-center gap-2 border border-slate-800/80 backdrop-blur-sm transition-all duration-300 cursor-pointer shadow-lg hover:border-indigo-500/40"
+          >
+            <span>Masuk Portal</span>
+            <LogIn className="h-3.5 w-3.5 text-slate-400 group-hover:text-white transition-colors duration-300" />
+          </button>
+        </header>
+
+        {/* SECTION 1: HOME */}
+        <section 
+          id="section-home" 
+          className="relative w-full h-screen snap-start flex flex-col justify-between pt-24 overflow-hidden bg-transparent z-20"
+        >
+          {/* Background Video (Dont Zoom In, Keep Loop & Mute) */}
+          <video 
+            ref={landingActiveTab === "home" ? landingVideoRef : undefined}
+            autoPlay
+            loop
+            muted
+            playsInline
+            src="https://res.cloudinary.com/x6bejifd/video/upload/v1783584845/PixVerse_V6_Extend_540P_buat_video_lebih_panja_1_online-video-cutter.com_1_lzv2t0.mp4"
+            className="absolute inset-0 w-full h-full -z-10 bg-[#020617]"
+            style={{ objectFit: "contain" }}
+          />
+          {/* Dark Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-slate-950/35 to-slate-950/85 -z-10 pointer-events-none" />
+
+          {/* Glowing bottom divider boundary */}
+          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-indigo-500/30 z-30 shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
+          {/* Main Hero Content (Bottom-Left Aligned) */}
+          <main className="relative z-10 flex-1 flex flex-col justify-center px-6 md:px-16 w-full max-w-6xl text-left">
+            <div className="animate-fade-in duration-500">
+              {/* Subtitle */}
+              <div className="flex items-center gap-3 text-xs text-indigo-400 font-bold uppercase tracking-[0.25em] mb-4 md:mb-6">
+                <span className="w-8 h-[2px] bg-indigo-500"></span>
+                <span>AEROSPACE SYSTEMS ENG.</span>
+              </div>
+
+              {/* Main Display Headline */}
+              <h1 className="font-display text-4xl md:text-6xl lg:text-7xl font-semibold tracking-tight text-white leading-[1.1] mb-6 max-w-4xl">
+                Building <span className="font-serif italic font-normal text-indigo-300">spacecraft</span> that venture beyond
+              </h1>
+
+              {/* Paragraph Description */}
+              <p className="text-sm md:text-base text-slate-300/90 leading-relaxed max-w-xl font-sans mb-8">
+                Advanced aerospace team designing high-performance orbital spacecraft, heavy payload boosters, and reliable fuel delivery systems.
+              </p>
+
+              {/* Call-to-Action Buttons */}
+              <div className="flex flex-wrap items-center gap-4">
+                <button 
+                  type="button"
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-4 rounded-full text-xs font-semibold uppercase tracking-wider flex items-center gap-2.5 transition-all duration-300 shadow-lg shadow-indigo-600/30 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                  onClick={() => {
+                    setShowHeroLanding(false);
+                    sessionStorage.setItem("prama_hero_dismissed", "true");
+                  }}
+                >
+                  <Rocket className="h-4 w-4 text-white" />
+                  <span>START ESTIMATOR</span>
+                </button>
+                <button 
+                  type="button"
+                  className="border border-white/20 hover:border-white/50 bg-white/5 hover:bg-white/10 text-white px-8 py-4 rounded-full text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                  onClick={() => scrollToSection("missions")}
+                >
+                  <span>EXPLORE FLEET</span>
+                  <span className="text-slate-400 font-normal ml-1">›</span>
+                </button>
+              </div>
+            </div>
+          </main>
+
+          {/* Footer (Partners + Stats) */}
+          <footer className="relative z-10 w-full px-6 py-4 md:px-16 md:py-8 flex flex-col md:flex-row md:items-end md:justify-between gap-6 md:gap-4">
+            {/* Partners Left */}
+            <div className="flex flex-col gap-3">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.25em]">
+                OUR AEROSPACE FLIGHT PARTNERS:
+              </span>
+              <div className="flex flex-wrap items-center gap-2.5">
+                {["NASA", "SPACEX", "ESA", "JAXA"].map((partner) => (
+                  <div 
+                    key={partner} 
+                    className="border border-slate-800/80 bg-slate-950/40 rounded-full px-4 py-2 flex items-center gap-2 text-[11px] font-semibold tracking-widest text-slate-300 backdrop-blur-sm"
+                  >
+                    <span className="w-1 h-1 bg-indigo-500 rounded-full animate-pulse"></span>
+                    <span>{partner}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Scroll indicator center */}
+            <div 
+              onClick={() => scrollToSection("missions")}
+              className="hidden lg:flex flex-col items-center gap-1.5 text-slate-400 hover:text-white transition-colors cursor-pointer group"
+            >
+              <span className="text-[10px] font-bold tracking-[0.2em] uppercase">SCROLL DOWN</span>
+              <ChevronDown className="h-4 w-4 animate-bounce text-indigo-400 group-hover:text-indigo-300" />
+            </div>
+
+            {/* Stats Right */}
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="bg-slate-950/40 backdrop-blur-md border border-slate-800/50 rounded-2xl p-4 flex items-center gap-4 w-44 md:w-52 shadow-xl hover:border-indigo-500/20 transition-all duration-300">
+                <div className="p-2.5 bg-indigo-500/10 rounded-xl border border-indigo-500/20 text-indigo-400">
+                  <Rocket className="h-5 w-5" />
+                </div>
+                <div className="flex flex-col text-left">
+                  <span className="text-[9px] text-slate-500 font-bold tracking-widest uppercase">
+                    TOTAL FLIGHTS
+                  </span>
+                  <span className="text-xl md:text-2xl font-bold tracking-tight text-white mt-0.5">
+                    400+
+                  </span>
+                </div>
+              </div>
+
+              <div className="bg-slate-950/40 backdrop-blur-md border border-slate-800/50 rounded-2xl p-4 flex items-center gap-4 w-44 md:w-52 shadow-xl hover:border-indigo-500/20 transition-all duration-300">
+                <div className="p-2.5 bg-indigo-500/10 rounded-xl border border-indigo-500/20 text-indigo-400">
+                  <Orbit className="h-5 w-5" />
+                </div>
+                <div className="flex flex-col text-left">
+                  <span className="text-[9px] text-slate-500 font-bold tracking-widest uppercase">
+                    ACTIVE ORBITS
+                  </span>
+                  <span className="text-xl md:text-2xl font-bold tracking-tight text-white mt-0.5">
+                    230+
+                  </span>
+                </div>
+              </div>
+            </div>
+          </footer>
+        </section>
+
+        {/* SECTION 2: MISSIONS */}
+        <section 
+          id="section-missions" 
+          className="relative w-full h-screen snap-start flex flex-col justify-between pt-24 overflow-hidden bg-transparent z-20"
+        >
+          {/* Background Video (Missions, Loop & Mute) */}
+          <video 
+            ref={landingActiveTab === "missions" ? landingVideoRef : undefined}
+            autoPlay
+            loop
+            muted
+            playsInline
+            src="https://res.cloudinary.com/djamo6ge4/video/upload/v1779812550/kling_20260527_Image_to_Video_generate_s_68_0_kcwrxg.mp4"
+            className="absolute inset-0 w-full h-full object-cover -z-10"
+          />
+          {/* Dark Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-slate-950/35 to-slate-950/85 -z-10 pointer-events-none" />
+
+          {/* Glowing bottom divider boundary */}
+          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-indigo-500/30 z-30 shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
+          {/* Main Hero Content (Bottom-Left Aligned) */}
+          <main className="relative z-10 flex-1 flex flex-col justify-center px-6 md:px-16 w-full max-w-6xl text-left">
+            <div className="animate-fade-in duration-500">
+              {/* Subtitle */}
+              <div className="flex items-center gap-3 text-xs text-indigo-400 font-bold uppercase tracking-[0.25em] mb-4 md:mb-6">
+                <span className="w-8 h-[2px] bg-indigo-500"></span>
+                <span>ACTIVE MISSIONS CONTROL</span>
+              </div>
+
+              {/* Main Display Headline */}
+              <h1 className="font-display text-4xl md:text-6xl lg:text-7xl font-semibold tracking-tight text-white leading-[1.1] mb-6 max-w-4xl">
+                Expanding the <span className="font-serif italic font-normal text-indigo-300">horizons</span> of humanity
+              </h1>
+
+              {/* Paragraph Description */}
+              <p className="text-sm md:text-base text-slate-300/90 leading-relaxed max-w-xl font-sans mb-8">
+                Managing autonomous orbital delivery networks, interplanetary exploration probes, and lunar habitability infrastructure deployments.
+              </p>
+
+              {/* Call-to-Action Buttons */}
+              <div className="flex flex-wrap items-center gap-4">
+                <button 
+                  type="button"
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-4 rounded-full text-xs font-semibold uppercase tracking-wider flex items-center gap-2.5 transition-all duration-300 shadow-lg shadow-indigo-600/30 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                  onClick={() => {
+                    setShowHeroLanding(false);
+                    sessionStorage.setItem("prama_hero_dismissed", "true");
+                  }}
+                >
+                  <Compass className="h-4 w-4 text-white" />
+                  <span>START ESTIMATOR</span>
+                </button>
+                <button 
+                  type="button"
+                  className="border border-white/20 hover:border-white/50 bg-white/5 hover:bg-white/10 text-white px-8 py-4 rounded-full text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                  onClick={() => scrollToSection("technology")}
+                >
+                  <span>MISSION LOGS</span>
+                  <span className="text-slate-400 font-normal ml-1">›</span>
+                </button>
+              </div>
+            </div>
+          </main>
+
+          {/* Footer (Partners + Stats) */}
+          <footer className="relative z-10 w-full px-6 py-4 md:px-16 md:py-8 flex flex-col md:flex-row md:items-end md:justify-between gap-6 md:gap-4">
+            {/* Partners Left */}
+            <div className="flex flex-col gap-3">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.25em]">
+                OUR AEROSPACE FLIGHT PARTNERS:
+              </span>
+              <div className="flex flex-wrap items-center gap-2.5">
+                {["NASA", "SPACEX", "ESA", "JAXA"].map((partner) => (
+                  <div 
+                    key={partner} 
+                    className="border border-slate-800/80 bg-slate-950/40 rounded-full px-4 py-2 flex items-center gap-2 text-[11px] font-semibold tracking-widest text-slate-300 backdrop-blur-sm"
+                  >
+                    <span className="w-1 h-1 bg-indigo-500 rounded-full animate-pulse"></span>
+                    <span>{partner}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Scroll indicator center */}
+            <div 
+              onClick={() => scrollToSection("technology")}
+              className="hidden lg:flex flex-col items-center gap-1.5 text-slate-400 hover:text-white transition-colors cursor-pointer group"
+            >
+              <span className="text-[10px] font-bold tracking-[0.2em] uppercase">SCROLL DOWN</span>
+              <ChevronDown className="h-4 w-4 animate-bounce text-indigo-400 group-hover:text-indigo-300" />
+            </div>
+
+            {/* Stats Right */}
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="bg-slate-950/40 backdrop-blur-md border border-slate-800/50 rounded-2xl p-4 flex items-center gap-4 w-44 md:w-52 shadow-xl hover:border-indigo-500/20 transition-all duration-300">
+                <div className="p-2.5 bg-indigo-500/10 rounded-xl border border-indigo-500/20 text-indigo-400">
+                  <Rocket className="h-5 w-5" />
+                </div>
+                <div className="flex flex-col text-left">
+                  <span className="text-[9px] text-slate-500 font-bold tracking-widest uppercase">
+                    CURRENT TARGETS
+                  </span>
+                  <span className="text-xl md:text-2xl font-bold tracking-tight text-white mt-0.5">
+                    Moon & Mars
+                  </span>
+                </div>
+              </div>
+
+              <div className="bg-slate-950/40 backdrop-blur-md border border-slate-800/50 rounded-2xl p-4 flex items-center gap-4 w-44 md:w-52 shadow-xl hover:border-indigo-500/20 transition-all duration-300">
+                <div className="p-2.5 bg-indigo-500/10 rounded-xl border border-indigo-500/20 text-indigo-400">
+                  <Orbit className="h-5 w-5" />
+                </div>
+                <div className="flex flex-col text-left">
+                  <span className="text-[9px] text-slate-500 font-bold tracking-widest uppercase">
+                    ACTIVE PROBES
+                  </span>
+                  <span className="text-xl md:text-2xl font-bold tracking-tight text-white mt-0.5">
+                    45 Active
+                  </span>
+                </div>
+              </div>
+            </div>
+          </footer>
+        </section>
+
+        {/* SECTION 3: TECHNOLOGY */}
+        <section 
+          id="section-technology" 
+          className="relative w-full h-screen snap-start flex flex-col justify-between pt-24 overflow-hidden bg-transparent z-20"
+        >
+          {/* Background Video (Technology, Loop & Mute) */}
+          <video 
+            ref={landingActiveTab === "technology" ? landingVideoRef : undefined}
+            autoPlay
+            loop
+            muted
+            playsInline
+            src="https://res.cloudinary.com/x6bejifd/video/upload/v1783584845/PixVerse_V6_Extend_540P_buat_video_lebih_panja_1_online-video-cutter.com_1_lzv2t0.mp4"
+            className="absolute inset-0 w-full h-full object-cover -z-10"
+          />
+          {/* Dark Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-slate-950/35 to-slate-950/85 -z-10 pointer-events-none" />
+          {/* Main Hero Content (Bottom-Left Aligned) */}
+          <main className="relative z-10 flex-1 flex flex-col justify-center px-6 md:px-16 w-full max-w-6xl text-left">
+            <div className="animate-fade-in duration-500">
+              {/* Subtitle */}
+              <div className="flex items-center gap-3 text-xs text-indigo-400 font-bold uppercase tracking-[0.25em] mb-4 md:mb-6">
+                <span className="w-8 h-[2px] bg-indigo-500"></span>
+                <span>ENGINEERING & INNOVATION</span>
+              </div>
+
+              {/* Main Display Headline */}
+              <h1 className="font-display text-4xl md:text-6xl lg:text-7xl font-semibold tracking-tight text-white leading-[1.1] mb-6 max-w-4xl">
+                Pioneering the <span className="font-serif italic font-normal text-indigo-300">propulsion</span> of tomorrow
+              </h1>
+
+              {/* Paragraph Description */}
+              <p className="text-sm md:text-base text-slate-300/90 leading-relaxed max-w-xl font-sans mb-8">
+                From vacuum-optimized methalox engines to carbon-composite heat shielding, our R&D pushes the absolute limits of physical engineering.
+              </p>
+
+              {/* Call-to-Action Buttons */}
+              <div className="flex flex-wrap items-center gap-4">
+                <button 
+                  type="button"
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-4 rounded-full text-xs font-semibold uppercase tracking-wider flex items-center gap-2.5 transition-all duration-300 shadow-lg shadow-indigo-600/30 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                  onClick={() => {
+                    setShowHeroLanding(false);
+                    sessionStorage.setItem("prama_hero_dismissed", "true");
+                  }}
+                >
+                  <Orbit className="h-4 w-4 text-white" />
+                  <span>START ESTIMATOR</span>
+                </button>
+                <button 
+                  type="button"
+                  className="border border-white/20 hover:border-white/50 bg-white/5 hover:bg-white/10 text-white px-8 py-4 rounded-full text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                  onClick={() => {
+                    setShowHeroLanding(false);
+                    sessionStorage.setItem("prama_hero_dismissed", "true");
+                  }}
+                >
+                  <span>TECH SPECIFICATIONS</span>
+                  <span className="text-slate-400 font-normal ml-1">›</span>
+                </button>
+              </div>
+            </div>
+          </main>
+
+          {/* Footer (Partners + Stats) */}
+          <footer className="relative z-10 w-full px-6 py-4 md:px-16 md:py-8 flex flex-col md:flex-row md:items-end md:justify-between gap-6 md:gap-4">
+            {/* Partners Left */}
+            <div className="flex flex-col gap-3">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.25em]">
+                OUR AEROSPACE FLIGHT PARTNERS:
+              </span>
+              <div className="flex flex-wrap items-center gap-2.5">
+                {["NASA", "SPACEX", "ESA", "JAXA"].map((partner) => (
+                  <div 
+                    key={partner} 
+                    className="border border-slate-800/80 bg-slate-950/40 rounded-full px-4 py-2 flex items-center gap-2 text-[11px] font-semibold tracking-widest text-slate-300 backdrop-blur-sm"
+                  >
+                    <span className="w-1 h-1 bg-indigo-500 rounded-full animate-pulse"></span>
+                    <span>{partner}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Stats Right */}
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="bg-slate-950/40 backdrop-blur-md border border-slate-800/50 rounded-2xl p-4 flex items-center gap-4 w-44 md:w-52 shadow-xl hover:border-indigo-500/20 transition-all duration-300">
+                <div className="p-2.5 bg-indigo-500/10 rounded-xl border border-indigo-500/20 text-indigo-400">
+                  <Rocket className="h-5 w-5" />
+                </div>
+                <div className="flex flex-col text-left">
+                  <span className="text-[9px] text-slate-500 font-bold tracking-widest uppercase">
+                    ENGINE EFFICIENCY
+                  </span>
+                  <span className="text-xl md:text-2xl font-bold tracking-tight text-white mt-0.5">
+                    98.4%
+                  </span>
+                </div>
+              </div>
+
+              <div className="bg-slate-950/40 backdrop-blur-md border border-slate-800/50 rounded-2xl p-4 flex items-center gap-4 w-44 md:w-52 shadow-xl hover:border-indigo-500/20 transition-all duration-300">
+                <div className="p-2.5 bg-indigo-500/10 rounded-xl border border-indigo-500/20 text-indigo-400">
+                  <Orbit className="h-5 w-5" />
+                </div>
+                <div className="flex flex-col text-left">
+                  <span className="text-[9px] text-slate-500 font-bold tracking-widest uppercase">
+                    PATENTS ISSUED
+                  </span>
+                  <span className="text-xl md:text-2xl font-bold tracking-tight text-white mt-0.5">
+                    120+
+                  </span>
+                </div>
+              </div>
+            </div>
+          </footer>
+        </section>
       </div>
     );
   }

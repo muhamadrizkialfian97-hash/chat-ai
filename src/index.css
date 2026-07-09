@@ -102,9 +102,9 @@
   left: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover; /* Memastikan video memenuhi seluruh layar tanpa distorsi */
+  object-fit: contain; /* Memastikan video pas tanpa dizoom atau dicrop */
   z-index: -1; /* Menempatkan video di paling belakang */
-  opacity: 0.65; /* Dimmed untuk meningkatkan keterbacaan teks */
+  opacity: 1.0; /* Full opacity sesuai request */
 }
 
 /* Mengatur posisi teks/tombol menu persis di tengah layar */

@@ -39,9 +39,9 @@ export const defaultChatIntelligence: ChatIntelligenceState = {
   projectTitle: "Integrasi Inteligensi Chat & Sistem Operasi Logistik Digital",
   targetCompany: "PT Pancaran Group Services",
   division: "Commercial & Business Development",
-  initialCapex: 8900, // Rp 8.9 Miliar
-  annualSavings: 2800, // Rp 2.8 Miliar / Tahun
-  salesIncrease: 1600, // Rp 1.6 Miliar / Tahun
+  initialCapex: 1650, // Rp 1.65 Miliar
+  annualSavings: 450, // Rp 450 Juta / Tahun
+  salesIncrease: 1620, // Rp 1.62 Miliar / Tahun
   recommendations: [
     {
       id: "rec-1",
@@ -49,7 +49,7 @@ export const defaultChatIntelligence: ChatIntelligenceState = {
       category: "Digital",
       description: "Penerapan perutean prediktif otomatis untuk armada truk hulu-ke-hilir untuk mengurangi empty kilometers sebesar 18% dan menghemat biaya bahan bakar.",
       impact: "High",
-      cost: 450
+      cost: 120
     },
     {
       id: "rec-2",
@@ -57,7 +57,7 @@ export const defaultChatIntelligence: ChatIntelligenceState = {
       category: "Digital",
       description: "Mengintegrasikan sistem ERP internal langsung ke server pelaporan KLHK untuk validasi elektronik manifes angkutan limbah.",
       impact: "High",
-      cost: 250
+      cost: 80
     },
     {
       id: "rec-3",
@@ -65,7 +65,7 @@ export const defaultChatIntelligence: ChatIntelligenceState = {
       category: "SDM",
       description: "Menyelenggarakan program beasiswa sertifikasi internal Kemenhub untuk mempercepat pengadaan kru tangki terampil siap kerja.",
       impact: "Medium",
-      cost: 350
+      cost: 60
     },
     {
       id: "rec-4",
@@ -73,7 +73,7 @@ export const defaultChatIntelligence: ChatIntelligenceState = {
       category: "Operasional",
       description: "Pemasangan sensor tekanan pneumatik modular jarak jauh untuk memitigasi bahaya kebocoran angkutan gas & tangki vakum baja tebal secara realtime.",
       impact: "High",
-      cost: 550
+      cost: 90
     }
   ],
   swot: {

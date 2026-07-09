@@ -1142,16 +1142,30 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
       });
 
       if (res && res.ok) {
-        const data = await res.json();
-        mainAnswerText = data.text || data.response || "";
+        const responseText = await res.text();
+        try {
+          const data = JSON.parse(responseText);
+          mainAnswerText = data.text || data.response || "";
+        } catch (e) {
+          throw new Error(`Server mengembalikan respon tidak valid (HTTP ${res.status}). Format data tidak dikenali.`);
+        }
       } else {
         let errorDetail = "Gagal memperoleh respons asisten.";
-        try {
-          const errData = await res.json();
-          if (errData && errData.error) {
-            errorDetail = typeof errData.error === "object" ? (errData.error.message || JSON.stringify(errData.error)) : errData.error;
+        if (res) {
+          const responseText = await res.text();
+          try {
+            const errData = JSON.parse(responseText);
+            if (errData && errData.error) {
+              errorDetail = typeof errData.error === "object" ? (errData.error.message || JSON.stringify(errData.error)) : errData.error;
+            }
+          } catch (e) {
+            if (responseText && (responseText.trim().startsWith("<") || responseText.includes("<!DOCTYPE") || responseText.includes("<!doctype"))) {
+              errorDetail = `Server mengembalikan respon tidak valid (HTTP ${res.status}). Hubungan terputus atau server sedang sibuk.`;
+            } else {
+              errorDetail = responseText || errorDetail;
+            }
           }
-        } catch (e) {}
+        }
         throw new Error(errorDetail);
       }
 
@@ -2247,11 +2261,21 @@ ${focusText}`;
         if (parsedData && parsedData.error) {
           errorMsg = typeof parsedData.error === "object" ? (parsedData.error.message || JSON.stringify(parsedData.error)) : parsedData.error;
         } else {
-          errorMsg = responseText || errorMsg;
+          if (responseText && (responseText.trim().startsWith("<") || responseText.includes("<!DOCTYPE") || responseText.includes("<!doctype"))) {
+            errorMsg = `Server mengembalikan respon tidak valid (HTTP ${res.status}). Hubungan terputus atau server sedang sibuk.`;
+          } else {
+            errorMsg = responseText || errorMsg;
+          }
         }
         throw new Error(errorMsg);
       } else if (res) {
-        const answerData = await res.json();
+        let answerData: any = null;
+        const responseText = await res.text();
+        try {
+          answerData = JSON.parse(responseText);
+        } catch (e) {
+          throw new Error(`Server mengembalikan respon tidak valid (HTTP ${res.status}). Format data tidak dikenali.`);
+        }
         mainAnswerText = answerData.text || "";
       }
 
@@ -2534,11 +2558,18 @@ ${focusText}`;
             errorMsg = JSON.stringify(errObj);
           }
         } else {
-          errorMsg = responseText || errorMsg;
+          if (responseText && (responseText.trim().startsWith("<") || responseText.includes("<!DOCTYPE") || responseText.includes("<!doctype"))) {
+            errorMsg = `Server mengembalikan respon tidak valid (HTTP ${res.status}). Hubungan terputus atau server sedang sibuk.`;
+          } else {
+            errorMsg = responseText || errorMsg;
+          }
         }
         throw new Error(errorMsg);
       } else {
-        const answerData = parsedData || JSON.parse(responseText);
+        const answerData = parsedData;
+        if (!answerData) {
+          throw new Error(`Server mengembalikan respon tidak valid (HTTP ${res.status}). Format data tidak dikenali.`);
+        }
         mainAnswerText = answerData.text;
         searchSources = answerData.sources || [];
       }
@@ -2945,11 +2976,20 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
       let errorMsg = "Gagal memperoleh respons dari server.";
       if (parsedData && parsedData.error) {
         errorMsg = typeof parsedData.error === "object" ? (parsedData.error.message || JSON.stringify(parsedData.error)) : parsedData.error;
+      } else {
+        if (responseText && (responseText.trim().startsWith("<") || responseText.includes("<!DOCTYPE") || responseText.includes("<!doctype"))) {
+          errorMsg = `Server mengembalikan respon tidak valid (HTTP ${res.status}). Hubungan terputus atau server sedang sibuk.`;
+        } else {
+          errorMsg = responseText || errorMsg;
+        }
       }
       throw new Error(errorMsg);
     }
 
-    const data = parsedData || JSON.parse(responseText);
+    const data = parsedData;
+    if (!data) {
+      throw new Error(`Server mengembalikan respon tidak valid (HTTP ${res.status}). Format data tidak dikenali.`);
+    }
     return data.text || "";
   };
 
@@ -3502,12 +3542,15 @@ ${lastMsgText}`;
   if (showHeroLanding) {
     return (
       <div className="video-container" id="landing-hero-container">
-        <img 
-          src="https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ" 
-          alt="Pancaran Group Logistics Illustration" 
-          referrerPolicy="no-referrer"
-          className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 animate-fade-in scale-[1.00] origin-center"
-          style={{ zIndex: -1, opacity: 1.0 }}
+        <video 
+          id="bg-video"
+          src="https://res.cloudinary.com/djamo6ge4/video/upload/v1779807528/kling_20260523_Image_to_Video_Create_a_s_5524_0_e3hkw1.mp4" 
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-contain transition-all duration-1000 animate-fade-in"
+          style={{ zIndex: -1, opacity: 1.0, objectFit: "contain" }}
         />
 
         {/* High-Resolution Corporate Logo overlay at top center removed as requested by user */}

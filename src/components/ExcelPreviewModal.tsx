@@ -29,15 +29,15 @@ export function ExcelPreviewModal({
   const [som, setSom] = useState<number>(15000000000);
 
   // Capex components
-  const [capexTrucks, setCapexTrucks] = useState<number>(450000000);
-  const [capexIT, setCapexIT] = useState<number>(50000000);
-  const [capexGudang, setCapexGudang] = useState<number>(30000000);
-  const [capexIzin, setCapexIzin] = useState<number>(20000000);
+  const [capexTrucks, setCapexTrucks] = useState<number>(1336500000);
+  const [capexIT, setCapexIT] = useState<number>(148500000);
+  const [capexGudang, setCapexGudang] = useState<number>(99000000);
+  const [capexIzin, setCapexIzin] = useState<number>(66000000);
 
   // Year 1-3 Revenue Projections
-  const [revenueY1, setRevenueY1] = useState<number>(1200000000);
-  const [revenueY2, setRevenueY2] = useState<number>(1500000000);
-  const [revenueY3, setRevenueY3] = useState<number>(1800000000);
+  const [revenueY1, setRevenueY1] = useState<number>(1620000000);
+  const [revenueY2, setRevenueY2] = useState<number>(2025000000);
+  const [revenueY3, setRevenueY3] = useState<number>(2430000000);
 
   // Year 1-3 OPEX components
   const [gajiY1, setGajiY1] = useState<number>(240000000);
@@ -61,22 +61,21 @@ export function ExcelPreviewModal({
       if (initialCapex && initialCapex > 0) {
         // Convert Juta to Full IDR
         const capexFull = initialCapex * 1000000;
-        setCapexTrucks(Math.round(capexFull * 0.70));
-        setCapexIT(Math.round(capexFull * 0.15));
-        setCapexGudang(Math.round(capexFull * 0.10));
-        setCapexIzin(Math.round(capexFull * 0.05));
+        setCapexTrucks(Math.round(capexFull * 0.81));
+        setCapexIT(Math.round(capexFull * 0.09));
+        setCapexGudang(Math.round(capexFull * 0.06));
+        setCapexIzin(Math.round(capexFull * 0.04));
       }
       if (salesIncrease && salesIncrease > 0) {
         const revFull = salesIncrease * 1000000;
         setRevenueY1(revFull);
-        setRevenueY2(Math.round(revFull * 1.20));
-        setRevenueY3(Math.round(revFull * 1.45));
-      }
-      if (salesIncrease && salesIncrease > 0) {
-        const estSom = salesIncrease * 10 * 1000000; // SOM is 10x Year 1 sales
+        setRevenueY2(Math.round(revFull * 1.25));
+        setRevenueY3(Math.round(revFull * 1.50));
+
+        const estSom = salesIncrease * 12.5 * 1000000;
         setSom(estSom);
         setSam(estSom * 5);
-        setTam(estSom * 25);
+        setTam(estSom * 33.3);
       }
     }
   }, [isOpen, initialCapex, salesIncrease, annualSavings]);

@@ -12,8 +12,8 @@ interface InteractiveFinancialSimulatorProps {
 export function InteractiveFinancialSimulator({
   projectTitle,
   division = "Logistics Swarnadwipa",
-  initialCapex = 550, // default Rp 550 Juta
-  salesIncrease = 1200 // default Rp 1.2 Miliar
+  initialCapex = 1650, // default Rp 1.65 Miliar
+  salesIncrease = 1620 // default Rp 1.62 Miliar
 }: InteractiveFinancialSimulatorProps) {
   const [activeTab, setActiveTab] = useState<"tamsamsom" | "pl">("tamsamsom");
 
@@ -22,16 +22,16 @@ export function InteractiveFinancialSimulator({
   const [sam, setSam] = useState<number>(75000000000);  // Rp 75 Miliar
   const [som, setSom] = useState<number>(15000000000);  // Rp 15 Miliar
 
-  // Capex components (Default total Rp 550 Juta)
-  const [capexTrucks, setCapexTrucks] = useState<number>(450000000); // Rp 450 Juta
-  const [capexIT, setCapexIT] = useState<number>(50000000);        // Rp 50 Miliar/Juta
-  const [capexGudang, setCapexGudang] = useState<number>(30000000);  // Rp 30 Juta
-  const [capexIzin, setCapexIzin] = useState<number>(20000000);      // Rp 20 Juta
+  // Capex components (Default total Rp 1.65 Miliar)
+  const [capexTrucks, setCapexTrucks] = useState<number>(1336500000); // Rp 1.336.500.000 (3 units @ Rp 445.5 Juta)
+  const [capexIT, setCapexIT] = useState<number>(148500000);        // Rp 148.5 Juta
+  const [capexGudang, setCapexGudang] = useState<number>(99000000);  // Rp 99 Juta
+  const [capexIzin, setCapexIzin] = useState<number>(66000000);      // Rp 66 Juta
 
-  // Year 1-3 Revenue Projections (Default Rp 1.2 Miliar, Y2 Rp 1.5M, Y3 Rp 1.8M)
-  const [revenueY1, setRevenueY1] = useState<number>(1200000000);
-  const [revenueY2, setRevenueY2] = useState<number>(1500000000);
-  const [revenueY3, setRevenueY3] = useState<number>(1800000000);
+  // Year 1-3 Revenue Projections (Default Rp 1.62 Miliar, Y2 Rp 2.02M, Y3 Rp 2.43M)
+  const [revenueY1, setRevenueY1] = useState<number>(1620000000);
+  const [revenueY2, setRevenueY2] = useState<number>(2025000000);
+  const [revenueY3, setRevenueY3] = useState<number>(2430000000);
 
   // Year 1-3 OPEX components
   const [gajiY1, setGajiY1] = useState<number>(240000000);
@@ -510,7 +510,7 @@ export function InteractiveFinancialSimulator({
                     className="w-full h-full text-right outline-none border-none px-2 text-[10.5px] font-mono text-slate-800"
                   />
                 </td>
-                <td colSpan={2} className="border border-slate-300 px-2 italic text-slate-500 text-left">Misal: DP Vacuum &amp; Box Truck Swarnadwipa</td>
+                <td colSpan={2} className="border border-slate-300 px-2 italic text-slate-500 text-left">Misal: 3 Unit Truk Engkel</td>
                 <td className="border border-slate-200 bg-[#fafafa]"></td>
               </tr>
 

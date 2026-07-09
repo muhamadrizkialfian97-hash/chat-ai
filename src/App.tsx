@@ -3549,8 +3549,8 @@ ${lastMsgText}`;
           loop
           muted
           playsInline
-          className="absolute inset-0 w-full h-full object-contain transition-all duration-1000 animate-fade-in"
-          style={{ zIndex: -1, opacity: 1.0, objectFit: "contain" }}
+          className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 animate-fade-in"
+          style={{ zIndex: -1, opacity: 1.0, objectFit: "cover" }}
         />
 
         {/* High-Resolution Corporate Logo overlay at top center removed as requested by user */}

@@ -3544,13 +3544,13 @@ ${lastMsgText}`;
       <div className="video-container" id="landing-hero-container">
         <video 
           id="bg-video"
-          src="https://res.cloudinary.com/x6bejifd/video/upload/v1783575356/PixVerse_V5_Image_Text_1080P_%E9%95%9C%E5%A4%B4%E7%8E%AF%E7%BB%95_%E6%BB%91%E6%9D%BF%E5%BF%AB%E9%80%9F%E5%9C%A8%E8%A1%97%E9%81%93%E4%B8%8A%E6%BB%91%E8%A1%8C_-_Copy_wmsinc.mp4"
+          src="https://res.cloudinary.com/x6bejifd/video/upload/v1783584845/PixVerse_V6_Extend_540P_buat_video_lebih_panja_1_online-video-cutter.com_1_lzv2t0.mp4"
           autoPlay
           loop
           muted
           playsInline
-          className="absolute inset-0 w-full h-full object-contain transition-all duration-1000 animate-fade-in"
-          style={{ zIndex: -1, opacity: 1.0, objectFit: "contain" }}
+          className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 animate-fade-in"
+          style={{ zIndex: -1, opacity: 1.0, objectFit: "cover" }}
         />
 
         {/* High-Resolution Corporate Logo overlay at top center removed as requested by user */}

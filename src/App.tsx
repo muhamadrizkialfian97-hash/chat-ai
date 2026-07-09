@@ -3671,17 +3671,39 @@ ${lastMsgText}`;
               </div>
 
               {/* Main Display Headline */}
-              <h1 className="font-display text-4xl md:text-6xl lg:text-7xl font-semibold tracking-tight text-white leading-[1.1] mb-6 max-w-4xl">
+              <h1 
+                className="font-display text-4xl md:text-6xl lg:text-7xl font-semibold tracking-tight text-white leading-[1.1] mb-6 max-w-4xl"
+                style={{ height: "230px", width: "2000px" }}
+              >
                 Proyek Lancar, Anggaran Aman dengan <span className="font-serif italic font-normal text-indigo-300">Prama AI Agent!</span> 💼✨
               </h1>
 
               {/* Paragraph Description */}
-              <p className="text-sm md:text-base text-slate-300/90 leading-relaxed max-w-xl font-sans mb-8">
-                Advanced aerospace team designing high-performance orbital spacecraft, heavy payload boosters, and reliable fuel delivery systems.
-              </p>
+              <div className="text-sm md:text-base text-slate-200/90 leading-relaxed max-w-2xl font-sans mb-8 space-y-4">
+                <p>
+                  Sebagai Project Management Analytics pintar, <strong className="text-indigo-300 font-bold">Prama AI</strong> siap menjadi support system andalan yang memberikan Anda:
+                </p>
+                <div className="space-y-3 pt-1">
+                  <div className="flex items-start gap-2.5">
+                    <span className="text-lg leading-none select-none mt-0.5">🎯</span>
+                    <p className="text-xs md:text-sm text-slate-300">
+                      <strong className="text-white font-semibold">Solusi Strategis Interaktif:</strong> Prama tidak sekadar menampilkan data, tapi aktif memberikan rekomendasi taktis. Navigasi proyek Anda kini jadi lebih presisi, prediktif, dan siap menghadapi segala risiko di lapangan.
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <span className="text-lg leading-none select-none mt-0.5">📉</span>
+                    <p className="text-xs md:text-sm text-slate-300">
+                      <strong className="text-white font-semibold">Efisiensi Finansial Mutakhir:</strong> Deteksi dini potensi pembengkakan biaya (cost-overrun) secara otomatis, memastikan setiap keputusan strategis tetap selaras dengan efisiensi anggaran.
+                    </p>
+                  </div>
+                </div>
+              </div>
 
               {/* Call-to-Action Buttons */}
-              <div className="flex flex-wrap items-center gap-4">
+              <div 
+                className="flex flex-wrap items-center gap-4"
+                style={{ height: "15.9531px", width: "1024.03px" }}
+              >
                 <button 
                   type="button"
                   className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-4 rounded-full text-xs font-semibold uppercase tracking-wider flex items-center gap-2.5 transition-all duration-300 shadow-lg shadow-indigo-600/30 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"

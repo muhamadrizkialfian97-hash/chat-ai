@@ -3646,7 +3646,7 @@ ${lastMsgText}`;
           id="section-home" 
           className="relative w-full h-screen snap-start flex flex-col justify-between pt-24 overflow-hidden bg-transparent z-20"
         >
-          {/* Background Video (Dont Zoom In, Keep Loop & Mute) */}
+          {/* Background Video (Full Screen, Keep Loop & Mute) */}
           <video 
             ref={landingActiveTab === "home" ? landingVideoRef : undefined}
             autoPlay
@@ -3654,8 +3654,7 @@ ${lastMsgText}`;
             muted
             playsInline
             src="https://res.cloudinary.com/x6bejifd/video/upload/v1783584845/PixVerse_V6_Extend_540P_buat_video_lebih_panja_1_online-video-cutter.com_1_lzv2t0.mp4"
-            className="absolute inset-0 w-full h-full -z-10 bg-[#020617]"
-            style={{ objectFit: "contain" }}
+            className="absolute inset-0 w-full h-full object-cover -z-10 bg-[#020617]"
           />
           {/* Dark Overlay */}
           <div className="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-slate-950/35 to-slate-950/85 -z-10 pointer-events-none" />
@@ -3673,7 +3672,7 @@ ${lastMsgText}`;
 
               {/* Main Display Headline */}
               <h1 className="font-display text-4xl md:text-6xl lg:text-7xl font-semibold tracking-tight text-white leading-[1.1] mb-6 max-w-4xl">
-                Building <span className="font-serif italic font-normal text-indigo-300">spacecraft</span> that venture beyond
+                Proyek Lancar, Anggaran Aman dengan <span className="font-serif italic font-normal text-indigo-300">Prama AI Agent!</span> 💼✨
               </h1>
 
               {/* Paragraph Description */}
@@ -3781,7 +3780,7 @@ ${lastMsgText}`;
             muted
             playsInline
             src="https://res.cloudinary.com/djamo6ge4/video/upload/v1779812550/kling_20260527_Image_to_Video_generate_s_68_0_kcwrxg.mp4"
-            className="absolute inset-0 w-full h-full object-cover -z-10"
+            className="absolute inset-0 w-full h-full object-cover -z-10 scale-[1.12] origin-center"
           />
           {/* Dark Overlay */}
           <div className="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-slate-950/35 to-slate-950/85 -z-10 pointer-events-none" />
@@ -3906,8 +3905,8 @@ ${lastMsgText}`;
             loop
             muted
             playsInline
-            src="https://res.cloudinary.com/x6bejifd/video/upload/v1783584845/PixVerse_V6_Extend_540P_buat_video_lebih_panja_1_online-video-cutter.com_1_lzv2t0.mp4"
-            className="absolute inset-0 w-full h-full object-cover -z-10"
+            src="https://res.cloudinary.com/djamo6ge4/video/upload/v1779807528/kling_20260523_Image_to_Video_Create_a_s_5524_0_e3hkw1.mp4"
+            className="absolute inset-0 w-full h-full object-cover -z-10 scale-[1.12] origin-center"
           />
           {/* Dark Overlay */}
           <div className="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-slate-950/35 to-slate-950/85 -z-10 pointer-events-none" />

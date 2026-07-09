@@ -3583,14 +3583,17 @@ ${lastMsgText}`;
   if (!activeUser) {
     return (
       <div className="relative min-h-screen flex items-center justify-center px-4 py-12 font-sans overflow-hidden">
-        {/* Brand Background Image */}
+        {/* Brand Background Video */}
         <div className="absolute inset-0 z-0">
-          <img 
-            src="https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ" 
-            alt="Pancaran Group Logistics Illustration" 
-            referrerPolicy="no-referrer"
-            className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 animate-fade-in scale-[1.00] origin-center"
-            style={{ zIndex: -1 }}
+          <video 
+            id="auth-bg-video"
+            src="https://res.cloudinary.com/x6bejifd/video/upload/v1783584845/PixVerse_V6_Extend_540P_buat_video_lebih_panja_1_online-video-cutter.com_1_lzv2t0.mp4"
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 animate-fade-in"
+            style={{ zIndex: -1, opacity: 1.0, objectFit: "cover" }}
           />
           {/* Elegant Dark/Blur Overlay to focus and elevate contrast */}
           <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm" />

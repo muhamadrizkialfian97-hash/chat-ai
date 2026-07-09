@@ -3667,7 +3667,7 @@ ${lastMsgText}`;
               {/* Subtitle */}
               <div className="flex items-center gap-3 text-xs text-indigo-400 font-bold uppercase tracking-[0.25em] mb-4 md:mb-6">
                 <span className="w-8 h-[2px] bg-indigo-500"></span>
-                <span>AEROSPACE SYSTEMS ENG.</span>
+                <span>( Powered By Digital Solution )</span>
               </div>
 
               {/* Main Display Headline */}

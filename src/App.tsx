@@ -3715,14 +3715,6 @@ ${lastMsgText}`;
                   <Rocket className="h-4 w-4 text-white" />
                   <span>START ESTIMATOR</span>
                 </button>
-                <button 
-                  type="button"
-                  className="border border-white/20 hover:border-white/50 bg-white/5 hover:bg-white/10 text-white px-8 py-4 rounded-full text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
-                  onClick={() => scrollToSection("missions")}
-                >
-                  <span>EXPLORE FLEET</span>
-                  <span className="text-slate-400 font-normal ml-1">›</span>
-                </button>
               </div>
             </div>
           </main>
@@ -3758,20 +3750,6 @@ ${lastMsgText}`;
 
             {/* Stats Right */}
             <div className="flex flex-wrap items-center gap-4">
-              <div className="bg-slate-950/40 backdrop-blur-md border border-slate-800/50 rounded-2xl p-4 flex items-center gap-4 w-44 md:w-52 shadow-xl hover:border-indigo-500/20 transition-all duration-300">
-                <div className="p-2.5 bg-indigo-500/10 rounded-xl border border-indigo-500/20 text-indigo-400">
-                  <Rocket className="h-5 w-5" />
-                </div>
-                <div className="flex flex-col text-left">
-                  <span className="text-[9px] text-slate-500 font-bold tracking-widest uppercase">
-                    TOTAL FLIGHTS
-                  </span>
-                  <span className="text-xl md:text-2xl font-bold tracking-tight text-white mt-0.5">
-                    400+
-                  </span>
-                </div>
-              </div>
-
               <div className="bg-slate-950/40 backdrop-blur-md border border-slate-800/50 rounded-2xl p-4 flex items-center gap-4 w-44 md:w-52 shadow-xl hover:border-indigo-500/20 transition-all duration-300">
                 <div className="p-2.5 bg-indigo-500/10 rounded-xl border border-indigo-500/20 text-indigo-400">
                   <Orbit className="h-5 w-5" />

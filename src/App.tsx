@@ -4223,9 +4223,10 @@ ${lastMsgText}`;
 
         {/* Auth Card wrapper with elevated relative z-index */}
         <motion.div 
-          initial={{ opacity: 0, scale: 0.4, filter: "blur(12px)", y: 80 }}
-          animate={{ opacity: 1, scale: 1, filter: "blur(0px)", y: 0 }}
-          transition={{ type: "spring", stiffness: 90, damping: 15, delay: 0.15 }}
+          initial={{ opacity: 0, scale: 0.35, rotateX: 12, filter: "blur(15px)", y: 80 }}
+          animate={{ opacity: 1, scale: 1, rotateX: 0, filter: "blur(0px)", y: 0 }}
+          transition={{ type: "spring", stiffness: 70, damping: 13, mass: 1.1, delay: 0.15 }}
+          style={{ perspective: "1200px", transformStyle: "preserve-3d" }}
           className="relative z-10 w-full max-w-4xl bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl overflow-hidden grid grid-cols-1 md:grid-cols-2 border border-white/20"
         >
           
@@ -4541,9 +4542,10 @@ ${lastMsgText}`;
 
           {dashboardView === "saved_docs" ? (
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 15, filter: "blur(10px)" }}
-              animate={{ opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }}
-              transition={{ type: "spring", stiffness: 100, damping: 15, mass: 1 }}
+              initial={{ opacity: 0, scale: 0.35, rotateX: 12, y: 80, filter: "blur(15px)" }}
+              animate={{ opacity: 1, scale: 1, rotateX: 0, y: 0, filter: "blur(0px)" }}
+              transition={{ type: "spring", stiffness: 70, damping: 13, mass: 1.1 }}
+              style={{ perspective: "1200px", transformStyle: "preserve-3d" }}
               className="max-w-5xl mx-auto text-left bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden w-full h-[650px] flex flex-col"
             >
               <div className="bg-slate-900 px-6 py-4 flex items-center justify-between text-white border-b border-slate-800 shrink-0">
@@ -4586,9 +4588,10 @@ ${lastMsgText}`;
             </motion.div>
           ) : dashboardView === "approval_requests" ? (
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 15, filter: "blur(10px)" }}
-              animate={{ opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }}
-              transition={{ type: "spring", stiffness: 100, damping: 15, mass: 1 }}
+              initial={{ opacity: 0, scale: 0.35, rotateX: 12, y: 80, filter: "blur(15px)" }}
+              animate={{ opacity: 1, scale: 1, rotateX: 0, y: 0, filter: "blur(0px)" }}
+              transition={{ type: "spring", stiffness: 70, damping: 13, mass: 1.1 }}
+              style={{ perspective: "1200px", transformStyle: "preserve-3d" }}
               className="max-w-4xl mx-auto text-left bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden w-full h-[600px] flex flex-col"
             >
               <div className="bg-slate-900 px-6 py-4 flex items-center justify-between text-white border-b border-slate-800 shrink-0">
@@ -4839,9 +4842,10 @@ ${lastMsgText}`;
             </motion.div>
           ) : dashboardView === "project_dashboard" ? (
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 15, filter: "blur(10px)" }}
-              animate={{ opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }}
-              transition={{ type: "spring", stiffness: 100, damping: 15, mass: 1 }}
+              initial={{ opacity: 0, scale: 0.35, rotateX: 12, y: 80, filter: "blur(15px)" }}
+              animate={{ opacity: 1, scale: 1, rotateX: 0, y: 0, filter: "blur(0px)" }}
+              transition={{ type: "spring", stiffness: 70, damping: 13, mass: 1.1 }}
+              style={{ perspective: "1200px", transformStyle: "preserve-3d" }}
               className="max-w-full mx-auto text-left bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden w-full min-h-[680px] flex flex-col transition-all duration-300"
             >
               {/* Header */}
@@ -6911,9 +6915,10 @@ ${lastMsgText}`;
             </motion.div>
           ) : dashboardView === "chat_intelligence" ? (
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 15, filter: "blur(10px)" }}
-              animate={{ opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }}
-              transition={{ type: "spring", stiffness: 100, damping: 15, mass: 1 }}
+              initial={{ opacity: 0, scale: 0.35, rotateX: 12, y: 80, filter: "blur(15px)" }}
+              animate={{ opacity: 1, scale: 1, rotateX: 0, y: 0, filter: "blur(0px)" }}
+              transition={{ type: "spring", stiffness: 70, damping: 13, mass: 1.1 }}
+              style={{ perspective: "1200px", transformStyle: "preserve-3d" }}
               className="max-w-full mx-auto text-left bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden w-full min-h-[680px] flex flex-col transition-all duration-300"
             >
               {/* Header */}
@@ -7695,9 +7700,10 @@ ${lastMsgText}`;
             </motion.div>
           ) : dashboardView === "robot_voice" ? (
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 15, filter: "blur(10px)" }}
-              animate={{ opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }}
-              transition={{ type: "spring", stiffness: 100, damping: 15, mass: 1 }}
+              initial={{ opacity: 0, scale: 0.35, rotateX: 12, y: 80, filter: "blur(15px)" }}
+              animate={{ opacity: 1, scale: 1, rotateX: 0, y: 0, filter: "blur(0px)" }}
+              transition={{ type: "spring", stiffness: 70, damping: 13, mass: 1.1 }}
+              style={{ perspective: "1200px", transformStyle: "preserve-3d" }}
               className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-6 p-1 transition-all duration-300 font-sans text-left items-stretch"
             >
               {/* LEFT COLUMN: 3D ROBOT STAGE */}
@@ -8123,9 +8129,10 @@ ${lastMsgText}`;
           ) : (
             /* Division Bento-like Selection Grid */
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 15, filter: "blur(10px)" }}
-              animate={{ opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }}
-              transition={{ type: "spring", stiffness: 100, damping: 15, mass: 1 }}
+              initial={{ opacity: 0, scale: 0.35, rotateX: 12, y: 80, filter: "blur(15px)" }}
+              animate={{ opacity: 1, scale: 1, rotateX: 0, y: 0, filter: "blur(0px)" }}
+              transition={{ type: "spring", stiffness: 70, damping: 13, mass: 1.1 }}
+              style={{ perspective: "1200px", transformStyle: "preserve-3d" }}
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 text-left max-w-[1350px] mx-auto px-6 w-full"
             >
               {divisions.map((div) => {
@@ -8484,9 +8491,10 @@ ${lastMsgText}`;
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9, filter: "blur(10px)" }}
-      animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-      transition={{ type: "spring", stiffness: 100, damping: 15, mass: 1 }}
+      initial={{ opacity: 0, scale: 0.35, rotateX: 12, y: 80, filter: "blur(15px)" }}
+      animate={{ opacity: 1, scale: 1, rotateX: 0, y: 0, filter: "blur(0px)" }}
+      transition={{ type: "spring", stiffness: 70, damping: 13, mass: 1.1 }}
+      style={{ perspective: "1200px", transformStyle: "preserve-3d" }}
       className="flex h-screen flex-col overflow-hidden bg-slate-100 font-sans text-slate-800 transition-colors duration-250"
     >
       

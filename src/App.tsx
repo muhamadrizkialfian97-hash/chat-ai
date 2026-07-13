@@ -8169,7 +8169,7 @@ ${lastMsgText}`;
                               e.stopPropagation();
                               setActiveDivision(div.id);
                             }}
-                            className="w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 px-6 md:px-[160px] lg:px-[210px] text-xs font-black tracking-wide transition shadow-md bg-indigo-600 hover:bg-indigo-700 text-white border border-indigo-500/30 cursor-pointer hover:scale-101"
+                            className="w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 px-4 text-xs font-black tracking-wide transition shadow-md bg-indigo-600 hover:bg-indigo-700 text-white border border-indigo-500/30 cursor-pointer hover:scale-101"
                           >
                             <span>Chat Model AI Agent Prama</span>
                             <ArrowRight className="h-3.5 w-3.5 shrink-0" />
@@ -8215,7 +8215,7 @@ ${lastMsgText}`;
                         e.stopPropagation();
                         setDashboardView("project_dashboard");
                       }}
-                      className="w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 px-6 md:px-[160px] lg:px-[210px] text-xs font-black tracking-wide transition shadow-md bg-indigo-600 hover:bg-indigo-700 text-white border border-indigo-500/30 cursor-pointer hover:scale-101"
+                      className="w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 px-4 text-xs font-black tracking-wide transition shadow-md bg-indigo-600 hover:bg-indigo-700 text-white border border-indigo-500/30 cursor-pointer hover:scale-101"
                     >
                       <LayoutDashboard className="h-4 w-4 shrink-0 text-white" />
                       <span>Dashboard Chat AI Agent Prama</span>

@@ -3756,7 +3756,7 @@ ${lastMsgText}`;
               animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
               exit={{ opacity: 0, y: -100, scale: 0.4, filter: "blur(12px)" }}
               transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute inset-0 w-full h-full flex flex-col justify-between pt-24 overflow-hidden bg-transparent z-20"
+              className="absolute inset-0 w-full h-full flex flex-col justify-between pt-16 md:pt-20 overflow-hidden bg-transparent z-20"
             >
               {/* Background Video (Full Screen, Keep Loop & Mute) */}
               <video 
@@ -3781,36 +3781,36 @@ ${lastMsgText}`;
                   initial={{ opacity: 0, scale: 0.4, filter: "blur(12px)" }}
                   animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
                   transition={{ type: "spring", stiffness: 90, damping: 15, delay: 0.1 }}
-                  className="bg-[#090d16]/75 backdrop-blur-md border border-indigo-500/30 rounded-3xl p-6 md:p-8 max-w-2xl shadow-2xl relative overflow-hidden group"
+                  className="bg-[#090d16]/75 backdrop-blur-md border border-indigo-500/30 rounded-3xl p-4 sm:p-5 md:p-6 max-w-2xl shadow-2xl relative overflow-hidden group"
                 >
                   <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none group-hover:bg-indigo-400/10 transition-all duration-300" />
                   
                   {/* Subtitle */}
-                  <div className="flex items-center gap-3 text-xs text-indigo-400 font-bold uppercase tracking-[0.25em] mb-4 md:mb-6">
+                  <div className="flex items-center gap-3 text-xs text-indigo-400 font-bold uppercase tracking-[0.25em] mb-2 md:mb-3">
                     <span className="w-8 h-[2px] bg-indigo-500"></span>
                     <span>( Powered By Digital Solution )</span>
                   </div>
 
                   {/* Main Display Headline */}
-                  <h1 className="font-display text-3xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-white leading-[1.1] mb-6">
+                  <h1 className="font-display text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold tracking-tight text-white leading-tight mb-3 md:mb-4">
                     Proyek Lancar, Anggaran Aman dengan <span className="font-serif italic font-normal text-indigo-300">Prama AI Agent!</span>
                   </h1>
 
                   {/* Paragraph Description */}
-                  <div className="text-xs md:text-sm text-slate-200/90 leading-relaxed font-sans mb-8 space-y-4">
-                    <p>
+                  <div className="text-sm text-slate-200/90 leading-relaxed font-sans mb-4 md:mb-5 space-y-2.5 md:space-y-3">
+                    <p className="text-[13px] sm:text-sm">
                       Sebagai Project Management Analytics pintar, <strong className="text-indigo-300 font-bold">Prama AI</strong> siap menjadi support system andalan yang memberikan Anda:
                     </p>
-                    <div className="space-y-3 pt-1">
+                    <div className="space-y-2 pt-0.5">
                       <div className="flex items-start gap-2.5">
-                        <span className="text-lg leading-none select-none mt-0.5">🎯</span>
-                        <p className="text-slate-300">
+                        <span className="text-base leading-none select-none mt-0.5">🎯</span>
+                        <p className="text-slate-300 text-[13px] sm:text-sm leading-relaxed">
                           <strong className="text-white font-semibold">Solusi Strategis Interaktif:</strong> Prama tidak sekadar menampilkan data, tapi aktif memberikan rekomendasi taktis. Navigasi proyek Anda kini jadi lebih presisi, prediktif, dan siap menghadapi segala risiko di lapangan.
                         </p>
                       </div>
                       <div className="flex items-start gap-2.5">
-                        <span className="text-lg leading-none select-none mt-0.5">📉</span>
-                        <p className="text-slate-300">
+                        <span className="text-base leading-none select-none mt-0.5">📉</span>
+                        <p className="text-slate-300 text-[13px] sm:text-sm leading-relaxed">
                           <strong className="text-white font-semibold">Efisiensi Finansial Mutakhir:</strong> Deteksi dini potensi pembengkakan biaya (cost-overrun) secara otomatis, memastikan setiap keputusan strategis tetap selaras dengan efisiensi anggaran.
                         </p>
                       </div>
@@ -3821,13 +3821,13 @@ ${lastMsgText}`;
                   <div className="flex flex-wrap items-center gap-4">
                     <button 
                       type="button"
-                      className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-4 rounded-full text-xs font-semibold uppercase tracking-wider flex items-center gap-2.5 transition-all duration-300 shadow-lg shadow-indigo-600/30 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                      className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 sm:px-7 sm:py-3 rounded-full text-xs font-semibold uppercase tracking-wider flex items-center gap-2 transition-all duration-300 shadow-lg shadow-indigo-600/30 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
                       onClick={() => {
                         setShowHeroLanding(false);
                         sessionStorage.setItem("prama_hero_dismissed", "true");
                       }}
                     >
-                      <Rocket className="h-4 w-4 text-white" />
+                      <Rocket className="h-3.5 w-3.5 text-white" />
                       <span>START ESTIMATOR</span>
                     </button>
                   </div>
@@ -3835,15 +3835,15 @@ ${lastMsgText}`;
               </main>
 
               {/* Footer (Partners) */}
-              <footer className="relative z-10 w-full px-6 py-4 md:px-16 md:py-8 flex flex-col md:flex-row md:items-end md:justify-between gap-6 md:gap-4">
+              <footer className="relative z-10 w-full px-6 py-2 md:px-16 md:py-3 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
                 {/* Partners Left */}
-                <div className="flex flex-col gap-3">
-                  <div className="flex flex-wrap items-center gap-3 md:gap-4">
+                <div className="flex flex-col gap-2">
+                  <div className="flex flex-wrap items-center gap-2 md:gap-3">
                     {landingPartners.map((partner) => (
                       <motion.div 
                         key={partner.name} 
                         layoutId={`partner-box-${partner.name}`}
-                        className="bg-slate-950/75 backdrop-blur-md border border-slate-800/80 hover:border-indigo-500/40 rounded-2xl px-5 py-4 flex items-center justify-center transition-all duration-300 hover:scale-105 shadow-xl shadow-black/40 hover:shadow-indigo-500/10 cursor-pointer h-20 w-40 md:h-24 md:w-52 overflow-hidden"
+                        className="bg-slate-950/75 backdrop-blur-md border border-slate-800/80 hover:border-indigo-500/40 rounded-xl px-3 py-2 flex items-center justify-center transition-all duration-300 hover:scale-105 shadow-xl shadow-black/40 hover:shadow-indigo-500/10 cursor-pointer h-10 w-28 md:h-12 md:w-40 overflow-hidden"
                         title={partner.name}
                       >
                         <img 
@@ -3860,10 +3860,10 @@ ${lastMsgText}`;
                 {/* Scroll indicator center */}
                 <div 
                   onClick={() => scrollToSection("missions")}
-                  className="hidden lg:flex flex-col items-center gap-1.5 text-slate-400 hover:text-white transition-colors cursor-pointer group"
+                  className="hidden lg:flex flex-col items-center gap-1 text-slate-400 hover:text-white transition-colors cursor-pointer group"
                 >
                   <span className="text-[10px] font-bold tracking-[0.2em] uppercase">SCROLL DOWN</span>
-                  <ChevronDown className="h-4 w-4 animate-bounce text-indigo-400 group-hover:text-indigo-300" />
+                  <ChevronDown className="h-3.5 w-3.5 animate-bounce text-indigo-400 group-hover:text-indigo-300" />
                 </div>
               </footer>
             </motion.section>
@@ -3877,7 +3877,7 @@ ${lastMsgText}`;
               animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
               exit={{ opacity: 0, y: -100, scale: 0.4, filter: "blur(12px)" }}
               transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute inset-0 w-full h-full flex flex-col justify-between pt-24 overflow-hidden bg-transparent z-20"
+              className="absolute inset-0 w-full h-full flex flex-col justify-between pt-16 md:pt-20 overflow-hidden bg-transparent z-20"
             >
               {/* Background Video (Missions, Loop & Mute) */}
               <video 
@@ -3903,49 +3903,49 @@ ${lastMsgText}`;
                     initial={{ opacity: 0, scale: 0.4, filter: "blur(12px)" }}
                     animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
                     transition={{ duration: 0.6, ease: "easeOut" }}
-                    className="flex items-center gap-3 text-xs text-indigo-400 font-bold uppercase tracking-[0.25em] mb-4 md:mb-6"
+                    className="flex items-center gap-3 text-xs text-indigo-400 font-bold uppercase tracking-[0.25em] mb-2 md:mb-3"
                   >
                     <span className="w-8 h-[2px] bg-indigo-500"></span>
                     <span>PRAMA AI AGENT MISSION</span>
                   </motion.div>
 
                   {/* Two Column Cards layout with layout id morphing */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-5xl mt-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 w-full max-w-5xl mt-2">
                     {/* Card 1: High Level */}
                     <motion.div 
                       layoutId="prama-landing-card-shared-1"
                       initial={{ opacity: 0, scale: 0.4, filter: "blur(12px)" }}
                       animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
                       transition={{ type: "spring", stiffness: 90, damping: 15, delay: 0.1 }}
-                      className="bg-[#090d16]/85 backdrop-blur-md border border-indigo-500/30 rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden group hover:border-cyan-400/50 transition-all duration-300"
+                      className="bg-[#090d16]/85 backdrop-blur-md border border-indigo-500/30 rounded-3xl p-4 sm:p-5 md:p-6 shadow-2xl relative overflow-hidden group hover:border-cyan-400/50 transition-all duration-300"
                     >
                       <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none group-hover:bg-cyan-400/10 transition-all duration-300" />
                       
-                      <div className="flex items-center gap-3 mb-4">
-                        <span className="text-2xl">🎯</span>
-                        <h3 className="font-display font-bold text-lg md:text-xl text-cyan-400 tracking-wide">
+                      <div className="flex items-center gap-2.5 mb-3">
+                        <span className="text-xl">🎯</span>
+                        <h3 className="font-display font-bold text-base sm:text-lg text-cyan-400 tracking-wide">
                           Misi Singkat (High-Level)
                         </h3>
                       </div>
                       
-                      <p className="text-xs md:text-sm text-slate-300 leading-relaxed mb-6 italic">
+                      <p className="text-[13px] sm:text-sm text-slate-300 leading-relaxed mb-3 md:mb-4 italic">
                         "Mentransformasi data proyek menjadi wawasan strategis, memprediksi risiko, and mengoptimalkan efisiensi eksekusi."
                       </p>
                       
-                      <ul className="space-y-4">
-                        <li className="flex items-start text-xs md:text-sm text-slate-300">
+                      <ul className="space-y-2 md:space-y-3">
+                        <li className="flex items-start text-[13px] sm:text-sm text-slate-300">
                           <Hexagon className="h-4.5 w-4.5 text-cyan-400 fill-cyan-400/10 mr-3 mt-0.5 shrink-0 animate-pulse" />
                           <div>
                             <strong className="text-white font-semibold">Data-Driven:</strong> Mengubah metrik mentah menjadi keputusan taktis.
                           </div>
                         </li>
-                        <li className="flex items-start text-xs md:text-sm text-slate-300">
+                        <li className="flex items-start text-[13px] sm:text-sm text-slate-300">
                           <Hexagon className="h-4.5 w-4.5 text-cyan-400 fill-cyan-400/10 mr-3 mt-0.5 shrink-0 animate-pulse" />
                           <div>
                             <strong className="text-white font-semibold">Proaktif:</strong> Memitigasi risiko sebelum menjadi kendala besar.
                           </div>
                         </li>
-                        <li className="flex items-start text-xs md:text-sm text-slate-300">
+                        <li className="flex items-start text-[13px] sm:text-sm text-slate-300">
                           <Hexagon className="h-4.5 w-4.5 text-cyan-400 fill-cyan-400/10 mr-3 mt-0.5 shrink-0 animate-pulse" />
                           <div>
                             <strong className="text-white font-semibold">Efisiensi:</strong> Memaksimalkan utilitas waktu, anggaran, dan kapasitas SDM.
@@ -3960,41 +3960,41 @@ ${lastMsgText}`;
                       initial={{ opacity: 0, scale: 0.4, filter: "blur(12px)" }}
                       animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
                       transition={{ type: "spring", stiffness: 90, damping: 15, delay: 0.25 }}
-                      className="bg-[#090d16]/85 backdrop-blur-md border border-indigo-500/30 rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden group hover:border-indigo-400/50 transition-all duration-300"
+                      className="bg-[#090d16]/85 backdrop-blur-md border border-indigo-500/30 rounded-3xl p-4 sm:p-5 md:p-6 shadow-2xl relative overflow-hidden group hover:border-indigo-400/50 transition-all duration-300"
                     >
                       <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none group-hover:bg-indigo-400/10 transition-all duration-300" />
                       
-                      <div className="flex items-center gap-3 mb-4">
-                        <span className="text-2xl">⚡</span>
-                        <h3 className="font-display font-bold text-lg md:text-xl text-indigo-400 tracking-wide">
+                      <div className="flex items-center gap-2.5 mb-3">
+                        <span className="text-xl">⚡</span>
+                        <h3 className="font-display font-bold text-base sm:text-lg text-indigo-400 tracking-wide">
                           Misi Detail (Core Analytics)
                         </h3>
                       </div>
                       
-                      <p className="text-xs md:text-sm text-slate-300 leading-relaxed mb-6 italic">
+                      <p className="text-[13px] sm:text-sm text-slate-300 leading-relaxed mb-3 md:mb-4 italic">
                         "Menjadi pusat kecerdasan analitis yang mengintegrasikan data proyek, mengotomatisasi evaluasi, dan merekomendasikan solusi preskriptif."
                       </p>
                       
-                      <ul className="space-y-4">
-                        <li className="flex items-start text-xs md:text-sm text-slate-300">
+                      <ul className="space-y-2 md:space-y-3">
+                        <li className="flex items-start text-[13px] sm:text-sm text-slate-300">
                           <Hexagon className="h-4.5 w-4.5 text-indigo-400 fill-indigo-400/10 mr-3 mt-0.5 shrink-0 animate-pulse" />
                           <div>
                             <strong className="text-white font-semibold">Deskriptif:</strong> Live Dashboard & visualisasi KPI otomatis.
                           </div>
                         </li>
-                        <li className="flex items-start text-xs md:text-sm text-slate-300">
+                        <li className="flex items-start text-[13px] sm:text-sm text-slate-300">
                           <Hexagon className="h-4.5 w-4.5 text-indigo-400 fill-indigo-400/10 mr-3 mt-0.5 shrink-0 animate-pulse" />
                           <div>
                             <strong className="text-white font-semibold">Prediktif:</strong> Forecasting sisa anggaran dan proyek keterlambatan.
                           </div>
                         </li>
-                        <li className="flex items-start text-xs md:text-sm text-slate-300">
+                        <li className="flex items-start text-[13px] sm:text-sm text-slate-300">
                           <Hexagon className="h-4.5 w-4.5 text-indigo-400 fill-indigo-400/10 mr-3 mt-0.5 shrink-0 animate-pulse" />
                           <div>
                             <strong className="text-white font-semibold">Preskriptif:</strong> Optimasi jalur kritis (critical path) & load balancing tim.
                           </div>
                         </li>
-                        <li className="flex items-start text-xs md:text-sm text-slate-300">
+                        <li className="flex items-start text-[13px] sm:text-sm text-slate-300">
                           <Hexagon className="h-4.5 w-4.5 text-indigo-400 fill-indigo-400/10 mr-3 mt-0.5 shrink-0 animate-pulse" />
                           <div>
                             <strong className="text-white font-semibold">Kolaborasi:</strong> Laporan otomatis ramah stakeholder & C-Suite.
@@ -4007,10 +4007,10 @@ ${lastMsgText}`;
               </main>
 
               {/* Footer (Partners) */}
-              <footer className="relative z-10 w-full px-6 py-4 md:px-16 md:py-8 flex flex-col md:flex-row md:items-end md:justify-between gap-6 md:gap-4">
+              <footer className="relative z-10 w-full px-6 py-2 md:px-16 md:py-3 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
                 {/* Partners Left */}
-                <div className="flex flex-col gap-3">
-                  <div className="flex flex-wrap items-center gap-3 md:gap-4">
+                <div className="flex flex-col gap-2">
+                  <div className="flex flex-wrap items-center gap-2 md:gap-3">
                     {landingPartners.map((partner, index) => (
                       <motion.div 
                         key={partner.name} 
@@ -4018,7 +4018,7 @@ ${lastMsgText}`;
                         initial={{ opacity: 0, scale: 0.4, filter: "blur(12px)" }}
                         animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
                         transition={{ duration: 0.65, ease: "easeOut", delay: 0.1 + index * 0.08 }}
-                        className="bg-slate-950/75 backdrop-blur-md border border-slate-800/80 hover:border-indigo-500/40 rounded-2xl px-5 py-4 flex items-center justify-center transition-all duration-300 hover:scale-105 shadow-xl shadow-black/40 hover:shadow-indigo-500/10 cursor-pointer h-20 w-40 md:h-24 md:w-52 overflow-hidden"
+                        className="bg-slate-950/75 backdrop-blur-md border border-slate-800/80 hover:border-indigo-500/40 rounded-xl px-3 py-2 flex items-center justify-center transition-all duration-300 hover:scale-105 shadow-xl shadow-black/40 hover:shadow-indigo-500/10 cursor-pointer h-10 w-28 md:h-12 md:w-40 overflow-hidden"
                         title={partner.name}
                       >
                         <img 
@@ -4035,10 +4035,10 @@ ${lastMsgText}`;
                 {/* Scroll indicator center */}
                 <div 
                   onClick={() => scrollToSection("technology")}
-                  className="hidden lg:flex flex-col items-center gap-1.5 text-slate-400 hover:text-white transition-colors cursor-pointer group"
+                  className="hidden lg:flex flex-col items-center gap-1 text-slate-400 hover:text-white transition-colors cursor-pointer group"
                 >
                   <span className="text-[10px] font-bold tracking-[0.2em] uppercase">SCROLL DOWN</span>
-                  <ChevronDown className="h-4 w-4 animate-bounce text-indigo-400 group-hover:text-indigo-300" />
+                  <ChevronDown className="h-3.5 w-3.5 animate-bounce text-indigo-400 group-hover:text-indigo-300" />
                 </div>
               </footer>
             </motion.section>
@@ -4052,7 +4052,7 @@ ${lastMsgText}`;
               animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
               exit={{ opacity: 0, y: -100, scale: 0.4, filter: "blur(12px)" }}
               transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute inset-0 w-full h-full flex flex-col justify-between pt-24 overflow-hidden bg-transparent z-20"
+              className="absolute inset-0 w-full h-full flex flex-col justify-between pt-16 md:pt-20 overflow-hidden bg-transparent z-20"
             >
               {/* Background Video (Technology, Loop & Mute) */}
               <video 
@@ -4075,30 +4075,30 @@ ${lastMsgText}`;
                     initial={{ opacity: 0, scale: 0.4, filter: "blur(12px)" }}
                     animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
                     transition={{ duration: 0.6, ease: "easeOut" }}
-                    className="flex items-center gap-3 text-xs text-indigo-400 font-bold uppercase tracking-[0.25em] mb-4 md:mb-6"
+                    className="flex items-center gap-3 text-xs text-indigo-400 font-bold uppercase tracking-[0.25em] mb-2 md:mb-3"
                   >
                     <span className="w-8 h-[2px] bg-indigo-500"></span>
                     <span>TEKNOLOGI & INOVASI PRAMA AI</span>
                   </motion.div>
 
                   {/* Three Column Tech Grid with layout ID morphing */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl mt-2">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5 w-full max-w-5xl mt-2">
                     {/* Tech Card 1 (Morphing Layout) */}
                     <motion.div 
                       layoutId="prama-landing-card-shared-1"
                       initial={{ opacity: 0, scale: 0.4, filter: "blur(12px)" }}
                       animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
                       transition={{ type: "spring", stiffness: 90, damping: 15, delay: 0.1 }}
-                      className="bg-[#090d16]/85 backdrop-blur-md border border-indigo-500/30 rounded-3xl p-6 shadow-2xl relative overflow-hidden group hover:border-cyan-400/50 transition-all duration-300"
+                      className="bg-[#090d16]/85 backdrop-blur-md border border-indigo-500/30 rounded-3xl p-4 sm:p-5 md:p-6 shadow-2xl relative overflow-hidden group hover:border-cyan-400/50 transition-all duration-300"
                     >
                       <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500/5 rounded-full blur-2xl pointer-events-none group-hover:bg-cyan-400/10 transition-all duration-300" />
-                      <div className="p-3 bg-cyan-500/10 border border-cyan-500/20 rounded-2xl w-fit text-cyan-400 mb-4">
-                        <Cpu className="h-6 w-6" />
+                      <div className="p-2 sm:p-2.5 bg-cyan-500/10 border border-cyan-500/20 rounded-xl w-fit text-cyan-400 mb-2.5">
+                        <Cpu className="h-5.5 w-5.5" />
                       </div>
-                      <h3 className="font-display font-bold text-base md:text-lg text-white mb-2">
+                      <h3 className="font-display font-bold text-[15px] sm:text-base text-white mb-1.5">
                         Predictive Analytics Engine
                       </h3>
-                      <p className="text-xs text-slate-300 leading-relaxed">
+                      <p className="text-[13px] sm:text-sm text-slate-200 leading-relaxed">
                         Algoritma machine learning terintegrasi yang mampu mendeteksi potensi pembengkakan biaya (cost-overrun) secara realtime dan otomatis memproyeksikan sisa anggaran proyek.
                       </p>
                     </motion.div>
@@ -4109,16 +4109,16 @@ ${lastMsgText}`;
                       initial={{ opacity: 0, scale: 0.4, filter: "blur(12px)" }}
                       animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
                       transition={{ type: "spring", stiffness: 90, damping: 15, delay: 0.2 }}
-                      className="bg-[#090d16]/85 backdrop-blur-md border border-indigo-500/30 rounded-3xl p-6 shadow-2xl relative overflow-hidden group hover:border-indigo-400/50 transition-all duration-300"
+                      className="bg-[#090d16]/85 backdrop-blur-md border border-indigo-500/30 rounded-3xl p-4 sm:p-5 md:p-6 shadow-2xl relative overflow-hidden group hover:border-indigo-400/50 transition-all duration-300"
                     >
                       <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none group-hover:bg-indigo-400/10 transition-all duration-300" />
-                      <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl w-fit text-indigo-400 mb-4">
-                        <Bot className="h-6 w-6" />
+                      <div className="p-2 sm:p-2.5 bg-indigo-500/10 border border-indigo-500/20 rounded-xl w-fit text-indigo-400 mb-2.5">
+                        <Bot className="h-5.5 w-5.5" />
                       </div>
-                      <h3 className="font-display font-bold text-base md:text-lg text-white mb-2">
+                      <h3 className="font-display font-bold text-[15px] sm:text-base text-white mb-1.5">
                         Interactive Decision Hub
                       </h3>
-                      <p className="text-xs text-slate-300 leading-relaxed">
+                      <p className="text-[13px] sm:text-sm text-slate-200 leading-relaxed">
                         Asisten AI taktis yang siap merekomendasikan solusi mitigasi risiko secara interaktif, lengkap dengan sistem log keputusan terstruktur untuk C-Suite.
                       </p>
                     </motion.div>
@@ -4129,16 +4129,16 @@ ${lastMsgText}`;
                       initial={{ opacity: 0, scale: 0.4, filter: "blur(12px)" }}
                       animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
                       transition={{ type: "spring", stiffness: 90, damping: 15, delay: 0.3 }}
-                      className="bg-[#090d16]/85 backdrop-blur-md border border-indigo-500/30 rounded-3xl p-6 shadow-2xl relative overflow-hidden group hover:border-violet-400/50 transition-all duration-300"
+                      className="bg-[#090d16]/85 backdrop-blur-md border border-indigo-500/30 rounded-3xl p-4 sm:p-5 md:p-6 shadow-2xl relative overflow-hidden group hover:border-violet-400/50 transition-all duration-300"
                     >
                       <div className="absolute top-0 right-0 w-24 h-24 bg-violet-500/5 rounded-full blur-2xl pointer-events-none group-hover:bg-violet-400/10 transition-all duration-300" />
-                      <div className="p-3 bg-violet-500/10 border border-violet-500/20 rounded-2xl w-fit text-violet-400 mb-4">
-                        <Rocket className="h-6 w-6" />
+                      <div className="p-2 sm:p-2.5 bg-violet-500/10 border border-violet-500/20 rounded-xl w-fit text-violet-400 mb-2.5">
+                        <Rocket className="h-5.5 w-5.5" />
                       </div>
-                      <h3 className="font-display font-bold text-base md:text-lg text-white mb-2">
+                      <h3 className="font-display font-bold text-[15px] sm:text-base text-white mb-1.5">
                         Enterprise Exporter
                       </h3>
-                      <p className="text-xs text-slate-300 leading-relaxed">
+                      <p className="text-[13px] sm:text-sm text-slate-200 leading-relaxed">
                         Sistem export dokumen pintar yang mendukung format interaktif HTML, PDF, Microsoft Word, dan PowerPoint (PPTX) sekali klik untuk mempermudah pelaporan.
                       </p>
                     </motion.div>
@@ -4147,10 +4147,10 @@ ${lastMsgText}`;
               </main>
 
               {/* Footer (Partners) */}
-              <footer className="relative z-10 w-full px-6 py-4 md:px-16 md:py-8 flex flex-col md:flex-row md:items-end md:justify-between gap-6 md:gap-4">
+              <footer className="relative z-10 w-full px-6 py-2 md:px-16 md:py-3 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
                 {/* Partners Left */}
-                <div className="flex flex-col gap-3">
-                  <div className="flex flex-wrap items-center gap-3 md:gap-4">
+                <div className="flex flex-col gap-2">
+                  <div className="flex flex-wrap items-center gap-2 md:gap-3">
                     {landingPartners.map((partner, index) => (
                       <motion.div 
                         key={partner.name} 
@@ -4158,7 +4158,7 @@ ${lastMsgText}`;
                         initial={{ opacity: 0, scale: 0.4, filter: "blur(12px)" }}
                         animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
                         transition={{ duration: 0.65, ease: "easeOut", delay: 0.1 + index * 0.08 }}
-                        className="bg-slate-950/75 backdrop-blur-md border border-slate-800/80 hover:border-indigo-500/40 rounded-2xl px-5 py-4 flex items-center justify-center transition-all duration-300 hover:scale-105 shadow-xl shadow-black/40 hover:shadow-indigo-500/10 cursor-pointer h-20 w-40 md:h-24 md:w-52 overflow-hidden"
+                        className="bg-slate-950/75 backdrop-blur-md border border-slate-800/80 hover:border-indigo-500/40 rounded-xl px-3 py-2 flex items-center justify-center transition-all duration-300 hover:scale-105 shadow-xl shadow-black/40 hover:shadow-indigo-500/10 cursor-pointer h-10 w-28 md:h-12 md:w-40 overflow-hidden"
                         title={partner.name}
                       >
                         <img 

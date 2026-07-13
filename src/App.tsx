@@ -4153,14 +4153,6 @@ ${lastMsgText}`;
               <footer className="relative z-10 w-full px-6 py-4 md:px-16 md:py-8 flex flex-col md:flex-row md:items-end md:justify-between gap-6 md:gap-4">
                 {/* Partners Left */}
                 <div className="flex flex-col gap-3">
-                  <motion.span 
-                    initial={{ opacity: 0, scale: 0.6, filter: "blur(8px)" }}
-                    animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-                    transition={{ duration: 0.6, ease: "easeOut" }}
-                    className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.25em]"
-                  >
-                    MITRA STRATEGIS PANCARAN GROUP:
-                  </motion.span>
                   <div className="flex flex-wrap items-center gap-3 md:gap-4">
                     {landingPartners.map((partner, index) => (
                       <motion.div 

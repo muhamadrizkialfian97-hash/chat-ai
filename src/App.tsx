@@ -3660,7 +3660,7 @@ ${lastMsgText}`;
       >
         {/* Pinned Navigation Header */}
         <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-slate-950/80 to-transparent backdrop-blur-xs">
-          <div className="max-w-full mx-auto w-full flex items-center justify-between px-6 py-5 md:px-12 lg:px-16">
+          <div className="max-w-full mx-auto w-full flex items-center justify-between px-6 py-5 md:px-16">
             {/* Brand/Logo Left */}
             <div className="flex items-center gap-3">
               <div className="p-1.5 bg-slate-950/50 rounded-lg border border-slate-800 backdrop-blur-sm shadow-inner h-10 w-10 overflow-hidden flex items-center justify-center">
@@ -3777,7 +3777,7 @@ ${lastMsgText}`;
               <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-indigo-500/30 z-30 shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
               
               {/* Main Hero Content (Aligned Top-Left, Sejajar dengan slide lain) */}
-              <main className="relative z-10 flex-1 flex flex-col justify-start pt-6 md:pt-10 lg:pt-12 px-6 md:px-16 w-full max-w-6xl text-left">
+              <main className="relative z-10 flex-1 flex flex-col justify-start pt-6 md:pt-10 lg:pt-12 px-6 md:px-16 w-full max-w-full text-left">
                 <div className="w-full">
                   <div className="max-w-2xl mt-2">
                     <motion.div 
@@ -3789,26 +3789,7 @@ ${lastMsgText}`;
                     >
                       <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none group-hover:bg-indigo-400/10 transition-all duration-300" />
                       
-                      {/* Small Image Above Text */}
-                      <div className="mb-4 flex items-center justify-start">
-                        <div className="p-1 bg-slate-950/60 rounded-2xl border border-indigo-500/30 backdrop-blur-sm w-full max-w-[250px] h-[53px] overflow-hidden flex items-center justify-center shadow-lg shadow-indigo-500/10">
-                          <img 
-                            src="/api/proxy-drive?id=1z6lj55JU_2e-sBtc3jI8BecI8jx4refn" 
-                            alt="Prama Logo"
-                            className="select-none rounded-xl"
-                            style={{ width: "250px", height: "53px", marginLeft: "0px", paddingLeft: "0px", objectFit: "cover" }}
-                            onError={(e) => {
-                              const img = e.currentTarget;
-                              if (img.src !== "https://lh3.googleusercontent.com/d/1z6lj55JU_2e-sBtc3jI8BecI8jx4refn") {
-                                img.src = "https://lh3.googleusercontent.com/d/1z6lj55JU_2e-sBtc3jI8BecI8jx4refn";
-                              } else if (img.src !== "https://drive.google.com/uc?export=view&id=1z6lj55JU_2e-sBtc3jI8BecI8jx4refn") {
-                                img.src = "https://drive.google.com/uc?export=view&id=1z6lj55JU_2e-sBtc3jI8BecI8jx4refn";
-                              }
-                            }}
-                            referrerPolicy="no-referrer"
-                          />
-                        </div>
-                      </div>
+
 
                       {/* Main Display Headline */}
                       <h1 className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight text-white leading-tight mb-4 md:mb-5">
@@ -3917,7 +3898,7 @@ ${lastMsgText}`;
               <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-indigo-500/30 z-30 shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
               
               {/* Main Hero Content (Aligned Top) */}
-              <main className="relative z-10 flex-1 flex flex-col justify-start pt-6 md:pt-10 lg:pt-12 px-6 md:px-16 w-full max-w-6xl text-left">
+              <main className="relative z-10 flex-1 flex flex-col justify-start pt-6 md:pt-10 lg:pt-12 px-6 md:px-16 w-full max-w-full text-left">
                 <div className="w-full">
                   {/* Subtitle */}
                   <motion.div 
@@ -4089,7 +4070,7 @@ ${lastMsgText}`;
               <div className="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-slate-950/35 to-slate-950/85 -z-10 pointer-events-none" />
               
               {/* Main Hero Content (Aligned Top) */}
-              <main className="relative z-10 flex-1 flex flex-col justify-start pt-6 md:pt-10 lg:pt-12 px-6 md:px-16 w-full max-w-6xl text-left">
+              <main className="relative z-10 flex-1 flex flex-col justify-start pt-6 md:pt-10 lg:pt-12 px-6 md:px-16 w-full max-w-full text-left">
                 <div className="w-full">
                   {/* Subtitle */}
                   <motion.div 

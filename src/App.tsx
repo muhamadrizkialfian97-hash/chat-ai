@@ -3660,7 +3660,7 @@ ${lastMsgText}`;
       >
         {/* Pinned Navigation Header */}
         <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-slate-950/80 to-transparent backdrop-blur-xs">
-          <div className="max-w-6xl mx-auto w-full flex items-center justify-between px-6 py-5 md:px-16">
+          <div className="max-w-full mx-auto w-full flex items-center justify-between px-6 py-5 md:px-12 lg:px-16">
             {/* Brand/Logo Left */}
             <div className="flex items-center gap-3">
               <div className="p-1.5 bg-slate-950/50 rounded-lg border border-slate-800 backdrop-blur-sm shadow-inner h-10 w-10 overflow-hidden flex items-center justify-center">
@@ -3791,12 +3791,12 @@ ${lastMsgText}`;
                       
                       {/* Small Image Above Text */}
                       <div className="mb-4 flex items-center justify-start">
-                        <div className="p-1 bg-slate-950/60 rounded-2xl border border-indigo-500/30 backdrop-blur-sm w-full max-w-[500px] h-[105px] overflow-hidden flex items-center justify-center shadow-lg shadow-indigo-500/10">
+                        <div className="p-1 bg-slate-950/60 rounded-2xl border border-indigo-500/30 backdrop-blur-sm w-full max-w-[250px] h-[53px] overflow-hidden flex items-center justify-center shadow-lg shadow-indigo-500/10">
                           <img 
                             src="/api/proxy-drive?id=1z6lj55JU_2e-sBtc3jI8BecI8jx4refn" 
                             alt="Prama Logo"
                             className="select-none rounded-xl"
-                            style={{ width: "500px", height: "105px", marginLeft: "0px", paddingLeft: "0px", objectFit: "cover" }}
+                            style={{ width: "250px", height: "53px", marginLeft: "0px", paddingLeft: "0px", objectFit: "cover" }}
                             onError={(e) => {
                               const img = e.currentTarget;
                               if (img.src !== "https://lh3.googleusercontent.com/d/1z6lj55JU_2e-sBtc3jI8BecI8jx4refn") {
@@ -3808,12 +3808,6 @@ ${lastMsgText}`;
                             referrerPolicy="no-referrer"
                           />
                         </div>
-                      </div>
-
-                      {/* Subtitle */}
-                      <div className="flex items-center gap-3 text-xs sm:text-sm text-indigo-400 font-bold uppercase tracking-[0.25em] mb-3 md:mb-4">
-                        <span className="w-8 h-[2px] bg-indigo-500"></span>
-                        <span>( Powered By Digital Solution )</span>
                       </div>
 
                       {/* Main Display Headline */}

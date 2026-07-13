@@ -4545,7 +4545,7 @@ ${lastMsgText}`;
         />
 
         {/* Division selector Body */}
-        <div className={`${(dashboardView === "project_dashboard" || dashboardView === "chat_intelligence") ? "max-w-[98%] 2xl:max-w-[1650px]" : "max-w-7xl"} mx-auto px-4 py-11 text-center flex-grow flex flex-col justify-center transition-all duration-300`}>
+        <div className={`${(dashboardView === "project_dashboard" || dashboardView === "chat_intelligence" || dashboardView === "divisions") ? "max-w-[98%] 2xl:max-w-[1650px]" : "max-w-7xl"} mx-auto px-4 py-11 text-center flex-grow flex flex-col justify-center transition-all duration-300`}>
           
           {/* Menu switcher moved directly inside division cards */}
           <div className="mb-6"></div>
@@ -8108,7 +8108,7 @@ ${lastMsgText}`;
             </div>
           ) : (
             /* Division Bento-like Selection Grid */
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 text-left max-w-7xl mx-auto px-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 text-left max-w-[1350px] mx-auto px-6 w-full">
               {divisions.map((div) => {
                 const IconComp = div.icon;
                 return (
@@ -8119,7 +8119,7 @@ ${lastMsgText}`;
                         setActiveDivision(div.id);
                       }
                     }}
-                    className={`group relative flex flex-col justify-between rounded-xl border h-[360px] overflow-hidden transition-all duration-300 ${
+                    className={`group relative flex flex-col justify-between rounded-xl border h-[300px] overflow-hidden transition-all duration-300 ${
                       div.locked
                         ? "border-slate-200 bg-slate-50/70 opacity-75 cursor-not-allowed select-none"
                         : "border-slate-200 bg-white cursor-pointer hover:border-indigo-400 shadow-sm hover:shadow-lg hover:-translate-y-0.5"
@@ -8169,7 +8169,7 @@ ${lastMsgText}`;
                               e.stopPropagation();
                               setActiveDivision(div.id);
                             }}
-                            className="w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-black tracking-wide transition shadow-md bg-indigo-600 hover:bg-indigo-700 text-white border border-indigo-500/30 cursor-pointer hover:scale-101"
+                            className="w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 px-[30px] text-xs font-black tracking-wide transition shadow-md bg-indigo-600 hover:bg-indigo-700 text-white border border-indigo-500/30 cursor-pointer hover:scale-101"
                           >
                             <span>Chat Model AI Agent Prama</span>
                             <ArrowRight className="h-3.5 w-3.5 shrink-0" />
@@ -8186,7 +8186,7 @@ ${lastMsgText}`;
                 onClick={() => {
                   setDashboardView("project_dashboard");
                 }}
-                className="group relative flex flex-col justify-between rounded-xl border border-slate-200 bg-white h-[360px] overflow-hidden transition-all duration-300 cursor-pointer hover:border-violet-500 shadow-sm hover:shadow-lg hover:-translate-y-0.5 animate-none"
+                className="group relative flex flex-col justify-between rounded-xl border border-slate-200 bg-white h-[300px] overflow-hidden transition-all duration-300 cursor-pointer hover:border-violet-500 shadow-sm hover:shadow-lg hover:-translate-y-0.5 animate-none"
               >
                 {/* Immersive Background Image */}
                 <div className="absolute inset-0 w-full h-full overflow-hidden">
@@ -8215,7 +8215,7 @@ ${lastMsgText}`;
                         e.stopPropagation();
                         setDashboardView("project_dashboard");
                       }}
-                      className="w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-black tracking-wide transition shadow-md bg-indigo-600 hover:bg-indigo-700 text-white border border-indigo-500/30 cursor-pointer hover:scale-101"
+                      className="w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 px-[30px] text-xs font-black tracking-wide transition shadow-md bg-indigo-600 hover:bg-indigo-700 text-white border border-indigo-500/30 cursor-pointer hover:scale-101"
                     >
                       <LayoutDashboard className="h-4 w-4 shrink-0 text-white" />
                       <span>Dashboard Chat AI Agent Prama</span>

@@ -16,7 +16,8 @@ import {
   Edit3, 
   Check, 
   Info,
-  RefreshCw
+  RefreshCw,
+  Users
 } from "lucide-react";
 
 export interface FlowNode {
@@ -55,7 +56,7 @@ interface PramaFlowchartHubProps {
 }
 
 export const PramaFlowchartHub: React.FC<PramaFlowchartHubProps> = ({ projectTitle }) => {
-  const [activeFlowTab, setActiveFlowTab] = useState<"qualification" | "skill" | "kpi" | "sop">("qualification");
+  const [activeFlowTab, setActiveFlowTab] = useState<"orgchart" | "qualification" | "skill" | "kpi" | "sop">("orgchart");
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [zoom, setZoom] = useState<number>(1);
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -84,6 +85,176 @@ export const PramaFlowchartHub: React.FC<PramaFlowchartHubProps> = ({ projectTit
     let skillNodes: FlowNode[] = [];
     let kpiNodes: FlowNode[] = [];
     let sopNodes: FlowNode[] = [];
+
+    const orgchartNodes: FlowNode[] = [
+      {
+        id: "ceo",
+        label: "Ir. H. Prama Swarnadwipa, M.B.A.\nPresident Director & CEO",
+        type: "start",
+        x: 430,
+        y: 20,
+        details: {
+          description: "Memimpin strategi korporat, pengambilan keputusan utama investasi, dan pengawasan audit kepatuhan Swarnadwipa.",
+          input: "Laporan Konsolidasi Bulanan & KPI Direksi",
+          output: "Arahan Strategis & Otorisasi Anggaran Finansial",
+          pic: "Ir. H. Prama Swarnadwipa, M.B.A.",
+          sopCode: "CEO-HQ-001"
+        }
+      },
+      {
+        id: "dir_ops",
+        label: "Bpk. Hermawan Pancaran, M.Sc.\nOperations & Fleet Director",
+        type: "end",
+        x: 230,
+        y: 140,
+        details: {
+          description: "Mengawasi seluruh operasional hauling batubara, kehutanan, cold chain, dan efisiensi cycle time di rute Swarnadwipa.",
+          input: "SLA Lapangan & Laporan Utilisasi Armada Swarnadwipa",
+          output: "Pemberian Target Operasional Mingguan",
+          pic: "Bpk. Hermawan Pancaran, M.Sc.",
+          sopCode: "DIR-OPS-002"
+        }
+      },
+      {
+        id: "dir_hse",
+        label: "Ibu Citra Swarnadwipa, S.Psi., M.H.\nHR & HSE Director",
+        type: "end",
+        x: 630,
+        y: 140,
+        details: {
+          description: "Menjamin tercapainya Zero Accident, standarisasi kualifikasi supir (DDC), dan pembinaan kesejahteraan staf lapangan.",
+          input: "Laporan Kepatuhan K3 & Data Kesehatan (MCU) Supir",
+          output: "Sertifikasi Kelayakan Kerja & Lisensi Kerja Internal",
+          pic: "Ibu Citra Swarnadwipa, S.Psi., M.H.",
+          sopCode: "DIR-HSE-003"
+        }
+      },
+      {
+        id: "gm_ops",
+        label: "Bpk. Ridwan Satria, M.T.\nGM Logistics Operations",
+        type: "process",
+        x: 230,
+        y: 260,
+        details: {
+          description: "Sinkronisasi taktis rute hauling, optimalisasi konsumsi solar harian, dan koordinasi depo logistik utama.",
+          input: "Data Timbangan & Real-time GPS Tracking",
+          output: "Otorisasi Trip Rantai Pasok Swarnadwipa",
+          pic: "Bpk. Ridwan Satria, M.T.",
+          sopCode: "GM-LOG-010"
+        }
+      },
+      {
+        id: "mgr_hse",
+        label: "Bpk. Dani Setiawan, S.T.\nHSE & Safety Audit Manager",
+        type: "process",
+        x: 630,
+        y: 260,
+        details: {
+          description: "Melaksanakan audit rutin pemeliharaan kelayakan truk (P2H) dan evaluasi materi uji Defensive Driving.",
+          input: "Hasil Inspeksi Lapangan & Logbook Kecelakaan",
+          output: "Laporan Skor Risiko K3 Bulanan",
+          pic: "Bpk. Dani Setiawan, S.T.",
+          sopCode: "MGR-HSE-020"
+        }
+      },
+      {
+        id: "lead_fleet",
+        label: "Bpk. Jaka Prakosa\nFleet Coordinator & Logging Lead",
+        type: "process",
+        x: 130,
+        y: 380,
+        details: {
+          description: "Koordinasi harian unit truck logging, alokasi muatan per gandar, dan penanganan emergency hauling.",
+          input: "Instruksi GM & Permintaan Muatan Kargo",
+          output: "Disposisi Penugasan Driver Captain",
+          pic: "Bpk. Jaka Prakosa",
+          sopCode: "SUPV-FLT-031"
+        }
+      },
+      {
+        id: "lead_disp",
+        label: "Bpk. Aris Munandar\nLead Dispatcher & Control Room",
+        type: "process",
+        x: 330,
+        y: 380,
+        details: {
+          description: "Monitoring 24/7 geofencing rute kritis, peringatan kelelahan (fatigue), dan verifikasi absensi supir.",
+          input: "Sinyal Telemetri IoT GPS & Radio HT",
+          output: "Otorisasi Tapping RFID Jalan Hauling",
+          pic: "Bpk. Aris Munandar",
+          sopCode: "SUPV-DIS-032"
+        }
+      },
+      {
+        id: "aud_hse",
+        label: "Ibu Shinta Bella, S.KM.\nHSE Field Auditor & Medic Lead",
+        type: "process",
+        x: 630,
+        y: 380,
+        details: {
+          description: "Pemeriksaan buta warna harian, tes tiup alkohol pre-trip, dan penanganan darurat kecelakaan kerja.",
+          input: "Kondisi Fisik Personel & Formulir Alkohol",
+          output: "Sertifikasi Fit-To-Work Harian",
+          pic: "Ibu Shinta Bella, S.KM.",
+          sopCode: "AUD-MED-033"
+        }
+      },
+      {
+        id: "driver_ahmad",
+        label: "Sopir Utama Ahmad Dahlan\nSenior Driver Captain",
+        type: "decision",
+        x: 30,
+        y: 500,
+        details: {
+          description: "Mengemudikan armada double-trailer muatan logistik utama Swarnadwipa dengan rekor keselamatan tertinggi.",
+          input: "Surat Perintah Jalan & Kartu RFID Aktif",
+          output: "Pengiriman Sukses & Berita Acara Serah Terima",
+          pic: "Sopir Utama Ahmad Dahlan",
+          sopCode: "DRV-CPT-001"
+        }
+      },
+      {
+        id: "driver_joko",
+        label: "Sopir Joko Widodo\nHeavy Duty Logging Driver",
+        type: "decision",
+        x: 180,
+        y: 500,
+        details: {
+          description: "Mengemudikan unit Logging Truck Swarnadwipa membawa kayu gelondongan di rute tanah konsesi.",
+          input: "Rute Hauling Kehutanan & Timbangan Awal",
+          output: "Bongkar Kayu di Depo Pabrik Kertas",
+          pic: "Sopir Joko Widodo",
+          sopCode: "DRV-LOG-012"
+        }
+      },
+      {
+        id: "driver_budi",
+        label: "Sopir Budi Santoso\nCoal Hauling Tipper Driver",
+        type: "decision",
+        x: 330,
+        y: 500,
+        details: {
+          description: "Mengemudikan Dump Truck Scania muatan batubara dari pit tambang menuju stockpile pelabuhan.",
+          input: "Kimper Tambang Aktif & Manifes Pit",
+          output: "Dumping Batubara Lolos Uji Timbangan",
+          pic: "Sopir Budi Santoso",
+          sopCode: "DRV-COAL-024"
+        }
+      }
+    ];
+
+    const orgchartConnections: FlowConnection[] = [
+      { from: "ceo", to: "dir_ops" },
+      { from: "ceo", to: "dir_hse" },
+      { from: "dir_ops", to: "gm_ops" },
+      { from: "dir_hse", to: "mgr_hse" },
+      { from: "gm_ops", to: "lead_fleet" },
+      { from: "gm_ops", to: "lead_disp" },
+      { from: "mgr_hse", to: "aud_hse" },
+      { from: "lead_fleet", to: "driver_ahmad" },
+      { from: "lead_fleet", to: "driver_joko" },
+      { from: "lead_fleet", to: "driver_budi" }
+    ];
 
     if (isForest) {
       contextName = "Forestry Management Transport";
@@ -1187,6 +1358,13 @@ export const PramaFlowchartHub: React.FC<PramaFlowchartHubProps> = ({ projectTit
     ];
 
     return {
+      orgchart: {
+        title: "Bagan Struktur Organisasi Swarnadwipa",
+        description: `Struktur hierarki kepemimpinan dan operasional PT Pancaran Swarnadwipa dari tingkat C-Suite hingga kru lapangan.`,
+        icon: <Users className="h-5 w-5" />,
+        nodes: orgchartNodes,
+        connections: orgchartConnections
+      },
       qualification: {
         title: "Personnel Qualification Flowchart",
         description: `Standardisasi jalur kualifikasi personil logistik (${contextName}) untuk kelayakan operasi minimum.`,
@@ -1302,13 +1480,13 @@ export const PramaFlowchartHub: React.FC<PramaFlowchartHubProps> = ({ projectTit
 
   // SVG Line Orthogonal Route Calculator
   // To make look exactly like professional draw.io, we use 90-deg angles!
-  const calculateOrthogonalPath = (fromNode: FlowNode, toNode: FlowNode) => {
+  const calculateOrthogonalPath = (fromNode: FlowNode, toNode: FlowNode, isOrgChart = false) => {
     // Determine bounds and anchors
     // From right edge (x + width) to left edge (x)
-    const fromWidth = fromNode.type === "decision" ? 140 : 150;
-    const fromHeight = fromNode.type === "decision" ? 90 : 70;
-    const toWidth = toNode.type === "decision" ? 140 : 150;
-    const toHeight = toNode.type === "decision" ? 90 : 70;
+    const fromWidth = isOrgChart ? 155 : fromNode.type === "decision" ? 140 : 150;
+    const fromHeight = isOrgChart ? 85 : fromNode.type === "decision" ? 90 : 70;
+    const toWidth = isOrgChart ? 155 : toNode.type === "decision" ? 140 : 150;
+    const toHeight = isOrgChart ? 85 : toNode.type === "decision" ? 90 : 70;
 
     let startX = fromNode.x + fromWidth;
     let startY = fromNode.y + fromHeight / 2;
@@ -1454,7 +1632,7 @@ export const PramaFlowchartHub: React.FC<PramaFlowchartHubProps> = ({ projectTit
               }`}
             >
               <Eye className="h-3.5 w-3.5" />
-              <span>Bento Grid (4 Map)</span>
+              <span>Bento Grid (5 Map)</span>
             </button>
           </div>
         </div>
@@ -1462,8 +1640,8 @@ export const PramaFlowchartHub: React.FC<PramaFlowchartHubProps> = ({ projectTit
 
       {/* FLOW TAB SELECTOR (ONLY SHOWN IN CANVAS MODE) */}
       {viewMode === "canvas" && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-5">
-          {(["qualification", "skill", "kpi", "sop"] as const).map(tabKey => {
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-5">
+          {(["orgchart", "qualification", "skill", "kpi", "sop"] as const).map(tabKey => {
             const data = flows[tabKey];
             const isActive = activeFlowTab === tabKey;
             return (
@@ -1484,7 +1662,7 @@ export const PramaFlowchartHub: React.FC<PramaFlowchartHubProps> = ({ projectTit
                 </div>
                 <div>
                   <h4 className={`text-xs font-black uppercase tracking-tight ${isActive ? "text-rose-700" : "text-slate-700"}`}>
-                    {tabKey === "qualification" ? "1. Qualification" : tabKey === "skill" ? "2. Skill Flow" : tabKey === "kpi" ? "3. Output & KPI" : "4. SOP Trip"}
+                    {tabKey === "orgchart" ? "1. Org Chart" : tabKey === "qualification" ? "2. Qualification" : tabKey === "skill" ? "3. Skill Flow" : tabKey === "kpi" ? "4. Output & KPI" : "5. SOP Trip"}
                   </h4>
                   <span className="text-[10px] text-slate-500 block leading-tight font-semibold mt-0.5 truncate max-w-[140px]">
                     {data.title}
@@ -1498,9 +1676,9 @@ export const PramaFlowchartHub: React.FC<PramaFlowchartHubProps> = ({ projectTit
 
       {/* CONTENT AREA: CANVAS VIEW OR BENTO MULTI-VIEW */}
       {viewMode === "bento" ? (
-        /* BENTO GRID (4 MAP AT A GLANCE) */
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {(["qualification", "skill", "kpi", "sop"] as const).map(tabKey => {
+        /* BENTO GRID (5 MAP AT A GLANCE) */
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {(["orgchart", "qualification", "skill", "kpi", "sop"] as const).map(tabKey => {
             const fData = flows[tabKey];
             return (
               <div 
@@ -1527,10 +1705,10 @@ export const PramaFlowchartHub: React.FC<PramaFlowchartHubProps> = ({ projectTit
                   </div>
 
                   {/* MINI DRAW.IO FLOW VIEW */}
-                  <div className="h-44 relative bg-white border border-slate-200/60 rounded-xl overflow-hidden mt-3 shadow-inner select-none pointer-events-none scale-90 origin-top">
+                  <div className="h-44 relative bg-white border border-slate-200/60 rounded-xl overflow-hidden mt-3 shadow-inner select-none pointer-events-none p-1">
                     {/* Grid bg pattern */}
                     <div className="absolute inset-0 opacity-40" style={{ backgroundImage: "radial-gradient(#cbd5e1 1px, transparent 1px)", backgroundSize: "12px 12px" }} />
-                    <svg className="absolute inset-0 w-full h-full">
+                    <svg viewBox="0 0 1000 620" className="absolute inset-0 w-full h-full">
                       <defs>
                         <marker id={`arrow-mini-${tabKey}`} viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
                           <path d="M 0 1 L 10 5 L 0 9 z" fill="#94a3b8" />
@@ -1543,33 +1721,53 @@ export const PramaFlowchartHub: React.FC<PramaFlowchartHubProps> = ({ projectTit
                         return (
                           <path
                             key={idx}
-                            d={calculateOrthogonalPath(from, to)}
+                            d={calculateOrthogonalPath(from, to, tabKey === "orgchart")}
                             fill="none"
                             stroke="#94a3b8"
-                            strokeWidth="1.5"
+                            strokeWidth="3.5"
                             markerEnd={`url(#arrow-mini-${tabKey})`}
                           />
                         );
                       })}
-                    </svg>
+                      {/* Miniature nodes inside foreignObject */}
+                      {fData.nodes.map(node => {
+                        const isOrgChart = tabKey === "orgchart";
+                        const nodeWidth = isOrgChart ? 155 : node.type === "decision" ? 140 : 150;
+                        const nodeHeight = isOrgChart ? 85 : node.type === "decision" ? 90 : 70;
+                        const [empName, empRole] = isOrgChart ? node.label.split("\n") : [node.label, ""];
 
-                    {/* Miniature nodes */}
-                    {fData.nodes.map(node => (
-                      <div
-                        key={node.id}
-                        className={`absolute rounded-md p-1.5 shadow-sm text-center font-bold text-[8px] flex items-center justify-center overflow-hidden border ${getThemeColors(node.type)}`}
-                        style={{
-                          left: `${node.x * 0.8}px`,
-                          top: `${node.y * 0.7}px`,
-                          width: `${(node.type === "decision" ? 110 : 120) * 0.8}px`,
-                          height: `${(node.type === "decision" ? 75 : 60) * 0.7}px`
-                        }}
-                      >
-                        <span className="line-clamp-2 leading-tight uppercase tracking-tight text-[7px]">
-                          {node.label}
-                        </span>
-                      </div>
-                    ))}
+                        return (
+                          <foreignObject
+                            key={node.id}
+                            x={node.x}
+                            y={node.y}
+                            width={nodeWidth}
+                            height={nodeHeight}
+                          >
+                            <div className={`w-full h-full rounded-xl shadow-sm text-center font-bold flex flex-col items-center justify-center border p-1 text-[10px] ${getThemeColors(node.type)}`}>
+                              {isOrgChart ? (
+                                <div className="flex flex-col items-center justify-center w-full h-full relative">
+                                  <span className={`text-[10px] font-black uppercase tracking-tight text-center leading-none ${
+                                    node.type === "start" || node.type === "end" ? "text-white" : "text-slate-800"
+                                  }`}>
+                                    {empName}
+                                  </span>
+                                  <span className={`text-[8.5px] font-extrabold mt-0.5 text-center leading-tight line-clamp-1 ${
+                                    node.type === "start" || node.type === "end" ? "text-rose-100" : "text-slate-500"
+                                  }`}>
+                                    {empRole}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="line-clamp-2 leading-tight uppercase tracking-tight text-[9px] px-1 font-extrabold">
+                                  {node.label}
+                                </span>
+                              )}
+                            </div>
+                          </foreignObject>
+                        );
+                      })}
+                    </svg>
                   </div>
                 </div>
 
@@ -1665,7 +1863,7 @@ export const PramaFlowchartHub: React.FC<PramaFlowchartHubProps> = ({ projectTit
                       const to = activeFlow.nodes.find(n => n.id === conn.to);
                       if (!from || !to) return null;
 
-                      const pathD = calculateOrthogonalPath(from, to);
+                      const pathD = calculateOrthogonalPath(from, to, activeFlowTab === "orgchart");
 
                       // Calculate midpoint of orthogonal line to position connection labels nicely
                       const midX = (from.x + to.x + 150) / 2;
@@ -1712,12 +1910,16 @@ export const PramaFlowchartHub: React.FC<PramaFlowchartHubProps> = ({ projectTit
                     })}
                   </svg>
 
-                  {/* FLOW NODES */}
+                   {/* FLOW NODES */}
                   {activeFlow.nodes.map(node => {
+                    const isOrgChart = activeFlowTab === "orgchart";
                     const isSelected = selectedNodeId === node.id;
-                    const nodeWidth = node.type === "decision" ? "w-[140px]" : "w-[150px]";
-                    const nodeHeight = node.type === "decision" ? "h-[90px]" : "h-[70px]";
+                    const nodeWidth = isOrgChart ? "w-[155px]" : node.type === "decision" ? "w-[140px]" : "w-[150px]";
+                    const nodeHeight = isOrgChart ? "h-[85px]" : node.type === "decision" ? "h-[90px]" : "h-[70px]";
                     
+                    const [empName, empRole] = isOrgChart ? node.label.split("\n") : [node.label, ""];
+                    const mainTitle = isOrgChart ? (empRole || empName) : node.label;
+
                     return (
                       <div
                         key={node.id}
@@ -1739,16 +1941,45 @@ export const PramaFlowchartHub: React.FC<PramaFlowchartHubProps> = ({ projectTit
                           </span>
                         )}
 
-                        <span className="text-[10.5px] font-extrabold uppercase tracking-tight leading-tight leading-4 line-clamp-2 px-1">
-                          {node.label}
-                        </span>
+                        {isOrgChart ? (
+                          <div className="flex flex-col items-center justify-center w-full h-full relative">
+                            {/* Initials badge */}
+                            <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[7px] font-black shadow-sm mb-1 ${
+                              node.type === "start" 
+                                ? "bg-white/20 text-white" 
+                                : node.type === "end" 
+                                ? "bg-white/30 text-white" 
+                                : "bg-indigo-50 text-indigo-700 border border-indigo-200"
+                            }`}>
+                              {mainTitle ? mainTitle.split(" ").map(w => w[0]).filter(c => /[a-zA-Z]/.test(c)).slice(0, 2).join("").toUpperCase() : "EM"}
+                            </div>
+                            
+                            <span className={`text-[10px] font-black uppercase tracking-tight text-center leading-tight line-clamp-2 px-1 ${
+                              node.type === "start" || node.type === "end" ? "text-white" : "text-slate-800"
+                            }`}>
+                              {mainTitle}
+                            </span>
+                            
+                            <span className={`text-[6.5px] font-mono mt-1 font-bold tracking-wider uppercase opacity-80 ${
+                              node.type === "start" || node.type === "end" ? "text-rose-200" : "text-slate-400"
+                            }`}>
+                              {node.type === "start" ? "★ CEO" : node.type === "end" ? "✦ DIREKTUR" : node.type === "decision" ? "👥 LAPANGAN" : "💼 MANAJEMEN"}
+                            </span>
+                          </div>
+                        ) : (
+                          <>
+                            <span className="text-[10.5px] font-extrabold uppercase tracking-tight leading-tight leading-4 line-clamp-2 px-1">
+                              {node.label}
+                            </span>
 
-                        {/* Visual indicator of type */}
-                        <span className={`text-[7px] font-mono mt-1 font-semibold tracking-wider uppercase opacity-80 ${
-                          node.type === "start" || node.type === "end" ? "text-rose-100" : "text-slate-500"
-                        }`}>
-                          {node.type === "decision" ? "◆ CABANG UJI" : node.type === "start" ? "● AWAL ALUR" : node.type === "end" ? "■ SELESAI" : "✔ PROSES"}
-                        </span>
+                            {/* Visual indicator of type */}
+                            <span className={`text-[7px] font-mono mt-1 font-semibold tracking-wider uppercase opacity-80 ${
+                              node.type === "start" || node.type === "end" ? "text-rose-100" : "text-slate-500"
+                            }`}>
+                              {node.type === "decision" ? "◆ CABANG UJI" : node.type === "start" ? "● AWAL ALUR" : node.type === "end" ? "■ SELESAI" : "✔ PROSES"}
+                            </span>
+                          </>
+                        )}
                       </div>
                     );
                   })}
@@ -1768,7 +1999,7 @@ export const PramaFlowchartHub: React.FC<PramaFlowchartHubProps> = ({ projectTit
                           DETAIL SIMPUL FLOWCHART
                         </span>
                         <h4 className="text-xs font-black text-slate-800 uppercase tracking-tight mt-0.5">
-                          {selectedNode.label}
+                          {activeFlowTab === "orgchart" ? (selectedNode.label.split("\n")[1] || selectedNode.label.split("\n")[0]) : selectedNode.label}
                         </h4>
                       </div>
                       <span className={`text-[8px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider ${
@@ -1803,8 +2034,14 @@ export const PramaFlowchartHub: React.FC<PramaFlowchartHubProps> = ({ projectTit
 
                       <div className="bg-slate-100 p-2.5 rounded-xl border border-slate-200/50 flex items-center justify-between text-[10px] font-bold">
                         <div>
-                          <span className="text-slate-400 block text-[8px] uppercase tracking-wider">Penanggung Jawab (PIC)</span>
-                          <span className="text-slate-700 font-extrabold">{selectedNode.details?.pic}</span>
+                          <span className="text-slate-400 block text-[8px] uppercase tracking-wider">
+                            {activeFlowTab === "orgchart" ? "Jabatan" : "Penanggung Jawab (PIC)"}
+                          </span>
+                          <span className="text-slate-700 font-extrabold">
+                            {activeFlowTab === "orgchart" 
+                              ? (selectedNode.label.split("\n")[1] || selectedNode.label.split("\n")[0])
+                              : (selectedNode.details?.pic || "-")}
+                          </span>
                         </div>
                         {selectedNode.details?.sopCode && (
                           <span className="px-2 py-0.5 bg-rose-50 text-rose-700 rounded text-[9px] font-mono font-black border border-rose-100">
@@ -1867,15 +2104,46 @@ export const PramaFlowchartHub: React.FC<PramaFlowchartHubProps> = ({ projectTit
             </div>
 
             <div className="space-y-3.5">
-              <div>
-                <label className="block font-bold text-slate-600 mb-1">Nama Simpul / Aktivitas</label>
-                <input
-                  type="text"
-                  value={editingNode.label}
-                  onChange={(e) => setEditingNode({ ...editingNode, label: e.target.value })}
-                  className="w-full p-2.5 border border-slate-205 rounded-xl bg-white outline-none focus:border-indigo-500 font-bold"
-                />
-              </div>
+              {activeFlowTab === "orgchart" ? (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-slate-600 mb-1">Nama Karyawan</label>
+                    <input
+                      type="text"
+                      value={editingNode.label.split("\n")[0] || ""}
+                      onChange={(e) => {
+                        const parts = editingNode.label.split("\n");
+                        parts[0] = e.target.value;
+                        setEditingNode({ ...editingNode, label: parts.join("\n") });
+                      }}
+                      className="w-full p-2.5 border border-slate-205 rounded-xl bg-white outline-none focus:border-indigo-500 font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-600 mb-1">Jabatan / Role</label>
+                    <input
+                      type="text"
+                      value={editingNode.label.split("\n")[1] || ""}
+                      onChange={(e) => {
+                        const parts = editingNode.label.split("\n");
+                        parts[1] = e.target.value;
+                        setEditingNode({ ...editingNode, label: parts.join("\n") });
+                      }}
+                      className="w-full p-2.5 border border-slate-205 rounded-xl bg-white outline-none focus:border-indigo-500 font-bold"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <label className="block font-bold text-slate-600 mb-1">Nama Simpul / Aktivitas</label>
+                  <input
+                    type="text"
+                    value={editingNode.label}
+                    onChange={(e) => setEditingNode({ ...editingNode, label: e.target.value })}
+                    className="w-full p-2.5 border border-slate-205 rounded-xl bg-white outline-none focus:border-indigo-500 font-bold"
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="block font-bold text-slate-600 mb-1">Deskripsi Detail Kegiatan</label>

@@ -3659,61 +3659,63 @@ ${lastMsgText}`;
         onTouchEnd={handleTouchEnd}
       >
         {/* Pinned Navigation Header */}
-        <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-5 md:px-16 w-full bg-gradient-to-b from-slate-950/80 to-transparent backdrop-blur-xs">
-          {/* Brand/Logo Left */}
-          <div className="flex items-center gap-3">
-            <div className="p-1.5 bg-slate-950/50 rounded-lg border border-slate-800 backdrop-blur-sm shadow-inner h-10 w-10 overflow-hidden flex items-center justify-center">
-              <img 
-                src="/api/proxy-drive?id=1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X" 
-                alt="Pancaran Group" 
-                referrerPolicy="no-referrer"
-                className="h-full w-full object-contain select-none" 
-              />
+        <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-slate-950/80 to-transparent backdrop-blur-xs">
+          <div className="max-w-6xl mx-auto w-full flex items-center justify-between px-6 py-5 md:px-16">
+            {/* Brand/Logo Left */}
+            <div className="flex items-center gap-3">
+              <div className="p-1.5 bg-slate-950/50 rounded-lg border border-slate-800 backdrop-blur-sm shadow-inner h-10 w-10 overflow-hidden flex items-center justify-center">
+                <img 
+                  src="/api/proxy-drive?id=1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X" 
+                  alt="Pancaran Group" 
+                  referrerPolicy="no-referrer"
+                  className="h-full w-full object-contain select-none" 
+                />
+              </div>
+              <span className="font-display font-bold text-sm tracking-[0.2em] text-white">
+                Pancaran Group
+              </span>
             </div>
-            <span className="font-display font-bold text-sm tracking-[0.2em] text-white">
-              Pancaran Group
-            </span>
-          </div>
 
-          {/* Navigation Pill Center */}
-          <div className="flex items-center bg-white/5 backdrop-blur-md border border-white/10 rounded-full p-1 shadow-2xl relative z-50">
-            {(["home", "missions", "technology"] as const).map((tab) => {
-              const isActive = landingActiveTab === tab;
-              return (
-                <button
-                  key={tab}
-                  onClick={() => setLandingActiveTab(tab)}
-                  className={`relative px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-colors duration-300 cursor-pointer ${
-                    isActive 
-                      ? "text-white" 
-                      : "text-slate-400 hover:text-white"
-                  }`}
-                >
-                  {isActive && (
-                    <motion.div
-                      layoutId="activeLandingTab"
-                      className="absolute inset-0 bg-indigo-600/80 border border-indigo-500/30 rounded-full shadow-md shadow-indigo-500/10"
-                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                      style={{ zIndex: -1 }}
-                    />
-                  )}
-                  {tab}
-                </button>
-              );
-            })}
-          </div>
+            {/* Navigation Pill Center */}
+            <div className="flex items-center bg-white/5 backdrop-blur-md border border-white/10 rounded-full p-1 shadow-2xl relative z-50">
+              {(["home", "missions", "technology"] as const).map((tab) => {
+                const isActive = landingActiveTab === tab;
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => setLandingActiveTab(tab)}
+                    className={`relative px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-colors duration-300 cursor-pointer ${
+                      isActive 
+                        ? "text-white" 
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    {isActive && (
+                      <motion.div
+                        layoutId="activeLandingTab"
+                        className="absolute inset-0 bg-indigo-600/80 border border-indigo-500/30 rounded-full shadow-md shadow-indigo-500/10"
+                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                        style={{ zIndex: -1 }}
+                      />
+                    )}
+                    {tab}
+                  </button>
+                );
+              })}
+            </div>
 
-          {/* Menu Button Right */}
-          <button 
-            onClick={() => {
-              setShowHeroLanding(false);
-              sessionStorage.setItem("prama_hero_dismissed", "true");
-            }}
-            className="group bg-slate-950/60 hover:bg-indigo-600 text-white px-5 py-2.5 rounded-full text-xs font-semibold tracking-wider flex items-center gap-2 border border-slate-800/80 backdrop-blur-sm transition-all duration-300 cursor-pointer shadow-lg hover:border-indigo-500/40"
-          >
-            <span>Masuk Portal</span>
-            <LogIn className="h-3.5 w-3.5 text-slate-400 group-hover:text-white transition-colors duration-300" />
-          </button>
+            {/* Menu Button Right */}
+            <button 
+              onClick={() => {
+                setShowHeroLanding(false);
+                sessionStorage.setItem("prama_hero_dismissed", "true");
+              }}
+              className="group bg-slate-950/60 hover:bg-indigo-600 text-white px-5 py-2.5 rounded-full text-xs font-semibold tracking-wider flex items-center gap-2 border border-slate-800/80 backdrop-blur-sm transition-all duration-300 cursor-pointer shadow-lg hover:border-indigo-500/40"
+            >
+              <span>Masuk Portal</span>
+              <LogIn className="h-3.5 w-3.5 text-slate-400 group-hover:text-white transition-colors duration-300" />
+            </button>
+          </div>
         </header>
 
         {/* Side Indicator Dots (PPT-style) - Hidden by default to keep the UI super clean */}
@@ -3774,64 +3776,89 @@ ${lastMsgText}`;
               {/* Glowing bottom divider boundary */}
               <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-indigo-500/30 z-30 shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
               
-              {/* Main Hero Content (Bottom-Left Aligned) */}
-              <main className="relative z-10 flex-1 flex flex-col justify-center px-6 md:px-16 w-full max-w-6xl text-left">
-                <motion.div 
-                  layoutId="prama-landing-card-shared-1"
-                  initial={{ opacity: 0, scale: 0.4, filter: "blur(12px)" }}
-                  animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-                  transition={{ type: "spring", stiffness: 90, damping: 15, delay: 0.1 }}
-                  className="bg-[#090d16]/75 backdrop-blur-md border border-indigo-500/30 rounded-3xl p-5 sm:p-6 md:p-8 max-w-3xl shadow-2xl relative overflow-hidden group"
-                >
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none group-hover:bg-indigo-400/10 transition-all duration-300" />
-                  
-                  {/* Subtitle */}
-                  <div className="flex items-center gap-3 text-xs sm:text-sm text-indigo-400 font-bold uppercase tracking-[0.25em] mb-3 md:mb-4">
-                    <span className="w-8 h-[2px] bg-indigo-500"></span>
-                    <span>( Powered By Digital Solution )</span>
-                  </div>
-
-                  {/* Main Display Headline */}
-                  <h1 className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight text-white leading-tight mb-4 md:mb-5">
-                    Proyek Lancar, Anggaran Aman dengan <span className="font-serif italic font-normal text-indigo-300">Prama AI Agent!</span>
-                  </h1>
-
-                  {/* Paragraph Description */}
-                  <div className="text-sm sm:text-base text-slate-200/90 leading-relaxed font-sans mb-5 space-y-3">
-                    <p className="text-sm sm:text-base">
-                      Sebagai Project Management Analytics pintar, <strong className="text-indigo-300 font-bold">Prama AI</strong> siap menjadi support system andalan yang memberikan Anda:
-                    </p>
-                    <div className="space-y-3 pt-1">
-                      <div className="flex items-start gap-3">
-                        <span className="text-lg leading-none select-none mt-0.5">🎯</span>
-                        <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
-                          <strong className="text-white font-semibold">Solusi Strategis Interaktif:</strong> Prama tidak sekadar menampilkan data, tapi aktif memberikan rekomendasi taktis. Navigasi proyek Anda kini jadi lebih presisi, prediktif, dan siap menghadapi segala risiko di lapangan.
-                        </p>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <span className="text-lg leading-none select-none mt-0.5">📉</span>
-                        <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
-                          <strong className="text-white font-semibold">Efisiensi Finansial Mutakhir:</strong> Deteksi dini potensi pembengkakan biaya (cost-overrun) secara otomatis, memastikan setiap keputusan strategis tetap selaras dengan efisiensi anggaran.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Call-to-Action Buttons */}
-                  <div className="flex flex-wrap items-center gap-4">
-                    <button 
-                      type="button"
-                      className="bg-indigo-600 hover:bg-indigo-500 text-white px-7 py-3 sm:px-8 sm:py-3.5 rounded-full text-xs sm:text-sm font-semibold uppercase tracking-wider flex items-center gap-2.5 transition-all duration-300 shadow-lg shadow-indigo-600/30 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
-                      onClick={() => {
-                        setShowHeroLanding(false);
-                        sessionStorage.setItem("prama_hero_dismissed", "true");
-                      }}
+              {/* Main Hero Content (Aligned Top-Left, Sejajar dengan slide lain) */}
+              <main className="relative z-10 flex-1 flex flex-col justify-start pt-6 md:pt-10 lg:pt-12 px-6 md:px-16 w-full max-w-6xl text-left">
+                <div className="w-full">
+                  <div className="max-w-2xl mt-2">
+                    <motion.div 
+                      layoutId="prama-landing-card-shared-1"
+                      initial={{ opacity: 0, scale: 0.4, filter: "blur(12px)" }}
+                      animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                      transition={{ type: "spring", stiffness: 90, damping: 15, delay: 0.1 }}
+                      className="bg-[#090d16]/85 backdrop-blur-md border border-indigo-500/30 rounded-3xl p-5 sm:p-6 md:p-8 w-full shadow-2xl relative overflow-hidden group hover:border-indigo-500/50 transition-all duration-300"
                     >
-                      <Rocket className="h-4 w-4 text-white" />
-                      <span>START ESTIMATOR</span>
-                    </button>
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none group-hover:bg-indigo-400/10 transition-all duration-300" />
+                      
+                      {/* Small Image Above Text */}
+                      <div className="mb-4 flex items-center justify-start">
+                        <div className="p-1 bg-slate-950/60 rounded-2xl border border-indigo-500/30 backdrop-blur-sm w-full max-w-[500px] h-[105px] overflow-hidden flex items-center justify-center shadow-lg shadow-indigo-500/10">
+                          <img 
+                            src="/api/proxy-drive?id=1z6lj55JU_2e-sBtc3jI8BecI8jx4refn" 
+                            alt="Prama Logo"
+                            className="select-none rounded-xl"
+                            style={{ width: "500px", height: "105px", marginLeft: "0px", paddingLeft: "0px", objectFit: "cover" }}
+                            onError={(e) => {
+                              const img = e.currentTarget;
+                              if (img.src !== "https://lh3.googleusercontent.com/d/1z6lj55JU_2e-sBtc3jI8BecI8jx4refn") {
+                                img.src = "https://lh3.googleusercontent.com/d/1z6lj55JU_2e-sBtc3jI8BecI8jx4refn";
+                              } else if (img.src !== "https://drive.google.com/uc?export=view&id=1z6lj55JU_2e-sBtc3jI8BecI8jx4refn") {
+                                img.src = "https://drive.google.com/uc?export=view&id=1z6lj55JU_2e-sBtc3jI8BecI8jx4refn";
+                              }
+                            }}
+                            referrerPolicy="no-referrer"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Subtitle */}
+                      <div className="flex items-center gap-3 text-xs sm:text-sm text-indigo-400 font-bold uppercase tracking-[0.25em] mb-3 md:mb-4">
+                        <span className="w-8 h-[2px] bg-indigo-500"></span>
+                        <span>( Powered By Digital Solution )</span>
+                      </div>
+
+                      {/* Main Display Headline */}
+                      <h1 className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight text-white leading-tight mb-4 md:mb-5">
+                        Prama <span className="font-serif italic font-normal text-indigo-300">AI Agent</span>
+                      </h1>
+
+                      {/* Paragraph Description */}
+                      <div className="text-sm sm:text-base text-slate-200/90 leading-relaxed font-sans mb-5 space-y-3">
+                        <p className="text-sm sm:text-base">
+                          Sebagai Project Management Analytics pintar, <strong className="text-indigo-300 font-bold">Prama AI</strong> siap menjadi support system andalan yang memberikan Anda:
+                        </p>
+                        <div className="space-y-3 pt-1">
+                          <div className="flex items-start gap-3">
+                            <span className="text-lg leading-none select-none mt-0.5">🎯</span>
+                            <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
+                              <strong className="text-white font-semibold">Solusi Strategis Interaktif:</strong> Prama tidak sekadar menampilkan data, tapi aktif memberikan rekomendasi taktis. Navigasi proyek Anda kini jadi lebih presisi, prediktif, dan siap menghadapi segala risiko di lapangan.
+                            </p>
+                          </div>
+                          <div className="flex items-start gap-3">
+                            <span className="text-lg leading-none select-none mt-0.5">📉</span>
+                            <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
+                              <strong className="text-white font-semibold">Efisiensi Finansial Mutakhir:</strong> Deteksi dini potensi pembengkakan biaya (cost-overrun) secara otomatis, memastikan setiap keputusan strategis tetap selaras dengan efisiensi anggaran.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Call-to-Action Buttons */}
+                      <div className="flex flex-wrap items-center gap-4">
+                        <button 
+                          type="button"
+                          className="bg-indigo-600 hover:bg-indigo-500 text-white px-7 py-3 sm:px-8 sm:py-3.5 rounded-full text-xs sm:text-sm font-semibold uppercase tracking-wider flex items-center gap-2.5 transition-all duration-300 shadow-lg shadow-indigo-600/30 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                          onClick={() => {
+                            setShowHeroLanding(false);
+                            sessionStorage.setItem("prama_hero_dismissed", "true");
+                          }}
+                        >
+                          <Rocket className="h-4 w-4 text-white" />
+                          <span>START ESTIMATOR</span>
+                        </button>
+                      </div>
+                    </motion.div>
                   </div>
-                </motion.div>
+                </div>
               </main>
 
               {/* Footer (Partners) */}
@@ -3886,7 +3913,7 @@ ${lastMsgText}`;
                 loop
                 muted
                 playsInline
-                src="https://res.cloudinary.com/djamo6ge4/video/upload/v1779812550/kling_20260527_Image_to_Video_generate_s_68_0_kcwrxg.mp4"
+                src="https://res.cloudinary.com/x6bejifd/video/upload/v1783924639/PixVerse_V6_Image_Text_540P_buatkan_video_anim_1_ug1wzx.mp4"
                 className="absolute inset-0 w-full h-full object-cover -z-10 scale-[1.12] origin-center"
               />
               {/* Dark Overlay */}
@@ -3895,8 +3922,8 @@ ${lastMsgText}`;
               {/* Glowing bottom divider boundary */}
               <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-indigo-500/30 z-30 shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
               
-              {/* Main Hero Content (Bottom-Left Aligned) */}
-              <main className="relative z-10 flex-1 flex flex-col justify-center px-6 md:px-16 w-full max-w-6xl text-left">
+              {/* Main Hero Content (Aligned Top) */}
+              <main className="relative z-10 flex-1 flex flex-col justify-start pt-6 md:pt-10 lg:pt-12 px-6 md:px-16 w-full max-w-6xl text-left">
                 <div className="w-full">
                   {/* Subtitle */}
                   <motion.div 
@@ -4061,14 +4088,14 @@ ${lastMsgText}`;
                 loop
                 muted
                 playsInline
-                src="https://res.cloudinary.com/djamo6ge4/video/upload/v1779807528/kling_20260523_Image_to_Video_Create_a_s_5524_0_e3hkw1.mp4"
+                src="https://res.cloudinary.com/x6bejifd/video/upload/v1783924639/PixVerse_V6_Image_Text_540P_Buatkan_video_logi_2_cez6wm.mp4"
                 className="absolute inset-0 w-full h-full object-cover -z-10 scale-[1.12] origin-center"
               />
               {/* Dark Overlay */}
               <div className="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-slate-950/35 to-slate-950/85 -z-10 pointer-events-none" />
               
-              {/* Main Hero Content (Bottom-Left Aligned) */}
-              <main className="relative z-10 flex-1 flex flex-col justify-center px-6 md:px-16 w-full max-w-6xl text-left">
+              {/* Main Hero Content (Aligned Top) */}
+              <main className="relative z-10 flex-1 flex flex-col justify-start pt-6 md:pt-10 lg:pt-12 px-6 md:px-16 w-full max-w-6xl text-left">
                 <div className="w-full">
                   {/* Subtitle */}
                   <motion.div 
@@ -4096,10 +4123,10 @@ ${lastMsgText}`;
                         <Cpu className="h-6 w-6" />
                       </div>
                       <h3 className="font-display font-bold text-base sm:text-lg md:text-xl text-white mb-2">
-                        Predictive Analytics Engine
+                        Predictive Market Strategy Engine
                       </h3>
                       <p className="text-sm sm:text-base text-slate-200 leading-relaxed">
-                        Algoritma machine learning terintegrasi yang mampu mendeteksi potensi pembengkakan biaya (cost-overrun) secara realtime dan otomatis memproyeksikan sisa anggaran proyek.
+                        Komponen AI pintar yang mendeteksi peluang pasar secara real-time, memproyeksikan langkah strategis ke depan, dan menyajikan solusi rekomendasi otomatis untuk mengoptimalkan performa bisnis.
                       </p>
                     </motion.div>
 
@@ -4856,14 +4883,11 @@ ${lastMsgText}`;
                   </div>
                   <div>
                     <h3 className="font-display font-black text-sm tracking-wider uppercase leading-none text-white flex items-center gap-2">
-                      DASHBOARD UTAMA FORMULASI PM
+                      Dashboard Chat AI Agent Prama
                       <span className="text-[8px] font-bold font-mono tracking-widest px-2 py-0.5 rounded bg-violet-900/80 text-violet-200 border border-violet-700 uppercase leading-none">
                         14 PILAR JURNAL
                       </span>
                     </h3>
-                    <p className="text-[10px] text-slate-400 font-mono tracking-widest font-bold mt-1 uppercase">
-                      KAJIAN KELAYAKAN KOMPREHENSIF MITRA PRAMA ADVISOR
-                    </p>
                   </div>
                 </div>
 
@@ -5212,19 +5236,6 @@ ${lastMsgText}`;
                           <div className="flex gap-1.5 overflow-x-auto">
                             <button
                               type="button"
-                              onClick={() => setWorkspaceViewState("editor")}
-                              className={`flex items-center gap-1.5 px-3.5 py-2.5 text-[10.5px] font-black rounded-xl transition ${
-                                workspaceViewState === "editor"
-                                  ? "bg-white text-slate-800 border border-slate-200 shadow-sm"
-                                  : "text-slate-500 hover:bg-slate-200 hover:text-slate-700"
-                              }`}
-                            >
-                              <SquarePen className="h-3.5 w-3.5" />
-                              <span>✏️ Formulasi Draf (Editor)</span>
-                            </button>
-
-                            <button
-                              type="button"
                               onClick={() => setWorkspaceViewState("article")}
                               className={`flex items-center gap-1.5 px-3.5 py-2.5 text-[10.5px] font-black rounded-xl transition ${
                                 workspaceViewState === "article"
@@ -5234,19 +5245,6 @@ ${lastMsgText}`;
                             >
                               <BookOpen className="h-3.5 w-3.5" />
                               <span>📰 Elegansi Artikel (Tipografi)</span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => setWorkspaceViewState("workflow")}
-                              className={`flex items-center gap-1.5 px-3.5 py-2.5 text-[10.5px] font-black rounded-xl transition ${
-                                workspaceViewState === "workflow"
-                                  ? "bg-white text-indigo-850 border border-slate-200 shadow-sm"
-                                  : "text-slate-500 hover:bg-slate-200 hover:text-indigo-800"
-                              }`}
-                            >
-                              <Grid className="h-3.5 w-3.5 text-indigo-500" />
-                              <span>📊 Skema Alur Workflow {activeSec.number === 5 ? "(Pilar 5 Struktur)" : ""}</span>
                             </button>
                           </div>
 
@@ -8361,122 +8359,7 @@ ${lastMsgText}`;
           </div>
         )}
 
-        {/* Floating Gear Menu Button - Only visible in divisions menu when activeDivision is null */}
-        {dashboardView === "divisions" && (
-          <div className="fixed bottom-6 left-6 z-50 flex flex-col items-start">
-            {/* Popover Menu */}
-            {showDivisionGearMenu && (
-              <div className="bg-white border border-slate-200 shadow-2xl rounded-2xl p-4 mb-3 w-80 animate-fade-in text-left">
-                <div className="border-b border-slate-150 pb-2 mb-3">
-                  <h4 className="font-display font-black text-xs text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                    <Settings className="h-3.5 w-3.5 text-indigo-650 animate-spin" style={{ animationDuration: '6s' }} />
-                    Menu Administrasi Tersembunyi
-                  </h4>
-                  <p className="text-[10px] text-slate-400 font-bold mt-0.5 font-mono uppercase">
-                    Opsi Kontrol PRAMA Enterprise
-                  </p>
-                </div>
 
-                <div className="space-y-2">
-                  {/* Option 1: Dokumen PM */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDashboardView("saved_docs");
-                      setShowDivisionGearMenu(false);
-                    }}
-                    className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-emerald-50 border border-transparent hover:border-emerald-100 transition duration-200 text-left group cursor-pointer"
-                  >
-                    <div className="h-8 w-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold border border-emerald-100 group-hover:bg-emerald-500 group-hover:text-white transition-all shrink-0">
-                      <HardDrive className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-extrabold text-slate-800 uppercase tracking-wide truncate">
-                          Simpan Dokumen PM
-                        </span>
-                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-extrabold">
-                          {files.length}
-                        </span>
-                      </div>
-                      <p className="text-[9px] text-slate-400 mt-0.5 font-semibold truncate">
-                        Draf artikel, proposal, & dokumen audit
-                      </p>
-                    </div>
-                  </button>
-
-                  {/* Option 2: Approval Pendaftaran */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDashboardView("approval_requests");
-                      setShowDivisionGearMenu(false);
-                    }}
-                    className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-indigo-50 border border-transparent hover:border-indigo-100 transition duration-200 text-left group cursor-pointer"
-                  >
-                    <div className="h-8 w-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold border border-indigo-100 group-hover:bg-indigo-500 group-hover:text-white transition-all shrink-0">
-                      <Users className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-extrabold text-slate-800 uppercase tracking-wide truncate">
-                          Cek Approval Pendaftaran
-                        </span>
-                        {pendingRequests.length > 0 && (
-                          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded-md bg-red-100 text-red-800 font-extrabold animate-pulse">
-                            {pendingRequests.length}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-[9px] text-slate-400 mt-0.5 font-semibold truncate">
-                        Verifikasi & otorisasi akun baru staf
-                      </p>
-                    </div>
-                  </button>
-
-                  {/* Option 3: Robot Voice & Media */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDashboardView("robot_voice");
-                      setShowDivisionGearMenu(false);
-                    }}
-                    className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-cyan-50 border border-transparent hover:border-cyan-100 transition duration-200 text-left group cursor-pointer"
-                  >
-                    <div className="h-8 w-8 rounded-lg bg-cyan-50 text-cyan-600 flex items-center justify-center font-bold border border-cyan-100 group-hover:bg-cyan-500 group-hover:text-white transition-all shrink-0">
-                      <Cpu className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-extrabold text-slate-800 uppercase tracking-wide truncate">
-                          Robot Voice & Media
-                        </span>
-                        <span className="text-[8px] font-mono px-1 bg-cyan-100 text-cyan-800 font-bold rounded uppercase">
-                          Otomatis
-                        </span>
-                      </div>
-                      <p className="text-[9px] text-slate-400 mt-0.5 font-semibold truncate">
-                        Transkripsi video & media automation
-                      </p>
-                    </div>
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Gear FAB Button */}
-            <button
-              type="button"
-              onClick={() => setShowDivisionGearMenu(!showDivisionGearMenu)}
-              className={`h-11 w-11 rounded-full bg-slate-900 border border-slate-800 hover:bg-slate-800 text-white flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 active:scale-90 cursor-pointer ${
-                showDivisionGearMenu ? "rotate-90 bg-indigo-650 border-indigo-500" : ""
-              }`}
-              title="Menu Opsi Administrasi"
-            >
-              <Settings className="h-5 w-5 animate-spin hover:text-[#00D285]" style={{ animationDuration: '8s' }} />
-            </button>
-          </div>
-        )}
 
       </div>
     );

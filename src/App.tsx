@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import {
   collection,
   doc,
@@ -115,7 +116,8 @@ import {
   Rocket,
   LayoutGrid,
   Orbit,
-  Compass
+  Compass,
+  Hexagon
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -370,41 +372,90 @@ export default function App() {
   });
 
   const [landingActiveTab, setLandingActiveTab] = useState<"home" | "missions" | "technology">("home");
+  const [showLandingGearMenu, setShowLandingGearMenu] = useState<boolean>(false);
+  const [showDivisionGearMenu, setShowDivisionGearMenu] = useState<boolean>(false);
 
   const scrollToSection = (sectionId: "home" | "missions" | "technology") => {
-    const el = document.getElementById(`section-${sectionId}`);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth" });
+    setLandingActiveTab(sectionId);
+  };
+
+  const lastScrollTime = useRef<number>(0);
+  const touchStartY = useRef<number>(0);
+
+  const handleLandingWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    const now = Date.now();
+    if (now - lastScrollTime.current < 800) return; // 800ms throttle for elegant, deliberate PPT transitions
+
+    const tabs: ("home" | "missions" | "technology")[] = ["home", "missions", "technology"];
+    const currentIndex = tabs.indexOf(landingActiveTab);
+
+    if (e.deltaY > 15) {
+      if (currentIndex < tabs.length - 1) {
+        setLandingActiveTab(tabs[currentIndex + 1]);
+        lastScrollTime.current = now;
+      }
+    } else if (e.deltaY < -15) {
+      if (currentIndex > 0) {
+        setLandingActiveTab(tabs[currentIndex - 1]);
+        lastScrollTime.current = now;
+      }
+    }
+  };
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+    const touchEndY = e.changedTouches[0].clientY;
+    const diff = touchStartY.current - touchEndY;
+    const now = Date.now();
+    if (now - lastScrollTime.current < 800) return;
+
+    const tabs: ("home" | "missions" | "technology")[] = ["home", "missions", "technology"];
+    const currentIndex = tabs.indexOf(landingActiveTab);
+
+    if (diff > 40) {
+      if (currentIndex < tabs.length - 1) {
+        setLandingActiveTab(tabs[currentIndex + 1]);
+        lastScrollTime.current = now;
+      }
+    } else if (diff < -40) {
+      if (currentIndex > 0) {
+        setLandingActiveTab(tabs[currentIndex - 1]);
+        lastScrollTime.current = now;
+      }
     }
   };
 
   useEffect(() => {
     if (!showHeroLanding) return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const id = entry.target.id;
-            if (id === "section-home") setLandingActiveTab("home");
-            if (id === "section-missions") setLandingActiveTab("missions");
-            if (id === "section-technology") setLandingActiveTab("technology");
-          }
-        });
-      },
-      { threshold: 0.5 }
-    );
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is in an input field or textarea
+      if (document.activeElement?.tagName === "INPUT" || document.activeElement?.tagName === "TEXTAREA") {
+        return;
+      }
 
-    const home = document.getElementById("section-home");
-    const missions = document.getElementById("section-missions");
-    const tech = document.getElementById("section-technology");
+      const tabs: ("home" | "missions" | "technology")[] = ["home", "missions", "technology"];
+      const currentIndex = tabs.indexOf(landingActiveTab);
 
-    if (home) observer.observe(home);
-    if (missions) observer.observe(missions);
-    if (tech) observer.observe(tech);
+      if (e.key === "ArrowDown" || e.key === "ArrowRight" || e.key === " ") {
+        if (currentIndex < tabs.length - 1) {
+          e.preventDefault();
+          setLandingActiveTab(tabs[currentIndex + 1]);
+        }
+      } else if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
+        if (currentIndex > 0) {
+          e.preventDefault();
+          setLandingActiveTab(tabs[currentIndex - 1]);
+        }
+      }
+    };
 
-    return () => observer.disconnect();
-  }, [showHeroLanding]);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showHeroLanding, landingActiveTab]);
 
 
 
@@ -3580,53 +3631,77 @@ ${lastMsgText}`;
 
   // Render 1.5: Cinematic Photo Landing/Intro Screen with Snap Scroll Navigation
   if (showHeroLanding) {
+    const landingPartners = [
+      {
+        name: "Pancaran Group",
+        logoUrl: "/api/proxy-drive?id=1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X"
+      },
+      {
+        name: "PETRA",
+        logoUrl: "/api/proxy-drive?id=1NIIGTdZHUtGHkFhafM142o1_mr3L4_sI"
+      },
+      {
+        name: "PDT",
+        logoUrl: "/api/proxy-drive?id=1fbl9XyIOCokgRq85oyJmOrsCvWoQVXoq"
+      },
+      {
+        name: "PLI",
+        logoUrl: "/api/proxy-drive?id=1CPq1gB-DNIbTlRDYqLoroq3dFtMfcsJ0"
+      }
+    ];
+
     return (
       <div 
-        className="w-full h-screen overflow-y-auto snap-y snap-mandatory scroll-smooth bg-slate-950 relative select-none" 
+        className="w-full h-screen overflow-hidden bg-slate-950 relative select-none" 
         id="landing-scroll-container"
+        onWheel={handleLandingWheel}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
       >
         {/* Pinned Navigation Header */}
         <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-5 md:px-16 w-full bg-gradient-to-b from-slate-950/80 to-transparent backdrop-blur-xs">
           {/* Brand/Logo Left */}
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-indigo-500/10 rounded-lg border border-indigo-500/30 backdrop-blur-sm shadow-inner">
-              <Sun className="h-5 w-5 text-indigo-400 animate-[spin_12s_linear_infinite]" />
+            <div className="p-1.5 bg-slate-950/50 rounded-lg border border-slate-800 backdrop-blur-sm shadow-inner h-10 w-10 overflow-hidden flex items-center justify-center">
+              <img 
+                src="/api/proxy-drive?id=1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X" 
+                alt="Pancaran Group" 
+                referrerPolicy="no-referrer"
+                className="h-full w-full object-contain select-none" 
+              />
             </div>
             <span className="font-display font-bold text-sm tracking-[0.2em] text-white">
-              CORE AEROSPACE
+              Pancaran Group
             </span>
           </div>
 
           {/* Navigation Pill Center */}
-          <nav className="hidden md:flex items-center gap-8 bg-slate-950/60 backdrop-blur-md border border-slate-800/60 rounded-full px-8 py-2.5 text-[11px] font-semibold tracking-wider text-slate-300">
-            <button 
-              onClick={() => scrollToSection("home")} 
-              className={`hover:text-white transition-colors cursor-pointer relative uppercase ${landingActiveTab === "home" ? "text-white" : "text-slate-400"}`}
-            >
-              HOME
-              {landingActiveTab === "home" && (
-                <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse"></span>
-              )}
-            </button>
-            <button 
-              onClick={() => scrollToSection("missions")} 
-              className={`hover:text-white transition-colors cursor-pointer relative uppercase ${landingActiveTab === "missions" ? "text-white" : "text-slate-400"}`}
-            >
-              MISSIONS
-              {landingActiveTab === "missions" && (
-                <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse"></span>
-              )}
-            </button>
-            <button 
-              onClick={() => scrollToSection("technology")} 
-              className={`hover:text-white transition-colors cursor-pointer relative uppercase ${landingActiveTab === "technology" ? "text-white" : "text-slate-400"}`}
-            >
-              TECHNOLOGY
-              {landingActiveTab === "technology" && (
-                <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse"></span>
-              )}
-            </button>
-          </nav>
+          <div className="flex items-center bg-white/5 backdrop-blur-md border border-white/10 rounded-full p-1 shadow-2xl relative z-50">
+            {(["home", "missions", "technology"] as const).map((tab) => {
+              const isActive = landingActiveTab === tab;
+              return (
+                <button
+                  key={tab}
+                  onClick={() => setLandingActiveTab(tab)}
+                  className={`relative px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-colors duration-300 cursor-pointer ${
+                    isActive 
+                      ? "text-white" 
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeLandingTab"
+                      className="absolute inset-0 bg-indigo-600/80 border border-indigo-500/30 rounded-full shadow-md shadow-indigo-500/10"
+                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                      style={{ zIndex: -1 }}
+                    />
+                  )}
+                  {tab}
+                </button>
+              );
+            })}
+          </div>
 
           {/* Menu Button Right */}
           <button 
@@ -3641,374 +3716,477 @@ ${lastMsgText}`;
           </button>
         </header>
 
-        {/* SECTION 1: HOME */}
-        <section 
-          id="section-home" 
-          className="relative w-full h-screen snap-start flex flex-col justify-between pt-24 overflow-hidden bg-transparent z-20"
-        >
-          {/* Background Video (Full Screen, Keep Loop & Mute) */}
-          <video 
-            ref={landingActiveTab === "home" ? landingVideoRef : undefined}
-            autoPlay
-            loop
-            muted
-            playsInline
-            src="https://res.cloudinary.com/x6bejifd/video/upload/v1783584845/PixVerse_V6_Extend_540P_buat_video_lebih_panja_1_online-video-cutter.com_1_lzv2t0.mp4"
-            className="absolute inset-0 w-full h-full object-cover -z-10 bg-[#020617]"
-          />
-          {/* Dark Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-slate-950/35 to-slate-950/85 -z-10 pointer-events-none" />
+        {/* Side Indicator Dots (PPT-style) - Hidden by default to keep the UI super clean */}
+        <div className="hidden" />
 
-          {/* Glowing bottom divider boundary */}
-          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-indigo-500/30 z-30 shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
-          {/* Main Hero Content (Bottom-Left Aligned) */}
-          <main className="relative z-10 flex-1 flex flex-col justify-center px-6 md:px-16 w-full max-w-6xl text-left">
-            <div className="animate-fade-in duration-500">
-              {/* Subtitle */}
-              <div className="flex items-center gap-3 text-xs text-indigo-400 font-bold uppercase tracking-[0.25em] mb-4 md:mb-6">
-                <span className="w-8 h-[2px] bg-indigo-500"></span>
-                <span>( Powered By Digital Solution )</span>
-              </div>
+        {/* Slide Control Left Arrow */}
+        {landingActiveTab !== "home" && (
+          <button
+            onClick={() => {
+              const tabs: ("home" | "missions" | "technology")[] = ["home", "missions", "technology"];
+              const idx = tabs.indexOf(landingActiveTab);
+              if (idx > 0) setLandingActiveTab(tabs[idx - 1]);
+            }}
+            className="fixed left-4 md:left-6 top-1/2 -translate-y-1/2 z-40 p-3 rounded-full bg-slate-950/40 hover:bg-indigo-600/80 border border-slate-800 hover:border-indigo-500/40 text-slate-400 hover:text-white backdrop-blur-md transition-all duration-300 hover:scale-110 shadow-lg cursor-pointer hidden md:flex items-center justify-center"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+        )}
 
-              {/* Main Display Headline */}
-              <h1 
-                className="font-display text-4xl md:text-6xl lg:text-7xl font-semibold tracking-tight text-white leading-[1.1] mb-6 max-w-4xl"
-                style={{ height: "230px", width: "2000px" }}
-              >
-                Proyek Lancar, Anggaran Aman dengan <span className="font-serif italic font-normal text-indigo-300">Prama AI Agent!</span>
-              </h1>
+        {/* Slide Control Right Arrow */}
+        {landingActiveTab !== "technology" && (
+          <button
+            onClick={() => {
+              const tabs: ("home" | "missions" | "technology")[] = ["home", "missions", "technology"];
+              const idx = tabs.indexOf(landingActiveTab);
+              if (idx < tabs.length - 1) setLandingActiveTab(tabs[idx + 1]);
+            }}
+            className="fixed right-4 md:right-6 top-1/2 -translate-y-1/2 z-40 p-3 rounded-full bg-slate-950/40 hover:bg-indigo-600/80 border border-slate-800 hover:border-indigo-500/40 text-slate-400 hover:text-white backdrop-blur-md transition-all duration-300 hover:scale-110 shadow-lg cursor-pointer hidden md:flex items-center justify-center"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+        )}
 
-              {/* Paragraph Description */}
-              <div className="text-sm md:text-base text-slate-200/90 leading-relaxed max-w-2xl font-sans mb-8 space-y-4">
-                <p>
-                  Sebagai Project Management Analytics pintar, <strong className="text-indigo-300 font-bold">Prama AI</strong> siap menjadi support system andalan yang memberikan Anda:
-                </p>
-                <div className="space-y-3 pt-1">
-                  <div className="flex items-start gap-2.5">
-                    <span className="text-lg leading-none select-none mt-0.5">🎯</span>
-                    <p className="text-xs md:text-sm text-slate-300">
-                      <strong className="text-white font-semibold">Solusi Strategis Interaktif:</strong> Prama tidak sekadar menampilkan data, tapi aktif memberikan rekomendasi taktis. Navigasi proyek Anda kini jadi lebih presisi, prediktif, dan siap menghadapi segala risiko di lapangan.
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-2.5">
-                    <span className="text-lg leading-none select-none mt-0.5">📉</span>
-                    <p className="text-xs md:text-sm text-slate-300">
-                      <strong className="text-white font-semibold">Efisiensi Finansial Mutakhir:</strong> Deteksi dini potensi pembengkakan biaya (cost-overrun) secara otomatis, memastikan setiap keputusan strategis tetap selaras dengan efisiensi anggaran.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Call-to-Action Buttons */}
-              <div 
-                className="flex flex-wrap items-center gap-4"
-                style={{ height: "15.9531px", width: "1024.03px" }}
-              >
-                <button 
-                  type="button"
-                  className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-4 rounded-full text-xs font-semibold uppercase tracking-wider flex items-center gap-2.5 transition-all duration-300 shadow-lg shadow-indigo-600/30 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
-                  onClick={() => {
-                    setShowHeroLanding(false);
-                    sessionStorage.setItem("prama_hero_dismissed", "true");
-                  }}
-                >
-                  <Rocket className="h-4 w-4 text-white" />
-                  <span>START ESTIMATOR</span>
-                </button>
-              </div>
-            </div>
-          </main>
-
-          {/* Footer (Partners + Stats) */}
-          <footer className="relative z-10 w-full px-6 py-4 md:px-16 md:py-8 flex flex-col md:flex-row md:items-end md:justify-between gap-6 md:gap-4">
-            {/* Partners Left */}
-            <div className="flex flex-col gap-3">
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.25em]">
-                OUR AEROSPACE FLIGHT PARTNERS:
-              </span>
-              <div className="flex flex-wrap items-center gap-2.5">
-                {["NASA", "SPACEX", "ESA", "JAXA"].map((partner) => (
-                  <div 
-                    key={partner} 
-                    className="border border-slate-800/80 bg-slate-950/40 rounded-full px-4 py-2 flex items-center gap-2 text-[11px] font-semibold tracking-widest text-slate-300 backdrop-blur-sm"
-                  >
-                    <span className="w-1 h-1 bg-indigo-500 rounded-full animate-pulse"></span>
-                    <span>{partner}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Scroll indicator center */}
-            <div 
-              onClick={() => scrollToSection("missions")}
-              className="hidden lg:flex flex-col items-center gap-1.5 text-slate-400 hover:text-white transition-colors cursor-pointer group"
+        <AnimatePresence mode="popLayout">
+          {landingActiveTab === "home" && (
+            <motion.section 
+              key="home"
+              id="section-home"
+              initial={{ opacity: 0, y: 100, scale: 0.4, filter: "blur(12px)" }}
+              animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+              exit={{ opacity: 0, y: -100, scale: 0.4, filter: "blur(12px)" }}
+              transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
+              className="absolute inset-0 w-full h-full flex flex-col justify-between pt-24 overflow-hidden bg-transparent z-20"
             >
-              <span className="text-[10px] font-bold tracking-[0.2em] uppercase">SCROLL DOWN</span>
-              <ChevronDown className="h-4 w-4 animate-bounce text-indigo-400 group-hover:text-indigo-300" />
-            </div>
+              {/* Background Video (Full Screen, Keep Loop & Mute) */}
+              <video 
+                ref={landingVideoRef}
+                autoPlay
+                loop
+                muted
+                playsInline
+                src="https://res.cloudinary.com/x6bejifd/video/upload/v1783584845/PixVerse_V6_Extend_540P_buat_video_lebih_panja_1_online-video-cutter.com_1_lzv2t0.mp4"
+                className="absolute inset-0 w-full h-full object-cover -z-10 bg-[#020617]"
+              />
+              {/* Dark Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-slate-950/35 to-slate-950/85 -z-10 pointer-events-none" />
 
-            {/* Stats Right */}
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="bg-slate-950/40 backdrop-blur-md border border-slate-800/50 rounded-2xl p-4 flex items-center gap-4 w-44 md:w-52 shadow-xl hover:border-indigo-500/20 transition-all duration-300">
-                <div className="p-2.5 bg-indigo-500/10 rounded-xl border border-indigo-500/20 text-indigo-400">
-                  <Orbit className="h-5 w-5" />
-                </div>
-                <div className="flex flex-col text-left">
-                  <span className="text-[9px] text-slate-500 font-bold tracking-widest uppercase">
-                    ACTIVE ORBITS
-                  </span>
-                  <span className="text-xl md:text-2xl font-bold tracking-tight text-white mt-0.5">
-                    230+
-                  </span>
-                </div>
-              </div>
-            </div>
-          </footer>
-        </section>
-
-        {/* SECTION 2: MISSIONS */}
-        <section 
-          id="section-missions" 
-          className="relative w-full h-screen snap-start flex flex-col justify-between pt-24 overflow-hidden bg-transparent z-20"
-        >
-          {/* Background Video (Missions, Loop & Mute) */}
-          <video 
-            ref={landingActiveTab === "missions" ? landingVideoRef : undefined}
-            autoPlay
-            loop
-            muted
-            playsInline
-            src="https://res.cloudinary.com/djamo6ge4/video/upload/v1779812550/kling_20260527_Image_to_Video_generate_s_68_0_kcwrxg.mp4"
-            className="absolute inset-0 w-full h-full object-cover -z-10 scale-[1.12] origin-center"
-          />
-          {/* Dark Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-slate-950/35 to-slate-950/85 -z-10 pointer-events-none" />
-
-          {/* Glowing bottom divider boundary */}
-          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-indigo-500/30 z-30 shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
-          {/* Main Hero Content (Bottom-Left Aligned) */}
-          <main className="relative z-10 flex-1 flex flex-col justify-center px-6 md:px-16 w-full max-w-6xl text-left">
-            <div className="animate-fade-in duration-500">
-              {/* Subtitle */}
-              <div className="flex items-center gap-3 text-xs text-indigo-400 font-bold uppercase tracking-[0.25em] mb-4 md:mb-6">
-                <span className="w-8 h-[2px] bg-indigo-500"></span>
-                <span>ACTIVE MISSIONS CONTROL</span>
-              </div>
-
-              {/* Main Display Headline */}
-              <h1 className="font-display text-4xl md:text-6xl lg:text-7xl font-semibold tracking-tight text-white leading-[1.1] mb-6 max-w-4xl">
-                Expanding the <span className="font-serif italic font-normal text-indigo-300">horizons</span> of humanity
-              </h1>
-
-              {/* Paragraph Description */}
-              <p className="text-sm md:text-base text-slate-300/90 leading-relaxed max-w-xl font-sans mb-8">
-                Managing autonomous orbital delivery networks, interplanetary exploration probes, and lunar habitability infrastructure deployments.
-              </p>
-
-              {/* Call-to-Action Buttons */}
-              <div className="flex flex-wrap items-center gap-4">
-                <button 
-                  type="button"
-                  className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-4 rounded-full text-xs font-semibold uppercase tracking-wider flex items-center gap-2.5 transition-all duration-300 shadow-lg shadow-indigo-600/30 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
-                  onClick={() => {
-                    setShowHeroLanding(false);
-                    sessionStorage.setItem("prama_hero_dismissed", "true");
-                  }}
+              {/* Glowing bottom divider boundary */}
+              <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-indigo-500/30 z-30 shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
+              
+              {/* Main Hero Content (Bottom-Left Aligned) */}
+              <main className="relative z-10 flex-1 flex flex-col justify-center px-6 md:px-16 w-full max-w-6xl text-left">
+                <motion.div 
+                  layoutId="prama-landing-card-shared-1"
+                  initial={{ opacity: 0, scale: 0.4, filter: "blur(12px)" }}
+                  animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                  transition={{ type: "spring", stiffness: 90, damping: 15, delay: 0.1 }}
+                  className="bg-[#090d16]/75 backdrop-blur-md border border-indigo-500/30 rounded-3xl p-6 md:p-8 max-w-2xl shadow-2xl relative overflow-hidden group"
                 >
-                  <Compass className="h-4 w-4 text-white" />
-                  <span>START ESTIMATOR</span>
-                </button>
-                <button 
-                  type="button"
-                  className="border border-white/20 hover:border-white/50 bg-white/5 hover:bg-white/10 text-white px-8 py-4 rounded-full text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none group-hover:bg-indigo-400/10 transition-all duration-300" />
+                  
+                  {/* Subtitle */}
+                  <div className="flex items-center gap-3 text-xs text-indigo-400 font-bold uppercase tracking-[0.25em] mb-4 md:mb-6">
+                    <span className="w-8 h-[2px] bg-indigo-500"></span>
+                    <span>( Powered By Digital Solution )</span>
+                  </div>
+
+                  {/* Main Display Headline */}
+                  <h1 className="font-display text-3xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-white leading-[1.1] mb-6">
+                    Proyek Lancar, Anggaran Aman dengan <span className="font-serif italic font-normal text-indigo-300">Prama AI Agent!</span>
+                  </h1>
+
+                  {/* Paragraph Description */}
+                  <div className="text-xs md:text-sm text-slate-200/90 leading-relaxed font-sans mb-8 space-y-4">
+                    <p>
+                      Sebagai Project Management Analytics pintar, <strong className="text-indigo-300 font-bold">Prama AI</strong> siap menjadi support system andalan yang memberikan Anda:
+                    </p>
+                    <div className="space-y-3 pt-1">
+                      <div className="flex items-start gap-2.5">
+                        <span className="text-lg leading-none select-none mt-0.5">🎯</span>
+                        <p className="text-slate-300">
+                          <strong className="text-white font-semibold">Solusi Strategis Interaktif:</strong> Prama tidak sekadar menampilkan data, tapi aktif memberikan rekomendasi taktis. Navigasi proyek Anda kini jadi lebih presisi, prediktif, dan siap menghadapi segala risiko di lapangan.
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-2.5">
+                        <span className="text-lg leading-none select-none mt-0.5">📉</span>
+                        <p className="text-slate-300">
+                          <strong className="text-white font-semibold">Efisiensi Finansial Mutakhir:</strong> Deteksi dini potensi pembengkakan biaya (cost-overrun) secara otomatis, memastikan setiap keputusan strategis tetap selaras dengan efisiensi anggaran.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Call-to-Action Buttons */}
+                  <div className="flex flex-wrap items-center gap-4">
+                    <button 
+                      type="button"
+                      className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-4 rounded-full text-xs font-semibold uppercase tracking-wider flex items-center gap-2.5 transition-all duration-300 shadow-lg shadow-indigo-600/30 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                      onClick={() => {
+                        setShowHeroLanding(false);
+                        sessionStorage.setItem("prama_hero_dismissed", "true");
+                      }}
+                    >
+                      <Rocket className="h-4 w-4 text-white" />
+                      <span>START ESTIMATOR</span>
+                    </button>
+                  </div>
+                </motion.div>
+              </main>
+
+              {/* Footer (Partners) */}
+              <footer className="relative z-10 w-full px-6 py-4 md:px-16 md:py-8 flex flex-col md:flex-row md:items-end md:justify-between gap-6 md:gap-4">
+                {/* Partners Left */}
+                <div className="flex flex-col gap-3">
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.25em]">
+                    MITRA STRATEGIS PANCARAN GROUP:
+                  </span>
+                  <div className="flex flex-wrap items-center gap-3 md:gap-4">
+                    {landingPartners.map((partner) => (
+                      <motion.div 
+                        key={partner.name} 
+                        layoutId={`partner-box-${partner.name}`}
+                        className="bg-slate-950/75 backdrop-blur-md border border-slate-800/80 hover:border-indigo-500/40 rounded-2xl px-5 py-4 flex items-center justify-center transition-all duration-300 hover:scale-105 shadow-xl shadow-black/40 hover:shadow-indigo-500/10 cursor-pointer h-20 w-40 md:h-24 md:w-52 overflow-hidden"
+                        title={partner.name}
+                      >
+                        <img 
+                          src={partner.logoUrl} 
+                          alt={partner.name} 
+                          referrerPolicy="no-referrer"
+                          className="h-full w-full object-contain filter drop-shadow-[0_2px_6px_rgba(99,102,241,0.15)] select-none transition-all duration-300" 
+                        />
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Scroll indicator center */}
+                <div 
+                  onClick={() => scrollToSection("missions")}
+                  className="hidden lg:flex flex-col items-center gap-1.5 text-slate-400 hover:text-white transition-colors cursor-pointer group"
+                >
+                  <span className="text-[10px] font-bold tracking-[0.2em] uppercase">SCROLL DOWN</span>
+                  <ChevronDown className="h-4 w-4 animate-bounce text-indigo-400 group-hover:text-indigo-300" />
+                </div>
+              </footer>
+            </motion.section>
+          )}
+
+          {landingActiveTab === "missions" && (
+            <motion.section 
+              key="missions"
+              id="section-missions"
+              initial={{ opacity: 0, y: 100, scale: 0.4, filter: "blur(12px)" }}
+              animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+              exit={{ opacity: 0, y: -100, scale: 0.4, filter: "blur(12px)" }}
+              transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
+              className="absolute inset-0 w-full h-full flex flex-col justify-between pt-24 overflow-hidden bg-transparent z-20"
+            >
+              {/* Background Video (Missions, Loop & Mute) */}
+              <video 
+                ref={landingVideoRef}
+                autoPlay
+                loop
+                muted
+                playsInline
+                src="https://res.cloudinary.com/djamo6ge4/video/upload/v1779812550/kling_20260527_Image_to_Video_generate_s_68_0_kcwrxg.mp4"
+                className="absolute inset-0 w-full h-full object-cover -z-10 scale-[1.12] origin-center"
+              />
+              {/* Dark Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-slate-950/35 to-slate-950/85 -z-10 pointer-events-none" />
+
+              {/* Glowing bottom divider boundary */}
+              <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-indigo-500/30 z-30 shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
+              
+              {/* Main Hero Content (Bottom-Left Aligned) */}
+              <main className="relative z-10 flex-1 flex flex-col justify-center px-6 md:px-16 w-full max-w-6xl text-left">
+                <div className="w-full">
+                  {/* Subtitle */}
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.4, filter: "blur(12px)" }}
+                    animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                    transition={{ duration: 0.6, ease: "easeOut" }}
+                    className="flex items-center gap-3 text-xs text-indigo-400 font-bold uppercase tracking-[0.25em] mb-4 md:mb-6"
+                  >
+                    <span className="w-8 h-[2px] bg-indigo-500"></span>
+                    <span>PRAMA AI AGENT MISSION</span>
+                  </motion.div>
+
+                  {/* Two Column Cards layout with layout id morphing */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-5xl mt-2">
+                    {/* Card 1: High Level */}
+                    <motion.div 
+                      layoutId="prama-landing-card-shared-1"
+                      initial={{ opacity: 0, scale: 0.4, filter: "blur(12px)" }}
+                      animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                      transition={{ type: "spring", stiffness: 90, damping: 15, delay: 0.1 }}
+                      className="bg-[#090d16]/85 backdrop-blur-md border border-indigo-500/30 rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden group hover:border-cyan-400/50 transition-all duration-300"
+                    >
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none group-hover:bg-cyan-400/10 transition-all duration-300" />
+                      
+                      <div className="flex items-center gap-3 mb-4">
+                        <span className="text-2xl">🎯</span>
+                        <h3 className="font-display font-bold text-lg md:text-xl text-cyan-400 tracking-wide">
+                          Misi Singkat (High-Level)
+                        </h3>
+                      </div>
+                      
+                      <p className="text-xs md:text-sm text-slate-300 leading-relaxed mb-6 italic">
+                        "Mentransformasi data proyek menjadi wawasan strategis, memprediksi risiko, and mengoptimalkan efisiensi eksekusi."
+                      </p>
+                      
+                      <ul className="space-y-4">
+                        <li className="flex items-start text-xs md:text-sm text-slate-300">
+                          <Hexagon className="h-4.5 w-4.5 text-cyan-400 fill-cyan-400/10 mr-3 mt-0.5 shrink-0 animate-pulse" />
+                          <div>
+                            <strong className="text-white font-semibold">Data-Driven:</strong> Mengubah metrik mentah menjadi keputusan taktis.
+                          </div>
+                        </li>
+                        <li className="flex items-start text-xs md:text-sm text-slate-300">
+                          <Hexagon className="h-4.5 w-4.5 text-cyan-400 fill-cyan-400/10 mr-3 mt-0.5 shrink-0 animate-pulse" />
+                          <div>
+                            <strong className="text-white font-semibold">Proaktif:</strong> Memitigasi risiko sebelum menjadi kendala besar.
+                          </div>
+                        </li>
+                        <li className="flex items-start text-xs md:text-sm text-slate-300">
+                          <Hexagon className="h-4.5 w-4.5 text-cyan-400 fill-cyan-400/10 mr-3 mt-0.5 shrink-0 animate-pulse" />
+                          <div>
+                            <strong className="text-white font-semibold">Efisiensi:</strong> Memaksimalkan utilitas waktu, anggaran, dan kapasitas SDM.
+                          </div>
+                        </li>
+                      </ul>
+                    </motion.div>
+
+                    {/* Card 2: Core Analytics */}
+                    <motion.div 
+                      layoutId="prama-landing-card-shared-2"
+                      initial={{ opacity: 0, scale: 0.4, filter: "blur(12px)" }}
+                      animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                      transition={{ type: "spring", stiffness: 90, damping: 15, delay: 0.25 }}
+                      className="bg-[#090d16]/85 backdrop-blur-md border border-indigo-500/30 rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden group hover:border-indigo-400/50 transition-all duration-300"
+                    >
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none group-hover:bg-indigo-400/10 transition-all duration-300" />
+                      
+                      <div className="flex items-center gap-3 mb-4">
+                        <span className="text-2xl">⚡</span>
+                        <h3 className="font-display font-bold text-lg md:text-xl text-indigo-400 tracking-wide">
+                          Misi Detail (Core Analytics)
+                        </h3>
+                      </div>
+                      
+                      <p className="text-xs md:text-sm text-slate-300 leading-relaxed mb-6 italic">
+                        "Menjadi pusat kecerdasan analitis yang mengintegrasikan data proyek, mengotomatisasi evaluasi, dan merekomendasikan solusi preskriptif."
+                      </p>
+                      
+                      <ul className="space-y-4">
+                        <li className="flex items-start text-xs md:text-sm text-slate-300">
+                          <Hexagon className="h-4.5 w-4.5 text-indigo-400 fill-indigo-400/10 mr-3 mt-0.5 shrink-0 animate-pulse" />
+                          <div>
+                            <strong className="text-white font-semibold">Deskriptif:</strong> Live Dashboard & visualisasi KPI otomatis.
+                          </div>
+                        </li>
+                        <li className="flex items-start text-xs md:text-sm text-slate-300">
+                          <Hexagon className="h-4.5 w-4.5 text-indigo-400 fill-indigo-400/10 mr-3 mt-0.5 shrink-0 animate-pulse" />
+                          <div>
+                            <strong className="text-white font-semibold">Prediktif:</strong> Forecasting sisa anggaran dan proyek keterlambatan.
+                          </div>
+                        </li>
+                        <li className="flex items-start text-xs md:text-sm text-slate-300">
+                          <Hexagon className="h-4.5 w-4.5 text-indigo-400 fill-indigo-400/10 mr-3 mt-0.5 shrink-0 animate-pulse" />
+                          <div>
+                            <strong className="text-white font-semibold">Preskriptif:</strong> Optimasi jalur kritis (critical path) & load balancing tim.
+                          </div>
+                        </li>
+                        <li className="flex items-start text-xs md:text-sm text-slate-300">
+                          <Hexagon className="h-4.5 w-4.5 text-indigo-400 fill-indigo-400/10 mr-3 mt-0.5 shrink-0 animate-pulse" />
+                          <div>
+                            <strong className="text-white font-semibold">Kolaborasi:</strong> Laporan otomatis ramah stakeholder & C-Suite.
+                          </div>
+                        </li>
+                      </ul>
+                    </motion.div>
+                  </div>
+                </div>
+              </main>
+
+              {/* Footer (Partners) */}
+              <footer className="relative z-10 w-full px-6 py-4 md:px-16 md:py-8 flex flex-col md:flex-row md:items-end md:justify-between gap-6 md:gap-4">
+                {/* Partners Left */}
+                <div className="flex flex-col gap-3">
+                  <div className="flex flex-wrap items-center gap-3 md:gap-4">
+                    {landingPartners.map((partner, index) => (
+                      <motion.div 
+                        key={partner.name} 
+                        layoutId={`partner-box-${partner.name}`}
+                        initial={{ opacity: 0, scale: 0.4, filter: "blur(12px)" }}
+                        animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                        transition={{ duration: 0.65, ease: "easeOut", delay: 0.1 + index * 0.08 }}
+                        className="bg-slate-950/75 backdrop-blur-md border border-slate-800/80 hover:border-indigo-500/40 rounded-2xl px-5 py-4 flex items-center justify-center transition-all duration-300 hover:scale-105 shadow-xl shadow-black/40 hover:shadow-indigo-500/10 cursor-pointer h-20 w-40 md:h-24 md:w-52 overflow-hidden"
+                        title={partner.name}
+                      >
+                        <img 
+                          src={partner.logoUrl} 
+                          alt={partner.name} 
+                          referrerPolicy="no-referrer"
+                          className="h-full w-full object-contain filter drop-shadow-[0_2px_6px_rgba(99,102,241,0.15)] select-none transition-all duration-300" 
+                        />
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Scroll indicator center */}
+                <div 
                   onClick={() => scrollToSection("technology")}
+                  className="hidden lg:flex flex-col items-center gap-1.5 text-slate-400 hover:text-white transition-colors cursor-pointer group"
                 >
-                  <span>MISSION LOGS</span>
-                  <span className="text-slate-400 font-normal ml-1">›</span>
-                </button>
-              </div>
-            </div>
-          </main>
+                  <span className="text-[10px] font-bold tracking-[0.2em] uppercase">SCROLL DOWN</span>
+                  <ChevronDown className="h-4 w-4 animate-bounce text-indigo-400 group-hover:text-indigo-300" />
+                </div>
+              </footer>
+            </motion.section>
+          )}
 
-          {/* Footer (Partners + Stats) */}
-          <footer className="relative z-10 w-full px-6 py-4 md:px-16 md:py-8 flex flex-col md:flex-row md:items-end md:justify-between gap-6 md:gap-4">
-            {/* Partners Left */}
-            <div className="flex flex-col gap-3">
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.25em]">
-                OUR AEROSPACE FLIGHT PARTNERS:
-              </span>
-              <div className="flex flex-wrap items-center gap-2.5">
-                {["NASA", "SPACEX", "ESA", "JAXA"].map((partner) => (
-                  <div 
-                    key={partner} 
-                    className="border border-slate-800/80 bg-slate-950/40 rounded-full px-4 py-2 flex items-center gap-2 text-[11px] font-semibold tracking-widest text-slate-300 backdrop-blur-sm"
-                  >
-                    <span className="w-1 h-1 bg-indigo-500 rounded-full animate-pulse"></span>
-                    <span>{partner}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Scroll indicator center */}
-            <div 
-              onClick={() => scrollToSection("technology")}
-              className="hidden lg:flex flex-col items-center gap-1.5 text-slate-400 hover:text-white transition-colors cursor-pointer group"
+          {landingActiveTab === "technology" && (
+            <motion.section 
+              key="technology"
+              id="section-technology"
+              initial={{ opacity: 0, y: 100, scale: 0.4, filter: "blur(12px)" }}
+              animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+              exit={{ opacity: 0, y: -100, scale: 0.4, filter: "blur(12px)" }}
+              transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
+              className="absolute inset-0 w-full h-full flex flex-col justify-between pt-24 overflow-hidden bg-transparent z-20"
             >
-              <span className="text-[10px] font-bold tracking-[0.2em] uppercase">SCROLL DOWN</span>
-              <ChevronDown className="h-4 w-4 animate-bounce text-indigo-400 group-hover:text-indigo-300" />
-            </div>
-
-            {/* Stats Right */}
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="bg-slate-950/40 backdrop-blur-md border border-slate-800/50 rounded-2xl p-4 flex items-center gap-4 w-44 md:w-52 shadow-xl hover:border-indigo-500/20 transition-all duration-300">
-                <div className="p-2.5 bg-indigo-500/10 rounded-xl border border-indigo-500/20 text-indigo-400">
-                  <Rocket className="h-5 w-5" />
-                </div>
-                <div className="flex flex-col text-left">
-                  <span className="text-[9px] text-slate-500 font-bold tracking-widest uppercase">
-                    CURRENT TARGETS
-                  </span>
-                  <span className="text-xl md:text-2xl font-bold tracking-tight text-white mt-0.5">
-                    Moon & Mars
-                  </span>
-                </div>
-              </div>
-
-              <div className="bg-slate-950/40 backdrop-blur-md border border-slate-800/50 rounded-2xl p-4 flex items-center gap-4 w-44 md:w-52 shadow-xl hover:border-indigo-500/20 transition-all duration-300">
-                <div className="p-2.5 bg-indigo-500/10 rounded-xl border border-indigo-500/20 text-indigo-400">
-                  <Orbit className="h-5 w-5" />
-                </div>
-                <div className="flex flex-col text-left">
-                  <span className="text-[9px] text-slate-500 font-bold tracking-widest uppercase">
-                    ACTIVE PROBES
-                  </span>
-                  <span className="text-xl md:text-2xl font-bold tracking-tight text-white mt-0.5">
-                    45 Active
-                  </span>
-                </div>
-              </div>
-            </div>
-          </footer>
-        </section>
-
-        {/* SECTION 3: TECHNOLOGY */}
-        <section 
-          id="section-technology" 
-          className="relative w-full h-screen snap-start flex flex-col justify-between pt-24 overflow-hidden bg-transparent z-20"
-        >
-          {/* Background Video (Technology, Loop & Mute) */}
-          <video 
-            ref={landingActiveTab === "technology" ? landingVideoRef : undefined}
-            autoPlay
-            loop
-            muted
-            playsInline
-            src="https://res.cloudinary.com/djamo6ge4/video/upload/v1779807528/kling_20260523_Image_to_Video_Create_a_s_5524_0_e3hkw1.mp4"
-            className="absolute inset-0 w-full h-full object-cover -z-10 scale-[1.12] origin-center"
-          />
-          {/* Dark Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-slate-950/35 to-slate-950/85 -z-10 pointer-events-none" />
-          {/* Main Hero Content (Bottom-Left Aligned) */}
-          <main className="relative z-10 flex-1 flex flex-col justify-center px-6 md:px-16 w-full max-w-6xl text-left">
-            <div className="animate-fade-in duration-500">
-              {/* Subtitle */}
-              <div className="flex items-center gap-3 text-xs text-indigo-400 font-bold uppercase tracking-[0.25em] mb-4 md:mb-6">
-                <span className="w-8 h-[2px] bg-indigo-500"></span>
-                <span>ENGINEERING & INNOVATION</span>
-              </div>
-
-              {/* Main Display Headline */}
-              <h1 className="font-display text-4xl md:text-6xl lg:text-7xl font-semibold tracking-tight text-white leading-[1.1] mb-6 max-w-4xl">
-                Pioneering the <span className="font-serif italic font-normal text-indigo-300">propulsion</span> of tomorrow
-              </h1>
-
-              {/* Paragraph Description */}
-              <p className="text-sm md:text-base text-slate-300/90 leading-relaxed max-w-xl font-sans mb-8">
-                From vacuum-optimized methalox engines to carbon-composite heat shielding, our R&D pushes the absolute limits of physical engineering.
-              </p>
-
-              {/* Call-to-Action Buttons */}
-              <div className="flex flex-wrap items-center gap-4">
-                <button 
-                  type="button"
-                  className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-4 rounded-full text-xs font-semibold uppercase tracking-wider flex items-center gap-2.5 transition-all duration-300 shadow-lg shadow-indigo-600/30 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
-                  onClick={() => {
-                    setShowHeroLanding(false);
-                    sessionStorage.setItem("prama_hero_dismissed", "true");
-                  }}
-                >
-                  <Orbit className="h-4 w-4 text-white" />
-                  <span>START ESTIMATOR</span>
-                </button>
-                <button 
-                  type="button"
-                  className="border border-white/20 hover:border-white/50 bg-white/5 hover:bg-white/10 text-white px-8 py-4 rounded-full text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
-                  onClick={() => {
-                    setShowHeroLanding(false);
-                    sessionStorage.setItem("prama_hero_dismissed", "true");
-                  }}
-                >
-                  <span>TECH SPECIFICATIONS</span>
-                  <span className="text-slate-400 font-normal ml-1">›</span>
-                </button>
-              </div>
-            </div>
-          </main>
-
-          {/* Footer (Partners + Stats) */}
-          <footer className="relative z-10 w-full px-6 py-4 md:px-16 md:py-8 flex flex-col md:flex-row md:items-end md:justify-between gap-6 md:gap-4">
-            {/* Partners Left */}
-            <div className="flex flex-col gap-3">
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.25em]">
-                OUR AEROSPACE FLIGHT PARTNERS:
-              </span>
-              <div className="flex flex-wrap items-center gap-2.5">
-                {["NASA", "SPACEX", "ESA", "JAXA"].map((partner) => (
-                  <div 
-                    key={partner} 
-                    className="border border-slate-800/80 bg-slate-950/40 rounded-full px-4 py-2 flex items-center gap-2 text-[11px] font-semibold tracking-widest text-slate-300 backdrop-blur-sm"
+              {/* Background Video (Technology, Loop & Mute) */}
+              <video 
+                ref={landingVideoRef}
+                autoPlay
+                loop
+                muted
+                playsInline
+                src="https://res.cloudinary.com/djamo6ge4/video/upload/v1779807528/kling_20260523_Image_to_Video_Create_a_s_5524_0_e3hkw1.mp4"
+                className="absolute inset-0 w-full h-full object-cover -z-10 scale-[1.12] origin-center"
+              />
+              {/* Dark Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-slate-950/35 to-slate-950/85 -z-10 pointer-events-none" />
+              
+              {/* Main Hero Content (Bottom-Left Aligned) */}
+              <main className="relative z-10 flex-1 flex flex-col justify-center px-6 md:px-16 w-full max-w-6xl text-left">
+                <div className="w-full">
+                  {/* Subtitle */}
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.4, filter: "blur(12px)" }}
+                    animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                    transition={{ duration: 0.6, ease: "easeOut" }}
+                    className="flex items-center gap-3 text-xs text-indigo-400 font-bold uppercase tracking-[0.25em] mb-4 md:mb-6"
                   >
-                    <span className="w-1 h-1 bg-indigo-500 rounded-full animate-pulse"></span>
-                    <span>{partner}</span>
+                    <span className="w-8 h-[2px] bg-indigo-500"></span>
+                    <span>TEKNOLOGI & INOVASI PRAMA AI</span>
+                  </motion.div>
+
+                  {/* Three Column Tech Grid with layout ID morphing */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl mt-2">
+                    {/* Tech Card 1 (Morphing Layout) */}
+                    <motion.div 
+                      layoutId="prama-landing-card-shared-1"
+                      initial={{ opacity: 0, scale: 0.4, filter: "blur(12px)" }}
+                      animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                      transition={{ type: "spring", stiffness: 90, damping: 15, delay: 0.1 }}
+                      className="bg-[#090d16]/85 backdrop-blur-md border border-indigo-500/30 rounded-3xl p-6 shadow-2xl relative overflow-hidden group hover:border-cyan-400/50 transition-all duration-300"
+                    >
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500/5 rounded-full blur-2xl pointer-events-none group-hover:bg-cyan-400/10 transition-all duration-300" />
+                      <div className="p-3 bg-cyan-500/10 border border-cyan-500/20 rounded-2xl w-fit text-cyan-400 mb-4">
+                        <Cpu className="h-6 w-6" />
+                      </div>
+                      <h3 className="font-display font-bold text-base md:text-lg text-white mb-2">
+                        Predictive Analytics Engine
+                      </h3>
+                      <p className="text-xs text-slate-300 leading-relaxed">
+                        Algoritma machine learning terintegrasi yang mampu mendeteksi potensi pembengkakan biaya (cost-overrun) secara realtime dan otomatis memproyeksikan sisa anggaran proyek.
+                      </p>
+                    </motion.div>
+
+                    {/* Tech Card 2 */}
+                    <motion.div 
+                      layoutId="prama-landing-card-shared-2"
+                      initial={{ opacity: 0, scale: 0.4, filter: "blur(12px)" }}
+                      animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                      transition={{ type: "spring", stiffness: 90, damping: 15, delay: 0.2 }}
+                      className="bg-[#090d16]/85 backdrop-blur-md border border-indigo-500/30 rounded-3xl p-6 shadow-2xl relative overflow-hidden group hover:border-indigo-400/50 transition-all duration-300"
+                    >
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none group-hover:bg-indigo-400/10 transition-all duration-300" />
+                      <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl w-fit text-indigo-400 mb-4">
+                        <Bot className="h-6 w-6" />
+                      </div>
+                      <h3 className="font-display font-bold text-base md:text-lg text-white mb-2">
+                        Interactive Decision Hub
+                      </h3>
+                      <p className="text-xs text-slate-300 leading-relaxed">
+                        Asisten AI taktis yang siap merekomendasikan solusi mitigasi risiko secara interaktif, lengkap dengan sistem log keputusan terstruktur untuk C-Suite.
+                      </p>
+                    </motion.div>
+
+                    {/* Tech Card 3 */}
+                    <motion.div 
+                      layoutId="prama-landing-card-shared-3"
+                      initial={{ opacity: 0, scale: 0.4, filter: "blur(12px)" }}
+                      animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                      transition={{ type: "spring", stiffness: 90, damping: 15, delay: 0.3 }}
+                      className="bg-[#090d16]/85 backdrop-blur-md border border-indigo-500/30 rounded-3xl p-6 shadow-2xl relative overflow-hidden group hover:border-violet-400/50 transition-all duration-300"
+                    >
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-violet-500/5 rounded-full blur-2xl pointer-events-none group-hover:bg-violet-400/10 transition-all duration-300" />
+                      <div className="p-3 bg-violet-500/10 border border-violet-500/20 rounded-2xl w-fit text-violet-400 mb-4">
+                        <Rocket className="h-6 w-6" />
+                      </div>
+                      <h3 className="font-display font-bold text-base md:text-lg text-white mb-2">
+                        Enterprise Exporter
+                      </h3>
+                      <p className="text-xs text-slate-300 leading-relaxed">
+                        Sistem export dokumen pintar yang mendukung format interaktif HTML, PDF, Microsoft Word, dan PowerPoint (PPTX) sekali klik untuk mempermudah pelaporan.
+                      </p>
+                    </motion.div>
                   </div>
-                ))}
-              </div>
-            </div>
+                </div>
+              </main>
 
-            {/* Stats Right */}
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="bg-slate-950/40 backdrop-blur-md border border-slate-800/50 rounded-2xl p-4 flex items-center gap-4 w-44 md:w-52 shadow-xl hover:border-indigo-500/20 transition-all duration-300">
-                <div className="p-2.5 bg-indigo-500/10 rounded-xl border border-indigo-500/20 text-indigo-400">
-                  <Rocket className="h-5 w-5" />
+              {/* Footer (Partners) */}
+              <footer className="relative z-10 w-full px-6 py-4 md:px-16 md:py-8 flex flex-col md:flex-row md:items-end md:justify-between gap-6 md:gap-4">
+                {/* Partners Left */}
+                <div className="flex flex-col gap-3">
+                  <motion.span 
+                    initial={{ opacity: 0, scale: 0.6, filter: "blur(8px)" }}
+                    animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                    transition={{ duration: 0.6, ease: "easeOut" }}
+                    className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.25em]"
+                  >
+                    MITRA STRATEGIS PANCARAN GROUP:
+                  </motion.span>
+                  <div className="flex flex-wrap items-center gap-3 md:gap-4">
+                    {landingPartners.map((partner, index) => (
+                      <motion.div 
+                        key={partner.name} 
+                        layoutId={`partner-box-${partner.name}`}
+                        initial={{ opacity: 0, scale: 0.4, filter: "blur(12px)" }}
+                        animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                        transition={{ duration: 0.65, ease: "easeOut", delay: 0.1 + index * 0.08 }}
+                        className="bg-slate-950/75 backdrop-blur-md border border-slate-800/80 hover:border-indigo-500/40 rounded-2xl px-5 py-4 flex items-center justify-center transition-all duration-300 hover:scale-105 shadow-xl shadow-black/40 hover:shadow-indigo-500/10 cursor-pointer h-20 w-40 md:h-24 md:w-52 overflow-hidden"
+                        title={partner.name}
+                      >
+                        <img 
+                          src={partner.logoUrl} 
+                          alt={partner.name} 
+                          referrerPolicy="no-referrer"
+                          className="h-full w-full object-contain filter drop-shadow-[0_2px_6px_rgba(99,102,241,0.15)] select-none transition-all duration-300" 
+                        />
+                      </motion.div>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex flex-col text-left">
-                  <span className="text-[9px] text-slate-500 font-bold tracking-widest uppercase">
-                    ENGINE EFFICIENCY
-                  </span>
-                  <span className="text-xl md:text-2xl font-bold tracking-tight text-white mt-0.5">
-                    98.4%
-                  </span>
-                </div>
-              </div>
+              </footer>
+            </motion.section>
+          )}
+        </AnimatePresence>
 
-              <div className="bg-slate-950/40 backdrop-blur-md border border-slate-800/50 rounded-2xl p-4 flex items-center gap-4 w-44 md:w-52 shadow-xl hover:border-indigo-500/20 transition-all duration-300">
-                <div className="p-2.5 bg-indigo-500/10 rounded-xl border border-indigo-500/20 text-indigo-400">
-                  <Orbit className="h-5 w-5" />
-                </div>
-                <div className="flex flex-col text-left">
-                  <span className="text-[9px] text-slate-500 font-bold tracking-widest uppercase">
-                    PATENTS ISSUED
-                  </span>
-                  <span className="text-xl md:text-2xl font-bold tracking-tight text-white mt-0.5">
-                    120+
-                  </span>
-                </div>
-              </div>
-            </div>
-          </footer>
-        </section>
       </div>
     );
   }
@@ -4016,7 +4194,12 @@ ${lastMsgText}`;
   // Render 2: Authentic Screen (Login & Register Form) - Theme: Light & Elegant with Brand Background Illustration
   if (!activeUser) {
     return (
-      <div className="relative min-h-screen flex items-center justify-center px-4 py-12 font-sans overflow-hidden">
+      <motion.div 
+        initial={{ opacity: 0, scale: 1.12, filter: "blur(12px)" }}
+        animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+        transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
+        className="relative min-h-screen flex items-center justify-center px-4 py-12 font-sans overflow-hidden bg-slate-950"
+      >
         {/* Brand Background Video */}
         <div className="absolute inset-0 z-0">
           <video 
@@ -4050,7 +4233,12 @@ ${lastMsgText}`;
 
 
         {/* Auth Card wrapper with elevated relative z-index */}
-        <div className="relative z-10 w-full max-w-4xl bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl overflow-hidden grid grid-cols-1 md:grid-cols-2 border border-white/20">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.4, filter: "blur(12px)", y: 80 }}
+          animate={{ opacity: 1, scale: 1, filter: "blur(0px)", y: 0 }}
+          transition={{ type: "spring", stiffness: 90, damping: 15, delay: 0.15 }}
+          className="relative z-10 w-full max-w-4xl bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl overflow-hidden grid grid-cols-1 md:grid-cols-2 border border-white/20"
+        >
           
           {/* Left panel: Info Hub Brand PRAMA */}
           <div className="bg-gradient-to-br from-indigo-700 via-indigo-900 to-slate-900 p-8 text-white flex flex-col justify-between">
@@ -4291,8 +4479,8 @@ ${lastMsgText}`;
 
           </div>
 
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     );
   }
 
@@ -4359,34 +4547,6 @@ ${lastMsgText}`;
         {/* Division selector Body */}
         <div className={`${(dashboardView === "project_dashboard" || dashboardView === "chat_intelligence") ? "max-w-[98%] 2xl:max-w-[1650px]" : "max-w-7xl"} mx-auto px-4 py-11 text-center flex-grow flex flex-col justify-center transition-all duration-300`}>
           
-          <div className="mb-8 block">
-            <span className="font-mono text-[10px] font-extrabold pb-1 bg-indigo-50 border border-indigo-100 text-indigo-700 px-3 py-1 rounded-full uppercase tracking-widest inline-block">
-              PUSAT HUB DIREKTORAT ENTERPRISE
-            </span>
-            <h2 className="mt-2.5 font-display font-black text-2xl tracking-tight text-slate-900 md:text-3.5xl">
-              {dashboardView === "divisions" 
-                ? "Pilih Hub Divisi Khusus" 
-                : dashboardView === "saved_docs"
-                ? "Simpan Draf & Dokumen Artikel PM"
-                : dashboardView === "project_dashboard"
-                ? "Dashboard Formulasi Jurnal PM"
-                : dashboardView === "robot_voice"
-                ? "Robot Voice Information & Media Automation"
-                : "Administrasi Persetujuan Registrasi"}
-            </h2>
-            <p className="mt-1.5 text-xs text-slate-500 max-w-xl mx-auto font-bold leading-relaxed">
-              {dashboardView === "divisions"
-                ? "Klik salah satu pilar divisi operasional korporat logistik Pancaran Group di bawah ini untuk memulai sesi dialog analisis, audit, atau penyusunan dokumen berbasis asisten cerdas PRAMA."
-                : dashboardView === "saved_docs"
-                ? "Kelola, edit, cari, cetak, dan ekspor draf artikel project management atau dokumen audit yang tersimpan di cloud terenkripsi portal PRAMA."
-                : dashboardView === "project_dashboard"
-                ? "Lihat, edit, dan unduh 14 pilar analisis dan strategi manajemen proyek secara lengkap dalam format dokumen Word (.doc) terpisah atau presentasi PPTX (.pptx)."
-                : dashboardView === "robot_voice"
-                ? "Otomatisasi pengolahan media logistik: transkripsikan video peninjauan lapangan menjadi teks, rekayasa teks-ke-video realistis, serta sintesiskan siaran suara robotik terpadu."
-                : "Verifikasi, terima, atau tolak permohonan pendaftaran dari kandidat staf baru sebelum mereka diberikan hak akses ke asisten cerdas internal PRAMA."}
-            </p>
-          </div>
-
           {/* Menu switcher moved directly inside division cards */}
           <div className="mb-6"></div>
 
@@ -7948,7 +8108,7 @@ ${lastMsgText}`;
             </div>
           ) : (
             /* Division Bento-like Selection Grid */
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-left max-w-5xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 text-left max-w-7xl mx-auto px-6">
               {divisions.map((div) => {
                 const IconComp = div.icon;
                 return (
@@ -7959,317 +8119,111 @@ ${lastMsgText}`;
                         setActiveDivision(div.id);
                       }
                     }}
-                    className={`group relative flex flex-col justify-between rounded-xl border p-5 transition-all duration-300 ${
+                    className={`group relative flex flex-col justify-between rounded-xl border h-[360px] overflow-hidden transition-all duration-300 ${
                       div.locked
                         ? "border-slate-200 bg-slate-50/70 opacity-75 cursor-not-allowed select-none"
                         : "border-slate-200 bg-white cursor-pointer hover:border-indigo-400 shadow-sm hover:shadow-lg hover:-translate-y-0.5"
-                    }`}
+                     }`}
                   >
-                    <div className="space-y-4">
+                    {/* Immersive Background Image */}
+                    <div className="absolute inset-0 w-full h-full overflow-hidden">
+                      <img 
+                        src="https://lh3.googleusercontent.com/d/1uBbHTvv5mIJCPFI1I09ihFuicDVDcfmo"
+                        alt="Prama AI Agent"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        referrerPolicy="no-referrer"
+                      />
+                    </div>
+
+                    {/* Overlay Content Container */}
+                    <div className="relative z-10 p-5 flex flex-col justify-between h-full">
                       {/* Header: Icon and Division Code */}
                       <div className="flex items-center justify-between">
-                        <div className={`flex h-10 w-10 items-center justify-center rounded-xl transition ${div.lightAccent} shadow-sm font-bold`}>
+                        <div className={`flex h-10 w-10 items-center justify-center rounded-xl transition ${div.lightAccent} shadow-md font-bold bg-white/90 backdrop-blur-sm border border-slate-200`}>
                           <IconComp className="h-5 w-5" />
                         </div>
                         <div className="flex items-center gap-1.5">
                           {div.locked && (
-                            <span className="flex items-center gap-0.5 text-[8px] font-black bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                            <span className="flex items-center gap-0.5 text-[8px] font-black bg-amber-50/90 backdrop-blur-sm text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded uppercase tracking-wider shadow-sm">
                               <Lock className="h-2 w-2" /> Terkunci
                             </span>
                           )}
-                          <span className="font-mono text-[9px] font-black tracking-widest bg-slate-100 text-slate-500 px-2 py-0.5 rounded border border-slate-200 animate-none">
-                            {div.code}
-                          </span>
                         </div>
                       </div>
 
-                      {/* Title & description */}
-                      <div>
-                        <h4 className={`font-display font-extrabold text-sm leading-snug transition ${div.locked ? "text-slate-600" : "text-slate-800 group-hover:text-indigo-700"}`}>
-                          {div.name}
-                        </h4>
-                        <p className="text-[10px] font-bold text-slate-400 mt-0.5 tracking-wide line-clamp-1 uppercase">
-                          {div.desc}
-                        </p>
+                      {/* Single full-width elegant action button */}
+                      <div className="w-full mt-auto">
+                        {div.locked ? (
+                          <button
+                            type="button"
+                            disabled
+                            className="w-full flex items-center justify-center gap-1 rounded-xl py-2.5 text-xs font-bold transition shadow-sm bg-slate-100/90 backdrop-blur-sm border border-slate-200 text-slate-400 cursor-not-allowed"
+                          >
+                            <Lock className="h-3 w-3 text-slate-400" />
+                            <span>Akses Terkunci</span>
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveDivision(div.id);
+                            }}
+                            className="w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-black tracking-wide transition shadow-md bg-indigo-600 hover:bg-indigo-700 text-white border border-indigo-500/30 cursor-pointer hover:scale-101"
+                          >
+                            <span>Chat Model AI Agent Prama</span>
+                            <ArrowRight className="h-3.5 w-3.5 shrink-0" />
+                          </button>
+                        )}
                       </div>
-
-                      {/* Quick profile info */}
-                      <div className="pt-2 border-t border-slate-100">
-                        <span className="text-[8px] font-extrabold text-slate-400 uppercase tracking-widest block font-mono">PROFIL ANALISIS</span>
-                        <p className="text-[10px] text-slate-500 leading-normal font-bold mt-1 line-clamp-4 italic">
-                          &quot;{div.details}&quot;
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Single full-width elegant action button */}
-                    <div className="pt-4 mt-auto">
-                      {div.locked ? (
-                        <button
-                          type="button"
-                          disabled
-                          className="w-full flex items-center justify-center gap-1 rounded-xl py-2.5 text-xs font-bold transition shadow-sm bg-slate-100 border border-slate-200 text-slate-400 cursor-not-allowed"
-                        >
-                          <Lock className="h-3 w-3 text-slate-400" />
-                          <span>Akses Terkunci</span>
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setActiveDivision(div.id);
-                          }}
-                          className="w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-black tracking-wide transition shadow-sm bg-indigo-50 border border-indigo-100 hover:bg-indigo-600 hover:text-white text-indigo-700 cursor-pointer hover:scale-101"
-                        >
-                          <span>Masuk Tahap Analisis AI</span>
-                          <ArrowRight className="h-3.5 w-3.5 shrink-0" />
-                        </button>
-                      )}
                     </div>
                   </div>
                 );
               })}
-
-              {/* Standalone custom card for Dokumen PM (Menu Simpan Dokumen) */}
-              <div
-                onClick={() => {
-                  setDashboardView("saved_docs");
-                }}
-                className="group relative flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-5 transition-all duration-300 cursor-pointer hover:border-emerald-400 shadow-sm hover:shadow-lg hover:-translate-y-0.5"
-              >
-                <div className="space-y-4">
-                  {/* Header: Icon and Division Code */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl transition bg-emerald-50 text-emerald-800 border border-emerald-100 shadow-sm font-bold">
-                      <HardDrive className="h-5 w-5 text-emerald-500" />
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-mono text-[9px] font-black tracking-widest bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded border border-emerald-200 uppercase">
-                        DRAF PM
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Title & description */}
-                  <div>
-                    <h4 className="font-display font-extrabold text-sm leading-snug transition text-slate-800 group-hover:text-emerald-700">
-                      Menu Simpan Dokumen / Artikel PM
-                    </h4>
-                    <p className="text-[10px] font-bold text-slate-400 mt-0.5 tracking-wide line-clamp-1 uppercase">
-                      ARSIP LAPORAN, PROPOSAL, & DRAF SISTEM PM
-                    </p>
-                  </div>
-
-                  {/* Quick profile info */}
-                  <div className="pt-2 border-t border-slate-100">
-                    <span className="text-[8px] font-extrabold text-slate-400 uppercase tracking-widest block font-mono">FUNGSI INTEGRASI</span>
-                    <p className="text-[10px] text-slate-500 leading-normal font-bold mt-1 line-clamp-4 italic">
-                      &quot;Kelola, edit, cari, cetak, dan ekspor draf artikel project management atau hasil audit asisten cerdas PRAMA ke PDF terverifikasi, Word, atau PowerPoint.&quot;
-                    </p>
-                  </div>
-                </div>
-
-                {/* Standalone Button matches the Comercial height and font */}
-                <div className="pt-4 mt-auto">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDashboardView("saved_docs");
-                    }}
-                    className="w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-black tracking-wide transition shadow-sm bg-emerald-50 border border-emerald-100 hover:bg-emerald-600 hover:text-white text-emerald-700 cursor-pointer hover:scale-101"
-                  >
-                    <HardDrive className="h-4 w-4 shrink-0 text-emerald-500 group-hover:text-white" />
-                    <span>Akses Dokumen PM</span>
-                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-extrabold shadow-inner shrink-0 leading-none group-hover:bg-emerald-700 group-hover:text-slate-100 ml-1">
-                      {files.length}
-                    </span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Standalone custom card for Administrasi Approval Pendaftaran */}
-              <div
-                onClick={() => {
-                  setDashboardView("approval_requests");
-                }}
-                className="group relative flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-5 transition-all duration-300 cursor-pointer hover:border-indigo-400 shadow-sm hover:shadow-lg hover:-translate-y-0.5"
-              >
-                <div className="space-y-4">
-                  {/* Header: Icon and Division Code */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl transition bg-indigo-50 text-indigo-800 border border-indigo-100 shadow-sm font-bold">
-                      <Users className="h-5 w-5 text-indigo-500" />
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      {pendingRequests.length > 0 ? (
-                        <span className="font-mono text-[9px] font-black tracking-widest bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded border border-emerald-200 uppercase animate-pulse">
-                          {pendingRequests.length} PENDING
-                        </span>
-                      ) : (
-                        <span className="font-mono text-[9px] font-black tracking-widest bg-slate-100 text-slate-500 px-2 py-0.5 rounded border border-slate-200 uppercase">
-                          BERSIH
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Title & description */}
-                  <div>
-                    <h4 className="font-display font-extrabold text-sm leading-snug transition text-slate-800 group-hover:text-indigo-700">
-                      Administrasi Cek Approval Pendaftaran
-                    </h4>
-                    <p className="text-[10px] font-bold text-slate-400 mt-0.5 tracking-wide line-clamp-1 uppercase">
-                      VERIFIKASI & AKTIVASI REGISTER KARYAWAN
-                    </p>
-                  </div>
-
-                  {/* Quick profile info */}
-                  <div className="pt-2 border-t border-slate-100">
-                    <span className="text-[8px] font-extrabold text-slate-400 uppercase tracking-widest block font-mono">FUNGSI OTORITAS</span>
-                    <p className="text-[10px] text-slate-500 leading-normal font-bold mt-1 line-clamp-4 italic">
-                      &quot;Akses kontrol pemantauan registrasi tim, peninjauan permohonan masuk, dan persetujuan otorisasi akun baru bagi seluruh staf PRAMA Pancaran Group.&quot;
-                    </p>
-                  </div>
-                </div>
-
-                {/* Standalone Button matches the other button heights and fonts */}
-                <div className="pt-4 mt-auto">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDashboardView("approval_requests");
-                    }}
-                    className="w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-black tracking-wide transition shadow-sm bg-indigo-50 border border-indigo-100 hover:bg-indigo-600 hover:text-white text-indigo-700 cursor-pointer hover:scale-101"
-                  >
-                    <Users className="h-4 w-4 shrink-0 text-indigo-500 group-hover:text-white" />
-                    <span>Akses Menu Approval</span>
-                    <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded-md font-extrabold shadow-inner shrink-0 leading-none ml-1 ${
-                      pendingRequests.length > 0 
-                        ? "bg-emerald-100 text-emerald-850 animate-pulse" 
-                        : "bg-indigo-100 text-indigo-800"
-                    }`}>
-                      {pendingRequests.length}
-                    </span>
-                  </button>
-                </div>
-              </div>
 
               {/* Standalone custom card for Dashboard Project Management (Modul Jurnal) */}
               <div
                 onClick={() => {
                   setDashboardView("project_dashboard");
                 }}
-                className="group relative flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-5 transition-all duration-300 cursor-pointer hover:border-violet-500 shadow-sm hover:shadow-lg hover:-translate-y-0.5 animate-none"
+                className="group relative flex flex-col justify-between rounded-xl border border-slate-200 bg-white h-[360px] overflow-hidden transition-all duration-300 cursor-pointer hover:border-violet-500 shadow-sm hover:shadow-lg hover:-translate-y-0.5 animate-none"
               >
-                <div className="space-y-4">
-                  {/* Header: Icon and Division Code */}
+                {/* Immersive Background Image */}
+                <div className="absolute inset-0 w-full h-full overflow-hidden">
+                  <img 
+                    src="https://lh3.googleusercontent.com/d/1HuDsoYkzoV5bXSQyMuO1D9RuXJWpjvRZ"
+                    alt="Dashboard Chat AI Agent Prama"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+
+                {/* Overlay Content Container */}
+                <div className="relative z-10 p-5 flex flex-col justify-between h-full">
+                  {/* Header: Icon */}
                   <div className="flex items-center justify-between">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl transition bg-violet-50 text-violet-800 border border-violet-100 shadow-sm font-bold">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl transition bg-violet-50/90 text-violet-800 border border-violet-100 shadow-md font-bold backdrop-blur-sm">
                       <LayoutDashboard className="h-5 w-5 text-violet-500" />
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-mono text-[9px] font-black tracking-widest bg-violet-50 text-violet-650 px-2 py-0.5 rounded border border-violet-200 uppercase">
-                        MODUL JURNAL
+                  </div>
+
+                  {/* Standalone Button */}
+                  <div className="w-full mt-auto">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDashboardView("project_dashboard");
+                      }}
+                      className="w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-black tracking-wide transition shadow-md bg-indigo-600 hover:bg-indigo-700 text-white border border-indigo-500/30 cursor-pointer hover:scale-101"
+                    >
+                      <LayoutDashboard className="h-4 w-4 shrink-0 text-white" />
+                      <span>Dashboard Chat AI Agent Prama</span>
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-white/20 text-white font-extrabold shadow-inner shrink-0 leading-none ml-1">
+                        AKTIF
                       </span>
-                    </div>
+                    </button>
                   </div>
-
-                  {/* Title & description */}
-                  <div>
-                    <h4 className="font-display font-extrabold text-sm leading-snug transition text-slate-800 group-hover:text-violet-700">
-                      Dashboard Formulasi Jurnal PM
-                    </h4>
-                    <p className="text-[10px] font-bold text-slate-400 mt-0.5 tracking-wide line-clamp-1 uppercase">
-                      KAJIAN KELAYAKAN PROYEK 14 PILAR
-                    </p>
-                  </div>
-
-                  {/* Quick profile info */}
-                  <div className="pt-2 border-t border-slate-100">
-                    <span className="text-[8px] font-extrabold text-slate-400 uppercase tracking-widest block font-mono">MITRA PM ADVISOR</span>
-                    <p className="text-[10px] text-slate-500 leading-normal font-bold mt-1 line-clamp-4 italic">
-                      &quot;Simulasi kelayakan investasi, pemetaan supply-demand, struktur tim kerja, transition model, analisis resiko, competitor landscape, dan perhitungan LTV/CAC.&quot;
-                    </p>
-                  </div>
-                </div>
-
-                {/* Standalone Button */}
-                <div className="pt-4 mt-auto">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDashboardView("project_dashboard");
-                    }}
-                    className="w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-black tracking-wide transition shadow-sm bg-violet-50 border border-violet-100 hover:bg-violet-600 hover:text-white text-violet-700 cursor-pointer hover:scale-101"
-                  >
-                    <LayoutDashboard className="h-4 w-4 shrink-0 text-violet-500 group-hover:text-white" />
-                    <span>Akses Dashboard Jurnal PM</span>
-                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-violet-100 text-violet-800 font-extrabold shadow-inner shrink-0 leading-none group-hover:bg-violet-700 group-hover:text-slate-100 ml-1">
-                      AKTIF
-                    </span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Standalone custom card for Robot Voice & Media Automation */}
-              <div
-                onClick={() => {
-                  setDashboardView("robot_voice");
-                }}
-                className="group relative flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-5 transition-all duration-300 cursor-pointer hover:border-cyan-500 shadow-sm hover:shadow-lg hover:-translate-y-0.5 animate-none"
-              >
-                <div className="space-y-4">
-                  {/* Header: Icon and Division Code */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl transition bg-cyan-50 text-cyan-800 border border-cyan-100 shadow-sm font-bold">
-                      <Cpu className="h-5 w-5 text-cyan-500 animate-pulse" />
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-mono text-[9px] font-black tracking-widest bg-cyan-50 text-cyan-700 px-2 py-0.5 rounded border border-cyan-200 uppercase">
-                        ROBOT VOICE & MEDIA
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Title & description */}
-                  <div>
-                    <h4 className="font-display font-extrabold text-sm leading-snug transition text-slate-800 group-hover:text-cyan-700">
-                      Robot Voice & Media Automation
-                    </h4>
-                    <p className="text-[10px] font-bold text-slate-400 mt-0.5 tracking-wide line-clamp-1 uppercase">
-                      AUTOMATION & GENERATIVE WORKSPACE
-                    </p>
-                  </div>
-
-                  {/* Quick profile info */}
-                  <div className="pt-2 border-t border-slate-100">
-                    <span className="text-[8px] font-extrabold text-slate-400 uppercase tracking-widest block font-mono">FUNGSI OTOMATISASI</span>
-                    <p className="text-[10px] text-slate-500 leading-normal font-bold mt-1 line-clamp-4 italic">
-                      &quot;Integrasi transkripsi video-ke-teks otomatis, simulatif adegan text-to-video dengan sulih suara robotik, serta rekayasa papan informasi suara interaktif.&quot;
-                    </p>
-                  </div>
-                </div>
-
-                {/* Standalone Button */}
-                <div className="pt-4 mt-auto">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDashboardView("robot_voice");
-                    }}
-                    className="w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-black tracking-wide transition shadow-sm bg-cyan-50 border border-cyan-100 hover:bg-cyan-600 hover:text-white text-cyan-700 cursor-pointer hover:border-cyan-500 hover:scale-101"
-                  >
-                    <Cpu className="h-4 w-4 shrink-0 text-cyan-500 group-hover:text-white" />
-                    <span>Akses Robot Voice & Media</span>
-                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-cyan-100 text-cyan-800 font-extrabold shadow-inner shrink-0 leading-none group-hover:bg-cyan-700 group-hover:text-slate-100 ml-1 animate-pulse">
-                      OTOMATIS
-                    </span>
-                  </button>
                 </div>
               </div>
 
@@ -8378,6 +8332,123 @@ ${lastMsgText}`;
                 </button>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Floating Gear Menu Button - Only visible in divisions menu when activeDivision is null */}
+        {dashboardView === "divisions" && (
+          <div className="fixed bottom-6 left-6 z-50 flex flex-col items-start">
+            {/* Popover Menu */}
+            {showDivisionGearMenu && (
+              <div className="bg-white border border-slate-200 shadow-2xl rounded-2xl p-4 mb-3 w-80 animate-fade-in text-left">
+                <div className="border-b border-slate-150 pb-2 mb-3">
+                  <h4 className="font-display font-black text-xs text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <Settings className="h-3.5 w-3.5 text-indigo-650 animate-spin" style={{ animationDuration: '6s' }} />
+                    Menu Administrasi Tersembunyi
+                  </h4>
+                  <p className="text-[10px] text-slate-400 font-bold mt-0.5 font-mono uppercase">
+                    Opsi Kontrol PRAMA Enterprise
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  {/* Option 1: Dokumen PM */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDashboardView("saved_docs");
+                      setShowDivisionGearMenu(false);
+                    }}
+                    className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-emerald-50 border border-transparent hover:border-emerald-100 transition duration-200 text-left group cursor-pointer"
+                  >
+                    <div className="h-8 w-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold border border-emerald-100 group-hover:bg-emerald-500 group-hover:text-white transition-all shrink-0">
+                      <HardDrive className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-extrabold text-slate-800 uppercase tracking-wide truncate">
+                          Simpan Dokumen PM
+                        </span>
+                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-extrabold">
+                          {files.length}
+                        </span>
+                      </div>
+                      <p className="text-[9px] text-slate-400 mt-0.5 font-semibold truncate">
+                        Draf artikel, proposal, & dokumen audit
+                      </p>
+                    </div>
+                  </button>
+
+                  {/* Option 2: Approval Pendaftaran */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDashboardView("approval_requests");
+                      setShowDivisionGearMenu(false);
+                    }}
+                    className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-indigo-50 border border-transparent hover:border-indigo-100 transition duration-200 text-left group cursor-pointer"
+                  >
+                    <div className="h-8 w-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold border border-indigo-100 group-hover:bg-indigo-500 group-hover:text-white transition-all shrink-0">
+                      <Users className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-extrabold text-slate-800 uppercase tracking-wide truncate">
+                          Cek Approval Pendaftaran
+                        </span>
+                        {pendingRequests.length > 0 && (
+                          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded-md bg-red-100 text-red-800 font-extrabold animate-pulse">
+                            {pendingRequests.length}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[9px] text-slate-400 mt-0.5 font-semibold truncate">
+                        Verifikasi & otorisasi akun baru staf
+                      </p>
+                    </div>
+                  </button>
+
+                  {/* Option 3: Robot Voice & Media */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDashboardView("robot_voice");
+                      setShowDivisionGearMenu(false);
+                    }}
+                    className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-cyan-50 border border-transparent hover:border-cyan-100 transition duration-200 text-left group cursor-pointer"
+                  >
+                    <div className="h-8 w-8 rounded-lg bg-cyan-50 text-cyan-600 flex items-center justify-center font-bold border border-cyan-100 group-hover:bg-cyan-500 group-hover:text-white transition-all shrink-0">
+                      <Cpu className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-extrabold text-slate-800 uppercase tracking-wide truncate">
+                          Robot Voice & Media
+                        </span>
+                        <span className="text-[8px] font-mono px-1 bg-cyan-100 text-cyan-800 font-bold rounded uppercase">
+                          Otomatis
+                        </span>
+                      </div>
+                      <p className="text-[9px] text-slate-400 mt-0.5 font-semibold truncate">
+                        Transkripsi video & media automation
+                      </p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Gear FAB Button */}
+            <button
+              type="button"
+              onClick={() => setShowDivisionGearMenu(!showDivisionGearMenu)}
+              className={`h-11 w-11 rounded-full bg-slate-900 border border-slate-800 hover:bg-slate-800 text-white flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 active:scale-90 cursor-pointer ${
+                showDivisionGearMenu ? "rotate-90 bg-indigo-650 border-indigo-500" : ""
+              }`}
+              title="Menu Opsi Administrasi"
+            >
+              <Settings className="h-5 w-5 animate-spin hover:text-[#00D285]" style={{ animationDuration: '8s' }} />
+            </button>
           </div>
         )}
 

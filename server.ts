@@ -558,6 +558,38 @@ app.get("/api/logo-pancaran", async (req, res) => {
   }
 });
 
+// Generic secure endpoint to proxy Google Drive images to bypass cookie blocks and hotlinking restrictions
+app.get("/api/proxy-drive", async (req, res) => {
+  try {
+    const id = req.query.id;
+    if (!id || typeof id !== "string") {
+      res.status(400).send("ID parameter is required.");
+      return;
+    }
+    
+    // Validate ID format to prevent SSRF path traversal (Google Drive IDs are usually alphanumeric with some symbols)
+    if (!/^[a-zA-Z0-9_-]{15,45}$/.test(id)) {
+      res.status(400).send("Invalid Google Drive ID format.");
+      return;
+    }
+
+    const driveUrl = `https://lh3.googleusercontent.com/d/${id}`;
+    const response = await fetchImageWithRetry(driveUrl);
+    const contentType = response.headers.get("content-type") || "image/png";
+    
+    res.setHeader("Content-Type", contentType);
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Cache-Control", "public, max-age=86400"); // Cache for 1 day
+    
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    res.send(buffer);
+  } catch (err: any) {
+    console.error(`Proxy drive file ${req.query.id} failure:`, err.message);
+    res.status(500).send("Failed to proxy Drive image correctly.");
+  }
+});
+
 // REST endpoint to proxy raw binary stream of external images
 app.get("/api/proxy-image-raw", async (req, res) => {
   try {

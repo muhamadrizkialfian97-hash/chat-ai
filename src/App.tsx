@@ -1490,6 +1490,7 @@ Pasar transportasi limbah industri, terutama limbah Bahan Berbahaya dan Beracun 
   // Customized states for Article mode, Web Previews, PowerPoint Presenter Voice and Workflows
   const [workspaceViewState, setWorkspaceViewState] = useState<"editor" | "article" | "workflow">("article");
   const [isWorkspaceExpanded, setIsWorkspaceExpanded] = useState<boolean>(false);
+  const [isGuidelineCardCollapsed, setIsGuidelineCardCollapsed] = useState<boolean>(false);
   const [webDocPreview, setWebDocPreview] = useState<"none" | "word" | "ppt" | "html">("none");
   const [isExcelPreviewOpen, setIsExcelPreviewOpen] = useState<boolean>(false);
   const [htmlPreviewContent, setHtmlPreviewContent] = useState<string>("");
@@ -5127,7 +5128,7 @@ ${lastMsgText}`;
                 )}
 
                 {/* RIGHT EXPLORER & EDITING WORKSPACE CANVAS */}
-                <div className="flex-grow p-6 flex flex-col min-h-0 bg-slate-50">
+                <div className="flex-grow p-6 flex flex-col min-h-0 bg-slate-50 relative">
                   {(() => {
                     const activeSec = defaultDashboardSections.find(s => s.number === activeDashboardSection);
                     if (!activeSec) return null;
@@ -5253,7 +5254,7 @@ ${lastMsgText}`;
                           {/* Conditional Workspace View */}
                           {workspaceViewState === "editor" ? (
                             /* Live Text Area Editor */
-                            <div className={`${isWorkspaceExpanded ? "xl:col-span-12" : "xl:col-span-8"} flex flex-col min-h-[300px]`}>
+                            <div className={`${(isWorkspaceExpanded || isGuidelineCardCollapsed) ? "xl:col-span-12" : "xl:col-span-8"} flex flex-col min-h-[300px]`}>
                               <div className="flex items-center justify-between px-3.5 py-2 bg-slate-800 rounded-t-xl text-white text-[9.5px] font-bold font-mono tracking-widest shrink-0">
                                 <span>WORKSPACE EDITOR PRAMA ADVISOR</span>
                                 <span className="text-emerald-400">BAHASA INDONESIA</span>
@@ -5325,7 +5326,7 @@ ${lastMsgText}`;
                             </div>
                           ) : workspaceViewState === "article" ? (
                             /* Classic Typography Article Layout Viewer */
-                            <div className={`${isWorkspaceExpanded ? "xl:col-span-12 max-h-none min-h-[500px]" : "xl:col-span-8 max-h-[500px]"} bg-white border border-slate-205 border-slate-200 rounded-2xl p-6 md:p-8 flex flex-col overflow-y-auto shadow-sm relative text-left`}>
+                            <div className={`${(isWorkspaceExpanded || isGuidelineCardCollapsed) ? "xl:col-span-12 max-h-none min-h-[500px]" : "xl:col-span-8 max-h-[500px]"} bg-white border border-slate-205 border-slate-200 rounded-2xl p-6 md:p-8 flex flex-col overflow-y-auto shadow-sm relative text-left`}>
                               {/* Glowing Reading progress top handle */}
                               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-indigo-500 rounded-t-2xl" />
 
@@ -5972,31 +5973,47 @@ ${lastMsgText}`;
                           )}
 
                           {/* Interactive Preview & Guidelines Container */}
-                          {!isWorkspaceExpanded && (
+                          {!isWorkspaceExpanded && !isGuidelineCardCollapsed && (
                             <div className="xl:col-span-4 flex flex-col gap-4">
                               {/* Executive Guideline Card */}
-                              <div className="bg-slate-900 text-white rounded-2xl p-4 border border-indigo-950 flex flex-col flex-grow text-xs leading-relaxed overflow-y-auto max-h-[320px] shadow-sm">
-                                <span className="text-[8px] font-mono font-black text-amber-400 tracking-widest uppercase mb-1">
+                              <div className="relative bg-[#0D1527] text-white rounded-2xl p-5 md:p-6 pl-7 md:pl-8 border border-slate-800 flex flex-col flex-grow text-xs leading-relaxed overflow-y-auto max-h-[320px] shadow-lg">
+                                {/* Decorative Left Line and Shadow Glow */}
+                                <div className="absolute left-0 top-0 bottom-0 w-[4.5px] bg-gradient-to-b from-amber-400 via-amber-500 to-yellow-600 shadow-[4px_0_15px_rgba(245,158,11,0.6)] z-10" />
+
+                                {/* Hide Mode Button at Top-Right */}
+                                <div className="absolute top-4 right-4 z-20">
+                                  <button
+                                    type="button"
+                                    onClick={() => setIsGuidelineCardCollapsed(true)}
+                                    title="Sembunyikan Pedoman (Jadi Titik Kuning)"
+                                    className="p-1 rounded-lg text-slate-400 hover:text-amber-400 hover:bg-slate-800/60 transition cursor-pointer"
+                                  >
+                                    <EyeOff className="h-4 w-4" />
+                                  </button>
+                                </div>
+
+                                <span className="text-[10px] font-mono font-extrabold text-amber-400 tracking-wider mb-1">
                                   INDIKATOR KEPATUHAN & PEDOMAN
                                 </span>
-                                <h5 className="font-extrabold text-[12px] text-slate-200 mb-2 uppercase">
-                                  Instruksi Panduan Kelayakan
+                                <h5 className="font-extrabold text-[13px] text-slate-100 mb-3 uppercase tracking-wide">
+                                  INSTRUKSI PANDUAN KELAYAKAN
                                 </h5>
-                                <p className="text-slate-300 text-[11px] mb-3 leading-normal font-semibold">
+                                <p className="text-slate-300 text-[11px] mb-4 leading-relaxed font-semibold">
                                   Pastikan artikel memuat spesifikasi logistik logis PT Pancaran Group. Untuk bagian finansial, detail perhitungan amortisasi armada vacuum truck dan target margin ROI diestimasi 35% dekarbonisasi.
                                 </p>
-                                <div className="mt-auto pt-3 border-t border-slate-800 flex flex-col gap-2 font-mono text-[9px] text-slate-400">
-                                  <div className="flex justify-between">
+                                
+                                <div className="mt-auto pt-3 border-t border-slate-800/80 flex flex-col gap-2.5 font-mono text-[9px] text-slate-400">
+                                  <div className="flex justify-between items-center">
                                     <span>Tingkat Risiko:</span>
-                                    <span className="text-rose-400 font-extrabold">TERKENDALIKAN</span>
+                                    <span className="text-rose-500 font-extrabold">TERKENDALIKAN</span>
                                   </div>
-                                  <div className="flex justify-between">
+                                  <div className="flex justify-between items-center">
                                     <span>Otoritas Timbang:</span>
                                     <span className="text-indigo-400 font-extrabold">FESTRONIK INTEGRATED</span>
                                   </div>
-                                  <div className="flex justify-between">
+                                  <div className="flex justify-between items-center">
                                     <span>Standar Sertifikasi:</span>
-                                    <span className="text-emerald-400 font-extrabold">AMDAL / ISO 14001</span>
+                                    <span className="text-emerald-400 font-extrabold">AMDAL / ISO 14881</span>
                                   </div>
                                 </div>
                               </div>
@@ -6010,7 +6027,7 @@ ${lastMsgText}`;
                                     [activeDashboardSection]: activeSec.defaultContent
                                   }));
                                 }}
-                                className="w-full py-2 bg-slate-200 hover:bg-slate-300 active:scale-97 border border-slate-300 text-slate-700 font-bold text-[10.5px] rounded-xl cursor-pointer transition shadow-sm"
+                                className="w-full py-2.5 bg-slate-200 hover:bg-slate-300 active:scale-97 border border-slate-300 text-slate-700 font-bold text-[11px] rounded-xl cursor-pointer transition shadow-sm flex items-center justify-center"
                               >
                                 Pulihkan Teks Bawaan Pabrik
                               </button>
@@ -6021,6 +6038,29 @@ ${lastMsgText}`;
                     );
                   })()
                 }
+
+                {/* Yellow Dot Floating Circular Button when Guidelines is Collapsed */}
+                {isGuidelineCardCollapsed && (
+                  <div className="absolute right-4 bottom-4 z-40">
+                    <button
+                      type="button"
+                      onClick={() => setIsGuidelineCardCollapsed(false)}
+                      title="Tampilkan Indikator Kepatuhan & Pedoman"
+                      className="group relative flex h-11 w-11 items-center justify-center rounded-full bg-slate-900 border border-amber-400 hover:border-amber-300 transition-all duration-300 cursor-pointer shadow-[0_0_15px_rgba(245,158,11,0.6)] hover:scale-110 active:scale-95"
+                    >
+                      {/* Glowing rings */}
+                      <span className="absolute inset-0 rounded-full bg-amber-400/25 animate-ping duration-1000" />
+                      <span className="absolute -inset-1 rounded-full bg-amber-400/10 animate-pulse" />
+                      {/* Yellow Dot */}
+                      <span className="relative h-3 w-3 rounded-full bg-amber-400 border border-amber-300 shadow-[0_0_10px_rgba(250,204,21,1)]" />
+                      
+                      {/* Floating Tooltip to the left */}
+                      <span className="absolute right-13 top-1/2 -translate-y-1/2 scale-0 transition-all duration-150 rounded bg-slate-950 px-2.5 py-1.5 text-[10px] font-black text-slate-200 group-hover:scale-100 whitespace-nowrap z-50 border border-slate-800 shadow-xl">
+                        Tampilkan Indikator Kepatuhan & Pedoman
+                      </span>
+                    </button>
+                  </div>
+                )}
                 </div>
 
                 {/* RIGHT COLLAPSIBLE CHAT PANEL (Advising AI) */}

@@ -729,6 +729,54 @@ export default function App() {
     return localStorage.getItem("prama_active_division") || null;
   });
 
+  // Immersive 3D Portal Room Transition State
+  const [portalTransition, setPortalTransition] = useState<{
+    active: boolean;
+    title: string;
+    image: string;
+    type: "division" | "dashboard";
+    id?: string;
+    isRevealing: boolean;
+  } | null>(null);
+
+  const triggerPortalTransition = (type: "division" | "dashboard", id?: string) => {
+    let title = "";
+    let image = "";
+    if (type === "division") {
+      title = "Chat Model AI Agent Prama";
+      image = "https://lh3.googleusercontent.com/d/1uBbHTvv5mIJCPFI1I09ihFuicDVDcfmo";
+    } else {
+      title = "Dashboard Chat AI Agent Prama";
+      image = "https://lh3.googleusercontent.com/d/1HuDsoYkzoV5bXSQyMuO1D9RuXJWpjvRZ";
+    }
+
+    setPortalTransition({
+      active: true,
+      title,
+      image,
+      type,
+      id,
+      isRevealing: false
+    });
+
+    // Travel zoom effect (1250ms)
+    setTimeout(() => {
+      if (type === "division" && id) {
+        setActiveDivision(id);
+      } else {
+        setDashboardView("project_dashboard");
+      }
+      
+      // Step 2: Now fade-out/reveal the overlay to show the new page
+      setPortalTransition(prev => prev ? { ...prev, isRevealing: true } : null);
+
+      // Step 3: End the transition completely
+      setTimeout(() => {
+        setPortalTransition(null);
+      }, 550); // fade out duration
+    }, 1250);
+  };
+
   // State for document and PowerPoint interactive inline live previews
   const [articlePreview, setArticlePreview] = useState<{ title: string; content: string; fileName: string } | null>(null);
   const [pptPreview, setPptPreview] = useState<{ title: string; slides: Array<{ title: string; bullets: string[]; speakerNotes: string; imageUrl: string }>; fileName: string } | null>(null);
@@ -8155,7 +8203,7 @@ ${lastMsgText}`;
                     key={div.id}
                     onClick={() => {
                       if (!div.locked) {
-                        setActiveDivision(div.id);
+                        triggerPortalTransition("division", div.id);
                       }
                     }}
                     className={`group relative flex flex-col justify-between rounded-xl border h-[300px] overflow-hidden transition-all duration-300 ${
@@ -8206,7 +8254,7 @@ ${lastMsgText}`;
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              setActiveDivision(div.id);
+                              triggerPortalTransition("division", div.id);
                             }}
                             className="w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 px-4 text-xs font-black tracking-wide transition shadow-md bg-indigo-600 hover:bg-indigo-700 text-white border border-indigo-500/30 cursor-pointer hover:scale-101"
                           >
@@ -8223,7 +8271,7 @@ ${lastMsgText}`;
               {/* Standalone custom card for Dashboard Project Management (Modul Jurnal) */}
               <div
                 onClick={() => {
-                  setDashboardView("project_dashboard");
+                  triggerPortalTransition("dashboard");
                 }}
                 className="group relative flex flex-col justify-between rounded-xl border border-slate-200 bg-white h-[300px] overflow-hidden transition-all duration-300 cursor-pointer hover:border-violet-500 shadow-sm hover:shadow-lg hover:-translate-y-0.5 animate-none"
               >
@@ -8252,7 +8300,7 @@ ${lastMsgText}`;
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setDashboardView("project_dashboard");
+                        triggerPortalTransition("dashboard");
                       }}
                       className="w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 px-4 text-xs font-black tracking-wide transition shadow-md bg-indigo-600 hover:bg-indigo-700 text-white border border-indigo-500/30 cursor-pointer hover:scale-101"
                     >

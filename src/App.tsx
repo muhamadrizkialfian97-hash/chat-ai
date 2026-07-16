@@ -26,7 +26,8 @@ import {
   generatePillarsForProject,
   parseResponseToPillars,
   extractProjectTitleFromAI,
-  getDefaultCompetitorsForProject
+  getDefaultCompetitorsForProject,
+  cleanPillarContent
 } from "./utils/projectDashboardHelper";
 import {
   ChatIntelligenceState,
@@ -84,6 +85,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
+  ChevronUp,
   Copy,
   Check,
   FileText,
@@ -372,35 +374,24 @@ export default function App() {
   });
 
   const [landingActiveTab, setLandingActiveTab] = useState<"home" | "missions" | "technology">("home");
+  const [scrollDirection, setScrollDirection] = useState<"down" | "up">("down");
   const [showLandingGearMenu, setShowLandingGearMenu] = useState<boolean>(false);
   const [showDivisionGearMenu, setShowDivisionGearMenu] = useState<boolean>(false);
 
   const scrollToSection = (sectionId: "home" | "missions" | "technology") => {
+    const tabs: ("home" | "missions" | "technology")[] = ["home", "missions", "technology"];
+    const currentIndex = tabs.indexOf(landingActiveTab);
+    const targetIndex = tabs.indexOf(sectionId);
+    if (targetIndex > currentIndex) {
+      setScrollDirection("down");
+    } else if (targetIndex < currentIndex) {
+      setScrollDirection("up");
+    }
     setLandingActiveTab(sectionId);
   };
 
   const lastScrollTime = useRef<number>(0);
   const touchStartY = useRef<number>(0);
-
-  const handleLandingWheel = (e: React.WheelEvent<HTMLDivElement>) => {
-    const now = Date.now();
-    if (now - lastScrollTime.current < 800) return; // 800ms throttle for elegant, deliberate PPT transitions
-
-    const tabs: ("home" | "missions" | "technology")[] = ["home", "missions", "technology"];
-    const currentIndex = tabs.indexOf(landingActiveTab);
-
-    if (e.deltaY > 15) {
-      if (currentIndex < tabs.length - 1) {
-        setLandingActiveTab(tabs[currentIndex + 1]);
-        lastScrollTime.current = now;
-      }
-    } else if (e.deltaY < -15) {
-      if (currentIndex > 0) {
-        setLandingActiveTab(tabs[currentIndex - 1]);
-        lastScrollTime.current = now;
-      }
-    }
-  };
 
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     touchStartY.current = e.touches[0].clientY;
@@ -410,23 +401,67 @@ export default function App() {
     const touchEndY = e.changedTouches[0].clientY;
     const diff = touchStartY.current - touchEndY;
     const now = Date.now();
-    if (now - lastScrollTime.current < 800) return;
+    if (now - lastScrollTime.current < 450) return; // Snappier 450ms cooldown matching wheel gesture
 
     const tabs: ("home" | "missions" | "technology")[] = ["home", "missions", "technology"];
     const currentIndex = tabs.indexOf(landingActiveTab);
 
     if (diff > 40) {
       if (currentIndex < tabs.length - 1) {
+        setScrollDirection("down");
         setLandingActiveTab(tabs[currentIndex + 1]);
         lastScrollTime.current = now;
       }
     } else if (diff < -40) {
       if (currentIndex > 0) {
+        setScrollDirection("up");
         setLandingActiveTab(tabs[currentIndex - 1]);
         lastScrollTime.current = now;
       }
     }
   };
+
+  const landingActiveTabRef = useRef(landingActiveTab);
+  useEffect(() => {
+    landingActiveTabRef.current = landingActiveTab;
+  }, [landingActiveTab]);
+
+  // Native non-passive wheel event listener to support preventDefault for silky-smooth full-screen transition effects
+  useEffect(() => {
+    if (!showHeroLanding) return;
+    const element = landingScrollContainerRef.current;
+    if (!element) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      // Prevent browser default scroll/rubber-band bounce to maintain layout integrity
+      e.preventDefault();
+
+      const now = Date.now();
+      if (now - lastScrollTime.current < 450) return; // Super snappy 450ms cooldown matching click response
+
+      const tabs: ("home" | "missions" | "technology")[] = ["home", "missions", "technology"];
+      const currentIndex = tabs.indexOf(landingActiveTabRef.current);
+
+      if (e.deltaY > 8) {
+        if (currentIndex < tabs.length - 1) {
+          setScrollDirection("down");
+          setLandingActiveTab(tabs[currentIndex + 1]);
+          lastScrollTime.current = now;
+        }
+      } else if (e.deltaY < -8) {
+        if (currentIndex > 0) {
+          setScrollDirection("up");
+          setLandingActiveTab(tabs[currentIndex - 1]);
+          lastScrollTime.current = now;
+        }
+      }
+    };
+
+    element.addEventListener("wheel", handleWheel, { passive: false });
+    return () => {
+      element.removeEventListener("wheel", handleWheel);
+    };
+  }, [showHeroLanding]);
 
   useEffect(() => {
     if (!showHeroLanding) return;
@@ -443,11 +478,13 @@ export default function App() {
       if (e.key === "ArrowDown" || e.key === "ArrowRight" || e.key === " ") {
         if (currentIndex < tabs.length - 1) {
           e.preventDefault();
+          setScrollDirection("down");
           setLandingActiveTab(tabs[currentIndex + 1]);
         }
       } else if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
         if (currentIndex > 0) {
           e.preventDefault();
+          setScrollDirection("up");
           setLandingActiveTab(tabs[currentIndex - 1]);
         }
       }
@@ -498,6 +535,7 @@ export default function App() {
   const landingVideoRef = useRef<HTMLVideoElement>(null);
   const authVideoRef = useRef<HTMLVideoElement>(null);
   const robotIframeRef = useRef<HTMLIFrameElement>(null);
+  const landingScrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Force autoplay under modern browser autoplay policies (Chrome, Safari, Firefox, Edge, and iOS/Android)
   useEffect(() => {
@@ -759,7 +797,7 @@ export default function App() {
       isRevealing: false
     });
 
-    // Travel zoom effect (1250ms)
+    // Fast, organic morph transition (350ms)
     setTimeout(() => {
       if (type === "division" && id) {
         setActiveDivision(id);
@@ -773,8 +811,8 @@ export default function App() {
       // Step 3: End the transition completely
       setTimeout(() => {
         setPortalTransition(null);
-      }, 550); // fade out duration
-    }, 1250);
+      }, 350); // fade out duration
+    }, 350);
   };
 
   // State for document and PowerPoint interactive inline live previews
@@ -1413,6 +1451,15 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
+        
+        // Clean all sections to remove conversational prologue and duplicate headers
+        for (const numStr of Object.keys(parsed)) {
+          const num = parseInt(numStr, 10);
+          const defSec = defaultDashboardSections.find(s => s.number === num);
+          const title = defSec ? defSec.title : "";
+          parsed[num] = cleanPillarContent(parsed[num] || "", num, title);
+        }
+
         const savedTitle = localStorage.getItem("prama_dashboard_project_title") || "Kajian Strategis: Forestry Management Transportation";
         const isWaste = savedTitle.toLowerCase().includes("waste") || savedTitle.toLowerCase().includes("limbah") || savedTitle.toLowerCase().includes("sampah");
         const p2 = parsed[2] || "";
@@ -1430,6 +1477,77 @@ Pasar transportasi limbah industri, terutama limbah Bahan Berbahaya dan Beracun 
 **Strategi Eksploitasi Ceruk Pasar:**
 * **Armada B3 Tersertifikasi:** Mempersiapkan armada tangki/box BRAMA dengan kelayakan uji kir, safety check, asuransi, serta sopir berlisensi BII Umum bersertifikat khusus.
 * **Kemitraan Aliansi Pengolahan:** Bekerja sama dengan Pihak Ketiga (fasilitas pengolahan akhir berizin seperti PPLI) untuk menawarkan jasa bundling hulu-ke-hilir (*end-to-end service*).`;
+        }
+
+        const isForestry = savedTitle.toLowerCase().includes("forestry") || savedTitle.toLowerCase().includes("kehutanan") || savedTitle.toLowerCase().includes("hutan") || savedTitle.toLowerCase().includes("wood") || savedTitle.toLowerCase().includes("logging");
+        const p10 = parsed[10] || "";
+        const isDefaultOrOldP10 = p10.includes("MITIGASI RISIKO KESELAMATAN JALAN RAYA") || p10.includes("Kecelakaan lalu lintas sasis") || p10.trim() === "### 10. Risk Management" || p10.trim().length <= 350;
+        if (isForestry && isDefaultOrOldP10) {
+          parsed[10] = `### 10. Risk Management
+
+Untuk memastikan proyek berjalan lancar dan menguntungkan, berikut adalah breakdown **Risk Management (Manajemen Risiko)** utama yang wajib Anda antisipasi, dikelompokkan berdasarkan kategorinya.
+
+---
+
+## 1. Risiko Operasional & Medan (Operational & Terrain Risks)
+
+Ini adalah area dengan risiko harian paling tinggi karena logistik kehutanan bekerja di lingkungan yang tidak dapat diprediksi.
+
+* **Kondisi Cuaca Ekstrem:** Hujan deras dapat mengubah jalur tanah menjadi lumpur dalam sekejap (*mudslide*), menghentikan mobilitas truk pengangkut kayu (logging trucks), dan merusak struktur jalan angkutan.
+* **Kerusakan Armada & Alat Berat:** Truk loging bekerja di medan berat, memicu keausan cepat pada ban, suspensi, dan mesin. Jika tidak ada manajemen pemeliharaan pencegahan (*preventive maintenance*), *downtime* operasional akan membengkak.
+* **Aksesibilitas Geografis:** Area yang terpencil menyulitkan pengiriman suku cadang, bahan bakar, atau bantuan medis jika terjadi keadaan darurat.
+
+> **Strategi Mitigasi:**
+> * Buat kalender operasional ketat yang menyesuaikan dengan musim (kurangi volume saat puncak musim hujan).
+> * Sediakan *buffer stock* suku cadang kritis dan bahan bakar langsung di *basecamp* lapangan.
+> * Terapkan sistem pemantauan armada berbasis GPS yang tangguh di area *low-signal*.
+
+## 2. Risiko Regulasi & Kepatuhan (Regulatory & Compliance Risks)
+
+Industri kehutanan diawasi sangat ketat oleh pemerintah dan lembaga lingkungan. Pelanggaran hukum bisa berakibat pembatalan kontrak atau denda besar.
+
+* **Sertifikasi & Legalitas Kayu:** Risiko mengangkut hasil hutan tanpa dokumen legalitas yang sah (seperti SKSHAK atau sertifikasi kelestarian lingkungan).
+* **Batasan Beban Kendaraan (Overloading):** Truk kayu rawan melanggar aturan muatan sumbu terberat (MST) di jalan umum, yang bisa memicu penilangan atau penyitaan.
+* **Zona Konservasi:** Risiko masuk atau merusak area lindung yang dilarang untuk kegiatan transportasi/ekstraksi.
+
+> **Strategi Mitigasi:**
+> * Lakukan audit dokumen digital sebelum truk meninggalkan *loading point*.
+> * Pasang jembatan timbang (*weighbridge*) portabel di area hutan untuk memastikan muatan sesuai regulasi sebelum masuk jalan umum.
+
+## 3. Risiko Finansial (Financial Risks)
+
+Proyek ini padat modal (*capital intensive*) dan sensitif terhadap fluktuasi biaya makro.
+
+* **Volatilitas Biaya Bahan Bakar (BBM):** Karena konsumsi BBM alat berat dan truk sangat besar, kenaikan harga solar industri sedikit saja bisa menggerus profit margin secara drastis.
+* **Ketidakpastian Volume Angkut:** Jika kuota tebang dari manajemen kehutanan turun atau terhambat, pendapatan Anda yang dihitung per ritase atau per kubik ($m^3$) akan ikut anjlok, sementara biaya tetap (gaji driver, sewa alat) berjalan terus.
+
+> **Strategi Mitigasi:**
+> * Masukkan klausul *Fuel Escalation Clause* dalam kontrak (penyesuaian tarif angkut otomatis jika harga BBM naik melebihi persentase tertentu).
+> * Terapkan skema kontrak dengan jaminan volume minimum (*Take-or-Pay clause*).
+
+## 4. Risiko Keselamatan & Kesehatan Kerja (K3 / HSE Risks)
+
+Logistik kehutanan termasuk salah satu industri dengan tingkat bahaya tertinggi.
+
+* **Kecelakaan Kerja:** Truk terbalik di lereng curam, tertimpa kayu saat proses *loading/unloading*, hingga cedera fatal operator.
+* **Konflik Sosial:** Risiko gesekan dengan masyarakat adat atau lokal di sepanjang jalur transportasi hutan.
+
+> **Strategi Mitigasi:**
+> * Kewajiban sertifikasi kompetensi untuk semua *driver* truk logging (khusus medan berat).
+> * Alokasikan dana khusus untuk CSR (*Corporate Social Responsibility*) dan libatkan tenaga kerja lokal demi menjaga stabilitas hubungan sosial.
+
+---
+
+### Ringkasan Skoring Risiko (Risk Matrix Checklist)
+
+Sebelum menandatangani kontrak, pastikan Anda dan tim menilai matriks risiko berikut:
+
+| Kategori Risiko | Dampak (Impact) | Probabilitas (Probability) | Prioritas Penanganan |
+| --- | --- | --- | --- |
+| **Cuaca & Medan Lumpur** | Tinggi | Tinggi | **Sangat Tinggi (Kritis)** |
+| **Kecelakaan Alat/Truk** | Tinggi | Sedang | **Tinggi** |
+| **Kenaikan Harga BBM** | Sedang | Tinggi | **Tinggi** |
+| **Izin & Dokumen Legal** | Sangat Tinggi | Rendah | **Sedang (Wajib Patuh)** |`;
         }
         return parsed;
       } catch (e) {
@@ -1479,40 +1597,7 @@ Pasar transportasi limbah industri, terutama limbah Bahan Berbahaya dan Beracun 
     localStorage.setItem("prama_dashboard_sections", JSON.stringify(dashboardSectionsState));
   }, [dashboardSectionsState]);
 
-  // Automated sanitization and optimization for Market Opportunity (Pillar 2)
-  useEffect(() => {
-    const isWaste = dashboardProjectTitle.toLowerCase().includes("waste") || 
-                    dashboardProjectTitle.toLowerCase().includes("limbah") || 
-                    dashboardProjectTitle.toLowerCase().includes("sampah");
-    
-    setDashboardSectionsState((prev) => {
-      const p2 = prev[2] || "";
-      const isCorrupted = p2.includes("Baik, terima kasih") || 
-                          p2.includes("GLOBAL/NAT OVERVIEW") || 
-                          p2.includes("### 1. Global") || 
-                          p2.trim() === "" || 
-                          p2.trim() === "### 2. Market Opportunity";
-      
-      if (isWaste && isCorrupted) {
-        return {
-          ...prev,
-          2: `### 2. Market Opportunity
-
-**Analisis Potensi Pasar & Gap Analisis:**
-Pasar transportasi limbah industri, terutama limbah Bahan Berbahaya dan Beracun (B3), memiliki tingkat marjin keuntungan yang jauh lebih tinggi daripada logistik general cargo biasa karena regulasi ketat, pengawasan lingkungan hidup, dan persyaratan armada yang spesifik.
-
-**Kesenjangan Layanan (Service Gaps):**
-* **Izin Khusus Terbatas:** Sangat sedikit operator logistik nasional yang memiliki lisensi pengangkutan terpadu (Kemenhub + KLHK) berskala armada besar untuk melayani rute kawasan industri Jawa Barat (Cikarang, Karawang).
-* **Integrasi Digital & Festronik:** Mayoritas transporter limbah konvensional masih mengandalkan manifest fisik kertas, sementara emiten/perusahaan multinasional membutuhkan pelaporan manifest digital terintegrasi (Festronik) untuk kepatuhan ESG.
-
-**Strategi Eksploitasi Ceruk Pasar:**
-* **Armada B3 Tersertifikasi:** Mempersiapkan armada tangki/box BRAMA dengan kelayakan uji kir, safety check, asuransi, serta sopir berlisensi BII Umum bersertifikat khusus.
-* **Kemitraan Aliansi Pengolahan:** Bekerja sama dengan Pihak Ketiga (fasilitas pengolahan akhir berizin seperti PPLI) untuk menawarkan jasa bundling hulu-ke-hilir (*end-to-end service*).`
-        };
-      }
-      return prev;
-    });
-  }, [dashboardProjectTitle]);
+  // Automated sanitization and optimization for Market Opportunity (Pillar 2) has been removed to respect clean slates and allow empty dashboards.
 
   // Right side Chat Menu state
   const [isDashboardChatOpen, setIsDashboardChatOpen] = useState<boolean>(true);
@@ -1534,11 +1619,13 @@ Pasar transportasi limbah industri, terutama limbah Bahan Berbahaya dan Beracun 
   const [isCreateNewDashboardOpen, setIsCreateNewDashboardOpen] = useState<boolean>(false);
   const [newDashboardTitleInput, setNewDashboardTitleInput] = useState<string>("");
   const [newDashboardPresetId, setNewDashboardPresetId] = useState<string>("forestry");
+  const [isCleanSlate, setIsCleanSlate] = useState<boolean>(true);
 
   // Customized states for Article mode, Web Previews, PowerPoint Presenter Voice and Workflows
   const [workspaceViewState, setWorkspaceViewState] = useState<"editor" | "article" | "workflow">("article");
   const [isWorkspaceExpanded, setIsWorkspaceExpanded] = useState<boolean>(false);
-  const [isGuidelineCardCollapsed, setIsGuidelineCardCollapsed] = useState<boolean>(false);
+  const [isGuidelineCardCollapsed, setIsGuidelineCardCollapsed] = useState<boolean>(true);
+  const [isExportMenuCollapsed, setIsExportMenuCollapsed] = useState<boolean>(true);
   const [webDocPreview, setWebDocPreview] = useState<"none" | "word" | "ppt" | "html">("none");
   const [isExcelPreviewOpen, setIsExcelPreviewOpen] = useState<boolean>(false);
   const [htmlPreviewContent, setHtmlPreviewContent] = useState<string>("");
@@ -3699,11 +3786,30 @@ ${lastMsgText}`;
       }
     ];
 
+    const getDriveIdFromUrl = (url: string): string => {
+      const match = url.match(/id=([a-zA-Z0-9_-]{15,45})/);
+      return match ? match[1] : "";
+    };
+
+    const handleLogoError = (e: React.SyntheticEvent<HTMLImageElement, Event>, originalUrl: string) => {
+      const img = e.currentTarget;
+      const driveId = getDriveIdFromUrl(originalUrl);
+      if (!driveId) return;
+
+      if (img.src.includes("/api/proxy-drive")) {
+        img.src = `https://lh3.googleusercontent.com/d/${driveId}`;
+      } else if (img.src.includes("lh3.googleusercontent.com")) {
+        img.src = `https://drive.google.com/thumbnail?sz=w500&id=${driveId}`;
+      } else if (img.src.includes("drive.google.com/thumbnail")) {
+        img.src = `https://docs.google.com/uc?export=view&id=${driveId}`;
+      }
+    };
+
     return (
       <div 
+        ref={landingScrollContainerRef}
         className="w-full h-screen overflow-hidden bg-slate-950 relative select-none" 
         id="landing-scroll-container"
-        onWheel={handleLandingWheel}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
@@ -3718,6 +3824,7 @@ ${lastMsgText}`;
                   alt="Pancaran Group" 
                   referrerPolicy="no-referrer"
                   className="h-full w-full object-contain select-none" 
+                  onError={(e) => handleLogoError(e, "/api/proxy-drive?id=1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X")}
                 />
               </div>
               <span className="font-display font-bold text-sm tracking-[0.2em] text-white">
@@ -3732,7 +3839,17 @@ ${lastMsgText}`;
                 return (
                   <button
                     key={tab}
-                    onClick={() => setLandingActiveTab(tab)}
+                    onClick={() => {
+                      const tabs: ("home" | "missions" | "technology")[] = ["home", "missions", "technology"];
+                      const currentIdx = tabs.indexOf(landingActiveTab);
+                      const targetIdx = tabs.indexOf(tab);
+                      if (targetIdx > currentIdx) {
+                        setScrollDirection("down");
+                      } else if (targetIdx < currentIdx) {
+                        setScrollDirection("up");
+                      }
+                      setLandingActiveTab(tab);
+                    }}
                     className={`relative px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-colors duration-300 cursor-pointer ${
                       isActive 
                         ? "text-white" 
@@ -3753,17 +3870,31 @@ ${lastMsgText}`;
               })}
             </div>
 
-            {/* Menu Button Right */}
-            <button 
-              onClick={() => {
-                setShowHeroLanding(false);
-                sessionStorage.setItem("prama_hero_dismissed", "true");
-              }}
-              className="group bg-slate-950/60 hover:bg-indigo-600 text-white px-5 py-2.5 rounded-full text-xs font-semibold tracking-wider flex items-center gap-2 border border-slate-800/80 backdrop-blur-sm transition-all duration-300 cursor-pointer shadow-lg hover:border-indigo-500/40"
-            >
-              <span>Masuk Portal</span>
-              <LogIn className="h-3.5 w-3.5 text-slate-400 group-hover:text-white transition-colors duration-300" />
-            </button>
+            {/* Top Right Action Button */}
+            <div className="flex items-center justify-end w-24 md:w-32">
+              <button
+                onClick={() => {
+                  setShowHeroLanding(false);
+                  if (!activeUser) {
+                    setAuthTab("login");
+                  }
+                  sessionStorage.setItem("prama_hero_dismissed", "true");
+                }}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-white/10 hover:border-indigo-500/50 bg-white/5 hover:bg-indigo-600/80 text-white text-[10px] font-bold tracking-widest uppercase transition-all duration-300 hover:scale-105 active:scale-95 shadow-md hover:shadow-indigo-500/20 cursor-pointer backdrop-blur-md"
+              >
+                {activeUser ? (
+                  <>
+                    <LayoutGrid className="h-3 w-3" />
+                    <span>PORTAL</span>
+                  </>
+                ) : (
+                  <>
+                    <LogIn className="h-3 w-3" />
+                    <span>LOGIN</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </header>
 
@@ -3776,7 +3907,10 @@ ${lastMsgText}`;
             onClick={() => {
               const tabs: ("home" | "missions" | "technology")[] = ["home", "missions", "technology"];
               const idx = tabs.indexOf(landingActiveTab);
-              if (idx > 0) setLandingActiveTab(tabs[idx - 1]);
+              if (idx > 0) {
+                setScrollDirection("up");
+                setLandingActiveTab(tabs[idx - 1]);
+              }
             }}
             className="fixed left-4 md:left-6 top-1/2 -translate-y-1/2 z-40 p-3 rounded-full bg-slate-950/40 hover:bg-indigo-600/80 border border-slate-800 hover:border-indigo-500/40 text-slate-400 hover:text-white backdrop-blur-md transition-all duration-300 hover:scale-110 shadow-lg cursor-pointer hidden md:flex items-center justify-center"
           >
@@ -3790,7 +3924,10 @@ ${lastMsgText}`;
             onClick={() => {
               const tabs: ("home" | "missions" | "technology")[] = ["home", "missions", "technology"];
               const idx = tabs.indexOf(landingActiveTab);
-              if (idx < tabs.length - 1) setLandingActiveTab(tabs[idx + 1]);
+              if (idx < tabs.length - 1) {
+                setScrollDirection("down");
+                setLandingActiveTab(tabs[idx + 1]);
+              }
             }}
             className="fixed right-4 md:right-6 top-1/2 -translate-y-1/2 z-40 p-3 rounded-full bg-slate-950/40 hover:bg-indigo-600/80 border border-slate-800 hover:border-indigo-500/40 text-slate-400 hover:text-white backdrop-blur-md transition-all duration-300 hover:scale-110 shadow-lg cursor-pointer hidden md:flex items-center justify-center"
           >
@@ -3803,9 +3940,9 @@ ${lastMsgText}`;
             <motion.section 
               key="home"
               id="section-home"
-              initial={{ opacity: 0, y: 100, scale: 0.4, filter: "blur(12px)" }}
+              initial={{ opacity: 0, y: scrollDirection === "down" ? 100 : -100, scale: 0.4, filter: "blur(12px)" }}
               animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-              exit={{ opacity: 0, y: -100, scale: 0.4, filter: "blur(12px)" }}
+              exit={{ opacity: 0, y: scrollDirection === "down" ? -100 : 100, scale: 0.4, filter: "blur(12px)" }}
               transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
               className="absolute inset-0 w-full h-full flex flex-col justify-between pt-16 md:pt-20 overflow-hidden bg-transparent z-20"
             >
@@ -3902,6 +4039,7 @@ ${lastMsgText}`;
                           alt={partner.name} 
                           referrerPolicy="no-referrer"
                           className="h-full w-full object-contain filter drop-shadow-[0_2px_6px_rgba(99,102,241,0.15)] select-none transition-all duration-300" 
+                          onError={(e) => handleLogoError(e, partner.logoUrl)}
                         />
                       </motion.div>
                     ))}
@@ -3924,9 +4062,9 @@ ${lastMsgText}`;
             <motion.section 
               key="missions"
               id="section-missions"
-              initial={{ opacity: 0, y: 100, scale: 0.4, filter: "blur(12px)" }}
+              initial={{ opacity: 0, y: scrollDirection === "down" ? 100 : -100, scale: 0.4, filter: "blur(12px)" }}
               animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-              exit={{ opacity: 0, y: -100, scale: 0.4, filter: "blur(12px)" }}
+              exit={{ opacity: 0, y: scrollDirection === "down" ? -100 : 100, scale: 0.4, filter: "blur(12px)" }}
               transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
               className="absolute inset-0 w-full h-full flex flex-col justify-between pt-16 md:pt-20 overflow-hidden bg-transparent z-20"
             >
@@ -4077,6 +4215,7 @@ ${lastMsgText}`;
                           alt={partner.name} 
                           referrerPolicy="no-referrer"
                           className="h-full w-full object-contain filter drop-shadow-[0_2px_6px_rgba(99,102,241,0.15)] select-none transition-all duration-300" 
+                          onError={(e) => handleLogoError(e, partner.logoUrl)}
                         />
                       </motion.div>
                     ))}
@@ -4099,9 +4238,9 @@ ${lastMsgText}`;
             <motion.section 
               key="technology"
               id="section-technology"
-              initial={{ opacity: 0, y: 100, scale: 0.4, filter: "blur(12px)" }}
+              initial={{ opacity: 0, y: scrollDirection === "down" ? 100 : -100, scale: 0.4, filter: "blur(12px)" }}
               animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-              exit={{ opacity: 0, y: -100, scale: 0.4, filter: "blur(12px)" }}
+              exit={{ opacity: 0, y: scrollDirection === "down" ? -100 : 100, scale: 0.4, filter: "blur(12px)" }}
               transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
               className="absolute inset-0 w-full h-full flex flex-col justify-between pt-16 md:pt-20 overflow-hidden bg-transparent z-20"
             >
@@ -4217,6 +4356,7 @@ ${lastMsgText}`;
                           alt={partner.name} 
                           referrerPolicy="no-referrer"
                           className="h-full w-full object-contain filter drop-shadow-[0_2px_6px_rgba(99,102,241,0.15)] select-none transition-all duration-300" 
+                          onError={(e) => handleLogoError(e, partner.logoUrl)}
                         />
                       </motion.div>
                     ))}
@@ -4960,153 +5100,259 @@ ${lastMsgText}`;
                 </div>
 
                 {/* Combined Export Buttons & Web Viewers */}
-                <div className="flex flex-wrap gap-2 shrink-0 pt-2 lg:pt-0">
-                  {/* WORD Controls block */}
-                  <div className="flex items-center gap-1.5 bg-indigo-50/60 p-1.5 rounded-2xl border border-indigo-100">
-                    <button
-                      type="button"
-                      onClick={() => setWebDocPreview("word")}
-                      className="flex items-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[10px] font-black rounded-xl px-3 py-2.5 transition shadow-sm cursor-pointer border border-indigo-200"
-                      title="Buka Pratinjau WORD Interaktif di Web"
-                    >
-                      <Eye className="h-3.5 w-3.5 text-indigo-500" />
-                      <span>Pratinjau Word</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        exportAllSectionsToWord(dashboardProjectTitle, dashboardSectionsState);
-                      }}
-                      className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black rounded-xl px-3.5 py-2.5 transition shadow-md cursor-pointer"
-                      title="Unduh file Word hasil kompilasi"
-                    >
-                      <FileText className="h-3.5 w-3.5 text-indigo-100" />
-                      <span>Unduh Word</span>
-                    </button>
-                  </div>
+                <div className="flex flex-col lg:flex-row lg:items-center gap-3 shrink-0 pt-2 lg:pt-0">
+                  {/* Toggle Button */}
+                  <button
+                    type="button"
+                    onClick={() => setIsExportMenuCollapsed(!isExportMenuCollapsed)}
+                    className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-black transition cursor-pointer select-none ${
+                      isExportMenuCollapsed 
+                        ? "bg-[#2b579a] hover:bg-[#1f4275] text-white border-[#1c3a66] shadow-md" 
+                        : "bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300 shadow-sm"
+                    }`}
+                    title={isExportMenuCollapsed ? "Tampilkan Alat Ekspor Dokumen" : "Sembunyikan Alat Ekspor Dokumen"}
+                  >
+                    <LayoutGrid className={`h-4 w-4 ${isExportMenuCollapsed ? "animate-pulse" : ""}`} />
+                    <span>{isExportMenuCollapsed ? "Tampilkan Alat Ekspor & Simulator" : "Sembunyikan Alat Ekspor"}</span>
+                    {isExportMenuCollapsed ? (
+                      <ChevronDown className="h-3.5 w-3.5 opacity-80" />
+                    ) : (
+                      <ChevronUp className="h-3.5 w-3.5 opacity-80" />
+                    )}
+                  </button>
 
-                  {/* PPT Controls block */}
-                  <div className="flex items-center gap-1.5 bg-sky-50/60 p-1.5 rounded-2xl border border-sky-100">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const mappedSlides = defaultDashboardSections.map((sec) => {
-                          const rawContent = dashboardSectionsState[sec.number] || sec.defaultContent;
-                          const lines = rawContent.split("\n")
-                            .map(l => l.trim())
-                            .filter(l => l.length > 0 && !l.startsWith("###") && !l.startsWith("!"))
-                            .map(l => l.replace(/\*\*/g, "").replace(/^\*\s*/, "").replace(/^-\s*/, ""));
-                          const bullets = lines.slice(0, 5);
-                          const speakerNotes = `Membahas pilar strategi ${sec.number}: ${sec.title}. Analisis operasional merangkum: ${bullets.slice(0, 2).join(", ")}.`;
-                          const kw = sec.title || "";
-                          const imageUrl = getUnsplashUrl(kw, activeDivision);
-                          return {
-                            title: `Pilar ${sec.number}: ${sec.title}`,
-                            bullets: bullets.length > 0 ? bullets : ["Materi pilar pembahasan komprehensif."],
-                            speakerNotes,
-                            imageUrl: imageUrl || "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1200"
-                          };
-                        });
-                        setPptPreview({
-                          title: dashboardProjectTitle || "Kajian 14 Pilar",
-                          slides: mappedSlides,
-                          fileName: (dashboardProjectTitle || "Kajian_14_Pilar").toLowerCase().replace(/[^a-zA-Z0-9]/g, "_")
-                        });
-                        setActiveSlideIndex(0);
-                      }}
-                      className="flex items-center gap-1.5 bg-sky-50 hover:bg-sky-100 text-sky-700 text-[10px] font-black rounded-xl px-3 py-2.5 transition shadow-sm cursor-pointer border border-sky-200"
-                      title="Pratinjau Slide Presentasi PPT & Aktifkan Fitur Suara Narasi"
+                  {!isExportMenuCollapsed && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.97 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.2 }}
+                      className="flex flex-wrap gap-2"
                     >
-                      <Eye className="h-3.5 w-3.5 text-sky-500" />
-                      <span>Pratinjau PPT</span>
-                    </button>
-                    <button
-                      onClick={async () => {
-                        await exportAllSectionsToPPTX(dashboardProjectTitle, dashboardSectionsState);
-                      }}
-                      className="flex items-center gap-1.5 bg-sky-600 hover:bg-sky-700 text-white text-[10px] font-black rounded-xl px-3.5 py-2.5 transition shadow-md cursor-pointer"
-                      title="Unduh file PowerPoint"
-                    >
-                      <Presentation className="h-3.5 w-3.5 text-sky-100" />
-                      <span>Unduh PPTX</span>
-                    </button>
-                  </div>
+                      {/* WORD Controls block */}
+                      <div className="flex items-center gap-1.5 bg-indigo-50/60 p-1.5 rounded-2xl border border-indigo-100">
+                        <button
+                          type="button"
+                          onClick={() => setWebDocPreview("word")}
+                          className="flex items-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[10px] font-black rounded-xl px-3 py-2.5 transition shadow-sm cursor-pointer border border-indigo-200"
+                          title="Buka Pratinjau WORD Interaktif di Web"
+                        >
+                          <Eye className="h-3.5 w-3.5 text-indigo-500" />
+                          <span>Pratinjau Word</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            exportAllSectionsToWord(dashboardProjectTitle, dashboardSectionsState);
+                          }}
+                          className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black rounded-xl px-3.5 py-2.5 transition shadow-md cursor-pointer"
+                          title="Unduh file Word hasil kompilasi"
+                        >
+                          <FileText className="h-3.5 w-3.5 text-indigo-100" />
+                          <span>Unduh Word</span>
+                        </button>
+                      </div>
 
-                  {/* HTML Controls block */}
-                  <div className="flex items-center gap-1.5 bg-emerald-50/60 p-1.5 rounded-2xl border border-emerald-100">
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        const mappedSlides = defaultDashboardSections.map((sec) => {
-                          const rawContent = dashboardSectionsState[sec.number] || sec.defaultContent;
-                          const lines = rawContent.split("\n")
-                            .map(l => l.trim())
-                            .filter(l => l.length > 0 && !l.startsWith("###") && !l.startsWith("!"))
-                            .map(l => l.replace(/\*\*/g, "").replace(/^\*\s*/, "").replace(/^-\s*/, ""));
-                          const bullets = lines.slice(0, 5);
-                          const speakerNotes = `Membahas pilar strategi ${sec.number}: ${sec.title}. Analisis operasional merangkum: ${bullets.slice(0, 2).join(", ")}.`;
-                          return {
-                            title: `Pilar ${sec.number}: ${sec.title}`,
-                            bullets: bullets.length > 0 ? bullets : ["Materi pilar pembahasan komprehensif."],
-                            speakerNotes,
-                            imageUrl: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1200"
-                          };
-                        });
-                        const htmlString = await exportToInteractiveHTML(
-                          dashboardProjectTitle || "Kajian 14 Pilar",
-                          mappedSlides,
-                          activeDivision || "UMUM",
-                          true
-                        );
-                        if (typeof htmlString === "string") {
-                          setHtmlPreviewContent(htmlString);
-                          setWebDocPreview("html");
-                        }
-                      }}
-                      className="flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[10px] font-black rounded-xl px-3 py-2.5 transition shadow-sm cursor-pointer border border-emerald-200"
-                      title="Buka Pratinjau HTML Interaktif di Web"
-                    >
-                      <Eye className="h-3.5 w-3.5 text-emerald-500" />
-                      <span>Pratinjau HTML</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        const mappedSlides = defaultDashboardSections.map((sec) => {
-                          const rawContent = dashboardSectionsState[sec.number] || sec.defaultContent;
-                          const lines = rawContent.split("\n")
-                            .map(l => l.trim())
-                            .filter(l => l.length > 0 && !l.startsWith("###") && !l.startsWith("!"))
-                            .map(l => l.replace(/\*\*/g, "").replace(/^\*\s*/, "").replace(/^-\s*/, ""));
-                          const bullets = lines.slice(0, 5);
-                          const speakerNotes = `Membahas pilar strategi ${sec.number}: ${sec.title}. Analisis operasional merangkum: ${bullets.slice(0, 2).join(", ")}.`;
-                          return {
-                            title: `Pilar ${sec.number}: ${sec.title}`,
-                            bullets: bullets.length > 0 ? bullets : ["Materi pilar pembahasan komprehensif."],
-                            speakerNotes,
-                            imageUrl: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1200"
-                          };
-                        });
-                        exportToInteractiveHTML(dashboardProjectTitle || "Kajian 14 Pilar", mappedSlides, activeDivision || "UMUM");
-                      }}
-                      className="flex items-center gap-1.5 bg-[#00D285] hover:bg-[#00B472] text-white text-[10px] font-black rounded-xl px-3 py-2.5 transition shadow-md cursor-pointer"
-                      title="Unduh file HTML Presentasi Interaktif dengan Suara TTS dan Auto Next untuk 14 Pilar"
-                    >
-                      <Download className="h-3.5 w-3.5 text-white" />
-                      <span>Unduh HTML Interaktif</span>
-                    </button>
-                  </div>
+                      {/* PPT Controls block */}
+                      <div className="flex items-center gap-1.5 bg-sky-50/60 p-1.5 rounded-2xl border border-sky-100">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            let extractedConclusions: string[] = [];
 
-                  {/* EXCEL Financial Controls block */}
-                  <div className="flex items-center gap-1.5 bg-emerald-50/60 p-1.5 rounded-2xl border border-emerald-100 font-sans">
-                    <button
-                      type="button"
-                      onClick={() => setIsExcelPreviewOpen(true)}
-                      className="flex items-center gap-1.5 bg-[#107c41] hover:bg-[#0d6434] text-white text-[10.5px] font-black rounded-xl px-3.5 py-2.5 transition shadow-md cursor-pointer border border-[#0d6434]"
-                      title="Buka Simulator Excel & Analisis Keuangan Interaktif"
-                    >
-                      <Table className="h-3.5 w-3.5 text-emerald-100" />
-                      <span>Simulator Excel Finansial</span>
-                    </button>
-                  </div>
+                            const mappedSlides = defaultDashboardSections.map((sec) => {
+                              const rawContent = dashboardSectionsState[sec.number] || sec.defaultContent;
+                              
+                              // Extract conclusion if present
+                              let mainContent = rawContent;
+                              let conclusionText: string | null = null;
+                              
+                              const conclusionMarkers = [
+                                /###\s*kesimpulan/i,
+                                /##\s*kesimpulan/i,
+                                /#\s*kesimpulan/i,
+                                /\*\*\s*kesimpulan\s*\*\*/i,
+                                /\bkesimpulan\s*:/i,
+                                /^\s*kesimpulan\s*$/im
+                              ];
+
+                              let foundIndex = -1;
+                              let matchedMarkerLength = 0;
+
+                              for (const marker of conclusionMarkers) {
+                                const match = rawContent.match(marker);
+                                if (match && match.index !== undefined) {
+                                  if (foundIndex === -1 || match.index < foundIndex) {
+                                    foundIndex = match.index;
+                                    matchedMarkerLength = match[0].length;
+                                  }
+                                }
+                              }
+
+                              if (foundIndex !== -1) {
+                                mainContent = rawContent.substring(0, foundIndex).trim();
+                                conclusionText = rawContent.substring(foundIndex + matchedMarkerLength).trim();
+                              }
+
+                              // Clean up [UPDATE_PILAR] and [/UPDATE_PILAR] tags
+                              mainContent = mainContent.replace(/\[\/?UPDATE_PILAR\]/gi, "").trim();
+
+                              if (conclusionText) {
+                                const cleanedConclusion = conclusionText.replace(/\[\/?UPDATE_PILAR\]/gi, "").trim();
+                                if (cleanedConclusion) {
+                                  extractedConclusions.push(cleanedConclusion);
+                                }
+                              }
+
+                              const lines = mainContent.split("\n")
+                                .map(l => l.trim())
+                                .filter(l => l.length > 0 && !l.startsWith("###") && !l.startsWith("!"))
+                                .map(l => l.replace(/\*\*/g, "").replace(/^\*\s*/, "").replace(/^-\s*/, ""));
+                              const bullets = lines.slice(0, 5);
+                              const speakerNotes = `Membahas pilar strategi ${sec.number}: ${sec.title}. Analisis operasional merangkum: ${bullets.slice(0, 2).join(", ")}.`;
+                              const kw = sec.title || "";
+                              const imageUrl = getUnsplashUrl(kw, activeDivision);
+                              return {
+                                title: `Pilar ${sec.number}: ${sec.title}`,
+                                bullets: bullets.length > 0 ? bullets : ["Materi pilar pembahasan komprehensif."],
+                                speakerNotes,
+                                imageUrl: imageUrl || "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1200"
+                              };
+                            });
+
+                            // Add a dedicated slide for Conclusion
+                            let conclusionBullets: string[] = [];
+                            if (extractedConclusions.length > 0) {
+                              conclusionBullets = extractedConclusions.join("\n")
+                                .split("\n")
+                                .map(l => l.trim())
+                                .filter(l => l.length > 0 && !l.startsWith("###") && !l.startsWith("!"))
+                                .map(l => l.replace(/\*\*/g, "").replace(/^\*\s*/, "").replace(/^-\s*/, ""));
+                            }
+
+                            // Use defaults if empty
+                            if (conclusionBullets.length === 0) {
+                              const pTitle = dashboardProjectTitle || "Kajian Proyek";
+                              const div = (activeDivision || "UMUM").toUpperCase();
+                              conclusionBullets = [
+                                `Kelayakan Investasi: Proyek ekspedisi "${pTitle}" di unit ${div} dinilai sangat layak secara komersial dan operasional.`,
+                                "Sinergi Teknologi & Armada: Penggabungan ketangguhan sasis armada Pancaran dengan sistem telemetri pintar PRAMA meminimalkan risiko operasional.",
+                                "Rekomendasi Onboarding: Segera lakukan verifikasi rute (trial run), finalisasi SLA operasional, dan integrasi penuh aplikasi Driver e-POD.",
+                                "Kepatuhan Hukum: Menjamin 100% kepatuhan regulasi ODOL (Over Dimension Over Load) dan standar keselamatan K3 nasional."
+                              ];
+                            }
+
+                            // Keep at most 5 bullet points for the slide
+                            const finalConclusionBullets = conclusionBullets.slice(0, 5);
+
+                            mappedSlides.push({
+                              title: "KESIMPULAN STRATEGIS (CONCLUSION)",
+                              bullets: finalConclusionBullets,
+                              speakerNotes: "Sesi presentasi komprehensif selesai. Kesimpulan akhir merekomendasikan GO-LIVE proyek berdasarkan integrasi armada fisik Pancaran Group dan sensor digital PRAMA.",
+                              imageUrl: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=1200"
+                            });
+
+                            setPptPreview({
+                              title: dashboardProjectTitle || "Kajian 14 Pilar",
+                              slides: mappedSlides,
+                              fileName: (dashboardProjectTitle || "Kajian_14_Pilar").toLowerCase().replace(/[^a-zA-Z0-9]/g, "_")
+                            });
+                            setActiveSlideIndex(0);
+                          }}
+                          className="flex items-center gap-1.5 bg-sky-50 hover:bg-sky-100 text-sky-700 text-[10px] font-black rounded-xl px-3 py-2.5 transition shadow-sm cursor-pointer border border-sky-200"
+                          title="Pratinjau Slide Presentasi PPT & Aktifkan Fitur Suara Narasi"
+                        >
+                          <Eye className="h-3.5 w-3.5 text-sky-500" />
+                          <span>Pratinjau PPT</span>
+                        </button>
+                        <button
+                          onClick={async () => {
+                            await exportAllSectionsToPPTX(dashboardProjectTitle, dashboardSectionsState);
+                          }}
+                          className="flex items-center gap-1.5 bg-sky-600 hover:bg-sky-700 text-white text-[10px] font-black rounded-xl px-3.5 py-2.5 transition shadow-md cursor-pointer"
+                          title="Unduh file PowerPoint"
+                        >
+                          <Presentation className="h-3.5 w-3.5 text-sky-100" />
+                          <span>Unduh PPTX</span>
+                        </button>
+                      </div>
+
+                      {/* HTML Controls block */}
+                      <div className="flex items-center gap-1.5 bg-emerald-50/60 p-1.5 rounded-2xl border border-emerald-100">
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const mappedSlides = defaultDashboardSections.map((sec) => {
+                              const rawContent = dashboardSectionsState[sec.number] || sec.defaultContent;
+                              const lines = rawContent.split("\n")
+                                .map(l => l.trim())
+                                .filter(l => l.length > 0 && !l.startsWith("###") && !l.startsWith("!"))
+                                .map(l => l.replace(/\*\*/g, "").replace(/^\*\s*/, "").replace(/^-\s*/, ""));
+                              const bullets = lines.slice(0, 5);
+                              const speakerNotes = `Membahas pilar strategi ${sec.number}: ${sec.title}. Analisis operasional merangkum: ${bullets.slice(0, 2).join(", ")}.`;
+                              return {
+                                title: `Pilar ${sec.number}: ${sec.title}`,
+                                bullets: bullets.length > 0 ? bullets : ["Materi pilar pembahasan komprehensif."],
+                                speakerNotes,
+                                imageUrl: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1200"
+                              };
+                            });
+                            const htmlString = await exportToInteractiveHTML(
+                              dashboardProjectTitle || "Kajian 14 Pilar",
+                              mappedSlides,
+                              activeDivision || "UMUM",
+                              true
+                            );
+                            if (typeof htmlString === "string") {
+                              setHtmlPreviewContent(htmlString);
+                              setWebDocPreview("html");
+                            }
+                          }}
+                          className="flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[10px] font-black rounded-xl px-3 py-2.5 transition shadow-sm cursor-pointer border border-emerald-200"
+                          title="Buka Pratinjau HTML Interaktif di Web"
+                        >
+                          <Eye className="h-3.5 w-3.5 text-emerald-500" />
+                          <span>Pratinjau HTML</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            const mappedSlides = defaultDashboardSections.map((sec) => {
+                              const rawContent = dashboardSectionsState[sec.number] || sec.defaultContent;
+                              const lines = rawContent.split("\n")
+                                .map(l => l.trim())
+                                .filter(l => l.length > 0 && !l.startsWith("###") && !l.startsWith("!"))
+                                .map(l => l.replace(/\*\*/g, "").replace(/^\*\s*/, "").replace(/^-\s*/, ""));
+                              const bullets = lines.slice(0, 5);
+                              const speakerNotes = `Membahas pilar strategi ${sec.number}: ${sec.title}. Analisis operasional merangkum: ${bullets.slice(0, 2).join(", ")}.`;
+                              return {
+                                title: `Pilar ${sec.number}: ${sec.title}`,
+                                bullets: bullets.length > 0 ? bullets : ["Materi pilar pembahasan komprehensif."],
+                                speakerNotes,
+                                imageUrl: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1200"
+                              };
+                            });
+                            exportToInteractiveHTML(dashboardProjectTitle || "Kajian 14 Pilar", mappedSlides, activeDivision || "UMUM");
+                          }}
+                          className="flex items-center gap-1.5 bg-[#00D285] hover:bg-[#00B472] text-white text-[10px] font-black rounded-xl px-3 py-2.5 transition shadow-md cursor-pointer"
+                          title="Unduh file HTML Presentasi Interaktif dengan Suara TTS dan Auto Next untuk 14 Pilar"
+                        >
+                          <Download className="h-3.5 w-3.5 text-white" />
+                          <span>Unduh HTML Interaktif</span>
+                        </button>
+                      </div>
+
+                      {/* EXCEL Financial Controls block */}
+                      <div className="flex items-center gap-1.5 bg-emerald-50/60 p-1.5 rounded-2xl border border-emerald-100 font-sans">
+                        <button
+                          type="button"
+                          onClick={() => setIsExcelPreviewOpen(true)}
+                          className="flex items-center gap-1.5 bg-[#107c41] hover:bg-[#0d6434] text-white text-[10.5px] font-black rounded-xl px-3.5 py-2.5 transition shadow-md cursor-pointer border border-[#0d6434]"
+                          title="Buka Simulator Excel & Analisis Keuangan Interaktif"
+                        >
+                          <Table className="h-3.5 w-3.5 text-emerald-100" />
+                          <span>Simulator Excel Finansial</span>
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
                 </div>
               </div>
 
@@ -5230,21 +5476,6 @@ ${lastMsgText}`;
                           <div className="shrink-0 flex flex-wrap gap-2">
                             <button
                               onClick={() => {
-                                const generated = generatePillarsForProject(dashboardProjectTitle)[activeSec.number];
-                                setDashboardSectionsState(prev => ({
-                                  ...prev,
-                                  [activeSec.number]: generated
-                                }));
-                                alert(`Konten Pilar ${activeSec.number} berhasil diisi dengan draf kustom rekomendasi AI PRAMA!`);
-                              }}
-                              className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-[10.5px] text-white rounded-xl px-4.5 py-2 font-black shadow-sm transition cursor-pointer border-none"
-                              title="Tulis ulang bagian ini dengan draf analisa rekomendasi AI PRAMA"
-                            >
-                              <Sparkles className="h-3.5 w-3.5 animate-pulse" />
-                              <span>Isi Draf AI PRAMA</span>
-                            </button>
-                            <button
-                              onClick={() => {
                                 exportSingleSectionToWord(dashboardProjectTitle, activeSec, val);
                               }}
                               className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-[10.5px] text-white rounded-xl px-4 py-2 font-black shadow-sm transition cursor-pointer border-none"
@@ -5261,7 +5492,7 @@ ${lastMsgText}`;
                             <button
                               type="button"
                               onClick={() => setWorkspaceViewState("article")}
-                              className={`flex items-center gap-1.5 px-3.5 py-2.5 text-[10.5px] font-black rounded-xl transition ${
+                              className={`flex items-center gap-1.5 px-3.5 py-2.5 text-[10.5px] font-black rounded-xl transition cursor-pointer ${
                                 workspaceViewState === "article"
                                   ? "bg-white text-emerald-800 border border-slate-200 shadow-sm"
                                   : "text-slate-500 hover:bg-slate-200 hover:text-emerald-700"
@@ -5270,6 +5501,7 @@ ${lastMsgText}`;
                               <BookOpen className="h-3.5 w-3.5" />
                               <span>📰 Elegansi Artikel (Tipografi)</span>
                             </button>
+
                           </div>
 
                           {/* Full Screen / Expand View Toggle Button */}
@@ -5304,73 +5536,64 @@ ${lastMsgText}`;
                             /* Live Text Area Editor */
                             <div className={`${(isWorkspaceExpanded || isGuidelineCardCollapsed) ? "xl:col-span-12" : "xl:col-span-8"} flex flex-col min-h-[300px]`}>
                               <div className="flex items-center justify-between px-3.5 py-2 bg-slate-800 rounded-t-xl text-white text-[9.5px] font-bold font-mono tracking-widest shrink-0">
-                                <span>WORKSPACE EDITOR PRAMA ADVISOR</span>
-                                <span className="text-emerald-400">BAHASA INDONESIA</span>
-                              </div>
-                              {isSectionEmpty ? (
-                                <div className="w-full h-full min-h-[250px] p-6 bg-slate-900 rounded-b-xl border border-slate-800 flex flex-col items-center justify-center text-center">
-                                  <div className="h-10 w-10 rounded-full bg-indigo-950 flex items-center justify-center text-indigo-400 mb-3 border border-indigo-900 shadow-lg">
-                                    <Sparkles className="h-5 w-5 animate-pulse" />
-                                  </div>
-                                  <h5 className="text-xs font-extrabold text-slate-200 uppercase tracking-tight">Draf Pilar Ini Belum Diisi / Masih Kosong</h5>
-                                  <p className="text-[10.5px] text-slate-400 max-w-sm mt-1.5 leading-relaxed font-semibold">
-                                    PRAMA AI Strategic Advisor mendeteksi bahwa bagian ini masih berupa draf kosong. Silakan pilih metode pengisian draf di bawah:
-                                  </p>
-                                  <div className="flex flex-wrap gap-2 mt-4 justify-center">
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        const generated = generatePillarsForProject(dashboardProjectTitle)[activeSec.number];
-                                        setDashboardSectionsState(prev => ({
-                                          ...prev,
-                                          [activeSec.number]: generated
-                                        }));
-                                      }}
-                                      className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-[10px] font-black rounded-lg transition cursor-pointer border-none"
-                                    >
-                                      <Sparkles className="h-3 w-3" />
-                                      <span>Gunakan Draf PRAMA AI</span>
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setDashboardSectionsState(prev => ({
-                                          ...prev,
-                                          [activeSec.number]: activeSec.defaultContent
-                                        }));
-                                      }}
-                                      className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-750 active:scale-95 text-slate-300 text-[10px] font-black rounded-lg transition cursor-pointer border border-slate-700"
-                                    >
-                                      <FileText className="h-3 w-3 text-slate-400" />
-                                      <span>Template Bawaan</span>
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setDashboardSectionsState(prev => ({
-                                          ...prev,
-                                          [activeSec.number]: `### ${activeSec.number}. ${activeSec.title}\n\n`
-                                        }));
-                                      }}
-                                      className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-850 hover:bg-slate-800 active:scale-95 text-slate-400 text-[10px] font-black rounded-lg transition cursor-pointer border-none"
-                                    >
-                                      <span>Tulis Manual</span>
-                                    </button>
-                                  </div>
+                                <span>WORKSPACE EDITOR PRAMA ADVISOR (BAHASA INDONESIA)</span>
+                                <div className="flex gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const generated = generatePillarsForProject(dashboardProjectTitle)[activeSec.number];
+                                      setDashboardSectionsState(prev => ({
+                                        ...prev,
+                                        [activeSec.number]: generated
+                                      }));
+                                    }}
+                                    className="px-2 py-1 rounded bg-indigo-600 hover:bg-indigo-700 text-white font-bold cursor-pointer transition active:scale-95 border-none text-[8.5px] flex items-center gap-1 shadow-sm"
+                                    title="Isi pilar ini secara otomatis menggunakan AI"
+                                  >
+                                    <Sparkles className="h-2.5 w-2.5" />
+                                    <span>AI Draft</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setDashboardSectionsState(prev => ({
+                                        ...prev,
+                                        [activeSec.number]: activeSec.defaultContent
+                                      }));
+                                    }}
+                                    className="px-2 py-1 rounded bg-slate-700 hover:bg-slate-650 text-slate-200 font-bold cursor-pointer transition active:scale-95 border border-slate-600 text-[8.5px] flex items-center gap-1 shadow-sm"
+                                    title="Gunakan draf template bawaan untuk pilar ini"
+                                  >
+                                    <FileText className="h-2.5 w-2.5 text-slate-300" />
+                                    <span>Template</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setDashboardSectionsState(prev => ({
+                                        ...prev,
+                                        [activeSec.number]: `### ${activeSec.number}. ${activeSec.title}`
+                                      }));
+                                    }}
+                                    className="px-2 py-1 rounded bg-rose-950/40 hover:bg-rose-900/65 text-rose-300 font-bold cursor-pointer transition active:scale-95 border border-rose-800/50 text-[8.5px] flex items-center gap-1 shadow-sm"
+                                    title="Kosongkan isi pilar ini dan biarkan hanya judul saja"
+                                  >
+                                    <Trash2 className="h-2.5 w-2.5 text-rose-400" />
+                                    <span>Kosongkan</span>
+                                  </button>
                                 </div>
-                              ) : (
-                                <textarea
-                                  value={val}
-                                  onChange={(e) => {
-                                    setDashboardSectionsState(prev => ({
-                                      ...prev,
-                                      [activeDashboardSection]: e.target.value
-                                    }));
-                                  }}
-                                  className={`w-full h-full ${isWorkspaceExpanded ? "min-h-[500px]" : "min-h-[250px]"} p-4 text-xs font-mono bg-slate-900 text-slate-100 rounded-b-xl border border-slate-800 outline-none leading-relaxed resize-none shadow-inner`}
-                                  placeholder="Ketik draf di sini..."
-                                />
-                              )}
+                              </div>
+                              <textarea
+                                value={val}
+                                onChange={(e) => {
+                                  setDashboardSectionsState(prev => ({
+                                    ...prev,
+                                    [activeDashboardSection]: e.target.value
+                                  }));
+                                }}
+                                className={`w-full h-full ${isWorkspaceExpanded ? "min-h-[500px]" : "min-h-[250px]"} p-4 text-xs font-mono bg-slate-900 text-slate-100 rounded-b-xl border border-slate-800 outline-none leading-relaxed resize-none shadow-inner`}
+                                placeholder="Ketik draf di sini..."
+                              />
                             </div>
                           ) : workspaceViewState === "article" ? (
                             /* Classic Typography Article Layout Viewer */
@@ -5386,16 +5609,6 @@ ${lastMsgText}`;
                                   <span>•</span>
                                   <span>{val.split(/\s+/).length} KATA</span>
                                 </div>
-                                <button 
-                                  type="button" 
-                                  onClick={() => {
-                                    navigator.clipboard.writeText(val);
-                                    alert("Salin isi artikel pilar berhasil diduplikasi!");
-                                  }}
-                                  className="text-[9.5px] font-black text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2.5 py-1 rounded-lg transition-all cursor-pointer"
-                                >
-                                  Salin Teks Artikel
-                                </button>
                               </div>
 
                               {/* Typography content wrapper */}
@@ -6066,19 +6279,7 @@ ${lastMsgText}`;
                                 </div>
                               </div>
 
-                              {/* Reset state */}
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setDashboardSectionsState(prev => ({
-                                    ...prev,
-                                    [activeDashboardSection]: activeSec.defaultContent
-                                  }));
-                                }}
-                                className="w-full py-2.5 bg-slate-200 hover:bg-slate-300 active:scale-97 border border-slate-300 text-slate-700 font-bold text-[11px] rounded-xl cursor-pointer transition shadow-sm flex items-center justify-center"
-                              >
-                                Pulihkan Teks Bawaan Pabrik
-                              </button>
+
                             </div>
                           )}
                         </div>
@@ -8423,6 +8624,35 @@ ${lastMsgText}`;
         )}
 
 
+        {/* Immersive 3D Portal Room Transition Overlay */}
+        {portalTransition && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={portalTransition.isRevealing ? { opacity: 0 } : { opacity: 1 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            className="fixed inset-0 z-[9999] bg-slate-50/45 backdrop-blur-xl flex flex-col items-center justify-center overflow-hidden"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={portalTransition.isRevealing ? { scale: 1.05, opacity: 0 } : { scale: 1, opacity: 1 }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              className="flex flex-col items-center gap-4"
+            >
+              <div className="relative flex items-center justify-center">
+                <div className="h-10 w-10 rounded-full border-[3px] border-indigo-600/10 border-t-indigo-600 animate-spin" />
+                <div className="absolute inset-0 bg-indigo-500/10 rounded-full blur-md" />
+              </div>
+              <div className="flex flex-col items-center text-center px-6">
+                <span className="text-[10px] font-mono font-black text-indigo-600 uppercase tracking-[0.2em] animate-pulse">
+                  PRAMA INTELLIGENCE SYSTEM
+                </span>
+                <span className="text-xs font-bold text-slate-800 uppercase tracking-wider mt-1 block">
+                  Menyiapkan Workspace...
+                </span>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
 
       </div>
     );
@@ -9076,6 +9306,25 @@ ${lastMsgText}`;
                   ))}
                 </div>
               </div>
+
+              {/* Clean Slate Option */}
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex items-start gap-3">
+                <input
+                  id="checkbox-is-clean-slate"
+                  type="checkbox"
+                  checked={isCleanSlate}
+                  onChange={(e) => setIsCleanSlate(e.target.checked)}
+                  className="mt-1 h-4 w-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 cursor-pointer"
+                />
+                <div className="space-y-0.5 text-left">
+                  <label htmlFor="checkbox-is-clean-slate" className="text-xs font-black text-slate-800 select-none cursor-pointer flex items-center gap-1.5 uppercase">
+                    🧼 Bersihkan Draf & Isi Penjelasan (Mulai dengan Draf Kosong)
+                  </label>
+                  <p className="text-[10.5px] leading-relaxed text-slate-500 font-semibold">
+                    Jika dicentang, seluruh draf penjelasan pada 14 pilar akan dibersihkan dan dikosongkan total, sehingga Anda bebas menyusun draf Anda sendiri secara bersih, contohnya pada pilar Market Opportunity akan benar-benar kosong tanpa data bawaan.
+                  </p>
+                </div>
+              </div>
             </div>
 
             {/* Modal Footer */}
@@ -9096,15 +9345,15 @@ ${lastMsgText}`;
                   const chosenTitle = newDashboardTitleInput.trim() || preset.title;
                   setDashboardProjectTitle(chosenTitle);
                   
-                  // Handle sections rehydration securely
+                  // Handle sections rehydration securely based on clean slate option
                   const rehydratedContent: Record<number, string> = {};
-                  if (preset.sectionsOverride) {
-                    Object.assign(rehydratedContent, preset.sectionsOverride);
-                  } else {
-                    defaultDashboardSections.forEach((s) => {
-                      rehydratedContent[s.number] = s.defaultContent;
-                    });
-                  }
+                  defaultDashboardSections.forEach((s) => {
+                    if (!isCleanSlate && preset.sectionsOverride && preset.sectionsOverride[s.number as keyof typeof preset.sectionsOverride]) {
+                      rehydratedContent[s.number] = preset.sectionsOverride[s.number as keyof typeof preset.sectionsOverride];
+                    } else {
+                      rehydratedContent[s.number] = `### ${s.number}. ${s.title}`;
+                    }
+                  });
                   setDashboardSectionsState(rehydratedContent);
                   setActiveDashboardSection(1);
                   
@@ -9113,14 +9362,13 @@ ${lastMsgText}`;
                     {
                       id: "dash-msg-welcome-preset",
                       role: "model",
-                      text: `Selamat! Anda berhasil menginisialisasi kajian baru:\n"${chosenTitle}"\n\nTemplate skenario: [${preset.name.toUpperCase()}]. Saya telah memperbarui konten draf 14 Pilar dengan data operasional, rasio finansial target, dan spesifikasi armada logistik kustom untuk skenario ini.\n\nSilakan diskusikan atau pilih pilar manapun untuk disunting lebih jauh bersama saya!`,
+                      text: `Selamat! Anda berhasil menginisialisasi kajian baru:\n"${chosenTitle}"\n\nSesuai instruksi Anda, draf 14 Pilar telah dikosongkan secara total agar Anda memiliki kebebasan penuh menulis draf sendiri. Silakan sampaikan detail atau instruksi Anda di panel chat sebelah kanan, dan saya siap membantu merancang draf pilar step-by-step secara terinci!`,
                       timestamp: Date.now(),
                       sender: "PRAMA AI"
                     }
                   ]);
                   
                   setIsCreateNewDashboardOpen(false);
-                  alert(`Dashboard Kajian baru "${chosenTitle}" berhasil dibuat!`);
                 }}
                 className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-550 text-white font-black text-xs transition shadow-md active:scale-97 cursor-pointer"
               >
@@ -9786,7 +10034,37 @@ ${lastMsgText}`;
           </div>
         </div>
       )}
-    </motion.div>
+      {/* Immersive 3D Portal Room Transition Overlay */}
+      {portalTransition && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={portalTransition.isRevealing ? { opacity: 0 } : { opacity: 1 }}
+          transition={{ duration: 0.25, ease: "easeInOut" }}
+          className="fixed inset-0 z-[9999] bg-slate-50/45 backdrop-blur-xl flex flex-col items-center justify-center overflow-hidden"
+        >
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={portalTransition.isRevealing ? { scale: 1.05, opacity: 0 } : { scale: 1, opacity: 1 }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            className="flex flex-col items-center gap-4"
+          >
+            <div className="relative flex items-center justify-center">
+              <div className="h-10 w-10 rounded-full border-[3px] border-indigo-600/10 border-t-indigo-600 animate-spin" />
+              <div className="absolute inset-0 bg-indigo-500/10 rounded-full blur-md" />
+            </div>
+            <div className="flex flex-col items-center text-center px-6">
+              <span className="text-[10px] font-mono font-black text-indigo-600 uppercase tracking-[0.2em] animate-pulse">
+                PRAMA INTELLIGENCE SYSTEM
+              </span>
+              <span className="text-xs font-bold text-slate-800 uppercase tracking-wider mt-1 block">
+                Menyiapkan Workspace...
+              </span>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+
+      </motion.div>
   );
 }
 

@@ -192,12 +192,12 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
                         <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-[1px]" />
                       </div>
 
-                      {/* 2. Vibrant Green Frames */}
-                      <div className="absolute inset-3 border border-[#00D285] pointer-events-none rounded-sm z-10" />
+                      {/* 2. Sleek Dark Gray Frames */}
+                      <div className="absolute inset-3 border border-slate-650/80 pointer-events-none rounded-sm z-10" />
 
                       {/* 3. Header Info Left / Right */}
                       <div className="absolute top-6 left-6 right-6 flex justify-between items-center z-25 select-none">
-                        <span className="text-[8px] sm:text-[10px] font-mono font-black text-[#00D285] uppercase tracking-widest">✦ {cleanTitle.toUpperCase() || "COMERCIAL STRATEGIS"}</span>
+                        <span className="text-[8px] sm:text-[10px] font-mono font-black text-slate-300 uppercase tracking-widest">✦ {cleanTitle.toUpperCase() || "COMERCIAL STRATEGIS"}</span>
                         <div className="flex items-center gap-1.5">
                           <img 
                             src={pramaLogo} 
@@ -212,7 +212,7 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
                       <div className="w-full flex flex-col items-center text-center px-6 sm:px-12 z-25 my-auto">
                         {/* Glowing Center Pill Box */}
                         <div className="flex justify-center w-full mb-3 sm:mb-4">
-                          <span className="bg-[#004D40]/85 border border-[#00D285]/65 rounded-full px-4 sm:px-6 py-1 sm:py-1.5 text-[8px] sm:text-[10px] text-[#00D285] font-mono tracking-widest uppercase font-black shadow-lg">
+                          <span className="bg-slate-900/90 border border-slate-700 rounded-full px-4 sm:px-6 py-1 sm:py-1.5 text-[8px] sm:text-[10px] text-slate-200 font-mono tracking-widest uppercase font-black shadow-lg">
                             KAJIAN STRATEGIS KOMPREHENSIF
                           </span>
                         </div>
@@ -222,7 +222,7 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
                           PT PANCARAN GROUP
                         </h1>
                         
-                        <h2 className="text-[#00D285] text-2xl sm:text-4xl md:text-5xl lg:text-[56px] font-extrabold tracking-widest leading-none select-text drop-shadow-[0_3px_6px_rgba(0,0,0,0.9)] uppercase mt-1 sm:mt-2.5">
+                        <h2 className="text-slate-100 text-2xl sm:text-4xl md:text-5xl lg:text-[56px] font-extrabold tracking-widest leading-none select-text drop-shadow-[0_3px_6px_rgba(0,0,0,0.9)] uppercase mt-1 sm:mt-2.5">
                           {cleanTitle.toUpperCase() || "COMERCIAL STRATEGIS"}
                         </h2>
                       </div>
@@ -231,7 +231,7 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
                       <div className="flex justify-between items-end border-t border-slate-700/50 pt-3 z-25 select-none text-[8px] sm:text-[10px] text-slate-400 font-mono">
                         <div>
                           <div>DIFORMULASIKAN SECARA OTOMATIS OLEH:</div>
-                          <div className="text-[#00D285] font-black mt-0.5 sm:mt-1">PRAMA STRATEGIC AI ADVISOR</div>
+                          <div className="text-slate-200 font-black mt-0.5 sm:mt-1">PRAMA STRATEGIC AI ADVISOR</div>
                         </div>
                         <div className="text-right">
                           <div>STATUS KAJIAN:</div>
@@ -257,13 +257,13 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
                     TERIMA KASIH
                   </h1>
                   
-                  <h3 className="text-[#00D285] font-mono font-bold text-xs sm:text-sm uppercase tracking-wider mb-6 sm:mb-8 z-20 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
+                  <h3 className="text-slate-300 font-mono font-bold text-xs sm:text-sm uppercase tracking-wider mb-6 sm:mb-8 z-20 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
                     Sistem Dokumentasi Strategis & Operasional Terintegrasi
                   </h3>
                   
                   <div className="mt-4 sm:mt-6 text-slate-300 font-mono text-[9px] sm:text-xs tracking-wide leading-relaxed z-20 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                     <div>✦ Diformulasikan secara otomatis oleh PRAMA Strategic AI Advisor</div>
-                    <div className="text-[#00D285] font-semibold mt-1">PT PANCARAN GROUP INDONESIA • RAHASIA INTERNAL SENSITIF</div>
+                    <div className="text-slate-400 font-semibold mt-1">PT PANCARAN GROUP INDONESIA • RAHASIA INTERNAL SENSITIF</div>
                   </div>
                 </div>
               ) : (
@@ -271,6 +271,214 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
                 (() => {
                   const currentSlide = pptPreview.slides[activeSlideIndex - 1];
                   
+                  const isForestry = pptPreview?.title?.toLowerCase().includes("forestry") || 
+                                     pptPreview?.title?.toLowerCase().includes("kehutanan") || 
+                                     pptPreview?.title?.toLowerCase().includes("hutan") || 
+                                     pptPreview?.title?.toLowerCase().includes("wood") || 
+                                     pptPreview?.title?.toLowerCase().includes("logging");
+                  
+                  const isRiskSlide = activeSlideIndex === 10;
+
+                  if (isRiskSlide && isForestry) {
+                    return (
+                      <div className="w-full h-full flex flex-col bg-slate-900 text-slate-100 relative overflow-hidden p-4 sm:p-5 md:p-6 justify-between select-text">
+                        {/* Solid Top Accent Bar */}
+                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-[#00D285] z-10" />
+
+                        {/* Slide Header */}
+                        <div className="flex flex-col gap-0.5 shrink-0 pt-1">
+                          <div className="text-[7.5px] sm:text-[8.5px] font-mono font-black text-slate-400 uppercase tracking-widest flex justify-between items-center w-full">
+                            <span>PT PANCARAN GROUP INDONESIA</span>
+                            <span className="text-[#00D285] font-extrabold font-mono">UNIT: {(activeDivision || "UMUM").toUpperCase() + " & BD"}</span>
+                          </div>
+                          <div className="h-[1px] bg-slate-800 my-1 w-full" />
+                          <div className="flex justify-between items-end">
+                            <div>
+                              <div className="text-[7.5px] sm:text-[8.5px] font-bold text-slate-400 font-mono uppercase tracking-widest">
+                                KAJIAN STRATEGIS: BAB 10 (RISK MANAGEMENT)
+                              </div>
+                              <h2 className="text-[#00D285] font-black text-xs sm:text-sm md:text-base lg:text-[18px] leading-tight mt-0.5 uppercase tracking-wide">
+                                PENILAIAN RISIKO & MATRIKS MITIGASI LOGISTIK KEHUTANAN
+                              </h2>
+                            </div>
+                            <span className="bg-red-500/20 text-red-400 border border-red-500/30 text-[7px] sm:text-[8px] font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider font-mono">
+                              Risk Threshold: High Alert
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Bento Grid Space */}
+                        <div className="flex-1 grid grid-cols-12 gap-3 my-2 min-h-0 items-stretch overflow-hidden text-left">
+                          {/* Left Column: Risks 1 & 2 */}
+                          <div className="col-span-5 flex flex-col gap-3 justify-between min-h-0">
+                            {/* Card 1: Operational Risks */}
+                            <div className="flex-1 bg-slate-850/60 border border-slate-800 rounded-xl p-2.5 flex flex-col justify-between min-h-0">
+                              <div>
+                                <div className="flex items-center gap-1.5 border-b border-slate-800 pb-1 mb-1">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                                  <h4 className="text-[9.5px] sm:text-[10.5px] font-extrabold text-white uppercase tracking-wider">
+                                    1. Risiko Operasional & Medan
+                                  </h4>
+                                </div>
+                                <div className="space-y-1">
+                                  <div className="text-[8px] sm:text-[9px] text-slate-300 leading-relaxed font-semibold">
+                                    • **Cuaca Ekstrem:** Hujan deras mengubah rute tanah menjadi lumpur (*mudslide*), menghentikan logistik truk.
+                                  </div>
+                                  <div className="text-[8px] sm:text-[9px] text-slate-300 leading-relaxed font-semibold">
+                                    • **Kerusakan Armada:** Medan berat memicu keausan cepat ban, suspensi, & mesin sasis truk.
+                                  </div>
+                                  <div className="text-[8px] sm:text-[9px] text-slate-300 leading-relaxed font-semibold">
+                                    • **Aksesibilitas Geografis:** Area terpencil menyulitkan pasokan darurat di basecamp.
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-1.5 mt-1 text-[7.5px] sm:text-[8px] text-amber-300 leading-normal font-semibold">
+                                **Mitigasi:** Atur kalender operasional musiman, buffer suku cadang di camp, & pantau GPS low-signal.
+                              </div>
+                            </div>
+
+                            {/* Card 2: Regulatory Risks */}
+                            <div className="flex-1 bg-slate-850/60 border border-slate-800 rounded-xl p-2.5 flex flex-col justify-between min-h-0">
+                              <div>
+                                <div className="flex items-center gap-1.5 border-b border-slate-800 pb-1 mb-1">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                                  <h4 className="text-[9.5px] sm:text-[10.5px] font-extrabold text-white uppercase tracking-wider">
+                                    2. Risiko Regulasi & Kepatuhan
+                                  </h4>
+                                </div>
+                                <div className="space-y-1">
+                                  <div className="text-[8px] sm:text-[9px] text-slate-300 leading-relaxed font-semibold">
+                                    • **Legalitas Kayu:** Risiko angkut hasil hutan tanpa dokumen SVLK/SKSHAK sah.
+                                  </div>
+                                  <div className="text-[8px] sm:text-[9px] text-slate-300 leading-relaxed font-semibold">
+                                    • **ODOL (Overloading):** Truk rawan melanggar aturan MST di jalan umum.
+                                  </div>
+                                  <div className="text-[8px] sm:text-[9px] text-slate-300 leading-relaxed font-semibold">
+                                    • **Zona Konservasi:** Risiko merusak atau masuk area lindung dilarang.
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-1.5 mt-1 text-[7.5px] sm:text-[8px] text-emerald-300 leading-normal font-semibold">
+                                **Mitigasi:** Audit dokumen digital sebelum jalan, pasang jembas timbang portable di rute muat.
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Middle Column: Risks 3 & 4 */}
+                          <div className="col-span-4 flex flex-col gap-3 justify-between min-h-0">
+                            {/* Card 3: Financial Risks */}
+                            <div className="flex-1 bg-slate-850/60 border border-slate-800 rounded-xl p-2.5 flex flex-col justify-between min-h-0">
+                              <div>
+                                <div className="flex items-center gap-1.5 border-b border-slate-800 pb-1 mb-1">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+                                  <h4 className="text-[9.5px] sm:text-[10.5px] font-extrabold text-white uppercase tracking-wider">
+                                    3. Risiko Finansial
+                                  </h4>
+                                </div>
+                                <div className="space-y-1">
+                                  <div className="text-[8px] sm:text-[9px] text-slate-300 leading-relaxed font-semibold">
+                                    • **Volatilitas Solar:** Konsumsi BBM sangat besar, fluktuasi solar industri menekan margin.
+                                  </div>
+                                  <div className="text-[8px] sm:text-[9px] text-slate-300 leading-relaxed font-semibold">
+                                    • **Volume Angkut:** Kuota tebang turun mengancam target ritase, biaya tetap supir berjalan terus.
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-1.5 mt-1 text-[7.5px] sm:text-[8px] text-blue-300 leading-normal font-semibold">
+                                **Mitigasi:** Klausul *Fuel Escalation* otomatis & kontrak volume minimum (*Take-or-Pay*).
+                              </div>
+                            </div>
+
+                            {/* Card 4: HSE Risks */}
+                            <div className="flex-1 bg-slate-850/60 border border-slate-800 rounded-xl p-2.5 flex flex-col justify-between min-h-0">
+                              <div>
+                                <div className="flex items-center gap-1.5 border-b border-slate-800 pb-1 mb-1">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+                                  <h4 className="text-[9.5px] sm:text-[10.5px] font-extrabold text-white uppercase tracking-wider">
+                                    4. Risiko K3 & Sosial
+                                  </h4>
+                                </div>
+                                <div className="space-y-1">
+                                  <div className="text-[8px] sm:text-[9px] text-slate-300 leading-relaxed font-semibold">
+                                    • **Kecelakaan Kerja:** Truk logging terbalik di lereng terjal atau kayu runtuh saat muat.
+                                  </div>
+                                  <div className="text-[8px] sm:text-[9px] text-slate-300 leading-relaxed font-semibold">
+                                    • **Konflik Sosial:** Gesekan dengan masyarakat adat/lokal di rute lintasan hutan.
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-1.5 mt-1 text-[7.5px] sm:text-[8px] text-red-300 leading-normal font-semibold">
+                                **Mitigasi:** Sertifikasi kompetensi supir logging, program CSR terarah, & rekrut tenaga lokal.
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Right Column: Scoring Table Card */}
+                          <div className="col-span-3 bg-slate-850/80 border border-slate-800 rounded-xl p-2.5 flex flex-col justify-between min-h-0">
+                            <div className="min-h-0 flex flex-col">
+                              <div className="flex items-center gap-1.5 border-b border-slate-800 pb-1.5 mb-2">
+                                <span className="h-1.5 w-1.5 rounded-full bg-[#00D285]" />
+                                <h4 className="text-[9.5px] sm:text-[10.5px] font-extrabold text-white uppercase tracking-wider">
+                                  Skoring Matriks
+                                </h4>
+                              </div>
+                              <div className="overflow-x-auto overflow-y-hidden select-none">
+                                <table className="w-full text-left text-[7.5px] sm:text-[8px] border-collapse font-sans font-semibold">
+                                  <thead>
+                                    <tr className="border-b border-slate-800 text-slate-400">
+                                      <th className="py-1">Risiko</th>
+                                      <th className="py-1 text-center">Imp</th>
+                                      <th className="py-1 text-center">Prob</th>
+                                      <th className="py-1 text-right font-mono">Prio</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-slate-800 text-slate-200">
+                                    <tr>
+                                      <td className="py-1.5 font-bold">Cuaca/Lumpur</td>
+                                      <td className="py-1.5 text-center text-red-400">H</td>
+                                      <td className="py-1.5 text-center text-red-400">H</td>
+                                      <td className="py-1.5 text-right"><span className="bg-red-500/20 text-red-400 px-1 py-0.2 rounded text-[7px] font-black uppercase border border-red-500/30">Kritis</span></td>
+                                    </tr>
+                                    <tr>
+                                      <td className="py-1.5 font-bold">Kecelakaan</td>
+                                      <td className="py-1.5 text-center text-red-400">H</td>
+                                      <td className="py-1.5 text-center text-amber-400">M</td>
+                                      <td className="py-1.5 text-right"><span className="bg-orange-500/20 text-orange-400 px-1 py-0.2 rounded text-[7px] font-black uppercase border border-orange-500/30">Tinggi</span></td>
+                                    </tr>
+                                    <tr>
+                                      <td className="py-1.5 font-bold">Kenaikan BBM</td>
+                                      <td className="py-1.5 text-center text-amber-400">M</td>
+                                      <td className="py-1.5 text-center text-red-400">H</td>
+                                      <td className="py-1.5 text-right"><span className="bg-orange-500/20 text-orange-400 px-1 py-0.2 rounded text-[7px] font-black uppercase border border-orange-500/30">Tinggi</span></td>
+                                    </tr>
+                                    <tr>
+                                      <td className="py-1.5 font-bold">Izin Legal</td>
+                                      <td className="py-1.5 text-center text-red-400">H</td>
+                                      <td className="py-1.5 text-center text-blue-400">L</td>
+                                      <td className="py-1.5 text-right"><span className="bg-yellow-500/20 text-yellow-400 px-1 py-0.2 rounded text-[7px] font-black uppercase border border-yellow-500/30">Sedang</span></td>
+                                    </tr>
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+
+                            <div className="bg-slate-900 border border-slate-800 rounded-lg p-1.5 mt-2 text-[7px] sm:text-[7.5px] text-slate-400 leading-normal font-medium font-mono">
+                              * H: Tinggi (High) | M: Sedang (Med) | L: Rendah (Low)
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Slide Footer */}
+                        <div className="text-[7.5px] sm:text-[8.5px] font-mono font-bold text-slate-500 border-t border-slate-800 pt-1.5 w-full flex justify-between items-center shrink-0 select-none">
+                          <span>PT PANCARAN GROUP &bull; ADVISORY ADVISOR CONFIDENTIAL</span>
+                          <span className="text-slate-400 font-bold uppercase tracking-wide">
+                            HALAMAN {activeSlideIndex + 1} DARI {pptPreview.slides.length + 2}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  }
+
                   const cleanLead = (txt: string) => {
                     if (!txt) return "";
                     return txt.trim()
@@ -278,15 +486,22 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
                       .trim();
                   };
 
-                  let introPara = "Kajian komprehensif implementasi strategi, tata kelola, dan operasional guna mengoptimalkan kinerja proyek.";
-                  let bPoints = currentSlide?.bullets || [];
+                  let introPara = "";
+                  let bPoints: string[] = [];
                   if (currentSlide?.bullets && currentSlide.bullets.length > 0) {
-                    if (currentSlide.bullets.length >= 3) {
+                    if (currentSlide.bullets.length === 1) {
+                      introPara = cleanLead(currentSlide.bullets[0]);
+                      bPoints = [];
+                    } else if (currentSlide.bullets.length === 2) {
+                      introPara = cleanLead(currentSlide.bullets[0]);
+                      bPoints = [currentSlide.bullets[1]];
+                    } else {
                       introPara = cleanLead(currentSlide.bullets[0]);
                       bPoints = currentSlide.bullets.slice(1);
-                    } else {
-                      bPoints = currentSlide.bullets;
                     }
+                  } else {
+                    introPara = "Kajian komprehensif implementasi strategi, tata kelola, dan operasional guna mengoptimalkan kinerja proyek.";
+                    bPoints = [];
                   }
 
                   const formatBulletText = (text: string) => {
@@ -307,46 +522,48 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
 
                   return (
                     <div className="w-full h-full flex flex-col md:flex-row bg-white text-slate-800 relative overflow-hidden">
-                      {/* Solid Top Accent Green Bar */}
-                      <div className="absolute top-0 left-0 right-0 h-1.5 bg-[#00D285] z-10" />
+                      {/* Solid Top Accent Dark Gray Bar */}
+                      <div className="absolute top-0 left-0 right-0 h-1.5 bg-slate-700 z-10" />
 
                       {/* Left half: Content & Bullets */}
-                      <div className="w-full md:w-7/12 h-full flex flex-col justify-between p-5 sm:p-7 md:p-9 relative overflow-hidden z-10">
-                        <div className="space-y-2.5 pt-1.5 shrink-0">
+                      <div className="w-full md:w-7/12 h-full flex flex-col justify-between p-4 sm:p-5 md:p-6 relative overflow-hidden z-10">
+                        <div className="flex-1 flex flex-col justify-start min-h-0 overflow-hidden space-y-1.5 sm:space-y-2 pt-1">
                           {/* Header row */}
-                          <div className="text-[9px] font-mono font-bold text-slate-400 uppercase tracking-wider flex justify-between items-center w-full pb-1 shrink-0">
+                          <div className="text-[8px] sm:text-[9px] font-mono font-bold text-slate-400 uppercase tracking-wider flex justify-between items-center w-full pb-0.5 shrink-0">
                             <span>{pptPreview.fileName.toUpperCase()}</span>
-                            <span className="text-[#00D285] font-extrabold">SEKTOR: {(activeDivision || "UMUM").toUpperCase() + " & BD"}</span>
+                            <span className="text-slate-550 font-extrabold">SEKTOR: {(activeDivision || "UMUM").toUpperCase() + " & BD"}</span>
                           </div>
                           
                           <div className="h-[1px] bg-slate-100 w-full shrink-0" />
 
-                          <div className="text-[10px] font-bold text-[#00D285] font-mono uppercase tracking-widest pt-1 shrink-0">
+                          <div className="text-[8px] sm:text-[9px] font-bold text-slate-500 font-mono uppercase tracking-widest pt-0.5 shrink-0">
                             KAJIAN STRATEGIS: BAB {activeSlideIndex}
                           </div>
                           
-                          <h2 className="text-slate-900 font-extrabold text-base sm:text-lg md:text-[20px] leading-tight select-text shrink-0">
+                          <h2 className="text-slate-900 font-extrabold text-xs sm:text-sm md:text-base lg:text-[18px] leading-tight select-text shrink-0">
                             {currentSlide?.title}
                           </h2>
                           
-                          <p className="text-[11px] text-slate-505 text-slate-500 font-medium leading-relaxed pb-1 select-text shrink-0">
+                          <p className="text-[9.5px] sm:text-[10.5px] md:text-[11px] text-slate-500 font-medium leading-relaxed pb-0.5 select-text shrink-0">
                             {introPara.replace(/\*\*/g, "")}
                           </p>
 
-                          <div className="space-y-1.5 shrink-0 max-h-[140px] overflow-y-auto">
-                            {bPoints.map((bulletText, bIdx) => {
-                              const bulletClean = cleanLead(bulletText);
-                              if (!bulletClean) return null;
-                              return (
-                                <div key={bIdx} className="flex gap-2 items-start pl-0.5 shrink-0">
-                                  <span className="text-[#00D285] mt-0.5 shrink-0 font-extrabold select-none text-[10px] sm:text-xs">•</span>
-                                  <p className="text-[10.5px] sm:text-xs text-slate-600 font-medium leading-relaxed select-text flex-1 min-w-0 text-left">
-                                    {formatBulletText(bulletClean)}
-                                  </p>
-                                </div>
-                              );
-                            })}
-                          </div>
+                          {bPoints.length > 0 && (
+                            <div className="space-y-1 sm:space-y-1.5 overflow-y-auto flex-1 pr-1 pb-1 min-h-0">
+                              {bPoints.map((bulletText, bIdx) => {
+                                const bulletClean = cleanLead(bulletText);
+                                if (!bulletClean) return null;
+                                return (
+                                  <div key={bIdx} className="flex gap-1.5 items-start pl-0.5 shrink-0">
+                                    <span className="text-slate-500 mt-0.5 shrink-0 font-extrabold select-none text-[8px] sm:text-[10px]">•</span>
+                                    <p className="text-[9px] sm:text-[10px] md:text-[11px] text-slate-600 font-medium leading-relaxed select-text flex-1 min-w-0 text-left">
+                                      {formatBulletText(bulletClean)}
+                                    </p>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
 
                         {/* Footer row */}
@@ -359,8 +576,8 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
                       {/* Right half: Photo Frame */}
                       <div className="w-full md:w-5/12 h-full bg-slate-50 relative overflow-hidden flex flex-col justify-center items-center p-5 border-l border-slate-100">
                         <div className="w-full h-full flex flex-col justify-center items-center gap-1.5">
-                          {/* Photo framed with green border */}
-                          <div className="w-full h-[85%] border border-[#00D285] p-1 bg-white shadow-sm relative overflow-hidden rounded-md flex items-center justify-center">
+                          {/* Photo framed with dark gray border */}
+                          <div className="w-full h-[85%] border border-slate-300 p-1 bg-white shadow-sm relative overflow-hidden rounded-md flex items-center justify-center">
                             <PramaAnimatedIllustration 
                               slideTitle={currentSlide?.title || "Kajian Proyek PRAMA"} 
                               slideIndex={activeSlideIndex} 

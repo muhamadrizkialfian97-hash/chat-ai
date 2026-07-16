@@ -1968,7 +1968,7 @@ export async function exportToPPTX(
     fill: { color: "06152B", transparency: 45 }
   });
 
-  // Outer green border rectangle
+  // Outer dark gray border rectangle
   openingSlide.addShape("rect", {
     x: 0.3,
     y: 0.3,
@@ -1976,7 +1976,7 @@ export async function exportToPPTX(
     h: 6.9,
     // pptxgenjs treats omitted fill property as completely transparent/no fill.
     // Specifying fill: { color: "none" } was evaluated as an invalid hex color and defaulted to solid black color.
-    line: { color: "00D285", width: 1.5 }
+    line: { color: "64748B", width: 1.5 }
   });
 
   // Top header in Cover
@@ -1987,7 +1987,7 @@ export async function exportToPPTX(
     h: 0.4,
     fontSize: 11,
     bold: true,
-    color: "00D285",
+    color: "E2E8F0",
     fontFace: "Arial"
   });
 
@@ -2023,7 +2023,7 @@ export async function exportToPPTX(
     w: 11.73,
     h: 0.8,
     fontSize: 11.5, // Perfectly scaled subtitle
-    color: "94A3B8",
+    color: "CBD5E1",
     fontFace: "Arial"
   });
 
@@ -2035,7 +2035,7 @@ export async function exportToPPTX(
     h: 1.1,
     fontSize: 10,
     bold: true,
-    color: "00D285",
+    color: "CBD5E1",
     fontFace: "Arial"
   });
 
@@ -2047,13 +2047,13 @@ export async function exportToPPTX(
     const slide = pptx.addSlide();
     slide.background = { color: "FFFFFF" }; // White Background
 
-    // Solid Top Accent Green Band (from edge to edge)
+    // Solid Top Accent Dark Gray Band (from edge to edge)
     slide.addShape("rect", {
       x: 0.0,
       y: 0.0,
       w: 13.33,
       h: 0.1,
-      fill: { color: "00D285" }
+      fill: { color: "334155" }
     });
 
     // Header Left-hand side
@@ -2075,7 +2075,7 @@ export async function exportToPPTX(
       w: 6.1,
       h: 0.25,
       fontSize: 10,
-      color: "00D285",
+      color: "475569",
       bold: true,
       align: "right",
       fontFace: "Arial",
@@ -2098,7 +2098,7 @@ export async function exportToPPTX(
       w: 11.73,
       h: 0.25,
       fontSize: 10,
-      color: "00D285",
+      color: "475569",
       bold: true,
       fontFace: "Arial",
       valign: "top",
@@ -2203,14 +2203,14 @@ export async function exportToPPTX(
       h: 3.5,
     });
 
-    // Draw bright green border around picture frame
+    // Draw sleek dark gray border around picture frame
     slide.addShape("rect", {
       x: 7.15,
       y: 1.50,
       w: 5.4,
       h: 3.6,
       // Omit fill to keep the shape outline transparent/unfilled. This prevents it from overlaying solid black on top of the image.
-      line: { color: "00D285", width: 1.5 }
+      line: { color: "94A3B8", width: 1.5 }
     });
 
     // Figure caption label
@@ -2283,14 +2283,14 @@ export async function exportToPPTX(
     fill: { color: "06152B", transparency: 75 }
   });
 
-  // Outer green border rectangle
+  // Outer dark gray border rectangle
   closingSlide.addShape("rect", {
     x: 0.3,
     y: 0.3,
     w: 12.73,
     h: 6.9,
     // Omit fill to keep the shape outline transparent/unfilled
-    line: { color: "00D285", width: 1.5 }
+    line: { color: "64748B", width: 1.5 }
   });
 
   // Center corporate logo above title
@@ -2319,7 +2319,7 @@ export async function exportToPPTX(
     fontFace: "Arial"
   });
 
-  // Green Subtitle
+  // Silver Subtitle
   closingSlide.addText("Sistem Dokumentasi Strategis & Operasional Terintegrasi", {
     x: 1.0,
     y: 3.4,
@@ -2327,7 +2327,7 @@ export async function exportToPPTX(
     h: 0.6,
     fontSize: 14, // Proportional subtitle sizing
     bold: true,
-    color: "00D285",
+    color: "CBD5E1",
     align: "center",
     fontFace: "Arial"
   });

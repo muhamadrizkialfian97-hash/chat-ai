@@ -45,7 +45,6 @@ import { PPTPreviewModal } from "./components/PPTPreviewModal";
 import { ExcelPreviewModal } from "./components/ExcelPreviewModal";
 import { PramaFlowchartHub } from "./components/PramaFlowchartHub";
 import { InteractiveFinancialSimulator } from "./components/InteractiveFinancialSimulator";
-import { MarketOpportunityDeepDive } from "./components/MarketOpportunityDeepDive";
 import { RiskManagementDeepDive } from "./components/RiskManagementDeepDive";
 import { GoToMarketDeepDive } from "./components/GoToMarketDeepDive";
 import { SupplyDemandDeepDive } from "./components/SupplyDemandDeepDive";
@@ -5880,13 +5879,6 @@ ${lastMsgText}`;
                                   {activeDashboardSection === 5 && (
                                     <div className="mt-8 pt-6 border-t border-slate-200">
                                       <PramaFlowchartHub projectTitle={dashboardProjectTitle} />
-                                    </div>
-                                  )}
-
-                                  {/* PRAMA MARKET OPPORTUNITY DEEP-DIVE HUB (PILAR 2 ONLY) */}
-                                  {activeDashboardSection === 2 && (
-                                    <div className="mt-8 pt-6 border-t border-slate-200">
-                                      <MarketOpportunityDeepDive projectTitle={dashboardProjectTitle} />
                                     </div>
                                   )}
 

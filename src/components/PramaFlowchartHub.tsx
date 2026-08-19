@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import kpiDashboardMockup from "../assets/images/kpi_dashboard_mockup_1784538137673.jpg";
 import { 
   UserCheck, 
   Award, 
@@ -17,7 +18,13 @@ import {
   Check, 
   Info,
   RefreshCw,
-  Users
+  Users,
+  TrendingUp,
+  ShieldAlert,
+  Cpu,
+  Layers,
+  Sparkles,
+  ClipboardList
 } from "lucide-react";
 
 export interface FlowNode {
@@ -51,6 +58,238 @@ export interface FlowchartData {
   connections: FlowConnection[];
 }
 
+export interface PersonnelOrgDetail {
+  id: string;
+  name: string;
+  role: string;
+  qualification: {
+    education: string;
+    experience: string;
+    license: string;
+    certifications: string[];
+    detailExplanation: string;
+  };
+  skill: {
+    coreSkills: string[];
+    managerialSkills: string[];
+    softSkills: string[];
+    detailExplanation: string;
+  };
+  iconBg: string;
+}
+
+export const personnelOrgData: PersonnelOrgDetail[] = [
+  {
+    id: "ceo",
+    name: "Section Head (SH)",
+    role: "SH - Section Head of Operations & Strategy",
+    iconBg: "from-rose-500 to-rose-600 text-white",
+    qualification: {
+      education: "S2 Master of Business Administration (M.B.A.) / Logistics & Supply Chain, S1 Teknik Industri.",
+      experience: "Lebih dari 15 tahun pengalaman kepemimpinan eksekutif di industri logistik, maritim, dan manajemen rantai pasok batubara & kehutanan.",
+      license: "Sertifikasi Dewan Komisaris, Lisensi Kepemimpinan Korporasi Internasional.",
+      certifications: ["Certified Supply Chain Professional (CSCP)", "Executive Leadership Certificate from INSEAD", "Strategic Business Management Standard"],
+      detailExplanation: "Memiliki keahlian tingkat tinggi dalam merumuskan arah strategis korporat, melakukan otorisasi anggaran belanja modal (Capex/Opex), dan mengawasi tata kelola perusahaan yang baik demi keberlanjutan bisnis Swarnadwipa."
+    },
+    skill: {
+      coreSkills: ["Perencanaan Strategis Korporat", "Merger & Akuisisi", "Valuasi Portofolio Logistik", "Keuangan Korporat"],
+      managerialSkills: ["Kepemimpinan Eksekutif", "Manajemen Perubahan", "Tata Kelola Risiko", "Manajemen Pemangku Kepentingan"],
+      softSkills: ["Komunikasi Visioner", "Negosiasi Tingkat Tinggi", "Resolusi Krisis", "Pengambilan Keputusan Etis"],
+      detailExplanation: "Kombinasi keahlian perencanaan strategis jangka panjang dan analisis finansial korporat. Mampu menyelaraskan seluruh direksi dan manajer operasional di bawah satu visi efisiensi berstandar internasional."
+    }
+  },
+  {
+    id: "dir_ops",
+    name: "Team Leader (TL)",
+    role: "TL - Team Leader of Fleet Operations",
+    iconBg: "from-indigo-500 to-indigo-600 text-white",
+    qualification: {
+      education: "S2 Logistics & Supply Chain Management, S1 Teknik Mesin.",
+      experience: "Lebih dari 12 tahun mengelola operasional armada angkutan logistik berat (>500 unit dump truck dan trailer) di jalur pertambangan, kehutanan, dan rute nasional.",
+      license: "Surat Izin Ahli Keselamatan Transportasi Darat, Lisensi Pengelolaan Angkutan Barang Khusus.",
+      certifications: ["Master Fleet Manager (MFM)", "Defensive Driving Course (DDC) Train-the-Trainer Certification", "ISO 9001:2015 Lead Auditor"],
+      detailExplanation: "Sangat berpengalaman dalam menyusun peta rute hauling, meminimalkan cycle time, mengoptimalkan rasio utilitas armada, serta memantau integrasi sistem telematika GPS dan efisiensi bahan bakar minyak secara harian."
+    },
+    skill: {
+      coreSkills: ["Optimalisasi Utilitas Armada", "Perencanaan Rute & Geofencing", "Sistem Manajemen Bahan Bakar (FMS)", "Rekayasa Perawatan"],
+      managerialSkills: ["Pengendalian Biaya Operasional", "Kepemimpinan Lintas Fungsi", "Pemantauan SLA", "Manajemen Kontrak Vendor"],
+      softSkills: ["Berpikir Analitis", "Komunikasi Teknis", "Eksekusi di Bawah Tekanan", "Pemecahan Masalah Praktis"],
+      detailExplanation: "Ahli dalam pemodelan matematis rute logistik dan analisis telemetri IoT armada untuk mendeteksi inefisiensi BBM atau deviasi rute secara real-time."
+    }
+  },
+  {
+    id: "dir_hse",
+    name: "Team Leader (TL)",
+    role: "TL - Team Leader of Safety & HR",
+    iconBg: "from-emerald-500 to-emerald-600 text-white",
+    qualification: {
+      education: "S2 Magister Hukum Ketenagakerjaan, S1 Psikologi Industri & Organisasi.",
+      experience: "Lebih dari 10 tahun memimpin manajemen sumber daya manusia dan standardisasi keselamatan kerja (K3/HSE) di sektor industri transportasi logistik alat berat.",
+      license: "Ahli K3 Umum Sertifikasi Kemnaker RI, Lisensi Auditor Sistem Manajemen Keselamatan dan Kesehatan Kerja (SMK3).",
+      certifications: ["Certified Human Resource Professional (CHRP)", "ISO 45001:2018 Lead Auditor (Occupational Health & Safety)", "Behavioral Based Safety Trainer"],
+      detailExplanation: "Berkomitmen penuh pada pencapaian Zero Accident korporat, perancangan sistem reward and punishment sopir, regulasi hukum ketenagakerjaan, serta program rekrutmen dan kesehatan (Fit-To-Work) harian seluruh personel lapangan."
+    },
+    skill: {
+      coreSkills: ["Audit & Implementasi SMK3", "Keselamatan Berbasis Perilaku (BBS)", "Kepatuhan Hukum Kerja", "Arsitektur Remunerasi & Benefit"],
+      managerialSkills: ["Penyelarasan Budaya Korporat", "Manajemen Talenta", "Strategi Pencegahan Risiko K3", "Kontrol Investigasi Insiden"],
+      softSkills: ["Mendengar Empatis", "Resolusi Konflik", "Komunikasi Antarpribadi", "Pemahaman Psikologi Sopir"],
+      detailExplanation: "Memahami psikologi pengemudi truk jarak jauh secara mendalam guna menyusun kurikulum pelatihan kesehatan mental, pemantauan kelelahan (fatigue), dan asuransi jaminan sosial yang adekuat."
+    }
+  },
+  {
+    id: "gm_ops",
+    name: "Specialist (SP)",
+    role: "SP - Specialist of Logistics Operations",
+    iconBg: "from-violet-500 to-violet-600 text-white",
+    qualification: {
+      education: "S2/S1 Teknik Industri / Rekayasa Transportasi.",
+      experience: "Pengalaman 8 tahun sebagai Manajer Operasional Senior di rute logistik menantang (hauling batubara dan logging kayu) dengan kompleksitas tinggi.",
+      license: "Sertifikasi POP (Pengawas Operasional Pratama) Mineral & Batubara RI, Izin Operasi Logistik Regional.",
+      certifications: ["Certified Supply Chain Professional (CSCP)", "Project Management Professional (PMP) - Prep", "Six Sigma Green Belt for Process Excellence"],
+      detailExplanation: "Bertanggung jawab atas kelancaran arus harian rantai pasok Swarnadwipa, penanganan kendala taktis di depo logistik, koordinasi tim dispatch, serta audit berat muatan per gandar (axle load balancing)."
+    },
+    skill: {
+      coreSkills: ["Kontrol Operasional Dispatch", "Pengoperasian Beban Gandar", "Integrasi Rantai Pasok", "Analisis Telematika GPS"],
+      managerialSkills: ["Pemantauan SLA", "Penjadwalan Sumber Daya", "Manajemen Insiden", "Pengembangan Kapasitas Tim"],
+      softSkills: ["Respon Krisis", "Komando Tegas", "Kolaborasi Aktif", "Presentasi Logis"],
+      detailExplanation: "Menguasai integrasi digital rantai pasok harian dan optimalisasi beban armada dump truck untuk mencegah kelebihan muatan (overloading) yang merusak suspensi."
+    }
+  },
+  {
+    id: "mgr_hse",
+    name: "Specialist (SP)",
+    role: "SP - Specialist of HSE & Safety Audit",
+    iconBg: "from-sky-500 to-sky-600 text-white",
+    qualification: {
+      education: "S1 Teknik Lingkungan / K3 (Keselamatan dan Kesehatan Kerja).",
+      experience: "Pengalaman 6 tahun dalam merancang register risiko bahaya (Hazard Register), melakukan investigasi kecelakaan, dan memimpin audit keselamatan armada transportasi.",
+      license: "Sertifikasi Ahli K3 Umum, Lisensi Auditor Internal Sistem Manajemen Keselamatan Transportasi (SMKT).",
+      certifications: ["ISO 14001:2015 & ISO 45001:2018 Certified Auditor", "Root Cause Analysis (RCA) Practitioner", "Defensive Driving Advanced Auditor"],
+      detailExplanation: "Berdedikasi untuk menyusun standar operational check kendaraan (P2H) harian, mengaudit kelaikan jalan truk, dan menyempurnakan kurikulum uji coba berkendara selamat (DDC)."
+    },
+    skill: {
+      coreSkills: ["Audit & Inspeksi Keselamatan", "Analisis Akar Penyebab Insiden (RCA)", "Identifikasi Bahaya & Penilaian Risiko (HIRADC)", "Kepatuhan AMDAL Lingkungan"],
+      managerialSkills: ["Orkestrasi Kampanye K3", "Pencatatan Kepatuhan K3", "Pengembangan Kurikulum DDC", "Ketua Tim Tanggap Darurat"],
+      softSkills: ["Orientasi Detail", "Pelaporan Objektif", "Komunikasi Sadar Risiko", "Kejelasan Instruksional"],
+      detailExplanation: "Kombinasi keahlian investigasi ilmiah penyebab insiden menggunakan metode TapRooT / Fishbone dan perumusan langkah preventif jangka panjang di jalan hauling."
+    }
+  },
+  {
+    id: "lead_fleet",
+    name: "Staff",
+    role: "Staff - Fleet Coordinator",
+    iconBg: "from-amber-500 to-amber-600 text-white",
+    qualification: {
+      education: "D3 / S1 Teknik Otomotif / Teknik Mesin.",
+      experience: "Lebih dari 5 tahun memimpin tim mekanik lapangan, bengkel pusat, koordinasi pemeliharaan (preventive & corrective maintenance) armada logging Scania/Volvo.",
+      license: "Sertifikasi Teknisi Alat Berat Tingkat Senior, Izin Otoritas Kelayakan Bengkel Lapangan.",
+      certifications: ["Heavy-Duty Fleet Specialist (Scania & Volvo Systems)", "Tyre Lifecycle Management Specialist", "P2H Lead Inspector Certification"],
+      detailExplanation: "Memiliki pemahaman mendalam tentang siklus pakai ban, kalibrasi sistem rem udara (Air Brake System), penyetelan suspensi muatan berat kayu gelondongan, dan perbaikan darurat truk amblas."
+    },
+    skill: {
+      coreSkills: ["Sistem Perawatan Preventif", "Diagnostik Mesin Tugas Berat", "Optimalisasi Tekanan & Keausan Ban", "Penyesuaian Distribusi Beban Gandar"],
+      managerialSkills: ["Dispatch Lapangan Darurat", "Penjadwalan Beban Kerja Mekanik", "Kontrol Inventaris Suku Cadang", "Pemantauan Perbaikan SLA"],
+      softSkills: ["Pemecahan Masalah Lapangan", "Ketahanan di Cuaca Panas", "Komando Lapangan Jelas", "Komunikasi Asertif"],
+      detailExplanation: "Ahli dalam menganalisis data diagnostik ECU truk untuk mendeteksi kerusakan sensor mesin sebelum terjadi breakdown fatal di tengah jalur hutan."
+    }
+  },
+  {
+    id: "lead_disp",
+    name: "Staff",
+    role: "Staff - Control Room Dispatcher",
+    iconBg: "from-cyan-500 to-cyan-600 text-white",
+    qualification: {
+      education: "D3 / S1 Sistem Informasi / Manajemen Transportasi Darat.",
+      experience: "Pengalaman harian selama 4 tahun mengoperasikan ruang kendali terpadu logistik, memonitor sistem GPS pelacakan, dan sistem telemetri IoT 24 jam.",
+      license: "Lisensi Operator Sistem Telekomunikasi Logistik, Sertifikasi Sistem Navigasi Satelit.",
+      certifications: ["Fleet Management Software (FMS) Professional", "Fatigue Monitoring Technology Specialist", "Radio Communication Protocol Certification"],
+      detailExplanation: "Bertanggung jawab atas deteksi dini pelanggaran kecepatan (speeding), pemantauan tanda-tanda kelelahan mata sopir (fatigue camera alerts), koordinasi radio HT darurat, dan manajemen antrean loading."
+    },
+    skill: {
+      coreSkills: ["Administrasi Geofencing GPS", "Pemantauan Dashboard Ruang Kendali", "Pelacakan Analitik Kelelahan", "Penanganan Alarm SOP"],
+      managerialSkills: ["Manajemen Serah Terima Shift", "Operasi Eskalasi Alert5", "Optimalisasi Antrean Lalu Lintas", "Pemeliharaan Logbook Digital"],
+      softSkills: ["Kewaspadaan Konstan", "Tenang Dalam Tekanan", "Disiplin Protokol Radio", "Sintesis Informasi Cepat"],
+      detailExplanation: "Mampu memproses puluhan notifikasi sensor IoT secara simultan dan melakukan koordinasi taktis darurat melalui radio untuk menyelamatkan konvoi truk."
+    }
+  },
+  {
+    id: "aud_hse",
+    name: "Staff",
+    role: "Staff - HSE Field Auditor",
+    iconBg: "from-teal-500 to-teal-600 text-white",
+    qualification: {
+      education: "S1 Kesehatan Masyarakat (K3) / Profesi Ners Keperawatan.",
+      experience: "Pengalaman 3 tahun di Unit Gawat Darurat rumah sakit atau klinik medis industrial site pertambangan/kehutanan terpencil.",
+      license: "Surat Tanda Registrasi (STR) Perawat Aktif, Lisensi First Aider Kemnaker RI.",
+      certifications: ["Basic Trauma Cardiac Life Support (BTCLS)", "Occupational Health & Hygiene Specialist", "Certified Drug & Alcohol Tester"],
+      detailExplanation: "Melaksanakan penegakan protokol kesehatan harian (Fit-To-Work), seperti tes tiup kadar alkohol (Alcohol Breath Test), pemeriksaan tekanan darah pre-trip, tes bebas narkoba urin, dan penanganan luka darurat."
+    },
+    skill: {
+      coreSkills: ["Pertolongan Pertama Darurat (P3K)", "Operasi Tes Kadar Alkohol (Breathalyzer)", "Inspeksi Tanda-Tanda Vital", "Sistem Rekam Medis Industri"],
+      managerialSkills: ["Manajemen Inventaris Klinik Site", "Kampanye Kesehatan Kerja", "Simulasi Tanggap Darurat Medis", "Audit Higiene Industri"],
+      softSkills: ["Kepedulian Empatis", "Penegakan Aturan Tegas", "Pencatatan Cermat", "Sikap Tenang Saat Krisis"],
+      detailExplanation: "Ketegasan tinggi dalam memberikan status UNFIT (Tidak Layak Jalan) bagi pengemudi yang tidak lolos tes alkohol demi keselamatan jiwa seluruh kru di jalan."
+    }
+  },
+  {
+    id: "driver_ahmad",
+    name: "Staff",
+    role: "Staff - Senior Driver Captain",
+    iconBg: "from-orange-500 to-orange-600 text-white",
+    qualification: {
+      education: "Pendidikan terakhir SMA / Sederajat.",
+      experience: "Pengalaman kerja mengemudi truk trailer gandeng kelas berat selama lebih dari 8 tahun dengan catatan mengemudi 100% aman (Zero Incident).",
+      license: "Surat Izin Mengemudi (SIM) BII Umum aktif asli.",
+      certifications: ["Advanced Defensive Driving Course (DDC)", "Eco-Driving Techniques Certification", "SOP P2H Heavy Vehicle Masterclass"],
+      detailExplanation: "Pengemudi teladan yang dipercaya membawa unit trailer multi-axle kargo utama Swarnadwipa untuk rute logistik strategis dengan efisiensi solar tertinggi dan nihil klaim kerusakan."
+    },
+    skill: {
+      coreSkills: ["Navigasi Multi-Gandar Berat", "Pengereman Retarder & Exhaust Brake", "Pengemudian Hemat Energi (Eco-Driving)", "Inspeksi Kelayakan Kendaraan (P2H)"],
+      managerialSkills: ["Mentorship Pendamping Sopir", "Pelaporan Trip Logbook", "Navigasi Pemimpin Konvoi", "Pengikatan & Keamanan Muatan"],
+      softSkills: ["Kesabaran Dalam Lalu Lintas", "Tanggung Jawab Jalan Raya", "Koordinasi Mata Waspada", "Disiplin Hidup Sehat"],
+      detailExplanation: "Sangat terampil dalam pengoperasian rem retarder pada turunan terjal muatan penuh guna mencegah rem blong akibat panas berlebih (brake fading)."
+    }
+  },
+  {
+    id: "driver_joko",
+    name: "Staff",
+    role: "Staff - Heavy Duty Logging Driver",
+    iconBg: "from-amber-600 to-amber-700 text-white",
+    qualification: {
+      education: "Pendidikan terakhir SMA / Sederajat.",
+      experience: "Pengalaman mengemudikan truk Logging pembawa kayu gelondongan selama 4 tahun di rute ekstrem tanah liat berlumpur (hutan konsesi Riau & Jambi).",
+      license: "SIM BII Umum aktif asli.",
+      certifications: ["DDC Forestry Roads & Extreme Off-Road Certification", "Heavy-Duty Logging Winch Operations", "First Aid for Field Accidents"],
+      detailExplanation: "Sopir tangguh yang menguasai teknik navigasi jalan licin non-aspal kehutanan dan memiliki spesialisasi evakuasi mandiri saat truk terjebak lumpur dalam."
+    },
+    skill: {
+      coreSkills: ["Pengemudian Lumpur Off-Road Ekstrem", "Kontrol Inter-Axle & Differential Lock", "Pengikatan Rantai Baja Log", "Operasi Winch & Evakuasi Truk"],
+      managerialSkills: ["Keseimbangan Kargo Lapangan", "Koordinasi Pemuatan Kayu SOP", "Taktik Penurunan Tekanan Ban", "Protokol Radio Darurat"],
+      softSkills: ["Fokus Mental Ekstrem", "Adaptabilitas Medan Tinggi", "Stamina & Kekuatan Fisik", "Solidaritas Bantuan Sopir"],
+      detailExplanation: "Sangat ahli mengoperasikan differential lock dan sistem winch penarik baja di jalur logging miring saat cuaca hujan lebat."
+    }
+  },
+  {
+    id: "driver_budi",
+    name: "Staff",
+    role: "Staff - Coal Hauling Tipper Driver",
+    iconBg: "from-slate-700 to-slate-800 text-white",
+    qualification: {
+      education: "Pendidikan terakhir SMA / Sederajat.",
+      experience: "Pengalaman 5 tahun mengemudikan Dump Truck/Tipper Scania muatan batubara berkapasitas besar di area tambang terbuka (open pit) hingga pelabuhan bongkar (stockpile).",
+      license: "SIM BII Umum / BI Umum aktif, KIMPER (Kartu Izin Mengemudi Tambang) aktif resmi.",
+      certifications: ["DDC Mining Hauling Roads Specialist", "Dumping & Tilting Stability Certification", "Scania Heavy-Duty Fleet Operator Training"],
+      detailExplanation: "Pengemudi khusus tambang batubara yang memahami prosedur keselamatan pemuatan di bawah excavator raksasa serta kestabilan penumpahan."
+    },
+    skill: {
+      coreSkills: ["Penumpahan Dump Truck Aman", "Pengereman Turunan Tambang (Retarder)", "Protokol Komunikasi Radio Tambang (HT)", "Maniak & Penjajaran Stockpile"],
+      managerialSkills: ["Koordinasi Area Pemuatan", "Kepatuhan Protokol Antrean", "Verifikasi Tonase", "Pelaporan Bahaya K3"],
+      softSkills: ["Disiplin Keselamatan Ketat", "Kewaspadaan Tebir Dinding", "Respon Cepat Peringatan Miring", "Kerjasama Baik dengan Spotter"],
+      detailExplanation: "Menguasai teknik manuver mundur di bibir jurang dumping pertambangan dengan panduan visual juru parkir (spotter) secara aman dan cepat."
+    }
+  }
+];
+
 interface PramaFlowchartHubProps {
   projectTitle: string;
 }
@@ -58,12 +297,26 @@ interface PramaFlowchartHubProps {
 export const PramaFlowchartHub: React.FC<PramaFlowchartHubProps> = ({ projectTitle }) => {
   const [activeFlowTab, setActiveFlowTab] = useState<"orgchart" | "qualification" | "skill" | "kpi" | "sop">("orgchart");
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [selectedPersonnelId, setSelectedPersonnelId] = useState<string>("ceo");
   const [zoom, setZoom] = useState<number>(1);
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isDraggingCanvas, setIsDraggingCanvas] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [themePreset, setThemePreset] = useState<"brand" | "teal" | "blue">("teal");
   const [viewMode, setViewMode] = useState<"canvas" | "bento">("canvas");
+  const [selectedStepId, setSelectedStepId] = useState<string | null>(null);
+  const [customKpiImage, setCustomKpiImage] = useState<string | null>(null);
+  const [selectedConclusionId, setSelectedConclusionId] = useState<string>("org");
+
+  useEffect(() => {
+    if (activeFlowTab === "kpi") {
+      setSelectedStepId("k1");
+    } else if (activeFlowTab === "sop") {
+      setSelectedStepId("p1");
+    } else {
+      setSelectedStepId(null);
+    }
+  }, [activeFlowTab]);
 
   // Local state for interactive editing
   const [flows, setFlows] = useState<Record<string, FlowchartData>>(() => {
@@ -89,7 +342,7 @@ export const PramaFlowchartHub: React.FC<PramaFlowchartHubProps> = ({ projectTit
     const orgchartNodes: FlowNode[] = [
       {
         id: "ceo",
-        label: "Ir. H. Prama Swarnadwipa, M.B.A.\nPresident Director & CEO",
+        label: "SH - Section Head\nOperations & Strategy",
         type: "start",
         x: 430,
         y: 20,
@@ -97,13 +350,13 @@ export const PramaFlowchartHub: React.FC<PramaFlowchartHubProps> = ({ projectTit
           description: "Memimpin strategi korporat, pengambilan keputusan utama investasi, dan pengawasan audit kepatuhan Swarnadwipa.",
           input: "Laporan Konsolidasi Bulanan & KPI Direksi",
           output: "Arahan Strategis & Otorisasi Anggaran Finansial",
-          pic: "Ir. H. Prama Swarnadwipa, M.B.A.",
+          pic: "Section Head (SH)",
           sopCode: "CEO-HQ-001"
         }
       },
       {
         id: "dir_ops",
-        label: "Bpk. Hermawan Pancaran, M.Sc.\nOperations & Fleet Director",
+        label: "TL - Team Leader\nFleet Operations Division",
         type: "end",
         x: 230,
         y: 140,
@@ -111,13 +364,13 @@ export const PramaFlowchartHub: React.FC<PramaFlowchartHubProps> = ({ projectTit
           description: "Mengawasi seluruh operasional hauling batubara, kehutanan, cold chain, dan efisiensi cycle time di rute Swarnadwipa.",
           input: "SLA Lapangan & Laporan Utilisasi Armada Swarnadwipa",
           output: "Pemberian Target Operasional Mingguan",
-          pic: "Bpk. Hermawan Pancaran, M.Sc.",
+          pic: "Team Leader (TL)",
           sopCode: "DIR-OPS-002"
         }
       },
       {
         id: "dir_hse",
-        label: "Ibu Citra Swarnadwipa, S.Psi., M.H.\nHR & HSE Director",
+        label: "TL - Team Leader\nSafety & HR Division",
         type: "end",
         x: 630,
         y: 140,
@@ -125,13 +378,13 @@ export const PramaFlowchartHub: React.FC<PramaFlowchartHubProps> = ({ projectTit
           description: "Menjamin tercapainya Zero Accident, standarisasi kualifikasi supir (DDC), dan pembinaan kesejahteraan staf lapangan.",
           input: "Laporan Kepatuhan K3 & Data Kesehatan (MCU) Supir",
           output: "Sertifikasi Kelayakan Kerja & Lisensi Kerja Internal",
-          pic: "Ibu Citra Swarnadwipa, S.Psi., M.H.",
+          pic: "Team Leader (TL)",
           sopCode: "DIR-HSE-003"
         }
       },
       {
         id: "gm_ops",
-        label: "Bpk. Ridwan Satria, M.T.\nGM Logistics Operations",
+        label: "SP - Specialist\nLogistics & Planning",
         type: "process",
         x: 230,
         y: 260,
@@ -139,13 +392,13 @@ export const PramaFlowchartHub: React.FC<PramaFlowchartHubProps> = ({ projectTit
           description: "Sinkronisasi taktis rute hauling, optimalisasi konsumsi solar harian, dan koordinasi depo logistik utama.",
           input: "Data Timbangan & Real-time GPS Tracking",
           output: "Otorisasi Trip Rantai Pasok Swarnadwipa",
-          pic: "Bpk. Ridwan Satria, M.T.",
+          pic: "Specialist (SP)",
           sopCode: "GM-LOG-010"
         }
       },
       {
         id: "mgr_hse",
-        label: "Bpk. Dani Setiawan, S.T.\nHSE & Safety Audit Manager",
+        label: "SP - Specialist\nHSE & Safety Audit",
         type: "process",
         x: 630,
         y: 260,
@@ -153,13 +406,13 @@ export const PramaFlowchartHub: React.FC<PramaFlowchartHubProps> = ({ projectTit
           description: "Melaksanakan audit rutin pemeliharaan kelayakan truk (P2H) dan evaluasi materi uji Defensive Driving.",
           input: "Hasil Inspeksi Lapangan & Logbook Kecelakaan",
           output: "Laporan Skor Risiko K3 Bulanan",
-          pic: "Bpk. Dani Setiawan, S.T.",
+          pic: "Specialist (SP)",
           sopCode: "MGR-HSE-020"
         }
       },
       {
         id: "lead_fleet",
-        label: "Bpk. Jaka Prakosa\nFleet Coordinator & Logging Lead",
+        label: "Staff\nFleet Coordinator",
         type: "process",
         x: 130,
         y: 380,
@@ -167,13 +420,13 @@ export const PramaFlowchartHub: React.FC<PramaFlowchartHubProps> = ({ projectTit
           description: "Koordinasi harian unit truck logging, alokasi muatan per gandar, dan penanganan emergency hauling.",
           input: "Instruksi GM & Permintaan Muatan Kargo",
           output: "Disposisi Penugasan Driver Captain",
-          pic: "Bpk. Jaka Prakosa",
+          pic: "Staff (Fleet)",
           sopCode: "SUPV-FLT-031"
         }
       },
       {
         id: "lead_disp",
-        label: "Bpk. Aris Munandar\nLead Dispatcher & Control Room",
+        label: "Staff\nControl Room Dispatcher",
         type: "process",
         x: 330,
         y: 380,
@@ -181,13 +434,13 @@ export const PramaFlowchartHub: React.FC<PramaFlowchartHubProps> = ({ projectTit
           description: "Monitoring 24/7 geofencing rute kritis, peringatan kelelahan (fatigue), dan verifikasi absensi supir.",
           input: "Sinyal Telemetri IoT GPS & Radio HT",
           output: "Otorisasi Tapping RFID Jalan Hauling",
-          pic: "Bpk. Aris Munandar",
+          pic: "Staff (Control Room)",
           sopCode: "SUPV-DIS-032"
         }
       },
       {
         id: "aud_hse",
-        label: "Ibu Shinta Bella, S.KM.\nHSE Field Auditor & Medic Lead",
+        label: "Staff\nHSE Field Auditor",
         type: "process",
         x: 630,
         y: 380,
@@ -195,13 +448,13 @@ export const PramaFlowchartHub: React.FC<PramaFlowchartHubProps> = ({ projectTit
           description: "Pemeriksaan buta warna harian, tes tiup alkohol pre-trip, dan penanganan darurat kecelakaan kerja.",
           input: "Kondisi Fisik Personel & Formulir Alkohol",
           output: "Sertifikasi Fit-To-Work Harian",
-          pic: "Ibu Shinta Bella, S.KM.",
+          pic: "Staff (Auditor)",
           sopCode: "AUD-MED-033"
         }
       },
       {
         id: "driver_ahmad",
-        label: "Sopir Utama Ahmad Dahlan\nSenior Driver Captain",
+        label: "Staff\nSenior Driver Captain",
         type: "decision",
         x: 30,
         y: 500,
@@ -209,13 +462,13 @@ export const PramaFlowchartHub: React.FC<PramaFlowchartHubProps> = ({ projectTit
           description: "Mengemudikan armada double-trailer muatan logistik utama Swarnadwipa dengan rekor keselamatan tertinggi.",
           input: "Surat Perintah Jalan & Kartu RFID Aktif",
           output: "Pengiriman Sukses & Berita Acara Serah Terima",
-          pic: "Sopir Utama Ahmad Dahlan",
+          pic: "Staff (Senior Driver)",
           sopCode: "DRV-CPT-001"
         }
       },
       {
         id: "driver_joko",
-        label: "Sopir Joko Widodo\nHeavy Duty Logging Driver",
+        label: "Staff\nHeavy Duty Logging Driver",
         type: "decision",
         x: 180,
         y: 500,
@@ -223,13 +476,13 @@ export const PramaFlowchartHub: React.FC<PramaFlowchartHubProps> = ({ projectTit
           description: "Mengemudikan unit Logging Truck Swarnadwipa membawa kayu gelondongan di rute tanah konsesi.",
           input: "Rute Hauling Kehutanan & Timbangan Awal",
           output: "Bongkar Kayu di Depo Pabrik Kertas",
-          pic: "Sopir Joko Widodo",
+          pic: "Staff (Logging Driver)",
           sopCode: "DRV-LOG-012"
         }
       },
       {
         id: "driver_budi",
-        label: "Sopir Budi Santoso\nCoal Hauling Tipper Driver",
+        label: "Staff\nCoal Hauling Tipper Driver",
         type: "decision",
         x: 330,
         y: 500,
@@ -237,7 +490,7 @@ export const PramaFlowchartHub: React.FC<PramaFlowchartHubProps> = ({ projectTit
           description: "Mengemudikan Dump Truck Scania muatan batubara dari pit tambang menuju stockpile pelabuhan.",
           input: "Kimper Tambang Aktif & Manifes Pit",
           output: "Dumping Batubara Lolos Uji Timbangan",
-          pic: "Sopir Budi Santoso",
+          pic: "Staff (Tipper Driver)",
           sopCode: "DRV-COAL-024"
         }
       }
@@ -1572,9 +1825,14 @@ export const PramaFlowchartHub: React.FC<PramaFlowchartHubProps> = ({ projectTit
       {/* HEADER BAR */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5 mb-5">
         <div>
-          <span className="text-[10px] font-mono font-black tracking-widest text-rose-600 bg-rose-50 border border-rose-200 rounded px-2 py-0.5 inline-block mb-1.5">
-            PRAMA ORGANIZATION CANVAS
-          </span>
+          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+            <span className="text-[10px] font-mono font-black tracking-widest text-rose-600 bg-rose-50 border border-rose-200 rounded px-2 py-0.5 inline-block">
+              PRAMA ORGANIZATION CANVAS
+            </span>
+            <span className="text-[10px] font-mono font-black tracking-widest text-indigo-700 bg-indigo-50 border border-indigo-200 rounded px-2 py-0.5 inline-flex items-center gap-1">
+              ⚡ SINKRON CHAT: <span className="text-indigo-900 font-bold">{projectTitle || "Kajian Strategis PRAMA"}</span>
+            </span>
+          </div>
           <h3 className="text-base md:text-lg font-black text-slate-800 uppercase tracking-tight flex items-center gap-2">
             <span>Corporate Structure Flowcharts & SOP Workspace</span>
           </h3>
@@ -1661,9 +1919,16 @@ export const PramaFlowchartHub: React.FC<PramaFlowchartHubProps> = ({ projectTit
                   {data.icon}
                 </div>
                 <div>
-                  <h4 className={`text-xs font-black uppercase tracking-tight ${isActive ? "text-rose-700" : "text-slate-700"}`}>
-                    {tabKey === "orgchart" ? "1. Org Chart" : tabKey === "qualification" ? "2. Qualification" : tabKey === "skill" ? "3. Skill Flow" : tabKey === "kpi" ? "4. Output & KPI" : "5. SOP Trip"}
-                  </h4>
+                  <div className="flex items-center gap-1">
+                    <h4 className={`text-xs font-black uppercase tracking-tight ${isActive ? "text-rose-700" : "text-slate-700"}`}>
+                      {tabKey === "orgchart" ? "1. Org Chart" : tabKey === "qualification" ? "2. Qualification" : tabKey === "skill" ? "3. Skill Flow" : tabKey === "kpi" ? "4. Output & KPI" : "5. SOP Trip"}
+                    </h4>
+                    {(tabKey === "qualification" || tabKey === "skill" || tabKey === "kpi" || tabKey === "sop") && (
+                      <span className="text-[7px] font-black uppercase bg-rose-100 text-rose-700 px-1 py-0.5 rounded shrink-0 leading-none scale-90 origin-left">
+                        TEXT
+                      </span>
+                    )}
+                  </div>
                   <span className="text-[10px] text-slate-500 block leading-tight font-semibold mt-0.5 truncate max-w-[140px]">
                     {data.title}
                   </span>
@@ -1704,76 +1969,120 @@ export const PramaFlowchartHub: React.FC<PramaFlowchartHubProps> = ({ projectTit
                     </div>
                   </div>
 
-                  {/* MINI DRAW.IO FLOW VIEW */}
-                  <div className="h-44 relative bg-white border border-slate-200/60 rounded-xl overflow-hidden mt-3 shadow-inner select-none pointer-events-none p-1">
-                    {/* Grid bg pattern */}
-                    <div className="absolute inset-0 opacity-40" style={{ backgroundImage: "radial-gradient(#cbd5e1 1px, transparent 1px)", backgroundSize: "12px 12px" }} />
-                    <svg viewBox="0 0 1000 620" className="absolute inset-0 w-full h-full">
-                      <defs>
-                        <marker id={`arrow-mini-${tabKey}`} viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                          <path d="M 0 1 L 10 5 L 0 9 z" fill="#94a3b8" />
-                        </marker>
-                      </defs>
-                      {fData.connections.map((conn, idx) => {
-                        const from = fData.nodes.find(n => n.id === conn.from);
-                        const to = fData.nodes.find(n => n.id === conn.to);
-                        if (!from || !to) return null;
-                        return (
-                          <path
-                            key={idx}
-                            d={calculateOrthogonalPath(from, to, tabKey === "orgchart")}
-                            fill="none"
-                            stroke="#94a3b8"
-                            strokeWidth="3.5"
-                            markerEnd={`url(#arrow-mini-${tabKey})`}
-                          />
-                        );
-                      })}
-                      {/* Miniature nodes inside foreignObject */}
-                      {fData.nodes.map(node => {
-                        const isOrgChart = tabKey === "orgchart";
-                        const nodeWidth = isOrgChart ? 155 : node.type === "decision" ? 140 : 150;
-                        const nodeHeight = isOrgChart ? 85 : node.type === "decision" ? 90 : 70;
-                        const [empName, empRole] = isOrgChart ? node.label.split("\n") : [node.label, ""];
-
-                        return (
-                          <foreignObject
-                            key={node.id}
-                            x={node.x}
-                            y={node.y}
-                            width={nodeWidth}
-                            height={nodeHeight}
-                          >
-                            <div className={`w-full h-full rounded-xl shadow-sm text-center font-bold flex flex-col items-center justify-center border p-1 text-[10px] ${getThemeColors(node.type)}`}>
-                              {isOrgChart ? (
-                                <div className="flex flex-col items-center justify-center w-full h-full relative">
-                                  <span className={`text-[10px] font-black uppercase tracking-tight text-center leading-none ${
-                                    node.type === "start" || node.type === "end" ? "text-white" : "text-slate-800"
-                                  }`}>
-                                    {empName}
-                                  </span>
-                                  <span className={`text-[8.5px] font-extrabold mt-0.5 text-center leading-tight line-clamp-1 ${
-                                    node.type === "start" || node.type === "end" ? "text-rose-100" : "text-slate-500"
-                                  }`}>
-                                    {empRole}
-                                  </span>
-                                </div>
-                              ) : (
-                                <span className="line-clamp-2 leading-tight uppercase tracking-tight text-[9px] px-1 font-extrabold">
-                                  {node.label}
-                                </span>
-                              )}
+                  {/* MINI TEXT LIST PREVIEW */}
+                  {["qualification", "skill", "kpi", "sop"].includes(tabKey) ? (
+                    <div className="h-44 bg-white border border-slate-200/60 rounded-xl overflow-y-auto mt-3 p-3.5 space-y-2 shadow-inner scrollbar-thin pointer-events-none text-left">
+                      {tabKey === "qualification" || tabKey === "skill" ? (
+                        personnelOrgData.slice(0, 4).map((p) => {
+                          const displayName = p.role; // ONLY role/position!
+                          const displayInitials = displayName.split(" ").map(w => w[0]).filter(c => /[a-zA-Z]/.test(c)).slice(0, 2).join("").toUpperCase();
+                          return (
+                            <div key={p.id} className="flex items-start gap-2 border-b border-slate-100 pb-1.5 last:border-0 last:pb-0">
+                              <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[8px] font-black text-slate-700 font-mono shrink-0">
+                                {displayInitials}
+                              </div>
+                              <div className="min-w-0">
+                                <h5 className="text-[9.5px] font-extrabold text-slate-800 leading-tight truncate">{displayName}</h5>
+                                <p className="text-[8.5px] text-slate-500 font-medium leading-tight mt-0.5 line-clamp-1">
+                                  {tabKey === "qualification" ? p.qualification.education : p.skill.coreSkills.slice(0, 3).join(", ")}
+                                </p>
+                              </div>
                             </div>
-                          </foreignObject>
-                        );
-                      })}
-                    </svg>
-                  </div>
+                          );
+                        })
+                      ) : (
+                        fData.nodes
+                          .filter(n => !n.id.includes("fail"))
+                          .slice(0, 4)
+                          .map((node, index) => (
+                            <div key={node.id} className="flex items-start gap-2 border-b border-slate-100 pb-1.5 last:border-0 last:pb-0">
+                              <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[8.5px] font-black text-slate-700 shrink-0">
+                                {index + 1}
+                              </div>
+                              <div className="min-w-0">
+                                <h5 className="text-[9.5px] font-extrabold text-slate-800 leading-tight truncate">{node.label}</h5>
+                                <p className="text-[8px] text-slate-400 font-semibold leading-none truncate">PIC: {node.details?.pic || "-"}</p>
+                              </div>
+                            </div>
+                          ))
+                      )}
+                      <div className="text-center text-[8px] font-black text-rose-650 uppercase tracking-wider pt-1">
+                        + Lihat Selengkapnya ({tabKey === "qualification" || tabKey === "skill" ? personnelOrgData.length : fData.nodes.length} Item)
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="h-44 relative bg-white border border-slate-200/60 rounded-xl overflow-hidden mt-3 shadow-inner select-none pointer-events-none p-1">
+                      {/* Grid bg pattern */}
+                      <div className="absolute inset-0 opacity-40" style={{ backgroundImage: "radial-gradient(#cbd5e1 1px, transparent 1px)", backgroundSize: "12px 12px" }} />
+                      <svg viewBox="0 0 1000 620" className="absolute inset-0 w-full h-full">
+                        <defs>
+                          <marker id={`arrow-mini-${tabKey}`} viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                            <path d="M 0 1 L 10 5 L 0 9 z" fill="#94a3b8" />
+                          </marker>
+                        </defs>
+                        {fData.connections.map((conn, idx) => {
+                          const from = fData.nodes.find(n => n.id === conn.from);
+                          const to = fData.nodes.find(n => n.id === conn.to);
+                          if (!from || !to) return null;
+                          return (
+                            <path
+                              key={idx}
+                              d={calculateOrthogonalPath(from, to, tabKey === "orgchart")}
+                              fill="none"
+                              stroke="#94a3b8"
+                              strokeWidth="3.5"
+                              markerEnd={`url(#arrow-mini-${tabKey})`}
+                            />
+                          );
+                        })}
+                        {/* Miniature nodes inside foreignObject */}
+                        {fData.nodes.map(node => {
+                          const isOrgChart = tabKey === "orgchart";
+                          const nodeWidth = isOrgChart ? 155 : node.type === "decision" ? 140 : 150;
+                          const nodeHeight = isOrgChart ? 85 : node.type === "decision" ? 90 : 70;
+                          const [empName, empRole] = isOrgChart ? node.label.split("\n") : [node.label, ""];
+
+                          return (
+                            <foreignObject
+                              key={node.id}
+                              x={node.x}
+                              y={node.y}
+                              width={nodeWidth}
+                              height={nodeHeight}
+                            >
+                              <div className={`w-full h-full rounded-xl shadow-sm text-center font-bold flex flex-col items-center justify-center border p-1 text-[10px] ${getThemeColors(node.type)}`}>
+                                {isOrgChart ? (
+                                  <div className="flex flex-col items-center justify-center w-full h-full relative">
+                                    <span className={`text-[10px] font-black uppercase tracking-tight text-center leading-none ${
+                                      node.type === "start" || node.type === "end" ? "text-white" : "text-slate-800"
+                                    }`}>
+                                      {empName}
+                                    </span>
+                                    <span className={`text-[8.5px] font-extrabold mt-0.5 text-center leading-tight line-clamp-1 ${
+                                      node.type === "start" || node.type === "end" ? "text-rose-100" : "text-slate-500"
+                                    }`}>
+                                      {empRole}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <span className="line-clamp-2 leading-tight uppercase tracking-tight text-[9px] px-1 font-extrabold">
+                                    {node.label}
+                                  </span>
+                                )}
+                              </div>
+                            </foreignObject>
+                          );
+                        })}
+                      </svg>
+                    </div>
+                  )}
                 </div>
 
                 <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between text-[10px] font-black text-rose-600">
                   <span>BUKA INTERAKTIF CANVAS ➔</span>
-                  <span className="text-slate-400 font-bold">{fData.nodes.length} Simpul (Nodes)</span>
+                  <span className="text-slate-400 font-bold">
+                    {tabKey === "qualification" || tabKey === "skill" ? `${personnelOrgData.length} Personnel` : `${fData.nodes.length} Simpul (Nodes)`}
+                  </span>
                 </div>
               </div>
             );
@@ -1823,266 +2132,714 @@ export const PramaFlowchartHub: React.FC<PramaFlowchartHubProps> = ({ projectTit
           </div>
 
           {/* MAIN INTERACTIVE BOARD AND DETAILS COLUMN */}
-          <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-            {/* CANVAS GRID (3 COLUMNS) */}
-            <div className="xl:col-span-3 border border-slate-200 rounded-2xl relative overflow-hidden shadow-inner bg-slate-100 h-[380px] cursor-grab select-none">
-              {/* Draw.io Canvas grid background */}
-              <div 
-                className="absolute inset-0"
-                style={{ backgroundImage: "radial-gradient(#cbd5e1 1.5px, transparent 1.5px)", backgroundSize: "20px 20px" }}
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
-                onMouseLeave={handleMouseUp}
-              >
-                {/* Scaled/Panned Container */}
-                <div
-                  className="absolute origin-top-left w-[1200px] h-[600px] transition-transform duration-75"
-                  style={{
-                    transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`
-                  }}
-                >
-                  {/* SVG FLOW PATHS */}
-                  <svg className="absolute inset-0 w-full h-full pointer-events-none">
-                    <defs>
-                      <marker
-                        id="arrow-marker"
-                        viewBox="0 0 10 10"
-                        refX="8"
-                        refY="5"
-                        markerWidth="6"
-                        markerHeight="6"
-                        orient="auto-start-reverse"
-                      >
-                        <path d="M 0 1 L 10 5 L 0 9 z" fill={getThemeColors("lines")} />
-                      </marker>
-                    </defs>
-
-                    {activeFlow.connections.map((conn, idx) => {
-                      const from = activeFlow.nodes.find(n => n.id === conn.from);
-                      const to = activeFlow.nodes.find(n => n.id === conn.to);
-                      if (!from || !to) return null;
-
-                      const pathD = calculateOrthogonalPath(from, to, activeFlowTab === "orgchart");
-
-                      // Calculate midpoint of orthogonal line to position connection labels nicely
-                      const midX = (from.x + to.x + 150) / 2;
-                      const midY = (from.y + to.y + 70) / 2;
-
+          {activeFlowTab === "qualification" || activeFlowTab === "skill" ? (
+            <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 text-left">
+              {/* PERSONNEL LIST SIDEBAR (1 COLUMN) */}
+              <div className="xl:col-span-1 border border-slate-200 rounded-2xl p-4.5 bg-white h-[420px] overflow-y-auto space-y-2 flex flex-col justify-between shadow-inner scrollbar-thin">
+                <div>
+                  <div className="border-b border-slate-100 pb-2 mb-3">
+                    <span className="text-[8px] font-mono font-black tracking-widest text-rose-600 uppercase">
+                      STRUKTUR POSISI
+                    </span>
+                    <h4 className="text-[11px] font-black text-slate-800 uppercase tracking-tight mt-0.5">
+                      DAFTAR JABATAN ({personnelOrgData.length})
+                    </h4>
+                  </div>
+                  <div className="space-y-1.5 overflow-y-auto pr-0.5">
+                    {personnelOrgData.map((p) => {
+                      const isSelected = selectedPersonnelId === p.id;
+                      const displayInitials = p.role
+                        .split(" ")
+                        .map((w) => w[0])
+                        .filter((c) => /[a-zA-Z]/.test(c))
+                        .slice(0, 2)
+                        .join("")
+                        .toUpperCase();
                       return (
-                        <g key={idx}>
-                          {/* Connection shadow stroke */}
-                          <path
-                            d={pathD}
-                            fill="none"
-                            stroke="white"
-                            strokeWidth="4"
-                          />
-                          {/* Main stroke connection */}
-                          <path
-                            d={pathD}
-                            fill="none"
-                            stroke={getThemeColors("lines")}
-                            strokeWidth="2"
-                            markerEnd="url(#arrow-marker)"
-                          />
-                          {/* Yes/No Branch Label */}
-                          {conn.label && (
-                            <foreignObject
-                              x={midX - 35}
-                              y={midY - 10}
-                              width="70"
-                              height="20"
-                            >
-                              <div className={`text-[8.5px] font-black text-center px-1 py-0.5 rounded border leading-none bg-white ${
-                                conn.type === "yes" 
-                                  ? "text-emerald-700 border-emerald-200" 
-                                  : conn.type === "no" 
-                                  ? "text-rose-700 border-rose-200" 
-                                  : "text-slate-600 border-slate-200"
-                              }`}>
-                                {conn.label}
-                              </div>
-                            </foreignObject>
-                          )}
-                        </g>
+                        <button
+                          key={p.id}
+                          onClick={() => setSelectedPersonnelId(p.id)}
+                          className={`w-full text-left p-2.5 rounded-xl border flex items-center gap-2.5 transition cursor-pointer ${
+                            isSelected 
+                              ? "bg-rose-50 border-rose-200 shadow-sm" 
+                              : "bg-slate-50/50 border-slate-100 hover:bg-slate-50"
+                          }`}
+                        >
+                          <div className={`w-7 h-7 rounded-full bg-gradient-to-br ${p.iconBg} flex items-center justify-center text-[9px] font-black shadow-sm text-slate-800 shrink-0`}>
+                            {displayInitials}
+                          </div>
+                          <div className="min-w-0">
+                            <h5 className={`text-[10px] font-extrabold truncate ${isSelected ? "text-rose-900" : "text-slate-800"}`}>
+                              {p.role}
+                            </h5>
+                            <p className="text-[8px] text-slate-400 font-bold leading-tight truncate">
+                              Kode Posisi: {p.id.toUpperCase()}
+                            </p>
+                          </div>
+                        </button>
                       );
                     })}
-                  </svg>
-
-                   {/* FLOW NODES */}
-                  {activeFlow.nodes.map(node => {
-                    const isOrgChart = activeFlowTab === "orgchart";
-                    const isSelected = selectedNodeId === node.id;
-                    const nodeWidth = isOrgChart ? "w-[155px]" : node.type === "decision" ? "w-[140px]" : "w-[150px]";
-                    const nodeHeight = isOrgChart ? "h-[85px]" : node.type === "decision" ? "h-[90px]" : "h-[70px]";
-                    
-                    const [empName, empRole] = isOrgChart ? node.label.split("\n") : [node.label, ""];
-                    const mainTitle = isOrgChart ? (empRole || empName) : node.label;
-
-                    return (
-                      <div
-                        key={node.id}
-                        onClick={() => setSelectedNodeId(isSelected ? null : node.id)}
-                        className={`flow-node absolute rounded-xl p-3 shadow-md flex flex-col justify-center items-center text-center transition cursor-pointer border select-none ${nodeWidth} ${nodeHeight} ${getThemeColors(node.type, isSelected)}`}
-                        style={{
-                          left: `${node.x}px`,
-                          top: `${node.y}px`
-                        }}
-                      >
-                        {/* Node Code Badge (top right inside node) */}
-                        {node.details?.sopCode && (
-                          <span className={`absolute top-1 right-1 text-[7px] font-black px-1 rounded-sm ${
-                            node.type === "start" || node.type === "end" 
-                              ? "bg-white/20 text-white" 
-                              : "bg-slate-100 text-slate-500 border border-slate-200"
-                          }`}>
-                            {node.details.sopCode}
-                          </span>
-                        )}
-
-                        {isOrgChart ? (
-                          <div className="flex flex-col items-center justify-center w-full h-full relative">
-                            {/* Initials badge */}
-                            <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[7px] font-black shadow-sm mb-1 ${
-                              node.type === "start" 
-                                ? "bg-white/20 text-white" 
-                                : node.type === "end" 
-                                ? "bg-white/30 text-white" 
-                                : "bg-indigo-50 text-indigo-700 border border-indigo-200"
-                            }`}>
-                              {mainTitle ? mainTitle.split(" ").map(w => w[0]).filter(c => /[a-zA-Z]/.test(c)).slice(0, 2).join("").toUpperCase() : "EM"}
-                            </div>
-                            
-                            <span className={`text-[10px] font-black uppercase tracking-tight text-center leading-tight line-clamp-2 px-1 ${
-                              node.type === "start" || node.type === "end" ? "text-white" : "text-slate-800"
-                            }`}>
-                              {mainTitle}
-                            </span>
-                            
-                            <span className={`text-[6.5px] font-mono mt-1 font-bold tracking-wider uppercase opacity-80 ${
-                              node.type === "start" || node.type === "end" ? "text-rose-200" : "text-slate-400"
-                            }`}>
-                              {node.type === "start" ? "★ CEO" : node.type === "end" ? "✦ DIREKTUR" : node.type === "decision" ? "👥 LAPANGAN" : "💼 MANAJEMEN"}
-                            </span>
-                          </div>
-                        ) : (
-                          <>
-                            <span className="text-[10.5px] font-extrabold uppercase tracking-tight leading-tight leading-4 line-clamp-2 px-1">
-                              {node.label}
-                            </span>
-
-                            {/* Visual indicator of type */}
-                            <span className={`text-[7px] font-mono mt-1 font-semibold tracking-wider uppercase opacity-80 ${
-                              node.type === "start" || node.type === "end" ? "text-rose-100" : "text-slate-500"
-                            }`}>
-                              {node.type === "decision" ? "◆ CABANG UJI" : node.type === "start" ? "● AWAL ALUR" : node.type === "end" ? "■ SELESAI" : "✔ PROSES"}
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    );
-                  })}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* DETAILS PANEL (1 COLUMN) */}
-            <div className="border border-slate-200 rounded-2xl p-5 text-left bg-slate-50 h-[380px] overflow-y-auto flex flex-col justify-between">
-              {selectedNode ? (
-                /* NODE SELECTED - SHOW FULL DETAILS */
-                <div className="flex-grow flex flex-col justify-between h-full">
-                  <div>
-                    <div className="flex justify-between items-start gap-2 border-b border-slate-200 pb-2 mb-3">
+              {/* DETAILED TEXT EXPLANATION PANEL (3 COLUMNS) */}
+              <div className="xl:col-span-3 border border-slate-200 rounded-2xl p-6 bg-white h-[420px] overflow-y-auto flex flex-col justify-between shadow-inner scrollbar-thin">
+                {(() => {
+                  const currentP = personnelOrgData.find(p => p.id === selectedPersonnelId) || personnelOrgData[0];
+                  const displayInitials = currentP.role
+                    .split(" ")
+                    .map((w) => w[0])
+                    .filter((c) => /[a-zA-Z]/.test(c))
+                    .slice(0, 2)
+                    .join("")
+                    .toUpperCase();
+                  return (
+                    <div className="flex-grow flex flex-col justify-between h-full">
                       <div>
-                        <span className="text-[8px] font-mono font-black tracking-widest text-indigo-600 uppercase">
-                          DETAIL SIMPUL FLOWCHART
-                        </span>
-                        <h4 className="text-xs font-black text-slate-800 uppercase tracking-tight mt-0.5">
-                          {activeFlowTab === "orgchart" ? (selectedNode.label.split("\n")[1] || selectedNode.label.split("\n")[0]) : selectedNode.label}
-                        </h4>
-                      </div>
-                      <span className={`text-[8px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider ${
-                        selectedNode.type === "decision" ? "bg-amber-100 text-amber-700" : "bg-indigo-100 text-indigo-700"
-                      }`}>
-                        {selectedNode.type}
-                      </span>
-                    </div>
-
-                    <div className="space-y-3.5 text-xs text-slate-700">
-                      <div>
-                        <strong className="text-[10px] text-slate-400 uppercase tracking-wider block">Deskripsi Kerja:</strong>
-                        <p className="m-0 text-[11px] font-semibold text-slate-650 leading-relaxed mt-0.5">
-                          {selectedNode.details?.description}
-                        </p>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2 bg-white p-2.5 rounded-xl border border-slate-200/60">
-                        <div>
-                          <strong className="text-[8.5px] text-slate-400 uppercase tracking-wider block">Input / Syarat:</strong>
-                          <p className="m-0 text-[10px] font-bold text-slate-700 leading-tight mt-0.5">
-                            {selectedNode.details?.input || "-"}
-                          </p>
+                        {/* Header banner */}
+                        <div className="flex items-center gap-4 border-b border-slate-150 pb-3 mb-4">
+                          <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${currentP.iconBg} flex items-center justify-center text-sm font-black text-slate-800 shadow shrink-0`}>
+                            {displayInitials}
+                          </div>
+                          <div>
+                            <span className="text-[8px] font-mono font-black tracking-widest text-rose-600 uppercase">
+                              {activeFlowTab === "qualification" ? "SPESIFIKASI KUALIFIKASI" : "KEAHLIAN & SKILL MAP"}
+                            </span>
+                            <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight mt-0.5">
+                              {currentP.role}
+                            </h3>
+                            <p className="text-[10px] text-slate-400 font-bold leading-none mt-1">
+                              Status Posisi: Aktif Struktural (Staf Utama)
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <strong className="text-[8.5px] text-slate-400 uppercase tracking-wider block">Output / Hasil:</strong>
-                          <p className="m-0 text-[10px] font-bold text-emerald-700 leading-tight mt-0.5">
-                            {selectedNode.details?.output || "-"}
-                          </p>
-                        </div>
-                      </div>
 
-                      <div className="bg-slate-100 p-2.5 rounded-xl border border-slate-200/50 flex items-center justify-between text-[10px] font-bold">
-                        <div>
-                          <span className="text-slate-400 block text-[8px] uppercase tracking-wider">
-                            {activeFlowTab === "orgchart" ? "Jabatan" : "Penanggung Jawab (PIC)"}
-                          </span>
-                          <span className="text-slate-700 font-extrabold">
-                            {activeFlowTab === "orgchart" 
-                              ? (selectedNode.label.split("\n")[1] || selectedNode.label.split("\n")[0])
-                              : (selectedNode.details?.pic || "-")}
-                          </span>
-                        </div>
-                        {selectedNode.details?.sopCode && (
-                          <span className="px-2 py-0.5 bg-rose-50 text-rose-700 rounded text-[9px] font-mono font-black border border-rose-100">
-                            {selectedNode.details.sopCode}
-                          </span>
+                        {activeFlowTab === "qualification" ? (
+                          /* QUALIFICATION CONTENT */
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                              <div className="bg-slate-50/50 p-3 rounded-xl border border-slate-100 flex items-start gap-2.5">
+                                <Award className="h-4 w-4 text-rose-500 shrink-0 mt-0.5" />
+                                <div>
+                                  <span className="text-[8.5px] font-mono font-bold uppercase text-slate-450 block tracking-wider">Pendidikan Akhir</span>
+                                  <p className="text-[10px] font-extrabold text-slate-800 leading-tight mt-0.5">{currentP.qualification.education}</p>
+                                </div>
+                              </div>
+                              <div className="bg-slate-50/50 p-3 rounded-xl border border-slate-100 flex items-start gap-2.5">
+                                <Users className="h-4 w-4 text-indigo-500 shrink-0 mt-0.5" />
+                                <div>
+                                  <span className="text-[8.5px] font-mono font-bold uppercase text-slate-450 block tracking-wider">Pengalaman Industri</span>
+                                  <p className="text-[10px] font-extrabold text-slate-800 leading-tight mt-0.5">{currentP.qualification.experience}</p>
+                                </div>
+                              </div>
+                              <div className="bg-slate-50/50 p-3 rounded-xl border border-slate-100 flex items-start gap-2.5">
+                                <UserCheck className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                                <div>
+                                  <span className="text-[8.5px] font-mono font-bold uppercase text-slate-450 block tracking-wider">Lisensi Resmi</span>
+                                  <p className="text-[10px] font-extrabold text-slate-800 leading-tight mt-0.5">{currentP.qualification.license}</p>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                              {/* Left side certifications */}
+                              <div className="bg-white border border-slate-200/80 p-3.5 rounded-xl">
+                                <span className="text-[9px] font-black uppercase tracking-wider text-slate-450 block mb-2 flex items-center gap-1">
+                                  <Check className="h-3 w-3 text-emerald-500" /> Sertifikasi Kompetensi
+                                </span>
+                                <div className="flex flex-wrap gap-1.5 max-h-[100px] overflow-y-auto">
+                                  {currentP.qualification.certifications.map((cert, idx) => (
+                                    <span key={idx} className="bg-slate-100 text-slate-700 text-[8.5px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border border-slate-200/60">
+                                      {cert}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Right side detailed explanation */}
+                              <div className="bg-rose-50/30 border border-rose-100/60 p-3.5 rounded-xl">
+                                <span className="text-[9px] font-black uppercase tracking-wider text-rose-750 block mb-1">
+                                  Otoritas & Tanggung Jawab Strategis
+                                </span>
+                                <p className="text-[10.5px] text-slate-650 leading-relaxed font-semibold">
+                                  {currentP.qualification.detailExplanation}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          /* SKILL CONTENT */
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                              <div className="bg-indigo-50/40 p-3.5 rounded-xl border border-indigo-100/60 text-left">
+                                <span className="text-[9px] font-black uppercase tracking-wider text-indigo-700 block mb-2">Keahlian Inti & Teknis</span>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {currentP.skill.coreSkills.map((sk, idx) => (
+                                    <span key={idx} className="bg-indigo-100/60 text-indigo-800 text-[8.5px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border border-indigo-200/40">
+                                      {sk}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                              <div className="bg-emerald-50/40 p-3.5 rounded-xl border border-emerald-100/60 text-left">
+                                <span className="text-[9px] font-black uppercase tracking-wider text-emerald-700 block mb-2">Operasional & Manajemen</span>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {currentP.skill.managerialSkills.map((sk, idx) => (
+                                    <span key={idx} className="bg-emerald-100/60 text-emerald-800 text-[8.5px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border border-emerald-200/40">
+                                      {sk}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                              <div className="bg-amber-50/40 p-3.5 rounded-xl border border-amber-100/60 text-left">
+                                <span className="text-[9px] font-black uppercase tracking-wider text-amber-700 block mb-2">Komunikasi & Soft Skills</span>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {currentP.skill.softSkills.map((sk, idx) => (
+                                    <span key={idx} className="bg-amber-100/60 text-amber-850 text-[8.5px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border border-amber-200/40">
+                                      {sk}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl mt-1.5">
+                              <span className="text-[9px] font-black uppercase tracking-wider text-slate-500 block mb-1">
+                                Deskripsi Penerapan Keahlian & Kinerja Tim
+                              </span>
+                              <p className="text-[10.5px] text-slate-700 leading-relaxed font-semibold">
+                                {currentP.skill.detailExplanation}
+                              </p>
+                            </div>
+                          </div>
                         )}
                       </div>
+
+                      {/* Footer Info bar */}
+                      <div className="bg-slate-50/80 p-2 rounded-xl border border-slate-150/60 flex items-center justify-between mt-3 text-[9px] text-slate-400 font-bold select-none">
+                        <span>PRAMA SYSTEM INTELLIGENCE ➔ QUALIFICATION & SKILL TEXT HUB</span>
+                        <span>Update: Terintegrasi Struktur Organisasi 13 Pilar</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          ) : activeFlowTab === "kpi" || activeFlowTab === "sop" ? (
+            <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 text-left">
+              {/* STEPS LIST SIDEBAR (1 COLUMN) */}
+              <div className="xl:col-span-1 border border-slate-200 rounded-2xl p-4.5 bg-white h-[420px] overflow-y-auto flex flex-col justify-between shadow-inner scrollbar-thin">
+                <div>
+                  <div className="border-b border-slate-100 pb-2 mb-3">
+                    <span className="text-[8px] font-mono font-black tracking-widest text-rose-600 uppercase">
+                      TAHAPAN ALUR {activeFlowTab === "kpi" ? "KPI" : "SOP"}
+                    </span>
+                    <h4 className="text-[11px] font-black text-slate-800 uppercase tracking-tight mt-0.5">
+                      URUTAN PROSEDUR ({flows[activeFlowTab]?.nodes.length || 0})
+                    </h4>
+                  </div>
+                  <div className="space-y-1.5 pr-0.5">
+                    {flows[activeFlowTab]?.nodes
+                      .filter(n => !n.id.includes("fail"))
+                      .concat(flows[activeFlowTab]?.nodes.filter(n => n.id.includes("fail")) || [])
+                      .map((node, index) => {
+                        const isSelected = selectedStepId === node.id;
+                        const isFailNode = node.id.includes("fail");
+                        return (
+                          <button
+                            key={node.id}
+                            onClick={() => setSelectedStepId(node.id)}
+                            className={`w-full text-left p-2.5 rounded-xl border flex items-center gap-2.5 transition cursor-pointer ${
+                              isSelected 
+                                ? "bg-rose-50 border-rose-200 shadow-sm" 
+                                : "bg-slate-50/50 border-slate-100 hover:bg-slate-50"
+                            }`}
+                          >
+                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shadow-sm shrink-0 ${
+                              isFailNode 
+                                ? "bg-rose-100 text-rose-700" 
+                                : isSelected 
+                                ? "bg-rose-650 text-white" 
+                                : "bg-slate-100 text-slate-500"
+                            }`}>
+                              {isFailNode ? "!" : index + 1}
+                            </div>
+                            <div className="min-w-0">
+                              <h5 className={`text-[10px] font-extrabold truncate ${isSelected ? "text-rose-900" : "text-slate-800"}`}>
+                                {node.label}
+                              </h5>
+                              <p className="text-[8.5px] text-slate-400 font-bold leading-tight truncate">
+                                PIC: {node.details?.pic || "-"}
+                              </p>
+                            </div>
+                          </button>
+                        );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* STEP DETAIL AND VISUAL PANEL (3 COLUMNS) */}
+              <div className="xl:col-span-3 border border-slate-200 rounded-2xl p-6 bg-white h-[420px] overflow-y-auto flex flex-col justify-between shadow-inner scrollbar-thin">
+                {(() => {
+                  const currentFlow = flows[activeFlowTab];
+                  const currentStep = currentFlow?.nodes.find(n => n.id === selectedStepId) || currentFlow?.nodes[0];
+                  if (!currentStep) return <div className="text-slate-400 text-center py-20 font-semibold">Memuat tahapan...</div>;
+                  
+                  return (
+                    <div className="flex-grow flex flex-col justify-between h-full">
+                      <div className="space-y-4">
+                        {/* Header of Active Step */}
+                        <div className="flex items-start justify-between border-b border-slate-150 pb-3">
+                          <div>
+                            <span className="text-[8px] font-mono font-black tracking-widest text-rose-600 uppercase">
+                              {activeFlowTab === "kpi" ? "EVALUASI OUTPUT & TARGET KPI" : "STANDAR OPERASIONAL PROSEDUR (SOP)"}
+                            </span>
+                            <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight mt-0.5">
+                              {currentStep.label}
+                            </h3>
+                            <p className="text-[9.5px] text-slate-450 font-bold mt-1">
+                              Penanggung Jawab: <span className="text-rose-700">{currentStep.details?.pic || "-"}</span>
+                            </p>
+                          </div>
+                          {currentStep.details?.sopCode && (
+                            <span className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md text-[10px] font-mono font-black border border-slate-200 shadow-sm">
+                              {currentStep.details.sopCode}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Description & Requirements Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                          <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100 md:col-span-1">
+                            <span className="text-[8.5px] font-mono font-bold uppercase text-slate-450 block tracking-wider">Deskripsi Kegiatan</span>
+                            <p className="text-[10px] font-semibold text-slate-650 leading-relaxed mt-1">{currentStep.details?.description}</p>
+                          </div>
+                          
+                          <div className="bg-indigo-50/30 p-3.5 rounded-xl border border-indigo-100/50 md:col-span-1">
+                            <span className="text-[8.5px] font-mono font-bold uppercase text-indigo-700 block tracking-wider">Input / Syarat Kelayakan</span>
+                            <p className="text-[10px] font-bold text-slate-750 leading-relaxed mt-1">{currentStep.details?.input || "-"}</p>
+                          </div>
+
+                          <div className="bg-emerald-50/30 p-3.5 rounded-xl border border-emerald-100/50 md:col-span-1">
+                            <span className="text-[8.5px] font-mono font-bold uppercase text-emerald-700 block tracking-wider">Output / Hasil Kerja Utama</span>
+                            <p className="text-[10px] font-bold text-emerald-800 leading-relaxed mt-1">{currentStep.details?.output || "-"}</p>
+                          </div>
+                        </div>
+
+                        {/* TAB-SPECIFIC ADDITIONS (KPI IMAGE & CHARTS OR SOP CHECKLIST) */}
+                        {activeFlowTab === "kpi" ? (
+                          /* KPI GRAPHICS & CHART ATTACHMENT SECTION */
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Interactive Live Mini-Chart */}
+                            <div className="bg-white border border-slate-200 p-3.5 rounded-xl flex flex-col justify-between">
+                              <div>
+                                <span className="text-[9.5px] font-black uppercase tracking-wider text-slate-500 block mb-2">
+                                  Matriks Pencapaian & Target Terukur
+                                </span>
+                                <div className="space-y-2">
+                                  <div>
+                                    <div className="flex justify-between text-[9px] font-bold text-slate-600">
+                                      <span>SLA Ketepatan Waktu (SLA Achievement)</span>
+                                      <span className="text-rose-650">Target: &gt;98%</span>
+                                    </div>
+                                    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mt-1">
+                                      <div className="bg-rose-500 h-full rounded-full" style={{ width: "98.5%" }} />
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <div className="flex justify-between text-[9px] font-bold text-slate-600">
+                                      <span>Kepatuhan Kecepatan Geofencing (Speed Limit Compliance)</span>
+                                      <span className="text-rose-650">Target: 100%</span>
+                                    </div>
+                                    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mt-1">
+                                      <div className="bg-teal-500 h-full rounded-full" style={{ width: "95%" }} />
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <div className="flex justify-between text-[9px] font-bold text-slate-600">
+                                      <span>Indeks Keamanan & Keselamatan Jalan (Zero Incident Score)</span>
+                                      <span className="text-rose-650">Target: 100%</span>
+                                    </div>
+                                    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mt-1">
+                                      <div className="bg-indigo-500 h-full rounded-full" style={{ width: "100%" }} />
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-[8.5px] text-slate-400 font-mono font-medium mt-3">
+                                📊 Sumber Data: Swarnadwipa Telematics Cloud Sync (Live)
+                              </div>
+                            </div>
+
+                            {/* KPI Dashboard Image Upload & Viewer */}
+                            <div className="bg-rose-50/20 border border-rose-100/50 p-3.5 rounded-xl flex flex-col justify-between">
+                              <div>
+                                <div className="flex justify-between items-center mb-1.5">
+                                  <span className="text-[9.5px] font-black uppercase tracking-wider text-rose-750">
+                                    Lampiran Visual KPI & Dashboard Grafik
+                                  </span>
+                                  {customKpiImage && (
+                                    <button
+                                      onClick={() => setCustomKpiImage(null)}
+                                      className="text-[8.5px] font-bold text-rose-600 hover:underline bg-transparent border-none cursor-pointer"
+                                    >
+                                      Reset ke Default
+                                    </button>
+                                  )}
+                                </div>
+                                
+                                {/* Image display container */}
+                                <div className="relative h-24 bg-slate-100 rounded-lg overflow-hidden border border-slate-200/60 flex items-center justify-center group shadow-sm">
+                                  <img 
+                                    src={customKpiImage || kpiDashboardMockup} 
+                                    alt="KPI Dashboard" 
+                                    className="w-full h-full object-cover"
+                                    referrerPolicy="no-referrer"
+                                  />
+                                  <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                                    <span className="text-white text-[9px] font-black uppercase tracking-wider">
+                                      {customKpiImage ? "Ganti Gambar" : "Ubah Gambar KPI"}
+                                    </span>
+                                  </div>
+                                  {/* Direct upload click trigger */}
+                                  <input 
+                                    type="file" 
+                                    accept="image/*"
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) {
+                                        const url = URL.createObjectURL(file);
+                                        setCustomKpiImage(url);
+                                      }
+                                    }}
+                                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                    title="Pilih foto kustom"
+                                  />
+                                </div>
+                              </div>
+                              
+                              <p className="text-[8px] text-slate-450 leading-tight m-0 mt-1.5 font-bold">
+                                💡 Klik pada gambar untuk mengunggah bagan/grafik KPI milik tim operasional Anda secara interaktif.
+                              </p>
+                            </div>
+                          </div>
+                        ) : (
+                          /* SOP TRIP COMPLIANCE CHECKLIST */
+                          <div className="bg-white border border-slate-200 p-4 rounded-xl">
+                            <span className="text-[9.5px] font-black uppercase tracking-wider text-slate-500 block mb-2.5">
+                              Checklist Kepatuhan Prosedur (SOP Compliance Checklist)
+                            </span>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-left">
+                              <div className="flex items-center gap-2 border border-slate-50 p-2 rounded-lg hover:bg-slate-50">
+                                <input type="checkbox" defaultChecked className="h-3.5 w-3.5 text-rose-600 rounded border-slate-300 focus:ring-rose-500" />
+                                <span className="text-[10px] font-semibold text-slate-650">Verifikasi berkas persyaratan pra-trip (Fit-to-Work)</span>
+                              </div>
+                              <div className="flex items-center gap-2 border border-slate-50 p-2 rounded-lg hover:bg-slate-50">
+                                <input type="checkbox" defaultChecked className="h-3.5 w-3.5 text-rose-600 rounded border-slate-300 focus:ring-rose-500" />
+                                <span className="text-[10px] font-semibold text-slate-650">Pencatatan manifes logbook digital ke Cloud ERP</span>
+                              </div>
+                              <div className="flex items-center gap-2 border border-slate-50 p-2 rounded-lg hover:bg-slate-50">
+                                <input type="checkbox" className="h-3.5 w-3.5 text-rose-600 rounded border-slate-300 focus:ring-rose-500" />
+                                <span className="text-[10px] font-semibold text-slate-650">Inspeksi visual kelayakan mekanis roda & pengereman (P2H)</span>
+                              </div>
+                              <div className="flex items-center gap-2 border border-slate-50 p-2 rounded-lg hover:bg-slate-50">
+                                <input type="checkbox" className="h-3.5 w-3.5 text-rose-600 rounded border-slate-300 focus:ring-rose-500" />
+                                <span className="text-[10px] font-semibold text-slate-650">Otorisasi tapping log RFID di pintu timbangan portal</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Footer Info bar */}
+                      <div className="bg-slate-50/80 p-2 rounded-xl border border-slate-150/60 flex items-center justify-between mt-3 text-[9px] text-slate-400 font-bold select-none">
+                        <span>PRAMA SYSTEM INTELLIGENCE ➔ {activeFlowTab === "kpi" ? "KPI DATA TEXT FEED" : "SOP DETAILED FLOW"}</span>
+                        <span>Status Kepatuhan: Audit Terstandardisasi ISO 9001:2015</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+              {/* CANVAS GRID (3 COLUMNS) */}
+              <div className="xl:col-span-3 border border-slate-200 rounded-2xl relative overflow-hidden shadow-inner bg-slate-100 h-[380px] cursor-grab select-none">
+                {/* Draw.io Canvas grid background */}
+                <div 
+                  className="absolute inset-0"
+                  style={{ backgroundImage: "radial-gradient(#cbd5e1 1.5px, transparent 1.5px)", backgroundSize: "20px 20px" }}
+                  onMouseDown={handleMouseDown}
+                  onMouseMove={handleMouseMove}
+                  onMouseUp={handleMouseUp}
+                  onMouseLeave={handleMouseUp}
+                >
+                  {/* Scaled/Panned Container */}
+                  <div
+                    className="absolute origin-top-left w-[1200px] h-[600px] transition-transform duration-75"
+                    style={{
+                      transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`
+                    }}
+                  >
+                    {/* SVG FLOW PATHS */}
+                    <svg className="absolute inset-0 w-full h-full pointer-events-none">
+                      <defs>
+                        <marker
+                          id="arrow-marker"
+                          viewBox="0 0 10 10"
+                          refX="8"
+                          refY="5"
+                          markerWidth="6"
+                          markerHeight="6"
+                          orient="auto-start-reverse"
+                        >
+                          <path d="M 0 1 L 10 5 L 0 9 z" fill={getThemeColors("lines")} />
+                        </marker>
+                      </defs>
+
+                      {activeFlow.connections.map((conn, idx) => {
+                        const from = activeFlow.nodes.find(n => n.id === conn.from);
+                        const to = activeFlow.nodes.find(n => n.id === conn.to);
+                        if (!from || !to) return null;
+
+                        const pathD = calculateOrthogonalPath(from, to, activeFlowTab === "orgchart");
+
+                        // Calculate midpoint of orthogonal line to position connection labels nicely
+                        const midX = (from.x + to.x + 150) / 2;
+                        const midY = (from.y + to.y + 70) / 2;
+
+                        return (
+                          <g key={idx}>
+                            {/* Connection shadow stroke */}
+                            <path
+                              d={pathD}
+                              fill="none"
+                              stroke="white"
+                              strokeWidth="4"
+                            />
+                            {/* Main stroke connection */}
+                            <path
+                              d={pathD}
+                              fill="none"
+                              stroke={getThemeColors("lines")}
+                              strokeWidth="2"
+                              markerEnd="url(#arrow-marker)"
+                            />
+                            {/* Yes/No Branch Label */}
+                            {conn.label && (
+                              <foreignObject
+                                x={midX - 35}
+                                y={midY - 10}
+                                width="70"
+                                height="20"
+                              >
+                                <div className={`text-[8.5px] font-black text-center px-1 py-0.5 rounded border leading-none bg-white ${
+                                  conn.type === "yes" 
+                                    ? "text-emerald-700 border-emerald-200" 
+                                    : conn.type === "no" 
+                                    ? "text-rose-700 border-rose-200" 
+                                    : "text-slate-600 border-slate-200"
+                                }`}>
+                                  {conn.label}
+                                </div>
+                              </foreignObject>
+                            )}
+                          </g>
+                        );
+                      })}
+                    </svg>
+
+                     {/* FLOW NODES */}
+                    {activeFlow.nodes.map(node => {
+                      const isOrgChart = activeFlowTab === "orgchart";
+                      const isSelected = selectedNodeId === node.id;
+                      const nodeWidth = isOrgChart ? "w-[155px]" : node.type === "decision" ? "w-[140px]" : "w-[150px]";
+                      const nodeHeight = isOrgChart ? "h-[85px]" : node.type === "decision" ? "h-[90px]" : "h-[70px]";
+                      
+                      const [empName, empRole] = isOrgChart ? node.label.split("\n") : [node.label, ""];
+                      const initials = empName.includes("SH") ? "SH" : empName.includes("TL") ? "TL" : empName.includes("SP") ? "SP" : "ST";
+                      const levelLabel = empName.includes("SH") 
+                        ? "★ LEVEL 1: SH" 
+                        : empName.includes("TL") 
+                        ? "✦ LEVEL 2: TL" 
+                        : empName.includes("SP") 
+                        ? "💼 LEVEL 3: SP" 
+                        : "👥 LEVEL 4: STAFF";
+
+                      return (
+                        <div
+                          key={node.id}
+                          onClick={() => setSelectedNodeId(isSelected ? null : node.id)}
+                          className={`flow-node absolute rounded-xl p-2 shadow-md flex flex-col justify-center items-center text-center transition cursor-pointer border select-none ${nodeWidth} ${nodeHeight} ${getThemeColors(node.type, isSelected)}`}
+                          style={{
+                            left: `${node.x}px`,
+                            top: `${node.y}px`
+                          }}
+                        >
+                          {/* Node Code Badge (top right inside node) */}
+                          {node.details?.sopCode && (
+                            <span className={`absolute top-1 right-1 text-[7px] font-black px-1 rounded-sm ${
+                              node.type === "start" || node.type === "end" 
+                                ? "bg-white/20 text-white" 
+                                : "bg-slate-100 text-slate-500 border border-slate-200"
+                            }`}>
+                              {node.details.sopCode}
+                            </span>
+                          )}
+
+                          {isOrgChart ? (
+                            <div className="flex flex-col items-center justify-center w-full h-full relative">
+                              {/* Initials badge */}
+                              <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[7.5px] font-black shadow-sm mb-1 ${
+                                node.type === "start" 
+                                  ? "bg-white/20 text-white" 
+                                  : node.type === "end" 
+                                  ? "bg-white/30 text-white" 
+                                  : "bg-indigo-50 text-indigo-700 border border-indigo-200"
+                              }`}>
+                                {initials}
+                              </div>
+                              
+                              <span className={`text-[7px] font-bold uppercase tracking-wider ${
+                                node.type === "start" || node.type === "end" ? "text-rose-200" : "text-slate-400"
+                              }`}>
+                                {empName}
+                              </span>
+                              
+                              <span className={`text-[9.5px] font-black uppercase tracking-tight text-center leading-tight line-clamp-1 px-1 mt-0.5 ${
+                                node.type === "start" || node.type === "end" ? "text-white" : "text-slate-800"
+                              }`}>
+                                {empRole}
+                              </span>
+                              
+                              <span className={`text-[6.5px] font-mono mt-1 font-bold tracking-wider uppercase opacity-80 ${
+                                node.type === "start" || node.type === "end" ? "text-rose-100" : "text-slate-500"
+                              }`}>
+                                {levelLabel}
+                              </span>
+                            </div>
+                          ) : (
+                            <>
+                              <span className="text-[10.5px] font-extrabold uppercase tracking-tight leading-tight leading-4 line-clamp-2 px-1">
+                                {node.label}
+                              </span>
+
+                              {/* Visual indicator of type */}
+                              <span className={`text-[7px] font-mono mt-1 font-semibold tracking-wider uppercase opacity-80 ${
+                                node.type === "start" || node.type === "end" ? "text-rose-100" : "text-slate-500"
+                              }`}>
+                                {node.type === "decision" ? "◆ CABANG UJI" : node.type === "start" ? "● AWAL ALUR" : node.type === "end" ? "■ SELESAI" : "✔ PROSES"}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* DETAILS PANEL (1 COLUMN) */}
+              <div className="border border-slate-200 rounded-2xl p-5 text-left bg-slate-50 h-[380px] overflow-y-auto flex flex-col justify-between">
+                {selectedNode ? (
+                  /* NODE SELECTED - SHOW FULL DETAILS */
+                  <div className="flex-grow flex flex-col justify-between h-full">
+                    <div>
+                      <div className="flex justify-between items-start gap-2 border-b border-slate-200 pb-2 mb-3">
+                        <div>
+                          <span className="text-[8px] font-mono font-black tracking-widest text-indigo-600 uppercase">
+                            DETAIL SIMPUL FLOWCHART
+                          </span>
+                          <h4 className="text-xs font-black text-slate-800 uppercase tracking-tight mt-0.5">
+                            {activeFlowTab === "orgchart" 
+                              ? `${selectedNode.label.split("\n")[0]} - ${selectedNode.label.split("\n")[1] || ""}`
+                              : selectedNode.label}
+                          </h4>
+                        </div>
+                        <span className={`text-[8px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider ${
+                          selectedNode.type === "decision" ? "bg-amber-100 text-amber-700" : "bg-indigo-100 text-indigo-700"
+                        }`}>
+                          {selectedNode.type}
+                        </span>
+                      </div>
+
+                      <div className="space-y-3.5 text-xs text-slate-700">
+                        <div>
+                          <strong className="text-[10px] text-slate-400 uppercase tracking-wider block">Deskripsi Kerja:</strong>
+                          <p className="m-0 text-[11px] font-semibold text-slate-650 leading-relaxed mt-0.5">
+                            {selectedNode.details?.description}
+                          </p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 bg-white p-2.5 rounded-xl border border-slate-200/60">
+                          <div>
+                            <strong className="text-[8.5px] text-slate-400 uppercase tracking-wider block">Input / Syarat:</strong>
+                            <p className="m-0 text-[10px] font-bold text-slate-700 leading-tight mt-0.5">
+                              {selectedNode.details?.input || "-"}
+                            </p>
+                          </div>
+                          <div>
+                            <strong className="text-[8.5px] text-slate-400 uppercase tracking-wider block">Output / Hasil:</strong>
+                            <p className="m-0 text-[10px] font-bold text-emerald-700 leading-tight mt-0.5">
+                              {selectedNode.details?.output || "-"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="bg-slate-100 p-2.5 rounded-xl border border-slate-200/50 flex items-center justify-between text-[10px] font-bold">
+                          <div>
+                            <span className="text-slate-400 block text-[8px] uppercase tracking-wider">
+                              {activeFlowTab === "orgchart" ? "Jabatan" : "Penanggung Jawab (PIC)"}
+                            </span>
+                            <span className="text-slate-700 font-extrabold">
+                              {activeFlowTab === "orgchart" 
+                                ? (selectedNode.label.split("\n")[1] || selectedNode.label.split("\n")[0])
+                                : (selectedNode.details?.pic || "-")}
+                            </span>
+                          </div>
+                          {selectedNode.details?.sopCode && (
+                            <span className="px-2 py-0.5 bg-rose-50 text-rose-700 rounded text-[9px] font-mono font-black border border-rose-100">
+                              {selectedNode.details.sopCode}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Edit button */}
+                    <div className="pt-4 border-t border-slate-200 mt-4 flex gap-2">
+                      <button
+                        onClick={() => setEditingNode(selectedNode)}
+                        className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs transition cursor-pointer border-none flex items-center justify-center gap-1.5 shadow-sm"
+                      >
+                        <Edit3 className="h-3.5 w-3.5" />
+                        <span>Edit Simpul Ini</span>
+                      </button>
+                      <button
+                        onClick={() => setSelectedNodeId(null)}
+                        className="px-3 py-2 bg-slate-200 hover:bg-slate-300 rounded-xl font-bold text-xs text-slate-700 cursor-pointer"
+                      >
+                        Tutup
+                      </button>
                     </div>
                   </div>
-
-                  {/* Edit button */}
-                  <div className="pt-4 border-t border-slate-200 mt-4 flex gap-2">
-                    <button
-                      onClick={() => setEditingNode(selectedNode)}
-                      className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs transition cursor-pointer border-none flex items-center justify-center gap-1.5 shadow-sm"
-                    >
-                      <Edit3 className="h-3.5 w-3.5" />
-                      <span>Edit Simpul Ini</span>
-                    </button>
-                    <button
-                      onClick={() => setSelectedNodeId(null)}
-                      className="px-3 py-2 bg-slate-200 hover:bg-slate-300 rounded-xl font-bold text-xs text-slate-700 cursor-pointer"
-                    >
-                      Tutup
-                    </button>
+                ) : (
+                  /* NO NODE SELECTED - PROMPT USER */
+                  <div className="flex flex-col items-center justify-center text-center h-full text-slate-400 py-10">
+                    <Info className="h-8 w-8 text-slate-300 mb-3" />
+                    <h4 className="text-xs font-black uppercase tracking-tight text-slate-500">
+                      Inspektur Simpul Aktif
+                    </h4>
+                    <p className="text-[10px] font-semibold text-slate-400 leading-normal max-w-[180px] mt-1.5">
+                      Klik salah satu kotak/simpul di dalam papan gambar untuk membuka audit detail penanggung jawab (PIC) serta output kerja.
+                    </p>
                   </div>
-                </div>
-              ) : (
-                /* NO NODE SELECTED - PROMPT USER */
-                <div className="flex flex-col items-center justify-center text-center h-full text-slate-400 py-10">
-                  <Info className="h-8 w-8 text-slate-300 mb-3" />
-                  <h4 className="text-xs font-black uppercase tracking-tight text-slate-500">
-                    Inspektur Simpul Aktif
-                  </h4>
-                  <p className="text-[10px] font-semibold text-slate-400 leading-normal max-w-[180px] mt-1.5">
-                    Klik salah satu kotak/simpul di dalam papan gambar untuk membuka audit detail penanggung jawab (PIC) serta output kerja.
-                  </p>
-                </div>
-              )}
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 
@@ -2107,7 +2864,7 @@ export const PramaFlowchartHub: React.FC<PramaFlowchartHubProps> = ({ projectTit
               {activeFlowTab === "orgchart" ? (
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block font-bold text-slate-600 mb-1">Nama Karyawan</label>
+                    <label className="block font-bold text-slate-600 mb-1">Tingkat Jabatan (SH/TL/SP/Staff)</label>
                     <input
                       type="text"
                       value={editingNode.label.split("\n")[0] || ""}
@@ -2120,7 +2877,7 @@ export const PramaFlowchartHub: React.FC<PramaFlowchartHubProps> = ({ projectTit
                     />
                   </div>
                   <div>
-                    <label className="block font-bold text-slate-600 mb-1">Jabatan / Role</label>
+                    <label className="block font-bold text-slate-600 mb-1">Bidang / Fungsi Kerja</label>
                     <input
                       type="text"
                       value={editingNode.label.split("\n")[1] || ""}

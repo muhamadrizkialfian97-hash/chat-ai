@@ -13,7 +13,7 @@ export interface DashboardSection {
   defaultContent: string;
 }
 
-// 14 Essential Project Management Structure Sections
+// 13 Essential Project Management Structure Sections
 export const defaultDashboardSections: DashboardSection[] = [
   {
     number: 1,
@@ -41,63 +41,63 @@ export const defaultDashboardSections: DashboardSection[] = [
   },
   {
     number: 5,
-    title: "Structure",
-    shortDesc: "Struktur alur kerja layanan, operasional pengangkutan, dan rantai nilai.",
-    defaultContent: "### 5. Structure\n\n"
+    title: "Organization (Qualification, Skill, Output/KPI, SOP)",
+    shortDesc: "Persyaratan keahlian staf, target performa kerja kunci, dan kepatuhan.",
+    defaultContent: "### 5. Organization (Qualification, Skill, Output/KPI, SOP)\n\n"
   },
   {
     number: 6,
-    title: "Organization (Qualification, Skill, Output/KPI, SOP)",
-    shortDesc: "Persyaratan keahlian staf, target performa kerja kunci, dan kepatuhan.",
-    defaultContent: "### 6. Organization (Qualification, Skill, Output/KPI, SOP)\n\n"
+    title: "Transition Model (Pre-On-Post)",
+    shortDesc: "Tahapan implementasi transisi proses onboard rute proyek baru.",
+    defaultContent: "### 6. Transition Model (Pre-On-Post)\n\n"
   },
   {
     number: 7,
-    title: "Transition Model (Pre-On-Post)",
-    shortDesc: "Tahapan implementasi transisi proses onboard rute proyek baru.",
-    defaultContent: "### 7. Transition Model (Pre-On-Post)\n\n"
+    title: "Go To Market Strategy",
+    shortDesc: "Cara menjangkau prospek klien korporasi besar dan penetrasi pasar logistik.",
+    defaultContent: "### 7. Go To Market Strategy\n\n"
   },
   {
     number: 8,
-    title: "Go To Market Strategy",
-    shortDesc: "Cara menjangkau prospek klien korporasi besar dan penetrasi pasar logistik.",
-    defaultContent: "### 8. Go To Market Strategy\n\n"
+    title: "Ops Model (Flow Process, Workflow Diagram, SLA)",
+    shortDesc: "Skema alur kontrol dispatch armada pencari, pelacakan GPS, dan SLA.",
+    defaultContent: "### 8. Ops Model (Flow Process, Workflow Diagram, SLA)\n\n"
   },
   {
     number: 9,
-    title: "Ops Model (Flow Process, Workflow Diagram, SLA)",
-    shortDesc: "Skema alur kontrol dispatch armada pencari, pelacakan GPS, dan SLA.",
-    defaultContent: "### 9. Ops Model (Flow Process, Workflow Diagram, SLA)\n\n"
+    title: "Risk Management",
+    shortDesc: "Sistem mitigasi kecelakaan, kebocoran lingkungan, dan risiko regulasi.",
+    defaultContent: "### 9. Risk Management\n\n"
   },
   {
     number: 10,
-    title: "Risk Management",
-    shortDesc: "Sistem mitigasi kecelakaan, kebocoran lingkungan, dan risiko regulasi.",
-    defaultContent: "### 10. Risk Management\n\n"
+    title: "Digital Coverage (Tools, Method, Impact, Automation)",
+    shortDesc: "Penerapan solusi ERP logistik, sensor IoT, dan FESTRONIK digital.",
+    defaultContent: "### 10. Digital Coverage (Tools, Method, Impact, Automation)\n\n"
   },
   {
     number: 11,
-    title: "Digital Coverage (Tools, Method, Impact, Automation)",
-    shortDesc: "Penerapan solusi ERP logistik, sensor IoT, dan FESTRONIK digital.",
-    defaultContent: "### 11. Digital Coverage (Tools, Method, Impact, Automation)\n\n"
+    title: "Competitor",
+    shortDesc: "Komparasi posisi nilai pasar dengan pemain logistik limbah serupa.",
+    defaultContent: "### 11. Competitor\n\n"
   },
   {
     number: 12,
-    title: "Competitor",
-    shortDesc: "Komparasi posisi nilai pasar dengan pemain logistik limbah serupa.",
-    defaultContent: "### 12. Competitor\n\n"
+    title: "TAM, SAM, SOM",
+    shortDesc: "Total estimasi potensi serapan pasar logistik limbah B3 di Indonesia.",
+    defaultContent: "### 12. TAM, SAM, SOM\n\n"
   },
   {
     number: 13,
-    title: "TAM, SAM, SOM",
-    shortDesc: "Total estimasi potensi serapan pasar logistik limbah B3 di Indonesia.",
-    defaultContent: "### 13. TAM, SAM, SOM\n\n"
+    title: "CAC, LTV",
+    shortDesc: "Analisis Customer Acquisition Cost versus Lifetime Value nilai pelanggan.",
+    defaultContent: "### 13. CAC, LTV\n\n"
   },
   {
     number: 14,
-    title: "CAC, LTV",
-    shortDesc: "Analisis Customer Acquisition Cost versus Lifetime Value nilai pelanggan.",
-    defaultContent: "### 14. CAC, LTV\n\n"
+    title: "Kesimpulan & Rekomendasi Keputusan",
+    shortDesc: "Rangkuman akhir, rekomendasi strategis, dan langkah taktis penentu kebijakan.",
+    defaultContent: "### 14. Kesimpulan & Rekomendasi Keputusan\n\n**Kesimpulan Akhir:**\nBerdasarkan kajian mendalam dari seluruh aspek operasional, finansial, kepatuhan HSE, dan integrasi telematika digital, proyek ekspansi logistik dan hauling dinyatakan **SANGAT LAYAK (GO)** untuk segera dieksekusi.\n\n**Rekomendasi Keputusan Utama:**\n1. Segera lakukan penandatanganan kontrak kerja sama multitahun (MToP) dengan pemilik konsesi.\n2. Terapkan sistem fit-to-work terofisial RFID di seluruh pos kesehatan guna menjamin keselamatan kerja armada.\n3. Integrasikan pelacakan telemetri satelit GPS dan sensor anti-lelah (fatigue monitoring) pada armada utama guna menekan risiko insiden di lapangan."
   }
 ];
 
@@ -292,7 +292,7 @@ export function exportSingleSectionToWord(projectTitle: string, section: Dashboa
 }
 
 /**
- * Export all 14 sections as one single merged Word document
+ * Export all 13 sections as one single merged Word document
  */
 export function exportAllSectionsToWord(projectTitle: string, sectionsMap: Record<number, string>) {
   const displayTitle = projectTitle.trim() || "Kajian Proyek Strategis";
@@ -312,7 +312,7 @@ export function exportAllSectionsToWord(projectTitle: string, sectionsMap: Recor
     fullSectionsHtml += `
       <div style="${index > 0 ? "page-break-before: always; margin-top: 30pt;" : ""}">
         <div style="font-size: 9pt; font-family: monospace; color: #2563eb; text-transform: uppercase; font-weight: bold; letter-spacing: 2px;">
-          BAGIAN ${sec.number} DARI 14
+          BAGIAN ${sec.number} DARI 13
         </div>
         <h2 style="font-size: 18pt; color: #1e3a8a; border-bottom: 2px solid #1e3a8a; padding-bottom: 4pt; margin-top: 6pt; margin-bottom: 12pt;">
           ${sec.title.toUpperCase()}
@@ -388,7 +388,7 @@ export function exportAllSectionsToWord(projectTitle: string, sectionsMap: Recor
             DOKUMEN KAJIAN STRATEGIS KOMPREHENSIF
           </div>
           <h1 style="color: #ffffff; font-size: 22pt; margin: 0; border: none; padding: 0;">
-            14 PILAR FORMULASI PROPOSAL & MANAJEMEN PROYEK
+            13 PILAR FORMULASI PROPOSAL & MANAJEMEN PROYEK
           </h1>
           <div style="font-size: 13pt; color: #cbd5e1; margin-top: 14pt; font-style: italic;">
             Proyek: ${displayTitle}
@@ -427,7 +427,7 @@ export function exportAllSectionsToWord(projectTitle: string, sectionsMap: Recor
   const blob = new Blob([htmlContent], { type: "application/msword;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
-  const sanitizedFilename = `KAJIAN_KOMPREHENSIF_PM_14_PILAR_${displayTitle.trim().replace(/\s+/g, "_")}.doc`;
+  const sanitizedFilename = `KAJIAN_KOMPREHENSIF_PM_13_PILAR_${displayTitle.trim().replace(/\s+/g, "_")}.doc`;
   
   link.href = url;
   link.download = sanitizedFilename;
@@ -442,7 +442,7 @@ export function exportAllSectionsToWord(projectTitle: string, sectionsMap: Recor
 }
 
 /**
- * Generate a beautiful widescreen complete 14-section PowerPoint presentation in PPTX format.
+ * Generate a beautiful widescreen complete 13-section PowerPoint presentation in PPTX format.
  */
 export async function exportAllSectionsToPPTX(projectTitle: string, sectionsMap: Record<number, string>) {
   const pptx = new pptxgen();
@@ -492,7 +492,7 @@ export async function exportAllSectionsToPPTX(projectTitle: string, sectionsMap:
     x: 0.8, y: 1.8, w: 9.0, h: 0.5,
     fontSize: 20, fontFace: "Calibri", color: "00D285", bold: true
   });
-  slide1.addText("14 PILAR UTAMA ANALYSIS PROPOSAL & PM", {
+  slide1.addText("13 PILAR UTAMA ANALYSIS PROPOSAL & PM", {
     x: 0.8, y: 2.4, w: 11.5, h: 1.2,
     fontSize: 36, fontFace: "Arial Black", color: "FFFFFF"
   });
@@ -512,7 +512,7 @@ export async function exportAllSectionsToPPTX(projectTitle: string, sectionsMap:
 
   let extractedConclusions: string[] = [];
 
-  // --- SLIDES 2 to 15: The 14 Core Formulation Pillars ---
+  // --- SLIDES 2 to 14: The 13 Core Formulation Pillars ---
   defaultDashboardSections.forEach((sec) => {
     const slide = pptx.addSlide();
     // Warm clean white background for readability
@@ -620,9 +620,9 @@ export async function exportAllSectionsToPPTX(projectTitle: string, sectionsMap:
     let boxText = "";
     if (sec.number === 3) {
       boxText = `ANALISIS KEUANGAN\n\n• CAPEX: Rp 8.95 Miliar\n• OPEX Bulanan: Rp 260 Juta\n• Payback Period: 2.8 Tahun\n• IRR: 28.5%\n• ROI: 35.2%\n• Kesehatan Finansial: Sangat Baik`;
-    } else if (sec.number === 13) {
+    } else if (sec.number === 12) {
       boxText = `POTENSI PASAR (MARKET SIZING)\n\n• TAM: Rp 1.5 Triliun / Thn\n• SAM: Rp 550 Miliar / Thn\n• SOM: Rp 95 Miliar / Thn\n• Realistis Target: Efektif 3 Thn\n• Sektor Utama: Manufaktur B2B`;
-    } else if (sec.number === 14) {
+    } else if (sec.number === 13) {
       boxText = `EFISIENSI BIAYA PELANGGAN\n\n• CAC: Rp 45.000.000\n• LTV Bersih: Rp 315.000.000\n• LTV / CAC Rasio: 7.0x\n• Angka Sehat Industri: > 3.0x\n• Retensi Kontrak: Rata-rata 3.5 Thn`;
     } else {
       boxText = `INDIKATOR PERFORMA PILAR ${sec.number}\n\n• Tingkat Kepatuhan: 100% Selaras SLA\n• Penjamin Tanggap: Tim HSE Siaga\n• Metodologi Kerja: Berdasarkan SOP PRAMA\n• Status Peninjauan: Disetujui Evaluasi`;
@@ -638,13 +638,13 @@ export async function exportAllSectionsToPPTX(projectTitle: string, sectionsMap:
       x: 0.6, y: 6.9, w: 7.2, h: 0.3,
       fontSize: 8.5, fontFace: "Courier New", color: "94A3B8", bold: true
     });
-    slide.addText(`Halaman ${sec.number + 1} dari 17`, {
+    slide.addText(`Halaman ${sec.number + 1} dari 16`, {
       x: 8.3, y: 6.9, w: 4.4, h: 0.3,
       fontSize: 9, fontFace: "Calibri", color: "94A3B8", align: "right"
     });
   });
 
-  // --- SLIDE 16: Dedicated Conclusion Slide ---
+  // --- SLIDE 15: Dedicated Conclusion Slide ---
   const conclusionSlide = pptx.addSlide();
   conclusionSlide.background = { color: "F8FAFC" };
 
@@ -717,12 +717,12 @@ export async function exportAllSectionsToPPTX(projectTitle: string, sectionsMap:
     x: 0.6, y: 6.9, w: 7.2, h: 0.3,
     fontSize: 8.5, fontFace: "Courier New", color: "94A3B8", bold: true
   });
-  conclusionSlide.addText("Halaman 16 dari 17", {
+  conclusionSlide.addText("Halaman 15 dari 16", {
     x: 8.3, y: 6.9, w: 4.4, h: 0.3,
     fontSize: 9, fontFace: "Calibri", color: "94A3B8", align: "right"
   });
 
-  // --- SLIDE 17: Closing Thank You Slide ---
+  // --- SLIDE 16: Closing Thank You Slide ---
   const closingSlide = pptx.addSlide();
   
   // Set background to the Pancaran Group Illustration for maximum visual brand impact
@@ -770,7 +770,7 @@ export async function exportAllSectionsToPPTX(projectTitle: string, sectionsMap:
   });
 
   // Save/trigger presentation download
-  const sanitizedFilename = `PPTX_Kajian_PM_14_Pilar_${displayTitle.trim().replace(/\s+/g, "_")}.pptx`;
+  const sanitizedFilename = `PPTX_Kajian_PM_13_Pilar_${displayTitle.trim().replace(/\s+/g, "_")}.pptx`;
   await pptx.writeFile({ fileName: sanitizedFilename });
 }
 
@@ -966,7 +966,76 @@ export function generatePillarsForProject(projectName: string, fileContent?: str
 * **Izin Usaha Angkutan Khusus (B3 / Tambang):** Lisensi wajib dari Kementerian Perhubungan RI untuk kategori angkutan barang dengan klasifikasi khusus atau muatan strategis sensitif.
 * **Sertifikasi Sistem Manajemen Keselamatan (SMK):** Akreditasi standar K3 logistik nasional untuk meminimalisir risiko insiden kecelakaan armada di jalan raya.`,
 
-    2: `### 2. Market Opportunity
+    2: (() => {
+      if (lower.includes("forestry") || lower.includes("kehutanan") || lower.includes("hutan") || lower.includes("wood") || lower.includes("logging")) {
+        return `### 2. Market Opportunity
+
+Berikut adalah bedah terstruktur (breakdown) dari dokumen **"MARKET OPPORTUNITY: Forestry Management Transportation"** berdasarkan poin-poin penting di dalamnya:
+
+---
+
+### **A. ANALISIS POTENSI PASAR & GAP (MARKET LANDSCAPE ANALYSIS)**
+
+Peluang pasar kehutanan terletak pada efisiensi, keandalan, dan kepatuhan dalam sistem rantai pasok transportasi hasil hutan dari lokasi penebangan/konsesi menuju pabrik pengolahan (*pulp mill* / penggergajian) atau pelabuhan ekspor.
+
+#### **🚀 1. Faktor Pendorong Pasar (Market Drivers)**
+* **Permintaan Global Meningkat:** Peluang pasar ini sangat signifikan karena didorong oleh tingginya permintaan global terhadap produk kayu yang bersertifikat (SVLK / FSC) secara berkelanjutan.
+* **Produk Non-Kayu:** Selain kayu utama, tren ini juga dipicu oleh meningkatnya permintaan terhadap hasil hutan bukan kayu (*Non-Timber Forest Products*) di pasar internasional.
+* **Kebutuhan Biomassa Energi:** Transisi hijau global mendongkrak kebutuhan serpih kayu (*woodchips*) dan pelet kayu (*wood pellets*) sebagai alternatif energi bersih terbarukan.
+
+#### **🎯 2. Celas Pasar & Solusi Logistik (Market Gap)**
+Ada kebutuhan besar yang belum terpenuhi secara optimal untuk penyedia jasa logistik yang mampu menawarkan:
+* **Efisiensi dan Keberlanjutan:** Solusi pengangkutan komoditas hutan yang efisien sekaligus ramah lingkungan untuk meminimalisir jejak karbon dari hulu ke hilir.
+* **Akses Area Terpencil:** Jasa transportasi darat tangguh dengan armada sasis khusus yang andal menembus medan pedalaman/terpencil langsung dari *logging yard* menuju fasilitas industri.
+* **Jaminan Legalitas Lacak Balak:** Transparansi sertifikasi rantai pasok kayu guna memastikan komoditas bebas dari pembalakan liar, sebuah nilai kepatuhan yang gagal ditawarkan operator kecil konvensional.
+
+---
+
+### **B. PELUANG INOVASI TEKNOLOGI & HIJAU (TECH & GREEN OPPORTUNITIES)**
+
+Penerapan teknologi modern dan praktik dekarbonisasi menjadi pilar utama peningkatan keunggulan kompetitif di sektor transportasi kehutanan:
+
+#### **💻 3. Peluang Inovasi Teknologi**
+* **Pelacakan & Pemantauan Pintar (IoT):** Penerapan sistem telemetri terkini untuk melacak posisi armada secara real-time di rute *logging road* terpencil guna meningkatkan transparansi operasional dan efisiensi rantai pasok.
+* **Sensor Berat Portable & Suspensi:** Deteksi berat muatan di tengah area konsesi untuk memitigasi risiko *overloading* secara proaktif sebelum truk masuk ke jalan umum.
+* **Pemetaan Rute Berbasis Satelit:** Menggunakan algoritma navigasi dinamis untuk mengoptimalkan rute hauling di wilayah minim sinyal seluler (*blind spot*).
+
+#### **🌿 4. Nilai Tambah Hijau (Green Value-Add)**
+Proyek yang berfokus pada kelestarian lingkungan memiliki potensi keuntungan ekstra melalui integrasi dengan:
+* **Pasar Karbon Kredit:** Peluang monetisasi atas pengurangan emisi karbon dari rute sirkular logistik hijau yang terencana baik.
+* **Inisiatif REDD+:** Sinkronisasi program transportasi dengan skema internasional pengurangan emisi dari deforestasi dan degradasi hutan (*Reducing Emissions from Deforestation and Forest Degradation*).
+* **Armada Rendah Emisi:** Penerapan truk standar emisi Euro 5 atau armada dekarbonisasi untuk memenangkan tender komoditas kayu premium dari pembeli multinasional.
+
+---
+
+### **C. STRATEGI IMPLEMENTASI PENETRASI PASAR (STEP-BY-STEP STRATEGIC PLAN)**
+
+Untuk memaksimalkan peluang pasar angkutan kehutanan ini, Pancaran Group menetapkan 4 langkah strategis utama:
+
+#### **Langkah 1: Pemetaan Konsesi & Lokasi Penebangan (Site Survey & Mapping)**
+* **Aktivitas:** Melakukan survei rute jalan tanah hutan (*logging road*), menganalisis kelayakan jembatan, elevasi curam, serta titik-titik kritis di dalam konsesi HTI.
+* **Tujuan:** Menentukan konfigurasi sasis truk, jenis ban, serta daya mesin (*horse power*) yang paling sesuai dengan medan berat kehutanan.
+
+#### **Langkah 2: Integrasi Sertifikasi Legalitas Kayu (SVLK / FSC Integration)**
+* **Aktivitas:** Mendaftarkan seluruh armada pengangkut ke dalam sistem ketertelusuran kayu nasional, serta melengkapi manifestasi dokumen SKSHAK digital.
+* **Tujuan:** Memberikan jaminan legalitas 100% bebas dari pembalakan liar demi kenyamanan audit pembeli korporat global.
+
+#### **Langkah 3: Pemasangan Telemetri GPS Satelit (High-Tech Fleet Deployment)**
+* **Aktivitas:** Memasang modul pelacak hibrida (seluler + satelit) pada setiap unit truk logging untuk mengawasi operasional di area pedalaman minim sinyal.
+* **Tujuan:** Mengawasi keselamatan berkendara (*driver behavior*), kecepatan aman di jalur berdebu/licin, serta memastikan ketepatan waktu bongkar muat.
+
+#### **Langkah 4: Skema Kontrak Jangka Panjang Berbasis ESG (ESG Partnership & LTSA)**
+* **Aktivitas:** Menjalin kemitraan tahunan eksklusif (*Long-Term Service Agreement*) dengan pemegang konsesi hutan utama dan produsen pulp-and-paper.
+* **Tujuan:** Mengamankan utilisasi armada secara kontinu, menstabilkan arus kas investasi capex, dan memberikan nilai tambah pelaporan ESG bulanan untuk klien.
+
+---
+
+### **D. JENIS-JENIS SEGMEN PELUANG DAN ANALISIS KESENJANGAN (TYPES OF OPPORTUNITY SEGMENTS)**
+* **Segmen Korporat Pulp & Paper Terintegrasi:** Pabrik kertas skala dunia yang menuntut ritase pasokan kayu bulat stabil harian dengan audit kepatuhan HSE sangat ketat.
+* **Segmen Pemegang Izin Konsesi Hutan (HTI / HPH):** Pemilik lahan hutan tanaman industri yang membutuhkan mitra pengangkutan dengan kapasitas tonase harian besar serta berizin resmi.
+* **Segmen Industri Energi Biomassa:** Pabrik pelet kayu dan serpih kayu pengekspor yang mewajibkan sertifikasi rantai pasok hijau murni dari hulu ke hilir.`;
+      }
+      return `### 2. Market Opportunity
 
 **Analisis Potensi Pasar & Gap Analisis (Market Landscape):**
 Proyek **"${pName}"** menyasar sektor ${industry} premium di mana terdapat gap atau kesenjangan besar antara transporter berlisensi standar dengan standar kepatuhan tinggi yang dituntut oleh korporat modern. Dengan memanfaatkan armada khusus berlisensi untuk mengangkut ${materialName}, Pancaran Group berada di posisi paling strategis untuk merebut pangsa pasar dari kompetitor konvensional.
@@ -1020,7 +1089,8 @@ Untuk memastikan penetrasi pasar berjalan secara terstruktur dan terarah pada pr
 ### **C. JENIS-JENIS SEGMEN PELUANG DAN ANALISIS KESENJANGAN (TYPES OF OPPORTUNITY SEGMENTS)**
 * **Segmen Korporat Multinasional (B2B Premium):** Perusahaan skala global yang wajib mematuhi standar audit logistik tanpa kompromi serta memiliki target dekarbonisasi nol emisi (*Net-Zero Emission*).
 * **Segmen Industri Strategis Nasional (Sovereign-backed):** Emiten besar atau proyek vital strategis nasional yang membutuhkan suplai pengangkutan bahan baku ${materialName} secara stabil dengan jaminan kelancaran kapasitas harian.
-* **Segmen Rantai Pasok Berkelanjutan (Circular Economy):** Mitra strategis yang mengedepankan efisiensi ritase sirkular bolak-balik tanpa membiarkan armada berjalan kosong (*empty miles*) pasca bongkar muat.`,
+* **Segmen Rantai Pasok Berkelanjutan (Circular Economy):** Mitra strategis yang mengedepankan efisiensi ritase sirkular bolak-balik tanpa membiarkan armada berjalan kosong (*empty miles*) pasca bongkar muat.`;
+    })(),
 
     3: (() => {
       const unitCount = defaultUnitsCount;
@@ -1381,12 +1451,45 @@ Sebelum menandatangani kontrak, pastikan Anda dan tim menilai matriks risiko ber
 * **Elemen LTV Kontrak Berulang:** Nilai kumulatif pendapatan bulanan dikurangi Opex selama masa kontrak primer, ditambah taksiran nilai kontrak perpanjangan (*renewal probability*) sebesar 75%.`
   };
 
-  return pillars;
+  // Map raw keys to match defaultDashboardSections (fixing the off-by-one misalignment due to missing Structure section)
+  const mappedPillars: Record<number, string> = {
+    1: pillars[1],
+    2: pillars[2],
+    3: pillars[3],
+    4: pillars[4],
+    5: pillars[6],  // Map generated 'Organization' (6) to Section 5
+    6: pillars[7],  // Map generated 'Transition' (7) to Section 6
+    7: pillars[8],  // Map generated 'GTM' (8) to Section 7
+    8: pillars[9],  // Map generated 'Ops Model' (9) to Section 8
+    9: pillars[10], // Map generated 'Risk Management' (10) to Section 9
+    10: pillars[11],// Map generated 'Digital Coverage' (11) to Section 10
+    11: pillars[12],// Map generated 'Competitor' (12) to Section 11
+    12: pillars[13],// Map generated 'TAM, SAM, SOM' (13) to Section 12
+    13: pillars[14], // Map generated 'CAC, LTV' (14) to Section 13
+    14: `### 14. Kesimpulan & Rekomendasi Keputusan
+
+**Kesimpulan Akhir:**
+Berdasarkan kajian mendalam dari seluruh aspek operasional, finansial, kepatuhan HSE, dan integrasi telematika digital, proyek ekspansi logistik dan hauling dinyatakan **SANGAT LAYAK (GO)** untuk segera dieksekusi.
+
+**Rekomendasi Keputusan Utama:**
+1. Segera lakukan penandatanganan kontrak kerja sama multitahun (MToP) dengan pemilik konsesi.
+2. Terapkan sistem fit-to-work terofisial RFID di seluruh pos kesehatan guna menjamin keselamatan kerja armada.
+3. Integrasikan pelacakan telemetri satelit GPS dan sensor anti-lelah (fatigue monitoring) pada armada utama guna menekan risiko insiden di lapangan.`
+  };
+
+  return mappedPillars;
 }
 
 export function cleanPillarContent(content: string, pillarNum: number, pillarTitle: string): string {
   let cleaned = content.trim();
   
+  if (pillarNum === 14) {
+    // Section 14 should strictly focus on Conclusion & Recommendations, removing any stray CAC/LTV summary text
+    cleaned = cleaned.replace(/Metrik\s+CAC\s+dioptimalkan[\s\S]*?kebutuhan\s+logistik\.?\s*/gi, "");
+    cleaned = cleaned.replace(/Metrik\s+CAC\s+dioptimalkan[\s\S]*?(?=\n\n|\n[A-Z]|$)/gi, "");
+    cleaned = cleaned.replace(/.*(?:Metrik\s+CAC|SaaS\s+atau\s+biaya|dukungan\s+teknis\s+24\/7).*\n?/gi, "");
+  }
+
   // 1. If the content has multiple occurrences of the pillar header, take the last one!
   // E.g., if there's a duplicate header like "### 1. Global / National" or "GLOBAL/NAT OVERVIEW" or "### 1"
   const lines = cleaned.split("\n");
@@ -1481,61 +1584,67 @@ export function parseResponseToPillars(text: string): Record<number, string> {
     "PENAWARAN & PERMINTAAN": 4,
     "SUPPLY & DEMAND ANALYSIS": 4,
     
-    "STRUCTURE": 5,
-    "STRUKTUR": 5,
-    "PROJECT STRUCTURE": 5,
-    "STRUKTUR PROYEK": 5,
+    "STRUCTURE": 100,
+    "STRUKTUR": 100,
+    "PROJECT STRUCTURE": 100,
+    "STRUKTUR PROYEK": 100,
     
-    "ORGANIZATION": 6,
-    "ORGANISASI": 6,
-    "ORGANIZATION STRATEGY": 6,
-    "STRATEGI ORGANISASI": 6,
+    "ORGANIZATION": 5,
+    "ORGANISASI": 5,
+    "ORGANIZATION STRATEGY": 5,
+    "STRATEGI ORGANISASI": 5,
     
-    "TRANSITION MODEL": 7,
-    "MODEL TRANSISI": 7,
-    "TRANSISI": 7,
-    "STRATEGI TRANSISI": 7,
+    "TRANSITION MODEL": 6,
+    "MODEL TRANSISI": 6,
+    "TRANSISI": 6,
+    "STRATEGI TRANSISI": 6,
     
-    "GO TO MARKET STRATEGY": 8,
-    "GO-TO-MARKET STRATEGY": 8,
-    "GO TO MARKET": 8,
-    "STRATEGI GO TO MARKET": 8,
-    "GTM STRATEGY": 8,
+    "GO TO MARKET STRATEGY": 7,
+    "GO-TO-MARKET STRATEGY": 7,
+    "GO TO MARKET": 7,
+    "STRATEGI GO TO MARKET": 7,
+    "GTM STRATEGY": 7,
     
-    "OPS MODEL": 9,
-    "OPERATIONAL MODEL": 9,
-    "MODEL OPERASIONAL": 9,
-    "OPS MODEL ANALYSIS": 9,
+    "OPS MODEL": 8,
+    "OPERATIONAL MODEL": 8,
+    "MODEL OPERASIONAL": 8,
+    "OPS MODEL ANALYSIS": 8,
     
-    "RISK MANAGEMENT": 10,
-    "MANAJEMEN RISIKO": 10,
-    "MANAJEMEN RESIKO": 10,
-    "MITIGASI RISIKO": 10,
-    "MITIGASI RESIKO": 10,
+    "RISK MANAGEMENT": 9,
+    "MANAJEMEN RISIKO": 9,
+    "MANAJEMEN RESIKO": 9,
+    "MITIGASI RISIKO": 9,
+    "MITIGASI RESIKO": 9,
     
-    "DIGITAL COVERAGE": 11,
-    "DIGITALISASI": 11,
-    "CAKUPAN DIGITAL": 11,
-    "TEKNOLOGI DIGITAL": 11,
+    "DIGITAL COVERAGE": 10,
+    "DIGITALISASI": 10,
+    "CAKUPAN DIGITAL": 10,
+    "TEKNOLOGI DIGITAL": 10,
     
-    "COMPETITOR": 12,
-    "COMPETITORS": 12,
-    "PESAING": 12,
-    "KOMPETITOR": 12,
-    "ANALISIS PESAING": 12,
+    "COMPETITOR": 11,
+    "COMPETITORS": 11,
+    "PESAING": 11,
+    "KOMPETITOR": 11,
+    "ANALISIS PESAING": 11,
     
-    "TAM, SAM, SOM": 13,
-    "TAM SAM SOM": 13,
-    "TAM, SAM DAN SOM": 13,
-    "MARKET SIZING": 13,
-    "TAM/SAM/SOM": 13,
+    "TAM, SAM, SOM": 12,
+    "TAM SAM SOM": 12,
+    "TAM, SAM DAN SOM": 12,
+    "MARKET SIZING": 12,
+    "TAM/SAM/SOM": 12,
     
-    "CAC, LTV": 14,
-    "CAC LTV": 14,
-    "CAC & LTV": 14,
-    "CAC AND LTV": 14,
-    "CAC/LTV": 14,
-    "CUSTOMER ACQUISITION COST": 14,
+    "CAC, LTV": 13,
+    "CAC LTV": 13,
+    "CAC & LTV": 13,
+    "CAC AND LTV": 13,
+    "CAC/LTV": 13,
+    "CUSTOMER ACQUISITION COST": 13,
+
+    "KESIMPULAN": 14,
+    "KESIMPULAN AKHIR": 14,
+    "CONCLUSION": 14,
+    "REKOMENDASI KEPUTUSAN": 14,
+    "KESIMPULAN & REKOMENDASI KEPUTUSAN": 14,
   };
 
   const getPillarFromLine = (line: string): number | null => {
@@ -1548,6 +1657,10 @@ export function parseResponseToPillars(text: string): Record<number, string> {
       const pNum = parseInt(numMatch[1], 10);
       const isFalsePositive = trimmed.includes("Rp ") || trimmed.includes("Rp.") || (trimmed.toLowerCase().includes("capex") && pNum !== 3) || trimmed.includes("%");
       if (!isFalsePositive) {
+        // Map raw rawNum to target sections in 14-section format
+        if (pNum <= 4) return pNum;
+        if (pNum === 5) return 100; // Omitted Structure section
+        if (pNum >= 6 && pNum <= 14) return pNum - 1;
         return pNum;
       }
     }
@@ -1605,6 +1718,9 @@ export function parseResponseToPillars(text: string): Record<number, string> {
     result[currentPilar] = currentContent.join("\n").trim();
   }
 
+  // Remove the dummy key used for omitting Structure
+  delete result[100];
+
   // Clean all sections to remove conversational prologue and duplicate headers
   for (const numStr of Object.keys(result)) {
     const num = parseInt(numStr, 10);
@@ -1616,17 +1732,117 @@ export function parseResponseToPillars(text: string): Record<number, string> {
   return result;
 }
 
+export function normalizeProjectTitle(title: string): string {
+  let cleaned = title.trim().replace(/^["'`*#]+|["'`*#]+$/g, "").trim();
+  if (/^(?:kajian|analisis|studi|proyek|project)/i.test(cleaned)) {
+    return cleaned;
+  }
+  const words = cleaned.split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+  return `Kajian Strategis: ${words}`;
+}
+
+export function detectAndInferProjectTitleFromText(text: string, currentTitle?: string): string | null {
+  if (!text || typeof text !== "string") return null;
+  const trimmed = text.trim();
+  const lower = trimmed.toLowerCase();
+
+  // Explicit change patterns
+  const changeRegex = /(?:ganti|ubah|set|buka|ganti judul|pindah|ganti nama|buat analisis|buat kajian)\s*(?:proyek|project|kajian)?\s*(?:ke|to|jadi|menjadi|tentang|mengenai)?\s*([^\n\.\,\?]+)/i;
+  const match = trimmed.match(changeRegex);
+  if (match && match[1] && match[1].trim().length > 3) {
+    const rawTarget = match[1].trim().replace(/\*+/g, "").replace(/["'`]/g, "").trim();
+    if (rawTarget.length > 3) {
+      return normalizeProjectTitle(rawTarget);
+    }
+  }
+
+  // Domain Presets
+  if (lower.includes("forestry") || lower.includes("kehutanan") || lower.includes("hutan") || lower.includes("kayu") || lower.includes("timber") || lower.includes("logging") || lower.includes("wood")) {
+    return "Kajian Strategis: Forestry Management Transportation";
+  }
+  if (lower.includes("waste") || lower.includes("limbah") || lower.includes("b3") || lower.includes("sampah") || lower.includes("recycle") || lower.includes("daur ulang") || lower.includes("sludge")) {
+    return "Kajian Kelayakan: Transportasi & Pengolahan Limbah Industri B3 (Waste Management)";
+  }
+  if (lower.includes("batubara") || lower.includes("batu bara") || lower.includes("coal") || lower.includes("tambang") || lower.includes("mining")) {
+    return "Analisis Kelayakan: Transportasi Koridor Batu Bara Swarnadwipa";
+  }
+  if (lower.includes("cold chain") || lower.includes("cold storage") || lower.includes("farmasi") || lower.includes("vaksin") || lower.includes("boga") || lower.includes("dingin") || lower.includes("reefer") || lower.includes("chiller")) {
+    return "Kajian Kelayakan: Ekspansi Cold Chain Distribusi Farmasi & Boga Segar Jawa-Bali";
+  }
+  if (lower.includes("port") || lower.includes("pelabuhan") || lower.includes("kontainer") || lower.includes("intermodal") || lower.includes("peti kemas") || lower.includes("tanjung priok") || lower.includes("shuttle container")) {
+    return "Kajian Kelayakan: Port Intermodal Hub & Shuttle Container Terminal Tanjung Priok";
+  }
+  if (lower.includes("semen") || lower.includes("cement") || lower.includes("klinker") || lower.includes("clinker")) {
+    return "Kajian Kelayakan: Distribusi Semen & Material Konstruksi Curah";
+  }
+  if (lower.includes("nikel") || lower.includes("nickel") || lower.includes("smelter") || lower.includes("feronikel")) {
+    return "Analisis Kelayakan: Transportasi Bijih Nikel & Logistik Smelter";
+  }
+  if (lower.includes("cpo") || lower.includes("sawit") || lower.includes("kelapa sawit") || lower.includes("palm oil")) {
+    return "Kajian Strategis: Rantai Pasok & Angkutan CPO Kelapa Sawit";
+  }
+  if (lower.includes("bauksit") || lower.includes("bauxite") || lower.includes("alumina")) {
+    return "Analisis Logistik: Hauling Bauksit & Pasokan Smelter Alumina";
+  }
+  if (lower.includes("pupuk") || lower.includes("fertilizer") || lower.includes("urea")) {
+    return "Kajian Kelayakan: Distribusi Logistik Pupuk Nasional";
+  }
+  if (lower.includes("baja") || lower.includes("steel") || lower.includes("koil baja")) {
+    return "Kajian Transportasi: Rantai Pasok Baja & Fabrikasi Logam Berat";
+  }
+  if (lower.includes("migas") || lower.includes("solar") || lower.includes("bbm") || lower.includes("fuel") || lower.includes("minyak bumi") || lower.includes("pertamina")) {
+    return "Kajian Strategis: Distribusi Logistik BBM & Penunjang Migas";
+  }
+
+  // If user typed a short title-like string (< 60 chars) without question words
+  if (trimmed.length >= 4 && trimmed.length <= 60 && !trimmed.includes("?") && !trimmed.includes("tolong") && !trimmed.includes("bantu") && !trimmed.includes("apa") && !trimmed.includes("bagaimana") && !trimmed.includes("kenapa")) {
+    return normalizeProjectTitle(trimmed);
+  }
+
+  return null;
+}
+
 export function extractProjectTitleFromAI(text: string): string | null {
+  if (!text || typeof text !== "string") return null;
+
+  // Pattern 0: MARKET OPPORTUNITY DEEP-DIVE: ...
+  const p0 = text.match(/MARKET OPPORTUNITY DEEP-DIVE:\s*(?:KAJIAN STRATEGIS:\s*|KAJIAN KELAYAKAN:\s*|ANALISIS KELAYAKAN:\s*)?([^\n\."*#]+)/i);
+  if (p0 && p0[1] && p0[1].trim().length > 3) {
+    const raw = p0[1].trim();
+    if (raw.toLowerCase().includes("forestry")) {
+      return "Kajian Strategis: Forestry Management Transportation";
+    }
+    return normalizeProjectTitle(raw);
+  }
+
   // Pattern 1: proyek yang sedang kita analisis adalah "..."
   const p1 = text.match(/proyek yang sedang kita analisis adalah\s*(?:"|'|«|“|`|')?([^"'\n\.«“”`\(\)]+)/i);
   if (p1 && p1[1] && p1[1].trim().length > 3) {
-    return p1[1].trim();
+    return normalizeProjectTitle(p1[1].trim());
   }
   
   // Pattern 2: Kajian Strategis: ...
   const p2 = text.match(/Kajian Strategis:\s*([^\n\.\"\']+)/i);
   if (p2 && p2[1] && p2[1].trim().length > 3) {
-    return p2[1].trim();
+    return `Kajian Strategis: ${p2[1].trim()}`;
+  }
+
+  // Pattern 3: Kajian Kelayakan: ...
+  const p3 = text.match(/Kajian Kelayakan:\s*([^\n\.\"\']+)/i);
+  if (p3 && p3[1] && p3[1].trim().length > 3) {
+    return `Kajian Kelayakan: ${p3[1].trim()}`;
+  }
+
+  // Pattern 4: Analisis Kelayakan: ...
+  const p4 = text.match(/Analisis Kelayakan:\s*([^\n\.\"\']+)/i);
+  if (p4 && p4[1] && p4[1].trim().length > 3) {
+    return `Analisis Kelayakan: ${p4[1].trim()}`;
+  }
+
+  // Pattern 5: PROYEK: ...
+  const p5 = text.match(/(?:PROYEK|PROJECT|JUDUL PROYEK)\s*:\s*([^\n\."*#]+)/i);
+  if (p5 && p5[1] && p5[1].trim().length > 3) {
+    return normalizeProjectTitle(p5[1].trim());
   }
   
   return null;

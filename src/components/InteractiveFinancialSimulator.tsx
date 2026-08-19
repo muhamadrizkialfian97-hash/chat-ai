@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Download, Table, Edit2, Play, Plus, ChevronLeft, ChevronRight, HelpCircle, TrendingUp, DollarSign, Calculator } from "lucide-react";
+import { Download, Table, Edit2, Play, Plus, ChevronLeft, ChevronRight, HelpCircle, TrendingUp, DollarSign, Calculator, Eye, EyeOff } from "lucide-react";
 import { ExcelData, exportToExcelFile } from "../utils/excelExporter";
 
 interface InteractiveFinancialSimulatorProps {
@@ -16,6 +16,7 @@ export function InteractiveFinancialSimulator({
   salesIncrease = 1620 // default Rp 1.62 Miliar
 }: InteractiveFinancialSimulatorProps) {
   const [activeTab, setActiveTab] = useState<"tamsamsom" | "pl">("tamsamsom");
+  const [isSpreadsheetVisible, setIsSpreadsheetVisible] = useState<boolean>(false);
 
   // Interactive finance variables
   const [tam, setTam] = useState<number>(500000000000); // Rp 500 Miliar
@@ -189,17 +190,40 @@ export function InteractiveFinancialSimulator({
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={handleDownload}
-          className="bg-white hover:bg-emerald-50 text-[#107c41] text-[10.5px] font-black px-3.5 py-2 rounded-lg flex items-center gap-1.5 shadow-sm transition active:scale-97 cursor-pointer border-none"
-        >
-          <Download className="h-3.5 w-3.5" />
-          <span>Ekspor Dokumen Excel (.xls)</span>
-        </button>
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-end shrink-0">
+          <button
+            type="button"
+            onClick={() => setIsSpreadsheetVisible(!isSpreadsheetVisible)}
+            className="bg-white/10 hover:bg-white/20 text-white text-[10.5px] font-black px-3.5 py-2 rounded-lg flex items-center gap-1.5 shadow-sm transition active:scale-97 cursor-pointer border border-white/20"
+            title={isSpreadsheetVisible ? "Sembunyikan Lembar Kerja" : "Tampilkan Lembar Kerja"}
+          >
+            {isSpreadsheetVisible ? (
+              <>
+                <EyeOff className="h-3.5 w-3.5" />
+                <span>Sembunyikan Excel</span>
+              </>
+            ) : (
+              <>
+                <Eye className="h-3.5 w-3.5" />
+                <span>Lihat Excel</span>
+              </>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleDownload}
+            className="bg-white hover:bg-emerald-50 text-[#107c41] text-[10.5px] font-black px-3.5 py-2 rounded-lg flex items-center gap-1.5 shadow-sm transition active:scale-97 cursor-pointer border-none"
+          >
+            <Download className="h-3.5 w-3.5" />
+            <span>Ekspor (.xls)</span>
+          </button>
+        </div>
       </div>
 
-      {/* INSTRUCTIONS MINI RIBBON */}
+      {isSpreadsheetVisible ? (
+        <>
+          {/* INSTRUCTIONS MINI RIBBON */}
       <div className="bg-[#f3f2f1] border-b border-slate-200 px-4 py-2 text-[10px] text-slate-650 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div className="flex items-center gap-1.5 font-medium">
           <span className="font-extrabold text-[#107c41]">PROYEK BINAAN:</span>
@@ -985,6 +1009,8 @@ export function InteractiveFinancialSimulator({
           Ready | Auto Calc Active
         </div>
       </div>
+    </>
+  ) : null}
 
       {/* DETAILED EXPLANATION AREA - EXPLAINING THE NUMBERS AND CALCULATIONS */}
       <div className="bg-white border-t border-slate-200 p-5 md:p-6 text-left">

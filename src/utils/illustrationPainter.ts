@@ -272,7 +272,7 @@ function drawDemographicsIllustration(ctx: CanvasRenderingContext2D, w: number, 
   ctx.lineTo(centerX + Math.cos(sweepAngle) * 130, centerY + Math.sin(sweepAngle) * 130);
   ctx.stroke();
 
-  // Pulsing city indicators (Jakarta, Surabaya, Medan, Makassar etc.)
+  // Ports & hubs
   const ports = [
     { x: w * 0.28, y: h * 0.62, label: "MEDAN" },
     { x: w * 0.35, y: h * 0.72, label: "JAKARTA" },
@@ -445,9 +445,9 @@ function drawFinanceIllustration(ctx: CanvasRenderingContext2D, w: number, h: nu
   // KPI Statistics sidebar cards
   const cardX = w * 0.72;
   const cards = [
-    { title: "ESTIMASI NPV", val: "Rp 12.8M", color: "#00D285", sub: "Internal Rate 14%" },
-    { title: "PAYBACK TERM", val: "2.4 TAHUN", color: "#3B82F6", sub: "Sangat Kelayakan" },
-    { title: "CAPEX METRIC", val: "93.4 SCORE", color: "#A855F7", sub: "Alokasi Efisien" }
+    { title: "ESTIMASI NPV", val: "Rp 12.8M", color: "#00D285", sub: "Tingkat Pengembalian 14%" },
+    { title: "PERIODE PAYBACK", val: "2.4 TAHUN", color: "#3B82F6", sub: "Sangat Layak" },
+    { title: "METRIK CAPEX", val: "SKOR 93.4", color: "#A855F7", sub: "Alokasi Efisien" }
   ];
 
   cards.forEach((c, idx) => {
@@ -489,11 +489,11 @@ function drawLogisticsIllustration(ctx: CanvasRenderingContext2D, w: number, h: 
 
   // Logistics nodes (Hubs / Ports / Intersections)
   const hubs = [
-    { x: w * 0.16, y: mapCenterY - 35, label: "SUMATRA HUB" },
-    { x: w * 0.35, y: mapCenterY + 45, label: "JAKARTA HQ" },
-    { x: w * 0.52, y: mapCenterY + 15, label: "PORT SURABAYA" },
-    { x: w * 0.44, y: mapCenterY - 50, label: "WEST KALIMANTAN" },
-    { x: w * 0.68, y: mapCenterY - 20, label: "SULAWESI PORT" }
+    { x: w * 0.16, y: mapCenterY - 35, label: "HUB SUMATRA" },
+    { x: w * 0.35, y: mapCenterY + 45, label: "MARKAS JAKARTA" },
+    { x: w * 0.52, y: mapCenterY + 15, label: "PELABUHAN SURABAYA" },
+    { x: w * 0.44, y: mapCenterY - 50, label: "KALIMANTAN BARAT" },
+    { x: w * 0.68, y: mapCenterY - 20, label: "PELABUHAN SULAWESI" }
   ];
 
   // Draw connection routes/lanes
@@ -643,9 +643,9 @@ function drawRiskIllustration(ctx: CanvasRenderingContext2D, w: number, h: numbe
 
   // Plot some threats/regulatory risks nodes
   const threatPoints = [
-    { x: radarCenterX - 45, y: radarCenterY - 45, severity: "MEDIUM", label: "Legal Compliance", pulseColor: "rgba(234, 179, 8, 0.3)", color: "#EAB308" },
-    { x: radarCenterX + 60, y: radarCenterY + 40, severity: "HIGH", label: "Environmental ESG", pulseColor: "rgba(239, 68, 68, 0.3)", color: "#EF4444" },
-    { x: radarCenterX - 55, y: radarCenterY + 50, severity: "LOW", label: "Local Permits", pulseColor: "rgba(59, 130, 246, 0.3)", color: "#3B82F6" }
+    { x: radarCenterX - 45, y: radarCenterY - 45, severity: "MEDIUM", label: "Kepatuhan Hukum", pulseColor: "rgba(234, 179, 8, 0.3)", color: "#EAB308" },
+    { x: radarCenterX + 60, y: radarCenterY + 40, severity: "HIGH", label: "ESG Lingkungan", pulseColor: "rgba(239, 68, 68, 0.3)", color: "#EF4444" },
+    { x: radarCenterX - 55, y: radarCenterY + 50, severity: "LOW", label: "Perizinan Daerah", pulseColor: "rgba(59, 130, 246, 0.3)", color: "#3B82F6" }
   ];
 
   threatPoints.forEach((tp, tidx) => {

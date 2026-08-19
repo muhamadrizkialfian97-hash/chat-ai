@@ -719,7 +719,7 @@ export default function ChatPanel({
                                         className="flex items-center gap-2 rounded-full bg-[#5B4DFB] hover:bg-[#4a3ce0] text-white border-none px-4 py-2 text-xs font-bold transition cursor-pointer shadow-lg shadow-indigo-100/30"
                                       >
                                         <Sparkles className="h-4 w-4 text-white animate-pulse" />
-                                        <span>Lihat 14 Pilar</span>
+                                        <span>Lihat 13 Pilar</span>
                                       </button>
                                     )}
 
@@ -820,10 +820,10 @@ export default function ChatPanel({
                                       type="button"
                                       onClick={onOpenRightPillarPanel}
                                       className="flex items-center gap-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 border border-indigo-150 px-2.5 py-1 text-[11px] font-bold text-indigo-700 transition cursor-pointer shadow-3sm"
-                                      title="Buka Panel 14 Pilar Strategis"
+                                      title="Buka Panel 13 Pilar Strategis"
                                     >
                                       <Sparkles className="h-3.5 w-3.5 text-indigo-500" />
-                                      <span>14 Pilar</span>
+                                      <span>13 Pilar</span>
                                     </button>
                                   )}
 
@@ -895,7 +895,7 @@ export default function ChatPanel({
             </div>
           )}
 
-          {/* PRAMA 15 Pillars Selection Menu Ribbon */}
+          {/* PRAMA 13 Pillars Selection Menu Ribbon */}
           <div className="mb-1">
             <p className="text-[10px] text-indigo-700 font-black uppercase tracking-wider font-mono mb-1.5 flex items-center gap-1.5 select-none">
               <Sparkles className="h-3.5 w-3.5 text-indigo-600 animate-pulse" />
@@ -903,12 +903,10 @@ export default function ChatPanel({
             </p>
             <div className="flex gap-1.5 overflow-x-auto pb-1.5 scrollbar-thin scrollbar-thumb-indigo-200 scrollbar-track-transparent touch-pan-x flex-nowrap mask-right">
               {[
-                { label: "New Journal", prompt: "Mari diskusikan mengenai pilar New Journal untuk proyek kita." },
                 { label: "Global/NAT Overview", prompt: "Saya butuh analisis komparatif pilar Global & NAT Overview." },
                 { label: "Market Opportunity", prompt: "Mari bedah celah bisnis pada pilar Market Opportunity proyek ini." },
                 { label: "Financial Strategy", prompt: "Beri saya ulasan finansial lengkap mencakup Capex, Opex, P&L, Cash Flow, dan ROI ideal." },
                 { label: "Supply & Demand", prompt: "Mari rumuskan keseimbangan Supply & Demand pada rantai logistik kita." },
-                { label: "Structure", prompt: "Bagaimana rekomendasi rancangan pilar Structure operasional yang solid?" },
                 { label: "Organization SOP", prompt: "Tolong susun Qualification staf, matrix kompetensi, Output/KPI, beserta draf SOP terbaik." },
                 { label: "Transition Model", prompt: "Rancang strategi pilar Transition Model (Pre-transition, On-transition, dan Post-transition)." },
                 { label: "Go To Market", prompt: "Beri saya rancangan formula Go To Market Strategy yang paling taktis." },

@@ -26,6 +26,8 @@ import {
   generatePillarsForProject,
   parseResponseToPillars,
   extractProjectTitleFromAI,
+  detectAndInferProjectTitleFromText,
+  normalizeProjectTitle,
   getDefaultCompetitorsForProject,
   cleanPillarContent
 } from "./utils/projectDashboardHelper";
@@ -43,6 +45,18 @@ import { PPTPreviewModal } from "./components/PPTPreviewModal";
 import { ExcelPreviewModal } from "./components/ExcelPreviewModal";
 import { PramaFlowchartHub } from "./components/PramaFlowchartHub";
 import { InteractiveFinancialSimulator } from "./components/InteractiveFinancialSimulator";
+import { MarketOpportunityDeepDive } from "./components/MarketOpportunityDeepDive";
+import { RiskManagementDeepDive } from "./components/RiskManagementDeepDive";
+import { GoToMarketDeepDive } from "./components/GoToMarketDeepDive";
+import { SupplyDemandDeepDive } from "./components/SupplyDemandDeepDive";
+import { GlobalNatOverviewDeepDive } from "./components/GlobalNatOverviewDeepDive";
+import { TransitionModelDeepDive } from "./components/TransitionModelDeepDive";
+import { DigitalCoverageDeepDive } from "./components/DigitalCoverageDeepDive";
+import { CacLtvDeepDive } from "./components/CacLtvDeepDive";
+import { OpsModelDeepDive } from "./components/OpsModelDeepDive";
+import { ExecutiveSummaryDashboard } from "./components/ExecutiveSummaryDashboard";
+import { FinancialFocusCards } from "./components/FinancialFocusCards";
+import { TamSamSomFocusCards } from "./components/TamSamSomFocusCards";
 const pramaLogo = "https://lh3.googleusercontent.com/d/1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X";
 
 export interface User {
@@ -271,6 +285,28 @@ export const DASHBOARD_PRESETS = [
     sectionsOverride: null
   },
   {
+    id: "waste",
+    name: "Pengolahan Limbah & B3 (Waste Management Transportation)",
+    title: "Kajian Kelayakan: Transportasi & Pengolahan Limbah Industri B3 (Waste Management)",
+    description: "Analisis logistik pengangkutan dan pengelolaan limbah B3 berizin KLHK & Festronik.",
+    sectionsOverride: {
+      1: "### 1. Global / National (NAT) Overview\n\n**Regulasi Pengelolaan Lingkungan Hidup KLHK:**\nKajian kepatuhan terhadap UU No. 18 Tahun 2008 tentang Pengelolaan Sampah dan PP No. 22 Tahun 2021 tentang Penyelenggaraan Perlindungan dan Pengelolaan Lingkungan Hidup, serta integrasi pelacakan manifest elektronik Festronik Kementerian Lingkungan Hidup dan Kehutanan.",
+      2: "### 2. Market Opportunity\n\n**Pasar Layanan Limbah Industri B3:**\nPermintaan yang sangat masif dari pabrik manufaktur, smelter, dan fasilitas kesehatan untuk bermitra dengan transporter berizin resmi KLHK demi menjamin kepatuhan audit K3LL dan standar ESG perusahaan multinasional.",
+      3: "### 3. Financial Analysis\n\n**Proyeksi Capex & Opex Waste Management:**\n\n**A. Capital Expenditure (Capex):**\n* Pembelian 10 Unit Tronton Tangki & Box Khusus B3: **Rp 14.500.000.000**\n* Perangkat IoT Festronik & Spill-Kit Darurat: **Rp 350.000.000**\n* *Total Capex:* **Rp 14.850.000.000**\n\n**B. Opex Operasional Bulanan:**\n* Pemeliharaan Tangki & Sertifikasi Kalibrasi KLHK: **Rp 65.000.000**\n* BBM & Insentif Keselamatan Driver: **Rp 120.000.000**\n* *Total Opex:* **Rp 185.000.000 / Bulan**\n\n**C. Metrik Finansial:**\n* Payback Period (PBP): **2.3 Tahun**\n* ROI Proyek: **42.8%**\n* IRR: **33.5%**",
+      4: "### 4. Supply & Demand\n\n**Kebutuhan Transporter Berizin Resmi:**\nSisi suplai operator truk tangki berizin resmi KLHK sangat terbatas dibandingkan volume limbah B3 industri yang terus melonjak, menciptakan peluang tarif margin tinggi bagi Pancaran Group.",
+      5: "### 5. Organization (Qualification, Skill, Output/KPI, SOP)\n\n**Kualifikasi Tim Operasional B3:**\n* Pengemudi: Wajib memiliki sertifikat penanganan Bahan Berbahaya dan Beracun (B3), pelatihan tanggap darurat (Spill Response), serta pemahaman e-manifest Festronik.\n* Supervisor HSE: Sertifikasi K3 Umum & Lingkungan Hidup.",
+      6: "### 6. Transition Model (Pre-On-Post)\n\n**Tahap Transisi Pengangkutan Limbah:**\n* Pre-Onboarding: Audit kelayakan fisik tangki dan izin trayek Dishub-KLHK.\n* Onboarding: Sinkronisasi e-manifest Festronik real-time antara pabrik penghasil dan fasilitas pengolahan akhir.\n* Post-Onboarding: Evaluasi bulanan audit K3LL.",
+      7: "### 7. Go-To-Market (GTM) Strategy\n\n**Strategi Penetrasi Korporat ESG:**\nMenawarkan kontrak layanan terintegrasi (End-to-End Waste Logistics Solution) dengan garansi kepatuhan hukum 100% dan pelaporan ESG otomatis bagi klien industri multinasional.",
+      8: "### 8. Ops Model (Flow Process, Workflow Diagram, SLA)\n\n**SOP Penanganan Muatan B3:**\n* Pengecekan segel pengaman sebelum truk diberangkatkan.\n* Waktu tanggap darurat tumpahan (Spill Response Time): Maksimal 30 menit di titik darurat.",
+      9: "### 9. Risk Management\n\n**Mitigasi Risiko Lingkungan:**\n* Risiko kebocoran limbah cair di jalan: Penyediaan alat pelindung tumpahan (Spill-Kit), katup darurat otomatis, dan asuransi pertanggungjawaban pencemaran lingkungan (Environmental Liability Insurance).",
+      10: "### 10. Digital Coverage (Tools, Method, Impact, Automation)\n\n**Sistem Telemetri & Festronik:**\nPemberlakuan pelacakan GPS satelit terkoneksi langsung dengan sistem pelaporan elektronik manifes KLHK untuk transparansi penuh.",
+      11: "### 11. Competitor\n\n**Posisi Pesaing:**\nSebagian besar pesaing kecil mengandalkan armada konvensional tanpa izin KLHK resmi. Pancaran unggul dalam kepatuhan hukum penuh dan keandalan armada berstandar tinggi.",
+      12: "### 12. TAM, SAM, SOM\n\n• TAM: Rp 3.8 Triliun (potensi pasar pengolahan dan angkutan limbah B3 industri nasional)\n• SAM: Rp 1.1 Triliun (koridor industri Jawa & Sumatera)\n• SOM: Rp 240 Miliar (target pangsa pasar logistik limbah Pancaran Group)",
+      13: "### 13. Customer Acquisition Cost (CAC) & Lifetime Value (LTV)\n\n• CAC: Rp 45.000.000\n• LTV Kontrak: Rp 2.200.000.000 per korporasi klien pertahun\n• Rasio LTV/CAC: 48.8x (Sangat Tinggi karena tingginya loyalitas kontrak limbah berizin)",
+      14: "### 14. Kesimpulan & Rekomendasi Keputusan\n\n**Kesimpulan Akhir:**\nDengan proyeksi ROI 42.8% dan dukungan regulasi KLHK yang ketat, proyek Transportasi & Pengolahan Limbah B3 dinyatakan **SANGAT LAYAK (GO)** untuk segera dieksekusi.\n\n**Rekomendasi Keputusan Utama:**\n1. Selesaikan perpanjangan seluruh izin trayek khusus tangki B3 KLHK.\n2. Latih seluruh awak armada dengan modul tanggap darurat tumpahan."
+    }
+  },
+  {
     id: "coal",
     name: "Logistik Batu Bara & Mineral Berat (Coal & Bulk Cargo)",
     title: "Analisis Kelayakan: Transportasi Koridor Batu Bara Swarnadwipa",
@@ -280,16 +316,16 @@ export const DASHBOARD_PRESETS = [
       2: "### 2. Market Opportunity\n\n**Rute Logistik Strategis Batubara:**\nTerdapat kesenjangan ketersediaan transporter dengan indeks keselamatan HSE standar internasional untuk rute hauling dari mulut tambang batubara (Sumatera Selatan / Kalimantan Timur) ke stockpile pelabuhan pemuatan.",
       3: "### 3. Financial Analysis\n\n**Proyeksi Capex & Opex Batubara Swarnadwipa:**\n\n**A. Capital Expenditure (Capex):**\n* Pembelian 15 Unit Tipper Truck Heavy Duty: **Rp 18.500.000.000**\n* Fasilitas Bengkel Penyelamat Lapangan: **Rp 1.200.000.005**\n* *Total Capex:* **Rp 19.700.000.005**\n\n**B. Opex Bulanan:**\n* BBM Solar Industri & Pelumas Spesial: **Rp 450.000.000**\n* Gaji Supir Hauling Lapangan: **Rp 120.000.000**\n* Ban & Suku Cadang Keras: **Rp 110.000.050**\n* *Total Opex:* **Rp 680.000.000 / Bulan**\n\n**C. Kelayakan Finansial:**\n* Payback Period (PBP): **3.1 Tahun**\n* ROI Proyek: **38.5%**\n* IRR: **29.1%**",
       4: "### 4. Supply & Demand\n\n**Kapasitas Pengangkutan Curah Tambang:**\nPermintaan sangat tinggi dari pemilik PKP2B untuk mengamankan slot angkutan sebelum musim penghujan tiba. Sisi suplai kontainer dump-tipper berbadan hukum resmi sangat terbatas.",
-      5: "### 5. Structure & Value Chain\n\n**Closed-Loop Hauling Ecosystem:**\n1. Loading Point di stockpile mulut tambang batubara.\n2. Hauling Road khusus non-umum standar muatan gandar 12 ton.\n3. Discharge Point di jembatan timbang konveyor pelabuhan tongkang laut.",
-      6: "### 6. Organizational Scope\n\n**Organisasi Hauling Lapangan:**\n* Pengemudi: Memiliki SIM Barkas Heavy-Duty, sertifikasi Kesehatan Kerja B3, dan sertifikat Defensive Driving Course tambang.\n* Supervisor Safety Alat Berat: Kualifikasi K3 Pertambangan (Pengawas Operasional Pertama - POP).",
-      7: "### 7. Transition Model (Pre-On-Post)\n\n**Tahap Transisi Deployment:**\n* Pre-Onboarding: Pengecekan kontur kelandaian jalan hauling tambang.\n* Onboarding: Pembagian rute shift sopir gilir 12 jam.\n* Post-Onboarding: Monitoring real-time cycle time armada batubara via IoT panel.",
-      8: "### 8. Go-To-Market (GTM) Strategy\n\n**Penetrasi B2B Minerba:**\nMenandatangani kontrak jangka panjang Minimum Take-or-Pay (MToP) dengan jaminan utilisasi armada di atas 85% bersama perusahaan tambang batubara pemegang IPPKH.",
-      9: "### 9. Operating Model\n\n**Prosedur Alur Kerja Dispatching:**\nSistem konvoi armada (Platooning) dengan batas kecepatan 40km/jam di rute hauling utama untuk menghindari debu tebal dan risiko senggolan alat berat.",
-      10: "### 10. Risk Management Matrix\n\n**Manajemen Risiko Hauling:**\n* Risiko amblas di rute hauling berlumpur: Penyediaan unit bulldoser rescue stand-by di titik kritis.\n* Risiko polusi debu ke warga sekitar: Penyiraman jalan menggunakan water tank truck berkala 3x sehari.",
-      11: "### 11. Digital Coverage & Logistics Industry 4.0\n\n**Teknologi Pelacakan Minerba:**\nPenerapan sensor pengukur suspensi muatan otomatis untuk mencegah muatan berlebih (Anti-ODOL sensor) dan kamera anti-mengantuk (fatigue sensor) pada kemudi pengemudi.",
-      12: "### 12. Competitor Landscapes\n\n**Keunggulan Pancaran:**\nTeruji dalam sistem manajemen terintegrasi armada besar yang kokoh, memiliki jaminan lisensi hukum dan asuransi muatan penuh (Cargo Liability) yang dihindari oleh transporter liar.",
-      13: "### 13. Market Sizing (TAM, SAM, SOM)\n\n• TAM: Rp 4.5 Triliun (potensi logistik mineral curah domestik)\n• SAM: Rp 1.2 Triliun (pasar angkutan hauling Sumatera bagian selatan)\n• SOM: Rp 280 Miliar (target kontrak tahunan armada tipper Pancaran Swarnadwipa)",
-      14: "### 14. Customer Acquisition Cost (CAC) & Lifetime Value (LTV)\n\n• CAC: Rp 120.000.000 (proses tender pertambangan ketat)\n• LTV Kontrak: Rp 2.400.000.000 per key customer\n• Rasio LTV/CAC: 20.0x (Sangat Menguntungkan karena LTV kontrak tambang berskala raksasa)"
+      5: "### 5. Organization (Qualification, Skill, Output/KPI, SOP)\n\n**Organisasi Hauling Lapangan:**\n* Pengemudi: Memiliki SIM Barkas Heavy-Duty, sertifikasi Kesehatan Kerja B3, dan sertifikat Defensive Driving Course tambang.\n* Supervisor Safety Alat Berat: Kualifikasi K3 Pertambangan (Pengawas Operasional Pertama - POP).",
+      6: "### 6. Transition Model (Pre-On-Post)\n\n**Tahap Transisi Deployment:**\n* Pre-Onboarding: Pengecekan kontur kelandaian jalan hauling tambang.\n* Onboarding: Pembagian rute shift sopir gilir 12 jam.\n* Post-Onboarding: Monitoring real-time cycle time armada batubara via IoT panel.",
+      7: "### 7. Go-To-Market (GTM) Strategy\n\n**Penetrasi B2B Minerba:**\nMenandatangani kontrak jangka panjang Minimum Take-or-Pay (MToP) dengan jaminan utilisasi armada di atas 85% bersama perusahaan tambang batubara pemegang IPPKH.",
+      8: "### 8. Ops Model (Flow Process, Workflow Diagram, SLA)\n\n**Prosedur Alur Kerja Dispatching:**\nSistem konvoi armada (Platooning) dengan batas kecepatan 40km/jam di rute hauling utama untuk menghindari debu tebal dan risiko senggolan alat berat.",
+      9: "### 9. Risk Management\n\n**Manajemen Risiko Hauling:**\n* Risiko amblas di rute hauling berlumpur: Penyediaan unit bulldoser rescue stand-by di titik kritis.\n* Risiko polusi debu ke warga sekitar: Penyiraman jalan menggunakan water tank truck berkala 3x sehari.",
+      10: "### 10. Digital Coverage (Tools, Method, Impact, Automation)\n\n**Teknologi Pelacakan Minerba:**\nPenerapan sensor pengukur suspensi muatan otomatis untuk mencegah muatan berlebih (Anti-ODOL sensor) dan kamera anti-mengantuk (fatigue sensor) pada kemudi pengemudi.",
+      11: "### 11. Competitor\n\n**Keunggulan Pancaran:**\nTeruji dalam sistem manajemen terintegrasi armada besar yang kokoh, memiliki jaminan lisensi hukum dan asuransi muatan penuh (Cargo Liability) yang dihindari oleh transporter liar.",
+      12: "### 12. TAM, SAM, SOM\n\n• TAM: Rp 4.5 Triliun (potensi logistik mineral curah domestik)\n• SAM: Rp 1.2 Triliun (pasar angkutan hauling Sumatera bagian selatan)\n• SOM: Rp 280 Miliar (target kontrak tahunan armada tipper Pancaran Swarnadwipa)",
+      13: "### 13. Customer Acquisition Cost (CAC) & Lifetime Value (LTV)\n\n• CAC: Rp 120.000.000 (proses tender pertambangan ketat)\n• LTV Kontrak: Rp 2.400.000.000 per key customer\n• Rasio LTV/CAC: 20.0x (Sangat Menguntungkan karena LTV kontrak tambang berskala raksasa)",
+      14: "### 14. Kesimpulan & Rekomendasi Keputusan\n\n**Kesimpulan Akhir:**\nBerdasarkan kajian komprehensif, proyek hauling batubara Swarnadwipa dinyatakan **SANGAT LAYAK (GO)** untuk dijalankan dengan proyeksi ROI 38.5%.\n\n**Rekomendasi Keputusan Utama:**\n1. Amankan kontrak MToP multitahun sebelum fase operasional penuh.\n2. Lakukan standarisasi K3 tambang ketat untuk meminimalisir risiko amblas di rute hauling."
     }
   },
   {
@@ -302,16 +338,16 @@ export const DASHBOARD_PRESETS = [
       2: "### 2. Market Opportunity\n\n**Pertumbuhan Logistik Suhu Terkontrol:**\nPemulihan sektor FMCG dan lonjakan konsumsi obat-obatan memerlukan transporter bersertifikat BPOM dengan fitur termometer cloud-realtime guna memitigasi risiko pembusukan bahan baku di transit.",
       3: "### 3. Financial Analysis\n\n**Proyeksi Capex & Opex Cold Chain:**\n\n**A. Capital Expenditure (Capex):**\n* Pembelian 8 unit Reefer Box ThermoKing 6-Wheeler: **Rp 6.400.000.000**\n* Perangkat Pengontrol Suhu IoT Telematika: **Rp 220.005.000**\n* *Total Capex:* **Rp 6.620.000.000**\n\n**B. Opex Kontrol Suhu Bulanan:**\n* Konsumsi Solar Tambahan untuk Generator Reefer: **Rp 95.000.000**\n* Perawatan Kompresor Pendingin Berkala: **Rp 35.000.000**\n* Gaji Driver Terlatih Suhu: **Rp 48.000.000**\n* *Total Opex:* **Rp 178.000.000 / Bulan**\n\n**C. Metrik ROI:**\n* Payback Period (PBP): **2.4 Tahun**\n* ROI Proyek: **41.2%**\n* IRR: **31.3%**",
       4: "### 4. Supply & Demand\n\n**Suplai Reefer Terbatas:**\nSuplai unit berpendingin berkualitas tinggi yang memiliki kalibrasi suhu berkala BPOM sangatlah minim. Kebanyakan adalah truk boks kering biasa yang diubah seadanya. Permintaan dari produsen es krim dan vaksin internasional melonjak hebat.",
-      5: "### 5. Structure & Value Chain\n\n**Sirkulasi Distribusi Rantai Dingin:**\n1. Cold Storage Pengirim (Suhu Konstan -20C).\n2. Loading Gate Tertutup (Mencegah Kondensasi).\n3. Pelayaran Penyebrangan Ketat Ketapang-Gilimanuk.\n4. Drop-off di Depo Retailer Bali.",
-      6: "### 6. Organizational Scope\n\n**Struktur Staf Pengatur Suhu:**\n* Supervisor Gudang Beku: Bersertifikat CDOB Farmasi.\n* Pengemudi Reefer: Menguasai pengaturan kelistrikan generator genset box reefer dan penanganan alarm penyimpangan suhu di jalan.",
-      7: "### 7. Transition Model (Pre-On-Post)\n\n**Transition Deployment Plan:**\n* Pre-Onboarding: Kalibrasi sensor suhu oleh badan meteorologi independen.\n* Onboarding: Uji coba pengiriman boks reefer kosong untuk memastikan stabilitas suhu di dalam boks selama 12 jam perjalanan.\n* Post-Onboarding: Pengiriman perdana muatan cokelat premium.",
-      8: "### 8. Go-To-Market (GTM) Strategy\n\n**Fokus Pasar Pabrikan Boga & Obat-obatan:**\nMenyediakan Layanan Garansi Zero-Defect (Suhu Konstan atau Uang Kembali) untuk memenangkan kontrak distribusi dengan merk farmasi besar multinasional.",
-      9: "### 9. Operating Model\n\n**SOP SLA Distribusi Boga Segar:**\n* Batas Deviasi Suhu Box: **Maksimal ±2°C** dari target suhu setpoint.\n* Waktu Pemuatan Kargo: **Maksimal 45 Menit** semenjak pintu gudang pendingin dibuka.",
-      10: "### 10. Risk Management Matrix\n\n**Mitigasi Kegagalan Pendinginan:**\n* Risiko genset reefer mati mendadak: Pemasangan genset cadangan (Dual-Power Genset backup) terpasang di sasis bawah truk.\n* Risiko kemacetan panjang di pelabuhan feri: Penyediaan suplai daya listrik darat di pelabuhan penyeberangan.",
-      11: "### 11. Digital Coverage & Logistics Industry 4.0\n\n**Sistem Telemetri Suhu Real-time:**\nIntegrasi API dengan dashboard pengirim yang memperlihatkan grafik fluktuasi grafik suhu boks reefer setiap 5 menit secara otomatis via satelit GPS.",
-      12: "### 12. Competitor Landscapes\n\n**Analisis Pembanding Pasar:**\nPesaing lokal tidak memiliki sistem pelaporan suhu digital terpusat secara langsung, memberikan Pancaran keunggulan teknologi mutlak untuk memenuhi persyaratan jaminan kualitas BPOM.",
-      13: "### 13. Market Sizing (TAM, SAM, SOM)\n\n• TAM: Rp 2.8 Triliun (pasar cold chain nasional Indonesia)\n• SAM: Rp 820 Miliar (distribusi farmasi & boga beku koridor Jawa-Bali)\n• SOM: Rp 160 Miliar (target perolehan kontrak logistik FMCG reefer Pancaran)",
-      14: "### 14. Customer Acquisition Cost (CAC) & Lifetime Value (LTV)\n\n• CAC: Rp 65.000.000\n• LTV Kontrak: Rp 980.000.000 per tahun kontrak industri makanan\n• Rasio LTV/CAC: 15.0x karena retensi klien farmasi bersifat sangat loyal jangka panjang"
+      5: "### 5. Organization (Qualification, Skill, Output/KPI, SOP)\n\n**Struktur Staf Pengatur Suhu:**\n* Supervisor Gudang Beku: Bersertifikat CDOB Farmasi.\n* Pengemudi Reefer: Menguasai pengaturan kelistrikan generator genset box reefer dan penanganan alarm penyimpangan suhu di jalan.",
+      6: "### 6. Transition Model (Pre-On-Post)\n\n**Transition Deployment Plan:**\n* Pre-Onboarding: Kalibrasi sensor suhu oleh badan meteorologi independen.\n* Onboarding: Uji coba pengiriman boks reefer kosong untuk memastikan stabilitas suhu di dalam boks selama 12 jam perjalanan.\n* Post-Onboarding: Pengiriman perdana muatan cokelat premium.",
+      7: "### 7. Go-To-Market (GTM) Strategy\n\n**Fokus Pasar Pabrikan Boga & Obat-obatan:**\nMenyediakan Layanan Garansi Zero-Defect (Suhu Konstan atau Uang Kembali) untuk memenangkan kontrak distribusi dengan merk farmasi besar multinasional.",
+      8: "### 8. Ops Model (Flow Process, Workflow Diagram, SLA)\n\n**SOP SLA Distribusi Boga Segar:**\n* Batas Deviasi Suhu Box: **Maksimal ±2°C** dari target suhu setpoint.\n* Waktu Pemuatan Kargo: **Maksimal 45 Menit** semenjak pintu gudang pendingin dibuka.",
+      9: "### 9. Risk Management\n\n**Mitigasi Kegagalan Pendinginan:**\n* Risiko genset reefer mati mendadak: Pemasangan genset cadangan (Dual-Power Genset backup) terpasang di sasis bawah truk.\n* Risiko kemacetan panjang di pelabuhan feri: Penyediaan suplai daya listrik darat di pelabuhan penyeberangan.",
+      10: "### 10. Digital Coverage (Tools, Method, Impact, Automation)\n\n**Sistem Telemetri Suhu Real-time:**\nIntegrasi API dengan dashboard pengirim yang memperlihatkan grafik fluktuasi grafik suhu boks reefer setiap 5 menit secara otomatis via satelit GPS.",
+      11: "### 11. Competitor\n\n**Analisis Pembanding Pasar:**\nPesaing lokal tidak memiliki sistem pelaporan suhu digital terpusat secara langsung, memberikan Pancaran keunggulan teknologi mutlak untuk memenuhi persyaratan jaminan kualitas BPOM.",
+      12: "### 12. TAM, SAM, SOM\n\n• TAM: Rp 2.8 Triliun (pasar cold chain nasional Indonesia)\n• SAM: Rp 820 Miliar (distribusi farmasi & boga beku koridor Jawa-Bali)\n• SOM: Rp 160 Miliar (target perolehan kontrak logistik FMCG reefer Pancaran)",
+      13: "### 13. Customer Acquisition Cost (CAC) & Lifetime Value (LTV)\n\n• CAC: Rp 65.000.000\n• LTV Kontrak: Rp 980.000.000 per tahun kontrak industri makanan\n• Rasio LTV/CAC: 15.0x karena retensi klien farmasi bersifat sangat loyal jangka panjang",
+      14: "### 14. Kesimpulan & Rekomendasi Keputusan\n\n**Kesimpulan Akhir:**\nBerdasarkan jaminan integritas suhu dan sistem telemetri cloud, ekspansi cold chain dinyatakan **SANGAT LAYAK (GO)** untuk dijalankan guna meraih pangsa pasar farmasi dan boga premium.\n\n**Rekomendasi Keputusan Utama:**\n1. Selesaikan kalibrasi sensor suhu sebelum penandatanganan SLA komersial.\n2. Terapkan SOP respon alarm deviasi suhu < 15 menit."
     }
   },
   {
@@ -324,16 +360,16 @@ export const DASHBOARD_PRESETS = [
       2: "### 2. Market Opportunity\n\n**Shuttle Peti Kemas Hinterland:**\nArus bongkar muat peti kemas ekspor-impor yang terus tumbuh membutuhkan jaminan transportasi shuttle kontainer terjadwal dari kaasan pabrik Karawang secara efisien tanpa penundaan di depo penumpukan.",
       3: "### 3. Financial Analysis\n\n**Proyeksi Keuangan Port Intermodal:**\n\n**A. Capital Expenditure (Capex):**\n* Pembelian 10 Unit Skeletal Trailer Chassis Container: **Rp 4.200.000.000**\n* Sistem ERP Depo & Terminal Operating System (TOS): **Rp 350.000.000**\n* *Total Capex:* **Rp 4.550.000.000**\n\n**B. Opex Penanganan Depo Bulanan:**\n* Tarif Bongkar Muat (LOLO) & Stack Depo: **Rp 85.000.000**\n* BBM Truk Penarik Trailer: **Rp 160.000.000**\n* Gaji Driver & Staf Administrasi Bea Cukai: **Rp 52.000.000**\n* *Total Opex:* **Rp 297.000.000 / Bulan**\n\n**C. Analisis Kelayakan:**\n* Payback Period (PBP): **2.1 Tahun**\n* Return on Investment (ROI): **44.5%**\n* IRR: **32.8%**",
       4: "### 4. Supply & Demand\n\n**Kebutuhan Tinggi Depo Terintegrasi:**\nDepo penumpukan peti kemas yang memiliki integrasi digital langsung dengan jadwal keberangkatan kapal laut sangat dicari oleh perusahaan ekportir raksasa untuk menghindari biaya denda keterlambatan penumpukan (Demurrage).",
-      5: "### 5. Structure & Value Chain\n\n**Hinterland-to-Port Value Chain:**\n1. Penjemputan peti kemas kosong di depo kargo.\n2. Pemuatan barang ekspor di gudang pabrik.\n3. Pengantaran peti kemas penuh melewati jalan tol khusus pelabuhan.\n4. Pembongkaran di terminal peti kemas Tanjung Priok (JICT).",
-      6: "### 6. Organizational Scope\n\n**Staf Kepabeanan & Lapangan:**\n* Ekspedisi Port Specialist: Menguasai manajemen dokumen ekspor-impor (Bill of Lading, PEB, PIB, Bea Cukai SPJM/SPJK).\n* Driver Trailer 40 Feet: Terampil bermanuver di area sempit terminal pelabuhan.",
-      7: "### 7. Transition Model (Pre-On-Post)\n\n**Transition Milestones:**\n* Pre-Onboarding: Pendaftaran nomor registrasi transporter digital di gerbang otomatis JICT.\n* Onboarding: Pembukaan jalur shuttle terjadwal harian Karawang-Tanjung Priok.\n* Post-Onboarding: Analisis otomatis utilisasi kapasitas angkut trailer ekspor.",
-      8: "### 8. Go-To-Market (GTM) Strategy\n\n**Aliansi Bersama Shipping Lines:**\nMenandatangani kontrak pengangkutan satu paket (Through Bill of Lading) bersama operator pelayaran kapal laut global (seperti Maersk / MSC) untuk menyedot kargo langsung dari pemilik barang.",
-      9: "### 9. Operating Model\n\n**SOP Dwelling Time & SLA:**\n* SLA Penarikan Kontainer dari Terminal: **Maksimal 3 Jam** sejak dokumen Bea Cukai keluar bebas SPPB.\n* Batas Kecepatan Trailer di Depo: **Maksimal 15 km/jam** keselamatan mutlak.",
-      10: "### 10. Risk Management Matrix\n\n**Manajemen Risiko Kemacetan Gerbang Tol Port:**\n* Risiko keterlambatan masuk closing-time kapal: Mitigasi dengan rute alternatif malam hari khusus dan penempatan depo buffer dekat gerbang pelabuhan.",
-      11: "### 11. Digital Coverage & Logistics Industry 4.0\n\n**Integrasi Sistem Inaportnet:**\nPenerapan sistem scan barcode gerbang otomatis (Gate RFID Automatic Recognition) untuk mempercepat proses truk masuk depo tanpa sentuhan dokumen fisik.",
-      12: "### 12. Competitor Landscapes\n\n**Analisis Peta Persaingan:**\nArmada Pancaran Group yang melimpah memberikan kepastian ketersediaan unit trailer 40 feet kapan pun (Instant Truck Availability), mengungguli perusahaan ekspedisi skala kecil.",
-      13: "### 13. Market Sizing (TAM, SAM, SOM)\n\n• TAM: Rp 6.2 Triliun (volume angkutan peti kemas nasional ekspor-impor)\n• SAM: Rp 1.8 Triliun (koridor pelabuhan Tanjung Priok - Jawa Barat hinterland)\n• SOM: Rp 320 Miliar (target raihan pangsa pasar shuttle kontainer Pancaran Group)",
-      14: "### 14. Customer Acquisition Cost (CAC) & Lifetime Value (LTV)\n\n• CAC: Rp 35.000.000\n• LTV Kontrak: Rp 3.500.000.000 per key customer pertahun\n• Rasio LTV/CAC: 100x (Sangat Fantastis karena volume pengiriman rutin bulanan berkelanjutan)"
+      5: "### 5. Organization (Qualification, Skill, Output/KPI, SOP)\n\n**Staf Kepabeanan & Lapangan:**\n* Ekspedisi Port Specialist: Menguasai manajemen dokumen ekspor-impor (Bill of Lading, PEB, PIB, Bea Cukai SPJM/SPJK).\n* Driver Trailer 40 Feet: Terampil bermanuver di area sempit terminal pelabuhan.",
+      6: "### 6. Transition Model (Pre-On-Post)\n\n**Transition Milestones:**\n* Pre-Onboarding: Pendaftaran nomor registrasi transporter digital di gerbang otomatis JICT.\n* Onboarding: Pembukaan jalur shuttle terjadwal harian Karawang-Tanjung Priok.\n* Post-Onboarding: Analisis otomatis utilisasi kapasitas angkut trailer ekspor.",
+      7: "### 7. Go-To-Market (GTM) Strategy\n\n**Aliansi Bersama Shipping Lines:**\nMenandatangani kontrak pengangkutan satu paket (Through Bill of Lading) bersama operator pelayaran kapal laut global (seperti Maersk / MSC) untuk menyedot kargo langsung dari pemilik barang.",
+      8: "### 8. Ops Model (Flow Process, Workflow Diagram, SLA)\n\n**SOP Dwelling Time & SLA:**\n* SLA Penarikan Kontainer dari Terminal: **Maksimal 3 Jam** sejak dokumen Bea Cukai keluar bebas SPPB.\n* Batas Kecepatan Trailer di Depo: **Maksimal 15 km/jam** keselamatan mutlak.",
+      9: "### 9. Risk Management\n\n**Manajemen Risiko Kemacetan Gerbang Tol Port:**\n* Risiko keterlambatan masuk closing-time kapal: Mitigasi dengan rute alternatif malam hari khusus dan penempatan depo buffer dekat gerbang pelabuhan.",
+      10: "### 10. Digital Coverage (Tools, Method, Impact, Automation)\n\n**Integrasi Sistem Inaportnet:**\nPenerapan sistem scan barcode gerbang otomatis (Gate RFID Automatic Recognition) untuk mempercepat proses truk masuk depo tanpa sentuhan dokumen fisik.",
+      11: "### 11. Competitor\n\n**Analisis Peta Persaingan:**\nArmada Pancaran Group yang melimpah memberikan kepastian ketersediaan unit trailer 40 feet kapan pun (Instant Truck Availability), mengungguli perusahaan ekspedisi skala kecil.",
+      12: "### 12. TAM, SAM, SOM\n\n• TAM: Rp 6.2 Triliun (volume angkutan peti kemas nasional ekspor-impor)\n• SAM: Rp 1.8 Triliun (koridor pelabuhan Tanjung Priok - Jawa Barat hinterland)\n• SOM: Rp 320 Miliar (target raihan pangsa pasar shuttle kontainer Pancaran Group)",
+      13: "### 13. Customer Acquisition Cost (CAC) & Lifetime Value (LTV)\n\n• CAC: Rp 35.000.000\n• LTV Kontrak: Rp 3.500.000.000 per key customer pertahun\n• Rasio LTV/CAC: 100x (Sangat Fantastis karena volume pengiriman rutin bulanan berkelanjutan)",
+      14: "### 14. Kesimpulan & Rekomendasi Keputusan\n\n**Kesimpulan Akhir:**\nDengan proyeksi ROI 44.5% dan status kemitraan penarikan JICT otomatis, proyek Port Intermodal Tanjung Priok dinyatakan **SANGAT LAYAK (GO)** untuk segera dioperasikan.\n\n**Rekomendasi Keputusan Utama:**\n1. Selesaikan pendaftaran nomor registrasi digital gantry sebelum pembukaan gerbang rute.\n2. Lobi aliansi shipping lines Maersk / MSC untuk kontrak angkut terusan."
     }
   },
   {
@@ -346,16 +382,16 @@ export const DASHBOARD_PRESETS = [
       2: "### 2. Market Opportunity\n\n[Tulis riset pasar, dan ceruk persaingan di sini...]",
       3: "### 3. Financial Analysis\n\n**A. Capital Expenditure (Capex):**\n* [Tulis rincian capex di sini...]\n\n**B. Operational Expenditure (Opex) Bulanan:**\n* [Tulis rincian opex di sini...]\n\n**C. Proyeksi P&L & ROI:**\n* [Tulis perhitungan kelayakan modal di sini...]",
       4: "### 4. Supply & Demand\n\n[Tulis ulasan penawaran kompetitor versus jumlah permintaan industri di sini...]",
-      5: "### 5. Structure & Value Chain\n\n[Tulis bagan struktur rantai nilai layanan logistik Anda di sini...]",
-      6: "### 6. Organizational Scope\n\n[Tulis syarat keahlian staf, kualifikasi pengemudi, standar SOP, dan metrik KPI di sini...]",
-      7: "### 7. Transition Model (Pre-On-Post)\n\n[Tulis milestones tahapan persiapan, onboarding rute, dan evaluasi berkelanjutan di sini...]",
-      8: "### 8. Go-To-Market (GTM) Strategy\n\n[Tulis strategi pemasaran B2B, lobi kontrak multitahun, dan rencana penetrasi pasar di sini...]",
-      9: "### 9. Operating Model\n\n[Tulis workflow dispatch rutin, pelacakan armada, dan tabel target SLA operasi di sini...]",
-      10: "### 10. Risk Management Matrix\n\n[Tulis matriks bahaya kecelakaan, kebocoran, tumpahan, dan langkah mitigasi darurat di sini...]",
-      11: "### 11. Digital Coverage & Logistics Industry 4.0\n\n[Tulis pemanfaatan sensor IoT, digitalisasi surat jalan, dan otomasi platform cloud ERP di sini...]",
-      12: "### 12. Competitor Landscapes\n\n[Tulis komparasi posisi bisnis Anda dengan kompetitor lokal/global di sini...]",
-      13: "### 13. Market Sizing (TAM, SAM, SOM)\n\n[Tulis hitungan nominal pasar TAM, SAM, SOM di sini...]",
-      14: "### 14. Customer Acquisition Cost (CAC) & Lifetime Value (LTV)\n\n[Tulis analisis kesehatan rasio investasi penjualan CAC berbanding profit LTV di sini...]"
+      5: "### 5. Organization (Qualification, Skill, Output/KPI, SOP)\n\n[Tulis syarat keahlian staf, kualifikasi pengemudi, standar SOP, dan metrik KPI di sini...]",
+      6: "### 6. Transition Model (Pre-On-Post)\n\n[Tulis milestones tahapan persiapan, onboarding rute, dan evaluasi berkelanjutan di sini...]",
+      7: "### 7. Go-To-Market (GTM) Strategy\n\n[Tulis strategi pemasaran B2B, lobi kontrak multitahun, dan rencana penetrasi pasar di sini...]",
+      8: "### 8. Ops Model (Flow Process, Workflow Diagram, SLA)\n\n[Tulis workflow dispatch rutin, pelacakan armada, dan tabel target SLA operasi di sini...]",
+      9: "### 9. Risk Management\n\n[Tulis matriks bahaya kecelakaan, kebocoran, tumpahan, dan langkah mitigasi darurat di sini...]",
+      10: "### 10. Digital Coverage (Tools, Method, Impact, Automation)\n\n[Tulis pemanfaatan sensor IoT, digitalisasi surat jalan, dan otomasi platform cloud ERP di sini...]",
+      11: "### 11. Competitor\n\n[Tulis komparasi posisi bisnis Anda dengan kompetitor lokal/global di sini...]",
+      12: "### 12. TAM, SAM, SOM\n\n[Tulis hitungan nominal pasar TAM, SAM, SOM di sini...]",
+      13: "### 13. Customer Acquisition Cost (CAC) & Lifetime Value (LTV)\n\n[Tulis analisis kesehatan rasio investasi penjualan CAC berbanding profit LTV di sini...]",
+      14: "### 14. Kesimpulan & Rekomendasi Keputusan\n\n[Tulis kesimpulan akhir penentu kebijakan strategis GO atau RE-EVALUATION di sini...]"
     }
   }
 ];
@@ -1382,7 +1418,7 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
 
       let fallbackText = "";
       if (isGenuineAPIError) {
-        const fallbackPayload = generateLocalSmartResponse(trimmedText, "HSSE Swarnadwipa", robotChatMessages);
+        const fallbackPayload = generateLocalSmartResponse(trimmedText, "HSSE Swarnadwipa", robotChatMessages, dashboardProjectTitle);
         let warningHeader = "";
         if (friendlyStr.includes("RESOURCE_EXHAUSTED") || friendlyStr.includes("429")) {
           warningHeader = `> ⚠️ **PEMBERITAHUAN:** *Batas kuota harian server bersama terlampaui (RESOURCE_EXHAUSTED 429).* Menyajikan asisten robot menggunakan **Modul Analisis Logistik Internal PRAMA**.\n\n`;
@@ -1393,7 +1429,7 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
         }
         fallbackText = warningHeader + fallbackPayload.text;
       } else {
-        const fallbackPayload = generateLocalSmartResponse(trimmedText, "HSSE Swarnadwipa", robotChatMessages);
+        const fallbackPayload = generateLocalSmartResponse(trimmedText, "HSSE Swarnadwipa", robotChatMessages, dashboardProjectTitle);
         fallbackText = fallbackPayload.text;
       }
 
@@ -1443,7 +1479,12 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
 
   // Project Dashboard customized parameters
   const [dashboardProjectTitle, setDashboardProjectTitle] = useState(() => {
-    return localStorage.getItem("prama_dashboard_project_title") || "Kajian Strategis: Forestry Management Transportation";
+    const saved = localStorage.getItem("prama_dashboard_project_title");
+    if (!saved || saved.toLowerCase().includes("port") || saved.toLowerCase().includes("batubara")) {
+      localStorage.setItem("prama_dashboard_project_title", "Kajian Strategis: Forestry Management Transportation");
+      return "Kajian Strategis: Forestry Management Transportation";
+    }
+    return saved;
   });
   const [activeDashboardSection, setActiveDashboardSection] = useState<number>(1);
   const [dashboardSectionsState, setDashboardSectionsState] = useState<Record<number, string>>(() => {
@@ -1591,6 +1632,12 @@ Sebelum menandatangani kontrak, pastikan Anda dan tim menilai matriks risiko ber
   useEffect(() => {
     localStorage.setItem("prama_dashboard_project_title", dashboardProjectTitle);
     setCompetitors(getDefaultCompetitorsForProject(dashboardProjectTitle));
+    setChatBIState(prev => {
+      if (dashboardProjectTitle && prev.projectTitle !== dashboardProjectTitle) {
+        return { ...prev, projectTitle: dashboardProjectTitle };
+      }
+      return prev;
+    });
   }, [dashboardProjectTitle]);
 
   useEffect(() => {
@@ -1606,7 +1653,7 @@ Sebelum menandatangani kontrak, pastikan Anda dan tim menilai matriks risiko ber
       {
         id: "dash-msg-welcome",
         role: "model",
-        text: "Halo! Saya adalah PRAMA Strategic AI Advisor. Saya siap membantu Anda menganalisis, mengoptimalkan, dan merumuskan strategi draf 14 Pilar untuk proyek kajian AKTIF Anda. Silakan beri perintah atau diskusikan pilar mana pun di sini!\n\nTips: Anda bisa meminta saya untuk mengganti judul proyek dengan menulis 'ganti nama proyek ke [Nama Baru]' atau mengklik input judul proyek langsung di atas.",
+        text: "Halo! Saya adalah PRAMA Strategic AI Advisor. Saya siap membantu Anda menganalisis, mengoptimalkan, dan merumuskan strategi draf 13 Pilar untuk proyek kajian AKTIF Anda. Silakan beri perintah atau diskusikan pilar mana pun di sini!\n\nTips: Anda bisa meminta saya untuk mengganti judul proyek dengan menulis 'ganti nama proyek ke [Nama Baru]' atau mengklik input judul proyek langsung di atas.",
         timestamp: Date.now(),
         sender: "PRAMA AI"
       }
@@ -1645,12 +1692,12 @@ Sebelum menandatangani kontrak, pastikan Anda dan tim menilai matriks risiko ber
     let textToSpeak = "";
     if (projectPptSlideIndex === 0) {
       // Cover Page
-      textToSpeak = `Selamat datang di Presentasi Kajian Strategis Proyek: ${dashboardProjectTitle}. Kami akan memaparkan empat belas pilar utama analisis proposal dan manajemen proyek terpadu secara langsung. Mari kita tinjau pilar demi pilar demi kesuksesan operasional Pancaran Group.`;
-    } else if (projectPptSlideIndex === 15) {
+      textToSpeak = `Selamat datang di Presentasi Kajian Strategis Proyek: ${dashboardProjectTitle}. Kami akan memaparkan tiga belas pilar utama analisis proposal dan manajemen proyek terpadu secara langsung. Mari kita tinjau pilar demi pilar demi kesuksesan operasional Pancaran Group.`;
+    } else if (projectPptSlideIndex === 14) {
       // Closing
-      textToSpeak = `Demikian pemaparan seluruh empat belas pilar strategis dari Prama Advisor Intelligent Assistant. Terima kasih yang sebesar-besarnya atas perhatian dan waktu Bapak Ibu sekalian. Semoga rencana transisi dan ekspedisi Pancaran Group berjalan sukses. Sampai jumpa.`;
+      textToSpeak = `Demikian pemaparan seluruh tiga belas pilar strategis dari Prama Advisor Intelligent Assistant. Terima kasih yang sebesar-besarnya atas perhatian dan waktu Bapak Ibu sekalian. Semoga rencana transisi dan ekspedisi Pancaran Group berjalan sukses. Sampai jumpa.`;
     } else {
-      // Pillars 1 to 14
+      // Pillars 1 to 13
       const sec = defaultDashboardSections[projectPptSlideIndex - 1];
       const docVal = dashboardSectionsState[sec.number] || sec.defaultContent;
       
@@ -1685,7 +1732,7 @@ Sebelum menandatangani kontrak, pastikan Anda dan tim menilai matriks risiko ber
 
     utterance.onend = () => {
       setIsPlayingSpeech(false);
-      if (autoNextPPT && projectPptSlideIndex < 15) {
+      if (autoNextPPT && projectPptSlideIndex < 14) {
         setCountdownTransition(3);
       }
     };
@@ -1705,7 +1752,7 @@ Sebelum menandatangani kontrak, pastikan Anda dan tim menilai matriks risiko ber
         setCountdownTransition((prev) => {
           if (prev <= 1) {
             const nextIdx = projectPptSlideIndex + 1;
-            if (nextIdx <= 15) {
+            if (nextIdx <= 14) {
               setProjectPptSlideIndex(nextIdx);
             }
             return 0;
@@ -1927,6 +1974,13 @@ Sebelum menandatangani kontrak, pastikan Anda dan tim menilai matriks risiko ber
       swot: parsedSWOT,
       timeline: parsedTimeline
     });
+
+    if (parsedTitle && parsedTitle !== dashboardProjectTitle) {
+      setDashboardProjectTitle(parsedTitle);
+      const newPillars = generatePillarsForProject(parsedTitle, latestText);
+      setDashboardSectionsState(newPillars);
+      setCompetitors(getDefaultCompetitorsForProject(parsedTitle));
+    }
 
     alert("Sinkronisasi Sukses! Asisten Coder PRAMA telah mendeteksi metrik finansial, draf SWOT, dan rekomendasi program baru langsung dari isi chat terakhir Anda untuk dipetakan ke dasbor BI ini.");
   };
@@ -2296,17 +2350,17 @@ Jika menyarankan perubahan judul kajian, letakkan di dalam [UPDATE_JUDUL] judul 
 
 KETENTUAN INTERAKSI DAN KOMUNIKASI (WAJIB DIPATUHI):
 1. Anda diperbolehkan dan mampu menerima obrolan santai, sapaan (seperti halo, apa kabar, selamat pagi), atau interaksi kasual dari pengguna agar komunikasi terasa nyaman dan fleksibel. Balas sapaan tersebut dengan ramah, santai, namun tetap profesional.
-2. PENTING: Untuk pertama kali percakapan atau ketika pengguna baru menyapa Anda pertama kali (misalnya dengan "halo", "hai", dsb.), Anda HARUS menyapa balik secara hangat dan bertanya terlebih dahulu: "Proyek, industri, atau topik bisnis apa yang ingin kita bahas hari ini agar arah analisis kita menjadi jelas?".
+2. PENTING: Untuk pertama kali percakapan atau ketika pengguna baru menyapa Anda pertama kali (misalnya dengan "halo", "hai", dsb.), Anda HARUS menyapa balik secara hangat and bertanya terlebih dahulu: "Proyek, industri, atau topik bisnis apa yang ingin kita bahas hari ini agar arah analisis kita menjadi jelas?".
 3. JANGAN langsung menyajikan analisis komprehensif 14 pilar untuk proyek default "Kajian Strategis: Forestry Management Transportation" kecuali jika pengguna secara eksplisit meminta proyek tersebut atau langsung memberikan detail topik proyek baru. Prioritaskan mengajak pengguna berdiskusi terlebih dahulu untuk memperjelas topik yang ingin dibahas.
-4. Begitu pengguna menjawab atau memberikan sebuah topik, judul proyek, atau nama industri baru, barulah Anda LANGSUNG MENJELASKAN SELURUH 14 POIN ruang lingkup di bawah ini dalam satu kali jawaban, kemudian wajib ditutup dengan sebuah KESIMPULAN strategis terkait pengambilan keputusan di bagian paling bawah. Jangan mencicil, jangan melewatkan satu poin pun, dan langsung masuk ke analisis yang kontekstual dengan topik tersebut.
+4. Begitu pengguna menjawab atau memberikan sebuah topik, judul proyek, atau nama industri baru, barulah Anda LANGSUNG MENJELASKAN SELURUH 14 POIN ruang lingkup di bawah ini dalam satu kali jawaban. Jangan mencicil, jangan melewatkan satu poin pun, dan langsung masuk ke analisis yang kontekstual dengan topik tersebut.
 
 ATURAN FORMAT PENULISAN (SANGAT KETAT):
 - JANGAN PERNAH menggunakan simbol-simbol asing atau karakter Markdown seperti tanda bintang (*) untuk menebalkan teks atau pagar (#) untuk judul karena akan merusak sistem tampilan visual pengguna.
-- Setiap poin ruang lingkup dan bagian kesimpulan wajib ditulis sebagai JUDUL POIN UTAMA dengan menggunakan format HURUF KAPITAL TEBAL biasa (tanpa simbol).
+- Setiap poin ruang lingkup wajib ditulis sebagai JUDUL POIN UTAMA dengan menggunakan format HURUF KAPITAL TEBAL biasa (tanpa simbol).
 - Di bawah setiap judul, tuliskan penjelasan analisis spesifik untuk proyek tersebut dalam bentuk satu paragraf yang rapi, padat, jelas, dan mengalir dengan baik. Jangan gunakan bullet points atau penomoran lagi di dalam paragraf.
 - Tulis istilah global, singkatan, contoh global, atau metrik penting di dalam teks dengan format HURUF KAPITAL TEBAL biasa (contoh: CAPEX, ROI, SLA, TAM, KESIMPULAN, GO, RE-EVALUATION) agar menonjol secara visual.
 
-FORMAT STRUKTUR JAWABAN YANG WAJIB ANDA HASILKAN SAAT MEMBEDAH TOPIK (TULIS SEMUA 14 POIN + KESIMPULAN SECARA BERURUTAN):
+FORMAT STRUKTUR JAWABAN YANG WAJIB ANDA HASILKAN SAAT MEMBEDAH TOPIK (TULIS SEMUA 14 POIN SECARA BERURUTAN):
 
 GLOBAL/NAT OVERVIEW
 Jelaskan analisis mengenai tren makro internasional, regulasi lingkungan global, kebijakan nasional, serta kondisi industri secara domestik yang memengaruhi arah dan keberlanjutan proyek tersebut.
@@ -2320,9 +2374,6 @@ Jelaskan analisis keuangan mendalam yang mencakup alokasi modal kerja atau CAPEX
 SUPPLY AND DEMAND
 Jelaskan evaluasi keseimbangan antara ketersediaan sumber daya, armada, bahan baku, atau kapasitas layanan dengan tingkat permintaan pasar untuk memastikan strategi volume dan harga yang tepat.
 
-STRUCTURE
-Jelaskan perancangan struktur proyek yang kokoh, efisien, dengan pembagian jalur komando, koordinasi antar lini, serta tanggung jawab yang jelas sejak awal proyek dijalankan.
-
 ORGANIZATION
 Jelaskan pengembangan kapasitas tim melalui pemetaan kualifikasi, kebutuhan keterampilan atau SKILL spesifik, penetapan indikator kinerja utama atau OUTPUT/KPI, serta penyusunan standar operasional prosedur atau SOP.
 
@@ -2333,7 +2384,7 @@ GO TO MARKET STRATEGY
 Jelaskan perumusan strategi peluncuran produk atau layanan ke pasar secara efektif, termasuk penentuan target audiens, metode komunikasi, kontrak jangka panjang, dan taktik penjualan.
 
 OPS MODEL
-Jelaskan sistem operasional harian yang terstruktur melalui pemetaan alur proses atau FLOW PROCESS, diagram kerja atau WORKFLOW DIAGRAM, serta penetapan standar waktu layanan atau SLA.
+Jelaskan sistem operasional harian yang tersonar melalui pemetaan alur proses atau FLOW PROCESS, diagram kerja atau WORKFLOW DIAGRAM, serta penetapan standar waktu layanan atau SLA.
 
 RISK MANAGEMENT
 Jelaskan identifikasi potensi risiko proyek, analisis dampak negatif, serta penyusunan langkah mitigasi pencegahan demi menjaga kelancaran operasional dari denda, kerugian, atau kecelakaan.
@@ -2342,7 +2393,7 @@ DIGITAL COVERAGE
 Jelaskan pemanfaatan teknologi modern yang mencakup pemilihan perangkat lunak atau TOOLS, metodologi digital, analisis dampak teknologi, serta otomatisasi sistem atau AUTOMATION untuk efisiensi kerja proyek.
 
 COMPETITOR
-Jelaskan analisis peta persaingan bisnis untuk memetakan kekuatan, kelemahan, teknologi, strategi, serta posisi pasar dari para pesaing utama di industri tersebut.
+Jelaskan analisis peta persaingan bisnis untuk memetakan kekuatan, kelegenan, teknologi, strategi, serta posisi pasar dari para pesaing utama di industri tersebut.
 
 TAM, SAM, SOM
 Jelaskan perhitungan potensi pasar secara berjenjang mulai dari total pasar keseluruhan atau TAM, pasar yang dapat dijangkau oleh produk atau layanan Anda atau SAM, hingga porsi pasar riil yang optimis bisa dikuasai atau SOM pada proyek tersebut.
@@ -2393,18 +2444,67 @@ ${focusText}`;
     }
   };
 
+  const syncProjectTitleAndPillars = (
+    newTitle: string,
+    aiResponseOrDraft?: string,
+    forceGenerate: boolean = false
+  ) => {
+    if (!newTitle || !newTitle.trim()) return "";
+    const cleanTitle = normalizeProjectTitle(newTitle.trim());
+
+    setDashboardProjectTitle(cleanTitle);
+    localStorage.setItem("prama_dashboard_project_title", cleanTitle);
+
+    setCompetitors(getDefaultCompetitorsForProject(cleanTitle));
+    setChatBIState(prev => ({
+      ...prev,
+      projectTitle: cleanTitle
+    }));
+
+    const matched = DASHBOARD_PRESETS.find(p => p.title.toLowerCase() === cleanTitle.toLowerCase());
+    let nextSections: Record<number, string>;
+    if (matched && matched.sectionsOverride && !forceGenerate && !aiResponseOrDraft) {
+      nextSections = matched.sectionsOverride;
+    } else {
+      nextSections = generatePillarsForProject(cleanTitle, aiResponseOrDraft);
+    }
+
+    if (aiResponseOrDraft) {
+      const parsedPillars = parseResponseToPillars(aiResponseOrDraft);
+      if (Object.keys(parsedPillars).length > 0) {
+        nextSections = { ...nextSections, ...parsedPillars };
+      }
+    }
+
+    setDashboardSectionsState(nextSections);
+    localStorage.setItem("prama_dashboard_sections", JSON.stringify(nextSections));
+    return cleanTitle;
+  };
+
+  const detectAndApplyProjectPreset = (text: string, aiResponse?: string) => {
+    const detected = detectAndInferProjectTitleFromText(text, dashboardProjectTitle);
+    if (detected && detected.toLowerCase() !== dashboardProjectTitle.toLowerCase()) {
+      syncProjectTitleAndPillars(detected, aiResponse);
+      return detected;
+    }
+    return null;
+  };
+
   // Handler for right side collapsible dashboard chat panel
   const handleSendDashboardChatMessage = async (text: string) => {
     if (!text.trim() || isDashboardChatLoading) return;
 
     const trimmedText = text.trim();
 
-    // Detect project-change intent
+    // Auto-detect project keywords and auto-sync immediately
+    detectAndApplyProjectPreset(trimmedText);
+
+    // Detect explicit project-change intent
     const changeProjectRegex = /(?:ganti|ubah|set|buka|ganti judul|pindah|ganti nama)\s*(?:proyek|project|kajian)?\s*(?:ke|to|jadi|menjadi)\s*([^\n]+)/i;
     const match = trimmedText.match(changeProjectRegex);
     if (match && match[1].trim()) {
       const extractedProjectName = match[1].trim().replace(/\*+/g, "").trim();
-      setProposedNewProjectName(extractedProjectName);
+      setProposedNewProjectName(normalizeProjectTitle(extractedProjectName));
       setPendingTextToProcess(trimmedText);
       setIsDashboardChatAction(true);
       setIsConfirmProjectUpdateOpen(true);
@@ -2508,22 +2608,16 @@ ${focusText}`;
 
       // Automatically parse AI response for the 14 pillars and update the active division templates in the dashboard menu!
       const parsedPillars = parseResponseToPillars(mainAnswerText);
-      const extractedTitle = extractProjectTitleFromAI(mainAnswerText);
+      const extractedTitle = extractProjectTitleFromAI(mainAnswerText) || detectAndInferProjectTitleFromText(trimmedText);
       
-      if (extractedTitle && extractedTitle.toLowerCase() !== dashboardProjectTitle.toLowerCase()) {
-        setDashboardProjectTitle(extractedTitle);
-        // Generate baseline pillars for the new project title
-        const basePillars = generatePillarsForProject(extractedTitle, mainAnswerText);
-        setDashboardSectionsState((prev) => ({
-          ...prev,
-          ...basePillars,
-          ...parsedPillars
-        }));
+      if (extractedTitle && (extractedTitle.toLowerCase() !== dashboardProjectTitle.toLowerCase() || isProjectChangeTriggered)) {
+        syncProjectTitleAndPillars(extractedTitle, mainAnswerText);
       } else if (Object.keys(parsedPillars).length > 0) {
-        setDashboardSectionsState((prev) => ({
-          ...prev,
-          ...parsedPillars
-        }));
+        setDashboardSectionsState((prev) => {
+          const next = { ...prev, ...parsedPillars };
+          localStorage.setItem("prama_dashboard_sections", JSON.stringify(next));
+          return next;
+        });
       }
 
       // Keep tags and markdown formatting intact to support draft updates
@@ -2565,7 +2659,7 @@ ${focusText}`;
       let fallbackText = "";
       if (isGenuineAPIError) {
         // Run local smart response
-        const fallbackPayload = generateLocalSmartResponse(finalQuery, "spia", newMsgs);
+        const fallbackPayload = generateLocalSmartResponse(finalQuery, "spia", newMsgs, dashboardProjectTitle);
         let warningHeader = "";
         if (friendlyStr.includes("RESOURCE_EXHAUSTED") || friendlyStr.includes("429")) {
           warningHeader = `> ⚠️ **PEMBERITAHUAN:** *Batas kuota harian server bersama terlampaui (RESOURCE_EXHAUSTED 429).* Menyajikan hasil menggunakan **Modul Analisis Logistik Internal PRAMA**.\n\n---\n\n`;
@@ -2576,21 +2670,15 @@ ${focusText}`;
         }
         fallbackText = warningHeader + fallbackPayload.text;
       } else {
-        const fallbackPayload = generateLocalSmartResponse(finalQuery, "spia", newMsgs);
+        const fallbackPayload = generateLocalSmartResponse(finalQuery, "spia", newMsgs, dashboardProjectTitle);
         fallbackText = fallbackPayload.text;
       }
 
       const fallbackParsed = parseResponseToPillars(fallbackText);
-      const fallbackExtractedTitle = extractProjectTitleFromAI(fallbackText);
+      const fallbackExtractedTitle = extractProjectTitleFromAI(fallbackText) || detectAndInferProjectTitleFromText(trimmedText);
       
-      if (fallbackExtractedTitle && fallbackExtractedTitle.toLowerCase() !== dashboardProjectTitle.toLowerCase()) {
-        setDashboardProjectTitle(fallbackExtractedTitle);
-        const basePillars = generatePillarsForProject(fallbackExtractedTitle, fallbackText);
-        setDashboardSectionsState((prev) => ({
-          ...prev,
-          ...basePillars,
-          ...fallbackParsed
-        }));
+      if (fallbackExtractedTitle && (fallbackExtractedTitle.toLowerCase() !== dashboardProjectTitle.toLowerCase() || isProjectChangeTriggered)) {
+        syncProjectTitleAndPillars(fallbackExtractedTitle, fallbackText);
       } else if (Object.keys(fallbackParsed).length > 0) {
         setDashboardSectionsState((prev) => ({
           ...prev,
@@ -2615,14 +2703,10 @@ ${focusText}`;
     setIsConfirmProjectUpdateOpen(false);
     
     if (shouldUpdatePillars) {
-      // 1. Update project title
-      setDashboardProjectTitle(proposedNewProjectName);
+      // 1. Sync project title and 14 pillars immediately
+      syncProjectTitleAndPillars(proposedNewProjectName, undefined, true);
       
-      // 2. Generate 14 new custom pillars for this brand new project
-      const newPillars = generatePillarsForProject(proposedNewProjectName);
-      setDashboardSectionsState(newPillars);
-      
-      // 3. Process the send action with the newly applied project and pillar rehydration flagged
+      // 2. Process the send action with the newly applied project and pillar rehydration flagged
       if (isDashboardChatAction) {
         await proceedSendDashboardChatMessage(pendingTextToProcess, proposedNewProjectName, true);
       } else {
@@ -2652,12 +2736,15 @@ ${focusText}`;
   ) => {
     if (chatLoading) return;
 
+    // Auto-detect and sync project keywords immediately
+    detectAndApplyProjectPreset(text);
+
     // Detect project-change intent
     const changeProjectRegex = /(?:ganti|ubah|set|buka|ganti judul|pindah|ganti nama)\s*(?:proyek|project|kajian)?\s*(?:ke|to|jadi|menjadi)\s*([^\n]+)/i;
     const match = text.match(changeProjectRegex);
     if (match && match[1].trim()) {
       const extractedProjectName = match[1].trim().replace(/\*+/g, "").trim();
-      setProposedNewProjectName(extractedProjectName);
+      setProposedNewProjectName(normalizeProjectTitle(extractedProjectName));
       setPendingTextToProcess(text);
       setPendingEnableSearch(enableSearch);
       setPendingReferencedFile(referencedFile || null);
@@ -2803,22 +2890,16 @@ ${focusText}`;
 
       // Automatically parse AI response for the 14 pillars and update the active division templates in the dashboard menu!
       const parsedPillars = parseResponseToPillars(mainAnswerText);
-      const extractedTitle = extractProjectTitleFromAI(mainAnswerText);
+      const extractedTitle = extractProjectTitleFromAI(mainAnswerText) || detectAndInferProjectTitleFromText(text);
       
-      if (extractedTitle && extractedTitle.toLowerCase() !== dashboardProjectTitle.toLowerCase()) {
-        setDashboardProjectTitle(extractedTitle);
-        // Generate baseline pillars for the new project title
-        const basePillars = generatePillarsForProject(extractedTitle, mainAnswerText);
-        setDashboardSectionsState((prev) => ({
-          ...prev,
-          ...basePillars,
-          ...parsedPillars
-        }));
+      if (extractedTitle && (extractedTitle.toLowerCase() !== dashboardProjectTitle.toLowerCase() || isProjectChangeTriggered)) {
+        syncProjectTitleAndPillars(extractedTitle, mainAnswerText);
       } else if (Object.keys(parsedPillars).length > 0) {
-        setDashboardSectionsState((prev) => ({
-          ...prev,
-          ...parsedPillars
-        }));
+        setDashboardSectionsState((prev) => {
+          const next = { ...prev, ...parsedPillars };
+          localStorage.setItem("prama_dashboard_sections", JSON.stringify(next));
+          return next;
+        });
       }
 
       // Strip asterisks (*) and hash (#) symbols from the main assistant answer text to align with formatting rules
@@ -3004,7 +3085,7 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
       let finalResponseText = "";
       if (isGenuineAPIError) {
         // Run local smart response
-        const fallbackPayload = generateLocalSmartResponse(text, activeDivision, updatedMessages);
+        const fallbackPayload = generateLocalSmartResponse(text, activeDivision, updatedMessages, dashboardProjectTitle);
         
         let warningHeader = "";
         if (friendlyText.includes("RESOURCE_EXHAUSTED") || friendlyText.includes("429")) {
@@ -3020,21 +3101,15 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
         finalResponseText = warningHeader + fallbackPayload.text;
       } else {
         // Generate highly intelligent Indonesian response tailored to the user's specific text + active division
-        const fallbackPayload = generateLocalSmartResponse(text, activeDivision, updatedMessages);
+        const fallbackPayload = generateLocalSmartResponse(text, activeDivision, updatedMessages, dashboardProjectTitle);
         finalResponseText = fallbackPayload.text;
       }
 
       const fallbackParsed = parseResponseToPillars(finalResponseText);
-      const fallbackExtractedTitle = extractProjectTitleFromAI(finalResponseText);
+      const fallbackExtractedTitle = extractProjectTitleFromAI(finalResponseText) || detectAndInferProjectTitleFromText(text);
       
-      if (fallbackExtractedTitle && fallbackExtractedTitle.toLowerCase() !== dashboardProjectTitle.toLowerCase()) {
-        setDashboardProjectTitle(fallbackExtractedTitle);
-        const basePillars = generatePillarsForProject(fallbackExtractedTitle, finalResponseText);
-        setDashboardSectionsState((prev) => ({
-          ...prev,
-          ...basePillars,
-          ...fallbackParsed
-        }));
+      if (fallbackExtractedTitle && (fallbackExtractedTitle.toLowerCase() !== dashboardProjectTitle.toLowerCase() || isProjectChangeTriggered)) {
+        syncProjectTitleAndPillars(fallbackExtractedTitle, finalResponseText);
       } else if (Object.keys(fallbackParsed).length > 0) {
         setDashboardSectionsState((prev) => ({
           ...prev,
@@ -5081,21 +5156,54 @@ ${lastMsgText}`;
               {/* Main Control Panel Bar (Editable Project Title & Combined Exports) */}
               <div className="bg-slate-50 border-b border-slate-200 p-5 flex flex-col lg:flex-row items-stretch lg:items-center gap-4 justify-between shrink-0">
                 {/* Editable Project Title */}
+                {/* Editable Project Title with Dynamic Auto-Sync */}
                 <div className="flex-1 min-w-0">
-                  <label className="block text-[8px] font-black text-slate-400 uppercase tracking-widest font-mono mb-1.5">
-                    JUDUL KAJIAN PROYEK PM (SINKRON KE EXPORT WORD/PPT)
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={dashboardProjectTitle}
-                      onChange={(e) => setDashboardProjectTitle(e.target.value)}
-                      placeholder="Masukkan nama proyek / judul kajian..."
-                      className="w-full pl-3 pr-10 py-2.5 text-xs font-extrabold border border-slate-200 bg-white text-slate-800 rounded-xl focus:border-indigo-500 transition-shadow outline-none shadow-sm font-sans"
-                    />
-                    <div className="absolute right-3 top-2.5 text-[9px] text-slate-400 font-extrabold uppercase font-mono tracking-wider select-none bg-slate-50 border border-slate-100 rounded px-1.5 py-0.5 leading-none">
-                      Edit
+                  <div className="flex items-center justify-between gap-2 mb-1.5">
+                    <label className="block text-[8.5px] font-black text-slate-500 uppercase tracking-wider font-mono">
+                      JUDUL KAJIAN PROYEK PM (SINKRON KE 14 PILAR, CHAT & EKSPOR)
+                    </label>
+                    <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full select-none">
+                      <Sparkles className="h-2.5 w-2.5 text-emerald-500" />
+                      Auto-Sync 14 Pilar Aktif
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <input
+                        type="text"
+                        value={dashboardProjectTitle}
+                        onChange={(e) => setDashboardProjectTitle(e.target.value)}
+                        onBlur={(e) => {
+                          if (e.target.value.trim()) {
+                            syncProjectTitleAndPillars(e.target.value.trim(), undefined, true);
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && dashboardProjectTitle.trim()) {
+                            syncProjectTitleAndPillars(dashboardProjectTitle.trim(), undefined, true);
+                          }
+                        }}
+                        placeholder="Masukkan nama proyek / judul kajian..."
+                        className="w-full pl-3 pr-12 py-2 text-xs font-extrabold border border-slate-300 bg-white text-slate-800 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition outline-none shadow-sm font-sans"
+                      />
+                      <div className="absolute right-2.5 top-2 text-[8.5px] text-slate-400 font-extrabold uppercase font-mono tracking-wider select-none bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5 leading-none">
+                        Edit
+                      </div>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (dashboardProjectTitle.trim()) {
+                          syncProjectTitleAndPillars(dashboardProjectTitle.trim(), undefined, true);
+                        }
+                      }}
+                      className="flex items-center gap-1.5 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 active:scale-95 text-white text-[11px] font-bold px-3 py-2 rounded-xl shadow-sm transition cursor-pointer shrink-0 select-none"
+                      title="Klik untuk menyinkronkan dan merumuskan ulang seluruh 14 Pilar sesuai judul ini"
+                    >
+                      <RefreshCw className="h-3.5 w-3.5 text-indigo-100" />
+                      <span className="hidden sm:inline">Singkronkan 14 Pilar</span>
+                      <span className="sm:hidden">Sinkron</span>
+                    </button>
                   </div>
                 </div>
 
@@ -5251,9 +5359,9 @@ ${lastMsgText}`;
                             });
 
                             setPptPreview({
-                              title: dashboardProjectTitle || "Kajian 14 Pilar",
+                              title: dashboardProjectTitle || "Kajian 13 Pilar",
                               slides: mappedSlides,
-                              fileName: (dashboardProjectTitle || "Kajian_14_Pilar").toLowerCase().replace(/[^a-zA-Z0-9]/g, "_")
+                              fileName: (dashboardProjectTitle || "Kajian_13_Pilar").toLowerCase().replace(/[^a-zA-Z0-9]/g, "_")
                             });
                             setActiveSlideIndex(0);
                           }}
@@ -5296,7 +5404,7 @@ ${lastMsgText}`;
                               };
                             });
                             const htmlString = await exportToInteractiveHTML(
-                              dashboardProjectTitle || "Kajian 14 Pilar",
+                              dashboardProjectTitle || "Kajian 13 Pilar",
                               mappedSlides,
                               activeDivision || "UMUM",
                               true
@@ -5329,10 +5437,10 @@ ${lastMsgText}`;
                                 imageUrl: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1200"
                               };
                             });
-                            exportToInteractiveHTML(dashboardProjectTitle || "Kajian 14 Pilar", mappedSlides, activeDivision || "UMUM");
+                            exportToInteractiveHTML(dashboardProjectTitle || "Kajian 13 Pilar", mappedSlides, activeDivision || "UMUM");
                           }}
                           className="flex items-center gap-1.5 bg-[#00D285] hover:bg-[#00B472] text-white text-[10px] font-black rounded-xl px-3 py-2.5 transition shadow-md cursor-pointer"
-                          title="Unduh file HTML Presentasi Interaktif dengan Suara TTS dan Auto Next untuk 14 Pilar"
+                          title="Unduh file HTML Presentasi Interaktif dengan Suara TTS dan Auto Next untuk 13 Pilar"
                         >
                           <Download className="h-3.5 w-3.5 text-white" />
                           <span>Unduh HTML Interaktif</span>
@@ -5358,12 +5466,12 @@ ${lastMsgText}`;
 
               {/* Split Body Layout */}
               <div className="flex-grow flex flex-col lg:flex-row min-h-0 bg-slate-50/50">
-                {/* LEFT LIST PANEL: 14 PILLARS MENUS (Scrollable) */}
+                {/* LEFT LIST PANEL: 13 PILLARS MENUS (Scrollable) */}
                 {!isWorkspaceExpanded && (
                   <div className="w-full lg:w-80 border-r border-slate-200 shrink-0 bg-white flex flex-col overflow-y-auto max-h-[300px] lg:max-h-[600px]">
                   <div className="bg-slate-50 border-b border-slate-200 p-3 flex items-center justify-between shrink-0">
                     <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest font-mono">
-                      Daftar 14 Pilar Strategi
+                      Daftar 13 Pilar Strategi
                     </span>
                     <span className="text-[8px] font-extrabold bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full font-mono">
                       Pramis Formulator
@@ -5677,23 +5785,71 @@ ${lastMsgText}`;
 
                                   <div className="prose prose-sm max-w-none text-slate-700 leading-relaxed font-sans mt-4">
                                     {(() => {
-                                      const paragraphs = val.split("\n").map(p => p.trim()).filter(Boolean);
-                                      let isFirstParagraph = true;
+                                      const rawLines = val.split("\n");
+                                      const paragraphs = rawLines.map(p => p.trim()).filter(Boolean);
+
+                                      const handleDeleteLine = (targetIdx: number) => {
+                                        let count = -1;
+                                        const filteredRaw = rawLines.filter(line => {
+                                          if (line.trim()) {
+                                            count++;
+                                            return count !== targetIdx;
+                                          }
+                                          return true;
+                                        });
+                                        setDashboardSectionsState(prev => ({
+                                          ...prev,
+                                          [activeDashboardSection]: filteredRaw.join("\n")
+                                        }));
+                                      };
+
                                       return paragraphs.map((textLine, sIdx) => {
+                                        if (activeDashboardSection === 14) {
+                                          const lineLower = textLine.toLowerCase();
+                                          if (
+                                            lineLower.includes("metrik cac") ||
+                                            lineLower.includes("saas atau biaya") ||
+                                            lineLower.includes("dukungan teknis 24/7") ||
+                                            (lineLower.includes("cac") && lineLower.includes("ltv") && lineLower.includes("retensi"))
+                                          ) {
+                                            return null;
+                                          }
+                                        }
+
                                         if (textLine.startsWith("###")) {
                                           return (
-                                            <h4 key={sIdx} className="text-[13px] font-black text-indigo-900 border-b border-indigo-100 pb-1 mt-5 mb-2 uppercase tracking-wide">
-                                              {textLine.replace(/^###\s*/, "")}
-                                            </h4>
+                                            <div key={sIdx} className="group relative my-3">
+                                              <h4 className="text-[13px] font-black text-indigo-900 border-b border-indigo-100 pb-1 mt-5 mb-2 uppercase tracking-wide pr-16">
+                                                {textLine.replace(/^###\s*/, "")}
+                                              </h4>
+                                              <button
+                                                type="button"
+                                                onClick={() => handleDeleteLine(sIdx)}
+                                                className="opacity-0 group-hover:opacity-100 transition-opacity absolute right-0 top-1 text-slate-400 hover:text-rose-600 bg-white border border-slate-200 rounded px-1.5 py-0.5 shadow-sm text-[9px] flex items-center gap-1 cursor-pointer font-sans"
+                                                title="Hapus sub-judul ini"
+                                              >
+                                                <Trash2 className="h-3 w-3 text-rose-500" />
+                                                <span>Hapus</span>
+                                              </button>
+                                            </div>
                                           );
                                         }
                                         if (textLine.startsWith("* ") || textLine.startsWith("- ")) {
                                           return (
-                                            <div key={sIdx} className="flex gap-2 items-start pl-4 py-1.5 border-l-2 border-emerald-500 bg-slate-50 rounded-r-lg my-1.5 font-sans">
+                                            <div key={sIdx} className="group relative flex gap-2 items-start pl-4 py-1.5 border-l-2 border-emerald-500 bg-slate-50 rounded-r-lg my-1.5 font-sans pr-16">
                                               <span className="text-emerald-500 font-bold text-[10px] select-none">✓</span>
                                               <p className="text-[11px] font-bold text-slate-600 m-0 animate-none">
                                                 {textLine.replace(/^[\*\-]\s*/, "").replace(/\*\*/g, "")}
                                               </p>
+                                              <button
+                                                type="button"
+                                                onClick={() => handleDeleteLine(sIdx)}
+                                                className="opacity-0 group-hover:opacity-100 transition-opacity absolute right-2 top-1.5 text-slate-400 hover:text-rose-600 bg-white border border-slate-200 rounded px-1.5 py-0.5 shadow-sm text-[9px] flex items-center gap-1 cursor-pointer font-sans"
+                                                title="Hapus poin ini"
+                                              >
+                                                <Trash2 className="h-3 w-3 text-rose-500" />
+                                                <span>Hapus</span>
+                                              </button>
                                             </div>
                                           );
                                         }
@@ -5701,35 +5857,107 @@ ${lastMsgText}`;
                                         const strippedLine = textLine.replace(/\*\*/g, "");
 
                                         return (
-                                          <p key={sIdx} className={`text-[11.5px] leading-relaxed text-slate-650 ${textLine.startsWith("**") ? "font-black text-indigo-950 mt-4 border-l-2 border-indigo-200 pl-2" : "font-semibold"} my-2.5 text-justify font-sans`}>
-                                            {strippedLine}
-                                          </p>
+                                          <div key={sIdx} className="group relative my-2.5">
+                                            <p className={`text-[11.5px] leading-relaxed text-slate-650 ${textLine.startsWith("**") ? "font-black text-indigo-950 mt-4 border-l-2 border-indigo-200 pl-2 pr-16" : "font-semibold pr-16"} my-0 text-justify font-sans`}>
+                                              {strippedLine}
+                                            </p>
+                                            <button
+                                              type="button"
+                                              onClick={() => handleDeleteLine(sIdx)}
+                                              className="opacity-0 group-hover:opacity-100 transition-opacity absolute right-0 top-0 text-slate-400 hover:text-rose-600 bg-white border border-slate-200 rounded px-1.5 py-0.5 shadow-sm text-[9px] flex items-center gap-1 cursor-pointer font-sans"
+                                              title="Hapus paragraf/bagian ini"
+                                            >
+                                              <Trash2 className="h-3 w-3 text-rose-500" />
+                                              <span>Hapus Bagian</span>
+                                            </button>
+                                          </div>
                                         );
                                       });
                                     })()}
                                   </div>
 
-                                  {/* PRAMA LIVE FLOWCHART HUB (PILAR 6 ONLY) */}
-                                  {activeDashboardSection === 6 && (
+                                  {/* PRAMA LIVE FLOWCHART HUB (PILAR 5 ONLY) */}
+                                  {activeDashboardSection === 5 && (
                                     <div className="mt-8 pt-6 border-t border-slate-200">
                                       <PramaFlowchartHub projectTitle={dashboardProjectTitle} />
                                     </div>
                                   )}
 
-                                  {/* INTERACTIVE FINANCIAL SIMULATOR (PILAR 3 & 13 ONLY) */}
-                                  {(activeDashboardSection === 3 || activeDashboardSection === 13) && (
+                                  {/* PRAMA MARKET OPPORTUNITY DEEP-DIVE HUB (PILAR 2 ONLY) */}
+                                  {activeDashboardSection === 2 && (
                                     <div className="mt-8 pt-6 border-t border-slate-200">
+                                      <MarketOpportunityDeepDive projectTitle={dashboardProjectTitle} />
+                                    </div>
+                                  )}
+
+                                  {/* INTERACTIVE FINANCIAL SIMULATOR (PILAR 3 & 12) */}
+                                  {(activeDashboardSection === 3 || activeDashboardSection === 12) && (
+                                    <div className="mt-8 pt-6 border-t border-slate-200 space-y-6">
                                       <InteractiveFinancialSimulator 
                                         projectTitle={dashboardProjectTitle} 
                                         division={activeDivision || "Logistics Swarnadwipa"}
                                         initialCapex={chatBIState.initialCapex || 550}
                                         salesIncrease={chatBIState.salesIncrease || 1200}
                                       />
+                                      
+                                      {activeDashboardSection === 3 && (
+                                        <FinancialFocusCards 
+                                          projectTitle={dashboardProjectTitle}
+                                        />
+                                      )}
+
+                                      {activeDashboardSection === 12 && (
+                                        <TamSamSomFocusCards 
+                                          projectTitle={dashboardProjectTitle}
+                                        />
+                                      )}
                                     </div>
                                   )}
 
-                                  {/* PRAMA LIVE COMPETITOR INTELLIGENCE HUB (PILAR 12 ONLY) */}
-                                  {activeDashboardSection === 12 && (
+                                  {/* PRAMA SUPPLY & DEMAND DEEP-DIVE HUB (PILAR 4 ONLY) */}
+                                  {activeDashboardSection === 4 && (
+                                    <div className="mt-8 pt-6 border-t border-slate-200">
+                                      <SupplyDemandDeepDive projectTitle={dashboardProjectTitle} />
+                                    </div>
+                                  )}
+
+                                  {/* PRAMA GLOBAL & NATIONAL OVERVIEW DEEP-DIVE HUB (PILAR 1 ONLY) */}
+                                  {activeDashboardSection === 1 && (
+                                    <div className="mt-8 pt-6 border-t border-slate-200">
+                                      <GlobalNatOverviewDeepDive projectTitle={dashboardProjectTitle} />
+                                    </div>
+                                  )}
+
+                                  {/* PRAMA TRANSITION MODEL DEEP-DIVE HUB (PILAR 6 ONLY) */}
+                                  {activeDashboardSection === 6 && (
+                                    <div className="mt-8 pt-6 border-t border-slate-200">
+                                      <TransitionModelDeepDive projectTitle={dashboardProjectTitle} />
+                                    </div>
+                                  )}
+
+                                  {/* PRAMA GO-TO-MARKET STRATEGY DEEP-DIVE HUB (PILAR 7 ONLY) */}
+                                  {activeDashboardSection === 7 && (
+                                    <div className="mt-8 pt-6 border-t border-slate-200">
+                                      <GoToMarketDeepDive projectTitle={dashboardProjectTitle} />
+                                    </div>
+                                  )}
+
+                                  {/* PRAMA RISK MANAGEMENT DEEP-DIVE HUB (PILAR 9 ONLY) */}
+                                  {activeDashboardSection === 9 && (
+                                    <div className="mt-8 pt-6 border-t border-slate-200">
+                                      <RiskManagementDeepDive projectTitle={dashboardProjectTitle} />
+                                    </div>
+                                  )}
+
+                                  {/* PRAMA DIGITAL COVERAGE DEEP-DIVE HUB (PILAR 10 ONLY) */}
+                                  {activeDashboardSection === 10 && (
+                                    <div className="mt-8 pt-6 border-t border-slate-200">
+                                      <DigitalCoverageDeepDive projectTitle={dashboardProjectTitle} />
+                                    </div>
+                                  )}
+
+                                  {/* PRAMA LIVE COMPETITOR INTELLIGENCE HUB (PILAR 11 ONLY) */}
+                                  {activeDashboardSection === 11 && (
                                     <div className="mt-8 pt-6 border-t border-slate-200">
                                       <div className="bg-gradient-to-r from-violet-600 to-indigo-700 rounded-2xl p-5 text-white shadow-md relative overflow-hidden mb-6">
                                         <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-10 -mt-10 blur-xl" />
@@ -6076,6 +6304,27 @@ ${lastMsgText}`;
                                       })()}
                                     </div>
                                   )}
+
+                                  {/* PRAMA FINANCIALS DEEP-DIVE - CAC, LTV (PILAR 13 ONLY) */}
+                                  {activeDashboardSection === 13 && (
+                                    <div className="mt-8 pt-6 border-t border-slate-200">
+                                      <CacLtvDeepDive projectTitle={dashboardProjectTitle} />
+                                    </div>
+                                  )}
+
+                                  {/* EXECUTIVE SUMMARY & RECOMMENDATIONS (PILAR 14 ONLY) */}
+                                  {activeDashboardSection === 14 && (
+                                    <div className="mt-8 pt-6 border-t border-slate-200">
+                                      <ExecutiveSummaryDashboard projectTitle={dashboardProjectTitle} />
+                                    </div>
+                                  )}
+
+                                  {/* PRAMA OPS MODEL DEEP-DIVE (PILAR 8 ONLY) */}
+                                  {activeDashboardSection === 8 && (
+                                    <div className="mt-8 pt-6 border-t border-slate-200">
+                                      <OpsModelDeepDive projectTitle={dashboardProjectTitle} />
+                                    </div>
+                                  )}
                                 </div>
                               )}
 
@@ -6111,7 +6360,7 @@ ${lastMsgText}`;
                                 <div className="flex items-center gap-2">
                                   <span className="block h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
                                   <span className="font-mono text-[9px] font-black uppercase tracking-widest text-emerald-400">
-                                    CLOSED-LOOP LOGISTICS PROCESS CHART {activeSec.number === 5 ? "(STRUKTUR NILAI)" : "(PILAR ALUR)"}
+                                    CLOSED-LOOP LOGISTICS PROCESS CHART {activeSec.number === 8 ? "(ALUR PROSES)" : "(PILAR ALUR)"}
                                   </span>
                                 </div>
                                 
@@ -6430,7 +6679,15 @@ ${lastMsgText}`;
                                         if (targetVal === "judul") {
                                           const finalTitle = extractedJudulDraft || displayText;
                                           setDashboardProjectTitle(finalTitle);
-                                          alert(`Sukses! Judul Proyek berhasil diperbarui menjadi:\n"${finalTitle}"`);
+                                          setChatBIState(prev => ({
+                                            ...prev,
+                                            projectTitle: finalTitle
+                                          }));
+                                          const newPillars = generatePillarsForProject(finalTitle, msg.text);
+                                          setDashboardSectionsState(newPillars);
+                                          setCompetitors(getDefaultCompetitorsForProject(finalTitle));
+                                          handleSyncChatToBI();
+                                          alert(`Sukses! Judul Proyek berhasil disinkronkan ke seluruh 14 Pilar & Dasbor BI:\n"${finalTitle}"`);
                                         } else {
                                           const targetPilarNum = parseInt(targetVal, 10);
                                           const finalContent = extractedPilarDraft || msg.text;
@@ -6441,11 +6698,20 @@ ${lastMsgText}`;
                                             [targetPilarNum]: finalContent
                                           }));
                                           
+                                          if (extractedJudulDraft) {
+                                            setDashboardProjectTitle(extractedJudulDraft);
+                                            setChatBIState(prev => ({ ...prev, projectTitle: extractedJudulDraft }));
+                                            setCompetitors(getDefaultCompetitorsForProject(extractedJudulDraft));
+                                          }
+
                                           // Switch active section if needed so user sees the update instantly
                                           setActiveDashboardSection(targetPilarNum);
                                           
+                                          // Execute full BI chat sync as well
+                                          handleSyncChatToBI();
+                                          
                                           const targetSecName = defaultDashboardSections.find(s => s.number === targetPilarNum)?.title || "14 Pilar";
-                                          alert(`Pembahasan Sukses! Draf Pilar Ke-${targetPilarNum} ("${targetSecName}") telah diperbarui secara langsung dan dialihkan ke editor.`);
+                                          alert(`Pembahasan Sukses! Draf Pilar Ke-${targetPilarNum} ("${targetSecName}") telah disinkronkan secara langsung ke dasbor BI dan dialihkan ke editor.`);
                                         }
                                       }}
                                       className="w-full py-1.5 bg-indigo-600 hover:bg-indigo-550 active:scale-97 text-white font-black text-[9.5px] rounded-xl cursor-pointer transition shadow-md flex items-center justify-center gap-1 uppercase tracking-wider"
@@ -7309,7 +7575,11 @@ ${lastMsgText}`;
                       <input
                         type="text"
                         value={chatBIState.projectTitle}
-                        onChange={(e) => setChatBIState(prev => ({ ...prev, projectTitle: e.target.value }))}
+                        onChange={(e) => {
+                          const newTitle = e.target.value;
+                          setChatBIState(prev => ({ ...prev, projectTitle: newTitle }));
+                          setDashboardProjectTitle(newTitle);
+                        }}
                         className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-cyan-500"
                         placeholder="Nama Proyek Kajian"
                       />
@@ -10200,11 +10470,11 @@ function renderPreviewMarkdown(text: string) {
       continue;
     }
 
-    // 3. Bullet points (- or * or •)
-    if (trimmed.startsWith("- ") || trimmed.startsWith("* ") || trimmed.startsWith("• ")) {
-      const content = trimmed.replace(/^[-*•]\s+/, "");
+    // 3. Bullet points (- or * or • or + or o followed by spaces)
+    if (trimmed.startsWith("- ") || trimmed.startsWith("* ") || trimmed.startsWith("• ") || trimmed.startsWith("+ ") || /^o\s+/.test(trimmed)) {
+      const content = trimmed.replace(/^([-*•+]|o)\s+/, "");
       elements.push(
-        <div key={`ul-${idx}`} className="flex gap-2.5 ml-3 my-1.5 text-xs sm:text-sm text-slate-705 items-start leading-relaxed">
+        <div key={`ul-${idx}`} className="flex gap-2.5 ml-3 my-1.5 text-xs sm:text-sm text-slate-700 items-start leading-relaxed">
           <span className="text-indigo-600 font-bold select-none">•</span>
           <p className="flex-1">{parsePreviewInlineMarkdown(content)}</p>
         </div>

@@ -5,6 +5,9 @@
  * Completely free of error notices, offline banners, or footnotes.
  */
 
+import { getSectorOpportunityProfile } from "./sectorOpportunityHelper";
+import { detectAndInferProjectTitleFromText } from "./projectDashboardHelper";
+
 interface LocalResponse {
   text: string;
   sources?: Array<{ title: string; uri: string }>;
@@ -13,10 +16,15 @@ interface LocalResponse {
 function _generateLocalSmartResponseRaw(
   message: string,
   activeDivision: string | null,
-  history: Array<{ role: string; text: string }> = []
+  history: Array<{ role: string; text: string }> = [],
+  projectTitle: string = "Kajian Strategis Logistik"
 ): LocalResponse {
   const query = message.toLowerCase().trim();
   const division = activeDivision ? activeDivision.toLowerCase() : "umum";
+
+  // Automatically detect and align project title if the message specifies a project domain
+  const detectedTitle = detectAndInferProjectTitleFromText(message, projectTitle);
+  const activeTitle = detectedTitle || projectTitle;
 
   // Helper to extract cities/places for commercial routes
   const extractCities = (text: string): { origin: string; destination: string } => {
@@ -42,6 +50,62 @@ function _generateLocalSmartResponseRaw(
   };
 
   // Generates responses based on keywords & dynamic extraction
+  if (query.includes("market opportunity") || query.includes("peluang pasar") || query.includes("peluang") || query.includes("market gap") || query.includes("proyek") || query.includes("project") || query.includes("forestry") || query.includes("limbah") || query.includes("batubara") || query.includes("cold chain") || query.includes("port") || query.includes("semen") || query.includes("nikel") || query.includes("sawit") || query.includes("cpo")) {
+    const profile = getSectorOpportunityProfile(activeTitle);
+    
+    return {
+      text: `Berikut adalah bedah terstruktur (breakdown) dari dokumen **"MARKET OPPORTUNITY DEEP-DIVE: ${activeTitle.toUpperCase()}"** berdasarkan pilar data terkini:
+
+---
+
+### **A. ANALISIS POTENSI PASAR & GAP (${profile.sectorBadge})**
+
+Peluang pasar **${profile.sectorName}** berfokus pada efisiensi, keandalan, dan kepatuhan dalam sistem rantai pasok transportasi untuk **"${activeTitle}"**.
+
+#### **🚀 1. Faktor Pendorong Pasar (Market Drivers)**
+${profile.driversList.map(item => `* **${item.title}:** ${item.description}`).join("\n")}
+
+#### **🎯 2. Celah Pasar & Solusi Logistik (Market Gap)**
+${profile.gapsList.map(item => `* **${item.title}:** ${item.description}`).join("\n")}
+
+---
+
+### **B. PELUANG INOVASI TEKNOLOGI & HIJAU (TECH & GREEN OPPORTUNITIES)**
+
+Penerapan teknologi modern dan praktik dekarbonisasi menjadi pilar utama keunggulan kompetitif Pancaran Group:
+
+#### **💻 3. Peluang Inovasi Teknologi**
+* **${profile.axleSimulatorTitle}:** ${profile.axleSimulatorSubtitle}
+* **${profile.pingTitle}:** ${profile.pingSubtitle}
+* **Sistem Pemantauan Telemetri:** Menggunakan GPS satelit hibrida untuk transparansi rute dan estimasi waktu tiba (ETA) real-time.
+
+#### **🌿 4. Nilai Tambah Hijau (Green Value-Add)**
+${profile.greenList.map(item => `* **${item.title}:** ${item.description}`).join("\n")}
+
+---
+
+### **C. STRATEGI IMPLEMENTASI PENETRASI PASAR (${activeTitle.toUpperCase()})**
+
+Untuk memaksimalkan peluang pasar angkutan ini, Pancaran Group menetapkan 4 langkah strategis utama:
+
+#### **Langkah 1: Pemetaan Rute & Lokasi Proyek (Site Survey & Mapping)**
+* **Aktivitas:** Melakukan survei rute pengangkutan, menganalisis kelayakan jembatan, elevasi, serta titik-titik kritis di jalur operasional.
+* **Tujuan:** Menentukan konfigurasi sasis armada, jenis ban, serta daya mesin yang paling sesuai dengan karakteristik kargo.
+
+#### **Langkah 2: Integrasi Sertifikasi & Legalitas Kepatuhan**
+* **Aktivitas:** Mendaftarkan seluruh armada pengangkut ke dalam portal resmi regulasi pemerintah dan dokumen manifes digital.
+* **Tujuan:** Memberikan jaminan legalitas 100% dan kepatuhan audit K3LL bagi pemilik proyek.
+
+#### **Langkah 3: Pemasangan Telemetri GPS Satelit (High-Tech Fleet Deployment)**
+* **Aktivitas:** Memasang modul pelacak hibrida (seluler + satelit) pada setiap unit truk untuk mengawasi operasional di rute remote.
+* **Tujuan:** Mengawasi keselamatan berkendara (*driver behavior*), pencegahan kelebihan muatan, serta kelancaran bongkar muat.
+
+#### **Langkah 4: Skema Kontrak Jangka Panjang Berbasis ESG (ESG Partnership & LTSA)**
+* **Aktivitas:** Menjalin kemitraan tahunan eksklusif (*Long-Term Service Agreement*) dengan pemilik proyek korporat.
+* **Tujuan:** Mengamankan utilisasi armada secara kontinu dan memberikan nilai tambah pelaporan dekarbonisasi bulanan.`
+    };
+  }
+
   // 1. GREETINGS
   if (
     query.match(/^(halo|hai|pagi|siang|sore|malam|permisi|hello|hi|p|assalamualaikum|apa kabar)/i)
@@ -268,12 +332,13 @@ Berikut adalah tabel draf langkah kerja atau pengalokasian langkah-langkah strat
 export function generateLocalSmartResponse(
   message: string,
   activeDivision: string | null,
-  history: Array<{ role: string; text: string }> = []
+  history: Array<{ role: string; text: string }> = [],
+  projectTitle: string = "Kajian Strategis Logistik"
 ): LocalResponse {
-  const rawRes = _generateLocalSmartResponseRaw(message, activeDivision, history);
+  const rawRes = _generateLocalSmartResponseRaw(message, activeDivision, history, projectTitle);
   return {
     ...rawRes,
-    text: rawRes.text.replace(/[*#]/g, ""),
+    text: rawRes.text,
   };
 }
 

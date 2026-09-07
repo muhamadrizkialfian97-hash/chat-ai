@@ -227,127 +227,139 @@ export function CacLtvDeepDive({ projectTitle }: CacLtvProps) {
         {activeTab === "cac" && (
           <motion.div
             key="cac-tab"
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
-            className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left relative z-10"
+            exit={{ opacity: 0, y: -10 }}
+            className="bg-slate-950/60 border border-slate-800 rounded-2xl p-5 md:p-6 text-left space-y-6 relative z-10"
           >
-            {/* CAC Description and Interactive Cost List Builder */}
-            <div className="lg:col-span-7 bg-slate-950/50 border border-slate-800 rounded-2xl p-4.5 flex flex-col justify-between">
-              <div>
-                <div className="flex justify-between items-start mb-3">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-                    <TrendingDown className="h-4 w-4 text-rose-400" />
-                    Struktur Komponen Customer Acquisition Cost (CAC)
-                  </h4>
-                  <span className="text-[8.5px] font-mono bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.2 rounded text-rose-400">
-                    REAL-TIME LIST
+            <div>
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-2">
+                <h4 className="text-xs md:text-sm font-black uppercase tracking-wider text-white flex items-center gap-2">
+                  <TrendingDown className="h-4.5 w-4.5 text-rose-400" />
+                  Struktur Komponen Customer Acquisition Cost (CAC)
+                </h4>
+                <span className="text-[10px] font-mono font-bold text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2.5 py-0.5 rounded-full w-fit">
+                  {cacCosts.length} Komponen Biaya Aktif
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-300 font-semibold leading-relaxed">
+                CAC mengukur seluruh investasi finansial dan waktu kerja yang dikeluarkan untuk memenangkan tender serta mengaktifkan rute komersial untuk satu klien baru:
+              </p>
+            </div>
+
+            {/* Structured Text-based Cost List */}
+            <div className="space-y-3.5 border-l-2 border-rose-500/40 pl-4 py-1">
+              {cacCosts.map((item, idx) => (
+                <div key={item.id} className="relative space-y-1 pb-1">
+                  {/* Dot marker */}
+                  <div className="absolute -left-[21px] top-1.5 h-2.5 w-2.5 rounded-full bg-rose-400 border-2 border-rose-500" />
+
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-[10px] font-mono font-black text-rose-400 uppercase">
+                        Komponen {idx + 1}:
+                      </span>
+                      <h5 className="text-[13px] font-black uppercase text-white tracking-tight">
+                        {item.name}
+                      </h5>
+                      <span className={`px-2 py-0.5 text-[8.5px] font-mono font-black rounded uppercase ${
+                        item.category === "Komersial" ? "bg-blue-500/10 text-blue-400 border border-blue-500/20" :
+                        item.category === "Teknis Operasional" ? "bg-amber-500/10 text-amber-400 border border-amber-500/20" :
+                        "bg-purple-500/10 text-purple-400 border border-purple-500/20"
+                      }`}>
+                        {item.category}
+                      </span>
+                      <span className="text-[11.5px] font-mono font-black text-slate-100 bg-slate-900 px-2.5 py-0.5 rounded border border-slate-800">
+                        Rp {item.costIDR.toLocaleString("id-ID")}
+                      </span>
+                    </div>
+
+                    {cacCosts.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveCacCost(item.id)}
+                        className="px-2 py-0.5 text-[9px] font-bold text-slate-500 hover:text-rose-400 hover:bg-slate-900 rounded transition cursor-pointer border border-transparent hover:border-slate-800"
+                        title="Hapus komponen biaya"
+                      >
+                        ✕ Hapus
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Total Calculation & Strategic Note in Clean Text */}
+            <div className="pt-4 border-t border-slate-800/80 space-y-3">
+              <div className="p-3.5 bg-slate-900/90 rounded-xl border border-slate-800 space-y-2 text-[11px] text-slate-300">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-[10px] font-mono font-black text-slate-400 uppercase">
+                    TOTAL ESTIMASI INVESTASI AKUISISI (CAC):
+                  </span>
+                  <span className="text-xl font-black text-rose-400 font-mono tracking-tight">
+                    Rp {totalCacIDR.toLocaleString("id-ID")}
                   </span>
                 </div>
-                <p className="text-[10.5px] text-slate-400 font-semibold mb-4 leading-relaxed">
-                  CAC mengukur seluruh investasi finansial dan waktu kerja yang dikeluarkan untuk memenangkan tender serta mengaktifkan rute komersial untuk satu klien baru. Ketuk tombol sampah untuk memotong biaya tak relevan.
+                <p className="text-[10.5px] text-slate-300 font-semibold leading-relaxed pt-1 border-t border-slate-800/80">
+                  <strong className="text-amber-300 font-bold">💡 Strategi Prama: </strong>
+                  Dengan menargetkan model tender korporat multi-year, total biaya akuisisi ini akan teramortisasi secara cepat dalam 3 bulan pertama saat siklus rute hauling aktif berjalan.
                 </p>
-
-                {/* Costs List */}
-                <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 mb-4">
-                  {cacCosts.map((item) => (
-                    <div key={item.id} className="bg-slate-900 p-2.5 rounded-xl border border-slate-850 flex justify-between items-center gap-3">
-                      <div className="min-w-0 flex-1">
-                        <span className={`px-1.5 py-0.2 text-[8px] font-black rounded uppercase ${
-                          item.category === "Komersial" ? "bg-blue-500/10 text-blue-400 border border-blue-500/20" :
-                          item.category === "Teknis Operasional" ? "bg-amber-500/10 text-amber-400 border border-amber-500/20" :
-                          "bg-purple-500/10 text-purple-400 border border-purple-500/20"
-                        }`}>
-                          {item.category}
-                        </span>
-                        <h5 className="text-[11px] font-black text-slate-100 uppercase tracking-tight mt-1 truncate">
-                          {item.name}
-                        </h5>
-                      </div>
-
-                      <div className="flex items-center gap-3 shrink-0">
-                        <span className="text-[11.5px] font-bold text-slate-200 font-mono">
-                          Rp {item.costIDR.toLocaleString("id-ID")}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveCacCost(item.id)}
-                          className="p-1 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded transition cursor-pointer"
-                          title="Hapus komponen biaya"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
               </div>
+            </div>
 
-              {/* Form to add custom cost */}
-              <div className="bg-slate-900 p-3 rounded-xl border border-slate-850 space-y-2.5">
-                <span className="text-[9px] text-slate-400 font-black tracking-wider block uppercase">Tambah Komponen Biaya Akuisisi</span>
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-2 text-xs">
+            {/* Form to add custom cost */}
+            <div className="border-t border-slate-800/80 pt-4">
+              <h5 className="text-[11px] font-black text-slate-200 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                <Plus className="h-3.5 w-3.5 text-rose-400" />
+                Tambah Komponen Biaya Akuisisi Baru
+              </h5>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleAddCacCost();
+                }}
+                className="grid grid-cols-1 md:grid-cols-12 gap-2 text-xs"
+              >
+                <div className="md:col-span-5">
                   <input
                     type="text"
                     value={newCostName}
                     onChange={(e) => setNewCostName(e.target.value)}
-                    placeholder="Contoh: Audit Vendor K3 Mandiri..."
-                    className="md:col-span-5 bg-slate-950 border border-slate-800 rounded-lg p-2 text-white font-semibold"
+                    placeholder="Nama Komponen Biaya (contoh: Audit K3 Mandiri...)"
+                    className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-white font-semibold focus:border-rose-500 outline-none"
+                    required
                   />
+                </div>
+                <div className="md:col-span-3">
                   <select
                     value={newCostCategory}
                     onChange={(e: any) => setNewCostCategory(e.target.value)}
-                    className="md:col-span-3 bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-300 font-semibold"
+                    className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-300 font-semibold"
                   >
                     <option value="Komersial">Komersial</option>
                     <option value="Teknis Operasional">Teknis Ops</option>
                     <option value="Legalitas & K3">Legal & K3</option>
                   </select>
+                </div>
+                <div className="md:col-span-3">
                   <input
                     type="number"
                     value={newCostVal}
                     onChange={(e) => setNewCostVal(Number(e.target.value))}
-                    className="md:col-span-3 bg-slate-950 border border-slate-800 rounded-lg p-2 text-white font-mono"
-                    placeholder="IDR"
+                    className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-white font-mono"
+                    placeholder="Nominal IDR"
+                    required
                   />
+                </div>
+                <div className="md:col-span-1">
                   <button
-                    type="button"
-                    onClick={handleAddCacCost}
-                    className="md:col-span-1 bg-rose-600 hover:bg-rose-500 text-white rounded-lg p-2 flex items-center justify-center cursor-pointer transition-all font-bold"
+                    type="submit"
+                    className="w-full bg-rose-600 hover:bg-rose-500 text-white rounded-lg p-2 flex items-center justify-center cursor-pointer transition-all font-bold h-full border-none"
                   >
                     <Plus className="h-4.5 w-4.5" />
                   </button>
                 </div>
-              </div>
-            </div>
-
-            {/* Total Display & Analysis */}
-            <div className="lg:col-span-5 bg-gradient-to-br from-slate-950 to-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
-              <div>
-                <span className="text-[8.5px] font-mono font-black text-rose-400 uppercase tracking-widest block mb-1">
-                  TOTAL CALCULATED CAC
-                </span>
-                <h4 className="text-sm font-black text-white uppercase tracking-tight mb-4">
-                  Hasil Biaya Akuisisi
-                </h4>
-
-                <div className="bg-slate-900/80 p-4 border border-slate-850 rounded-xl text-center space-y-3.5">
-                  <div>
-                    <span className="text-[9.5px] text-slate-500 font-black block">TOTAL INVESTASI AKUISISI KLIEN</span>
-                    <div className="text-2xl font-black text-white font-mono mt-1">
-                      Rp {totalCacIDR.toLocaleString("id-ID")}
-                    </div>
-                  </div>
-
-                  <div className="text-[10px] text-slate-400 font-semibold leading-relaxed text-left border-t border-slate-800/80 pt-3">
-                    💡 <span className="text-white">Strategi Prama:</span> Dengan menargetkan model tender korporat multi-year, total CAC ini akan 'teramortisasi' secara cepat dalam 3 bulan pertama rute hauling aktif berjalan.
-                  </div>
-                </div>
-              </div>
-
-              <div className="text-[9px] text-slate-500 font-bold mt-4 font-mono">
-                PRAMA FINANCIAL ENGINE v1.1
-              </div>
+              </form>
             </div>
           </motion.div>
         )}
@@ -356,111 +368,104 @@ export function CacLtvDeepDive({ projectTitle }: CacLtvProps) {
         {activeTab === "ltv" && (
           <motion.div
             key="ltv-tab"
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
-            className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left relative z-10"
+            exit={{ opacity: 0, y: -10 }}
+            className="bg-slate-950/60 border border-slate-800 rounded-2xl p-5 md:p-6 text-left space-y-6 relative z-10"
           >
-            {/* LTV Definition and Parameter Control Sliders */}
-            <div className="lg:col-span-7 bg-slate-950/50 border border-slate-800 rounded-2xl p-4.5 flex flex-col justify-between">
-              <div>
-                <h4 className="text-xs font-black uppercase tracking-wider text-slate-300 mb-3 flex items-center gap-1.5">
-                  <DollarSign className="h-4.5 w-4.5 text-rose-400" />
-                  Parameter & Logika Customer Lifetime Value (LTV)
-                </h4>
-                <p className="text-[10.5px] text-slate-400 font-semibold mb-4 leading-relaxed">
-                  LTV mengestimasi seluruh nilai keuntungan finansial bersih yang bisa diberikan oleh satu akun pelanggan korporasi selama durasi kontrak layanan mereka aktif di Prama. Sesuaikan variabel di bawah untuk melihat reaksinya:
-                </p>
+            <div>
+              <h4 className="text-xs md:text-sm font-black uppercase tracking-wider text-white flex items-center gap-2 mb-1.5">
+                <DollarSign className="h-4.5 w-4.5 text-rose-400" />
+                Parameter & Logika Customer Lifetime Value (LTV)
+              </h4>
+              <p className="text-[11px] text-slate-300 font-semibold leading-relaxed">
+                LTV mengestimasi seluruh nilai keuntungan finansial bersih yang dihasilkan oleh satu akun pelanggan korporasi selama durasi kontrak layanan aktif di Prama.
+              </p>
+            </div>
 
-                <div className="space-y-4 text-xs">
-                  {/* Slider 1: Average monthly revenue */}
-                  <div>
-                    <div className="flex justify-between mb-1.5 text-[10px]">
-                      <span className="text-slate-400 font-bold">Rata-rata Pendapatan Bruto / Bulan</span>
-                      <span className="text-rose-400 font-black font-mono">
-                        Rp {avgRevenuePerMonth.toLocaleString("id-ID")}
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min="20000000"
-                      max="150000000"
-                      step="5000000"
-                      value={avgRevenuePerMonth}
-                      onChange={(e) => setAvgRevenuePerMonth(Number(e.target.value))}
-                      className="w-full h-1 bg-slate-850 rounded-lg appearance-none cursor-pointer accent-rose-500"
-                    />
-                  </div>
+            {/* Slider Parameters in Clean Layout */}
+            <div className="space-y-4">
+              <span className="text-[10px] font-mono font-black text-rose-400 uppercase tracking-wider block">
+                📊 VARIABEL FINANSIAL KONTRAK:
+              </span>
 
-                  {/* Slider 2: Net profit margin */}
-                  <div>
-                    <div className="flex justify-between mb-1.5 text-[10px]">
-                      <span className="text-slate-400 font-bold">Margin Keuntungan Bersih (Net Margin %)</span>
-                      <span className="text-rose-400 font-black font-mono">{netProfitMargin}% Margin</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="8"
-                      max="25"
-                      step="1"
-                      value={netProfitMargin}
-                      onChange={(e) => setNetProfitMargin(Number(e.target.value))}
-                      className="w-full h-1 bg-slate-850 rounded-lg appearance-none cursor-pointer accent-rose-500"
-                    />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                {/* Slider 1: Average monthly revenue */}
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[10.5px]">
+                    <span className="text-slate-300 font-bold">Pendapatan Bruto / Bulan</span>
+                    <span className="text-rose-400 font-black font-mono">
+                      Rp {avgRevenuePerMonth.toLocaleString("id-ID")}
+                    </span>
                   </div>
-
-                  {/* Slider 3: Contract duration */}
-                  <div>
-                    <div className="flex justify-between mb-1.5 text-[10px]">
-                      <span className="text-slate-400 font-bold">Durasi Kontrak Layanan (Bulan)</span>
-                      <span className="text-rose-400 font-black font-mono">{contractDurationMonths} Bulan ({(contractDurationMonths/12).toFixed(1)} Thn)</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="12"
-                      max="60"
-                      step="6"
-                      value={contractDurationMonths}
-                      onChange={(e) => setContractDurationMonths(Number(e.target.value))}
-                      className="w-full h-1 bg-slate-850 rounded-lg appearance-none cursor-pointer accent-rose-500"
-                    />
-                  </div>
+                  <input
+                    type="range"
+                    min="20000000"
+                    max="150000000"
+                    step="5000000"
+                    value={avgRevenuePerMonth}
+                    onChange={(e) => setAvgRevenuePerMonth(Number(e.target.value))}
+                    className="w-full accent-rose-500 cursor-pointer"
+                  />
                 </div>
-              </div>
 
-              <div className="mt-4 pt-3 border-t border-slate-800/80 text-[10px] text-slate-400 font-semibold flex items-center gap-1.5">
-                <Info className="h-4 w-4 text-rose-400 shrink-0" />
-                <span>{cacLtvProfile.sectorNote}</span>
+                {/* Slider 2: Net profit margin */}
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[10.5px]">
+                    <span className="text-slate-300 font-bold">Margin Bersih (Net %)</span>
+                    <span className="text-rose-400 font-black font-mono">{netProfitMargin}% Margin</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="8"
+                    max="25"
+                    step="1"
+                    value={netProfitMargin}
+                    onChange={(e) => setNetProfitMargin(Number(e.target.value))}
+                    className="w-full accent-rose-500 cursor-pointer"
+                  />
+                </div>
+
+                {/* Slider 3: Contract duration */}
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[10.5px]">
+                    <span className="text-slate-300 font-bold">Durasi Kontrak</span>
+                    <span className="text-rose-400 font-black font-mono">{contractDurationMonths} Bulan ({(contractDurationMonths/12).toFixed(1)} Thn)</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="12"
+                    max="60"
+                    step="6"
+                    value={contractDurationMonths}
+                    onChange={(e) => setContractDurationMonths(Number(e.target.value))}
+                    className="w-full accent-rose-500 cursor-pointer"
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Projections outcome display */}
-            <div className="lg:col-span-5 bg-gradient-to-br from-slate-950 to-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
-              <div>
-                <span className="text-[8.5px] font-mono font-black text-rose-400 uppercase tracking-widest block mb-1">
-                  CUSTOMER LIFETIME VALUE (LTV)
-                </span>
-                <h4 className="text-sm font-black text-white uppercase tracking-tight mb-4">
-                  Proyeksi LTV Bersih
-                </h4>
-
-                <div className="bg-slate-900/80 p-4 border border-slate-850 rounded-xl space-y-3">
-                  <div>
-                    <span className="text-[9px] text-slate-500 font-black block">ESTIMASI LTV BERSIH KONTRAK</span>
-                    <div className="text-xl font-black text-emerald-400 font-mono mt-1">
-                      Rp {totalLtvIDR.toLocaleString("id-ID")}
-                    </div>
-                  </div>
-
-                  <div className="text-[10px] text-slate-300 font-semibold leading-relaxed pt-2 border-t border-slate-800/80">
-                    {cacLtvProfile.ltvNote}
-                  </div>
+            {/* Calculated LTV Outcome in Clean Text */}
+            <div className="pt-4 border-t border-slate-800/80 space-y-3">
+              <div className="p-3.5 bg-slate-900/90 rounded-xl border border-slate-800 space-y-2 text-[11px] text-slate-300">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-[10px] font-mono font-black text-slate-400 uppercase">
+                    ESTIMASI LTV BERSIH KONTRAK:
+                  </span>
+                  <span className="text-xl font-black text-emerald-400 font-mono tracking-tight">
+                    Rp {totalLtvIDR.toLocaleString("id-ID")}
+                  </span>
                 </div>
+                <p className="text-[10.5px] text-slate-300 font-semibold leading-relaxed pt-1 border-t border-slate-800/80">
+                  <strong className="text-emerald-400 font-bold">• Catatan Finansial Sektor: </strong>
+                  {cacLtvProfile.ltvNote}
+                </p>
               </div>
+            </div>
 
-              <div className="text-[9px] text-slate-500 font-bold mt-4">
-                PRAMA LTV CALCULATOR ENGINE v1.2
-              </div>
+            <div className="text-[10px] text-slate-400 font-semibold flex items-center gap-1.5 pt-1">
+              <Info className="h-4 w-4 text-rose-400 shrink-0" />
+              <span>{cacLtvProfile.sectorNote}</span>
             </div>
           </motion.div>
         )}
@@ -469,107 +474,74 @@ export function CacLtvDeepDive({ projectTitle }: CacLtvProps) {
         {activeTab === "ratio" && (
           <motion.div
             key="ratio-tab"
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
-            className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left relative z-10"
+            exit={{ opacity: 0, y: -10 }}
+            className="bg-slate-950/60 border border-slate-800 rounded-2xl p-5 md:p-6 text-left space-y-6 relative z-10"
           >
-            {/* LTV/CAC Ratio and financial diagnosis */}
-            <div className="lg:col-span-7 bg-slate-950/50 border border-slate-800 rounded-2xl p-4.5 flex flex-col justify-between">
-              <div>
-                <h4 className="text-xs font-black uppercase tracking-wider text-slate-300 mb-3 flex items-center gap-1.5">
-                  <Scale className="h-4.5 w-4.5 text-rose-400" />
-                  Rasio Keuangan LTV/CAC & Evaluasi Kesehatan Bisnis
-                </h4>
-                <p className="text-[10.5px] text-slate-400 font-semibold mb-4 leading-relaxed">
-                  Rasio LTV dibanding CAC mengonfirmasi efisiensi investasi biaya promosi dan komisi penjualan. Secara universal, angka rasio <span className="text-emerald-400 font-black">{`>= 3.0x`}</span> dianggap sehat dan teruji bertahan lama.
-                </p>
+            <div>
+              <h4 className="text-xs md:text-sm font-black uppercase tracking-wider text-white flex items-center gap-2 mb-1.5">
+                <Scale className="h-4.5 w-4.5 text-rose-400" />
+                Rasio Keuangan LTV/CAC & Evaluasi Kesehatan Bisnis
+              </h4>
+              <p className="text-[11px] text-slate-300 font-semibold leading-relaxed">
+                Rasio LTV dibanding CAC mengonfirmasi efisiensi investasi biaya promosi dan komisi penjualan. Secara universal, angka rasio <span className="text-emerald-400 font-black">{`>= 3.0x`}</span> dianggap sehat dan menjamin kesinambungan jangka panjang.
+              </p>
+            </div>
 
-                <div className="space-y-3.5 text-xs">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-slate-900 p-3.5 rounded-xl border border-slate-850 text-center">
-                      <span className="text-[9px] text-slate-500 font-black block">CAC AKTUAl</span>
-                      <span className="text-[13px] font-black text-rose-400 font-mono">
-                        Rp {totalCacIDR.toLocaleString("id-ID")}
-                      </span>
-                    </div>
-
-                    <div className="bg-slate-900 p-3.5 rounded-xl border border-slate-850 text-center">
-                      <span className="text-[9px] text-slate-500 font-black block">LTV BERSIH</span>
-                      <span className="text-[13px] font-black text-emerald-400 font-mono">
-                        Rp {totalLtvIDR.toLocaleString("id-ID")}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Healthy Ratio Scale */}
-                  <div className="bg-slate-900 p-4 border border-slate-850 rounded-xl">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-[9.5px] text-slate-400 font-black">BAR REGISTER KESEHATAN INVESTASI</span>
-                      <span className={`text-[10px] font-black px-2 py-0.5 rounded border ${healthColor}`}>
-                        {ratioHealth}
-                      </span>
-                    </div>
-
-                    <div className="w-full bg-slate-950 h-3 rounded-full overflow-hidden relative mb-2">
-                      <div
-                        className={`h-full transition-all duration-500 ${
-                          ltvCacRatio >= 5.0 ? "bg-emerald-500" : ltvCacRatio >= 3.0 ? "bg-blue-400" : ltvCacRatio >= 1.5 ? "bg-amber-400" : "bg-rose-500"
-                        }`}
-                        style={{ width: `${Math.min(100, (ltvCacRatio / 10) * 100)}%` }}
-                      />
-                      {/* Scale indicators */}
-                      <div className="absolute left-[30%] top-0 w-0.5 h-full bg-slate-700" title="Standar Sehat (3.0x)" />
-                      <div className="absolute left-[50%] top-0 w-0.5 h-full bg-slate-700" title="Sangat Sehat (5.0x)" />
-                    </div>
-
-                    <div className="flex justify-between text-[8.5px] text-slate-500 font-mono">
-                      <span>0.0x (Kritis)</span>
-                      <span>3.0x (Standar Sehat)</span>
-                      <span>5.0x (Sangat Sehat)</span>
-                      <span>10.0x</span>
-                    </div>
-                  </div>
-                </div>
+            {/* Numbers in Clean Horizontal Summary */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800">
+                <span className="text-[9.5px] font-mono font-black text-slate-400 block uppercase mb-0.5">Biaya Akuisisi (CAC)</span>
+                <span className="text-base font-mono font-black text-rose-400">Rp {totalCacIDR.toLocaleString("id-ID")}</span>
               </div>
-
-              <div className="mt-4 pt-3 border-t border-slate-800/80 text-[10px] text-slate-400 font-semibold">
-                * Rasio LTV/CAC Anda saat ini: <span className="text-white font-black">{ltvCacRatio.toFixed(2)}x</span>
+              <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800">
+                <span className="text-[9.5px] font-mono font-black text-slate-400 block uppercase mb-0.5">LTV Bersih Kontrak</span>
+                <span className="text-base font-mono font-black text-emerald-400">Rp {totalLtvIDR.toLocaleString("id-ID")}</span>
+              </div>
+              <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800">
+                <span className="text-[9.5px] font-mono font-black text-slate-400 block uppercase mb-0.5">Rasio & Status Finansial</span>
+                <span className="text-base font-mono font-black text-sky-400">{ltvCacRatio.toFixed(1)}x ({ratioHealth})</span>
               </div>
             </div>
 
-            {/* Strategic suggestions based on computed Ratio */}
-            <div className="lg:col-span-5 bg-gradient-to-br from-slate-950 to-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
-              <div>
-                <span className="text-[8.5px] font-mono font-black text-rose-400 uppercase tracking-widest block mb-1">
-                  STRATEGIC ADVISOR REPORT
+            {/* Health Bar Register */}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center text-[10px] font-black">
+                <span className="text-slate-300 uppercase font-mono">BAR REGISTER KESEHATAN INVESTASI</span>
+                <span className={`px-2 py-0.5 rounded border font-mono ${healthColor}`}>
+                  {ratioHealth} ({ltvCacRatio.toFixed(2)}x)
                 </span>
-                <h4 className="text-sm font-black text-white uppercase tracking-tight mb-4 flex items-center gap-1">
-                  <Calculator className="h-4 w-4 text-rose-400" />
-                  Rekomendasi Bisnis Prama
-                </h4>
-
-                <div className="bg-slate-900 p-4 border border-slate-850 rounded-xl space-y-3">
-                  <span className="text-[9.5px] text-slate-500 font-black block">ARAHAN OPERASIONAL</span>
-                  <p className="text-[10px] text-slate-200 leading-relaxed font-semibold">
-                    {strategyText}
-                  </p>
-
-                  <div className="border-t border-slate-800/80 pt-3 text-[9.5px] text-slate-400 font-semibold space-y-1.5">
-                    <div className="flex items-center gap-1.5">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                      <span>Pertahankan tingkat retensi kontrak tinggi.</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                      <span>Optimalkan pemanfaatan backhaul sharing.</span>
-                    </div>
-                  </div>
-                </div>
               </div>
 
-              <div className="text-[9px] text-slate-500 font-bold mt-4">
-                PRAMA BUSINESS ADVISORY SYSTEM v1.3
+              <div className="w-full bg-slate-900 h-3 rounded-full overflow-hidden relative border border-slate-800">
+                <div
+                  className={`h-full transition-all duration-500 ${
+                    ltvCacRatio >= 5.0 ? "bg-emerald-500" : ltvCacRatio >= 3.0 ? "bg-blue-400" : ltvCacRatio >= 1.5 ? "bg-amber-400" : "bg-rose-500"
+                  }`}
+                  style={{ width: `${Math.min(100, (ltvCacRatio / 10) * 100)}%` }}
+                />
+              </div>
+
+              <div className="flex justify-between text-[9px] text-slate-400 font-mono">
+                <span>0.0x (Kritis)</span>
+                <span>3.0x (Standar Sehat)</span>
+                <span>5.0x (Sangat Sehat)</span>
+                <span>10.0x</span>
+              </div>
+            </div>
+
+            {/* Strategic Advice Text */}
+            <div className="pt-4 border-t border-slate-800/80 space-y-2">
+              <span className="text-[10px] font-mono font-black text-rose-400 uppercase tracking-wider block">
+                📋 REKOMENDASI & ARAHAN STRATEGIS:
+              </span>
+              <p className="text-[11px] text-slate-200 leading-relaxed font-semibold">
+                {strategyText}
+              </p>
+              <div className="text-[10.5px] text-slate-300 font-semibold space-y-1 pt-1">
+                <p>• <strong className="text-white">Retensi Kontrak: </strong>Pertahankan tingkat kepuasan dan SLA armada agar klien terus memperpanjang tenor kontrak.</p>
+                <p>• <strong className="text-white">Efisiensi Rute (Backhaul): </strong>Manfaatkan muatan balikan untuk memaksimalkan net margin profitabilitas tanpa menambah biaya CAC.</p>
               </div>
             </div>
           </motion.div>

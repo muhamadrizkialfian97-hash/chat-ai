@@ -13,93 +13,195 @@ export interface DashboardSection {
   defaultContent: string;
 }
 
-// 13 Essential Project Management Structure Sections
-export const defaultDashboardSections: DashboardSection[] = [
-  {
-    number: 1,
-    title: "Global/NAT Overview",
-    shortDesc: "Analisis regulasi makro dan kebijakan transisi energi / lingkungan.",
-    defaultContent: "### 1. Global/NAT Overview\n\n"
-  },
-  {
-    number: 2,
-    title: "Market Opportunity",
-    shortDesc: "Potensi pasar, kesenjangan layanan logistik limbah, dan ceruk pasar.",
-    defaultContent: "### 2. Market Opportunity\n\n"
-  },
-  {
-    number: 3,
-    title: "Financial (Capex, Opex, P&L, Cash Flow, ROI)",
-    shortDesc: "Estimasi kelayakan finansial, alokasi biaya, dan pengembalian modal.",
-    defaultContent: "### 3. Financial (Capex, Opex, P&L, Cash Flow, ROI)\n\n"
-  },
-  {
-    number: 4,
-    title: "Supply & Demand",
-    shortDesc: "Analisis kapasitas armada pengangkutan limbah versus pertumbuhan industri.",
-    defaultContent: "### 4. Supply & Demand\n\n"
-  },
-  {
-    number: 5,
-    title: "Organization (Qualification, Skill, Output/KPI, SOP)",
-    shortDesc: "Persyaratan keahlian staf, target performa kerja kunci, dan kepatuhan.",
-    defaultContent: "### 5. Organization (Qualification, Skill, Output/KPI, SOP)\n\n"
-  },
-  {
-    number: 6,
-    title: "Transition Model (Pre-On-Post)",
-    shortDesc: "Tahapan implementasi transisi proses onboard rute proyek baru.",
-    defaultContent: "### 6. Transition Model (Pre-On-Post)\n\n"
-  },
-  {
-    number: 7,
-    title: "Go To Market Strategy",
-    shortDesc: "Cara menjangkau prospek klien korporasi besar dan penetrasi pasar logistik.",
-    defaultContent: "### 7. Go To Market Strategy\n\n"
-  },
-  {
-    number: 8,
-    title: "Ops Model (Flow Process, Workflow Diagram, SLA)",
-    shortDesc: "Skema alur kontrol dispatch armada pencari, pelacakan GPS, dan SLA.",
-    defaultContent: "### 8. Ops Model (Flow Process, Workflow Diagram, SLA)\n\n"
-  },
-  {
-    number: 9,
-    title: "Risk Management",
-    shortDesc: "Sistem mitigasi kecelakaan, kebocoran lingkungan, dan risiko regulasi.",
-    defaultContent: "### 9. Risk Management\n\n"
-  },
-  {
-    number: 10,
-    title: "Digital Coverage (Tools, Method, Impact, Automation)",
-    shortDesc: "Penerapan solusi ERP logistik, sensor IoT, dan FESTRONIK digital.",
-    defaultContent: "### 10. Digital Coverage (Tools, Method, Impact, Automation)\n\n"
-  },
-  {
-    number: 11,
-    title: "Competitor",
-    shortDesc: "Komparasi posisi nilai pasar dengan pemain logistik limbah serupa.",
-    defaultContent: "### 11. Competitor\n\n"
-  },
-  {
-    number: 12,
-    title: "TAM, SAM, SOM",
-    shortDesc: "Total estimasi potensi serapan pasar logistik limbah B3 di Indonesia.",
-    defaultContent: "### 12. TAM, SAM, SOM\n\n"
-  },
-  {
-    number: 13,
-    title: "CAC, LTV",
-    shortDesc: "Analisis Customer Acquisition Cost versus Lifetime Value nilai pelanggan.",
-    defaultContent: "### 13. CAC, LTV\n\n"
-  },
-  {
-    number: 14,
-    title: "Kesimpulan & Rekomendasi Keputusan",
-    shortDesc: "Rangkuman akhir, rekomendasi strategis, dan langkah taktis penentu kebijakan.",
-    defaultContent: "### 14. Kesimpulan & Rekomendasi Keputusan\n\n**Kesimpulan Akhir:**\nBerdasarkan kajian mendalam dari seluruh aspek operasional, finansial, kepatuhan HSE, dan integrasi telematika digital, proyek ekspansi logistik dan hauling dinyatakan **SANGAT LAYAK (GO)** untuk segera dieksekusi.\n\n**Rekomendasi Keputusan Utama:**\n1. Segera lakukan penandatanganan kontrak kerja sama multitahun (MToP) dengan pemilik konsesi.\n2. Terapkan sistem fit-to-work terofisial RFID di seluruh pos kesehatan guna menjamin keselamatan kerja armada.\n3. Integrasikan pelacakan telemetri satelit GPS dan sensor anti-lelah (fatigue monitoring) pada armada utama guna menekan risiko insiden di lapangan."
+export function getDashboardSectionsForProject(projectTitle: string): DashboardSection[] {
+  const cleanTitle = normalizeProjectTitle(projectTitle || "Kajian Strategis: Forestry Management Transportation");
+  const lower = cleanTitle.toLowerCase();
+
+  let shortDescriptions: Record<number, string>;
+
+  if (lower.includes("forestry") || lower.includes("kehutanan") || lower.includes("hutan") || lower.includes("kayu") || lower.includes("timber") || lower.includes("logging") || lower.includes("wood")) {
+    shortDescriptions = {
+      1: "Analisis regulasi SVLK, moratorium hutan, dan kepatuhan KLHK kehutanan.",
+      2: "Potensi rute logging timber, pasokan industri pulp & kertas, dan celah pasar.",
+      3: "Estimasi Capex truk logging off-road, Opex solar industri, dan ROI rute hutan.",
+      4: "Kapasitas angkut armada logging vs kuota tebang tahunan konsesi HTI.",
+      5: "Kualifikasi supir medan berat, pengawas K3 kehutanan, dan SOP keselamatan.",
+      6: "Tahapan uji coba rute hutan (pilot run), mobilisasi armada, dan serah terima.",
+      7: "Strategi kontrak jangka panjang (LTSA) dengan grup industri pulp & paper.",
+      8: "Alur dispatch dari log pond/landing point, telemetri satelit, dan SLA muat.",
+      9: "Mitigasi jalan lumpur cuaca ekstrem, kecelakaan muatan kayu, dan konflik sosial.",
+      10: "Sensor GPS area blankspot, timbangan gandar portable, dan e-dokumen SKSHAK.",
+      11: "Komparasi posisi nilai dengan transporter kayu lokal dan armada captive.",
+      12: "Estimasi potensi pasar logistik kehutanan nasional (TAM), koridor HTI (SAM/SOM).",
+      13: "Rasio biaya akuisisi konsesi kayu vs nilai kontrak tahunan bernilai tinggi.",
+      14: "Rangkuman evaluasi kelayakan komersial dan rekomendasi eksekusi proyek kehutanan."
+    };
+  } else if (lower.includes("waste") || lower.includes("limbah") || lower.includes("sampah") || lower.includes("b3") || lower.includes("environmental") || lower.includes("environment")) {
+    shortDescriptions = {
+      1: "Analisis regulasi AMDAL, PP No 22/2021, dan izin pengangkutan limbah B3 KLHK.",
+      2: "Kesenjangan transporter limbah berizin resmi dan lonjakan limbah manufaktur.",
+      3: "Capex tangki vacuum & boks khusus B3, Opex pengolahan, dan proyeksi ROI.",
+      4: "Suplai transporter limbah B3 berizin vs volume limbah kawasan industri.",
+      5: "Sertifikasi B2 Umum kimia, tim tanggap darurat B3, dan SOP dekontaminasi.",
+      6: "Prosedur sertifikasi izin trayek KLHK, uji coba jalur B3, dan onboard klien.",
+      7: "Penetrasi tender korporat kimia, manufaktur otomotif, dan rumah sakit B2B.",
+      8: "Alur manifes Festronik, prosedur bongkar muat bahan berbahaya, dan SLA darurat.",
+      9: "Mitigasi kebocoran bahan kimia B3, tumpahan jalan raya, dan audit lingkungan.",
+      10: "Integrasi sistem Festronik KLHK, sensor kebocoran IoT, dan GPS anti-deviasi.",
+      11: "Analisis komparatif dengan PPLI, Wastec International, dan pengolah limbah B3.",
+      12: "Total pasar limbah B3 nasional, fokus kawasan industri Jawa, dan target SOM.",
+      13: "Efisiensi biaya audit kepatuhan tender B3 vs retensi kontrak korporat multitahun.",
+      14: "Rekomendasi strategis dan penetapan kelayakan investasi pengangkutan limbah B3."
+    };
+  } else if (lower.includes("batubara") || lower.includes("coal") || lower.includes("tambang") || lower.includes("mineral") || lower.includes("batu bara")) {
+    shortDescriptions = {
+      1: "Kajian regulasi ESDM, royalti pertambangan, dan kebijakan efisiensi energi.",
+      2: "Permintaan koridor hauling batu bara dari tambang (IUP) menuju pelabuhan jetty.",
+      3: "Capex dump truck heavy-duty, Opex solar & ban off-road, dan kelayakan IRR.",
+      4: "Kapasitas ritase harian armada hauling vs target kuota produksi tambang.",
+      5: "Kualifikasi supir hauling tambang, sertifikasi POP/POM K3, dan SOP muatan.",
+      6: "Pemetaan jalan tambang khusus, uji muat (pilot run), dan mobilisasi unit.",
+      7: "Kontrak kerja sama jangka panjang (MToP) dengan pemilik konsesi tambang.",
+      8: "Alur timbangan jetty, sistem dispatch FMS, dan SLA turnaround time armada.",
+      9: "Mitigasi jalan tambang longsor, insiden blindspot alat berat, dan fluktuasi solar.",
+      10: "Fleet Management System (FMS), sensor fatigue monitoring, dan kamera ADAS.",
+      11: "Komparasi keandalan dengan kontraktor hauling tambang petahana.",
+      12: "Total pasar hauling batu bara Sumatera/Kalimantan, rute khusus, dan target SOM.",
+      13: "Analisis biaya uji coba rute hauling vs LTV kontrak volume jumbo tahunan.",
+      14: "Evaluasi akhir kelayakan operasional dan investasi armada hauling pertambangan."
+    };
+  } else if (lower.includes("dingin") || lower.includes("cold") || lower.includes("farmasi") || lower.includes("vaksin") || lower.includes("makanan") || lower.includes("boga") || lower.includes("fresh") || lower.includes("reefer")) {
+    shortDescriptions = {
+      1: "Regulasi CDOB BPOM, standar rantai dingin halal, dan tren logistik farmasi/boga.",
+      2: "Pertumbuhan distribusi frozen food, vaksin farmasi, dan ritel segar antarkota.",
+      3: "Capex armada reefer chiller, Opex solar diesel genset, dan perhitungan ROI.",
+      4: "Kelangkaan armada berpendingin tersertifikasi vs lonjakan industri segar.",
+      5: "Pelatihan penanganan suhu, protokol kebersihan HACCP, dan KPI integritas kargo.",
+      6: "Validasi termal boks pendingin, mapping rute trans-Jawa, dan onboarding klien.",
+      7: "Penetrasi ke pabrik farmasi, eksportir seafood, dan jaringan ritel modern.",
+      8: "Alur pemuatan suhu konstan (-20°C s.d +4°C), live temperature tracking, & SLA.",
+      9: "Mitigasi kegagalan genset pendingin, fluktuasi suhu kargo, dan klaim asuransi.",
+      10: "Sensor IoT real-time temperature logger, data logger cloud, dan e-POD.",
+      11: "Analisis kekuatan armada dingin dibanding Enseval, MGM Bosco, dan Kiat Ananda.",
+      12: "Potensi pasar cold storage & logistik dingin Indonesia serta target SOM.",
+      13: "Biaya kustomisasi boks reefer vs nilai kontrak jangka panjang distribusi farmasi.",
+      14: "Rekomendasi kelayakan ekspansi armada cold chain terintegrasi teknologi."
+    };
+  } else if (lower.includes("pelabuhan") || lower.includes("port") || lower.includes("kontainer") || lower.includes("container") || lower.includes("laut") || lower.includes("ocean")) {
+    shortDescriptions = {
+      1: "Kebijakan National Logistics Ecosystem (NLE), dwelling time, dan intermodal.",
+      2: "Peluang shuttle container depo ke terminal pelabuhan ekspor-impor Tanjung Priok.",
+      3: "Capex armada prime mover head trailer, Opex tol & bbm, serta analisa ROI.",
+      4: "Kapasitas pergerakan peti kemas di pelabuhan utama vs ketersediaan truk sasis.",
+      5: "Kualifikasi supir lisensi pelabuhan (TID), sertifikasi keselamatan, & KPI ritase.",
+      6: "Integrasi sistem gate pelabuhan (TOS), uji rute koridor buffer, & go-live.",
+      7: "Kemitraan dengan shipping line internasional, freight forwarder, & konsolidator.",
+      8: "Sistem booking slot gate digital (VBS), pemantauan GPS, dan SLA waktu tunggu.",
+      9: "Mitigasi kemacetan akses pelabuhan, antrean gate terminal, dan dwelling time.",
+      10: "Integrasi API Port Community System, smart gate RFID, dan e-Seal kontainer.",
+      11: "Komparasi SLA kecepatan bongkar muat dengan asosiasi angkutan khusus pelabuhan.",
+      12: "Estimasi throughput peti kemas nasional, koridor Priok/Cikarang, dan SOM.",
+      13: "Efisiensi biaya integrasi sistem logistik pelabuhan vs pendapatan berulang.",
+      14: "Kajian kelayakan strategis pengoperasian shuttle container terminal intermodal."
+    };
+  } else if (lower.includes("cpo") || lower.includes("sawit") || lower.includes("palm oil") || lower.includes("minyak")) {
+    shortDescriptions = {
+      1: "Regulasi ISPO, RSPO, mandatori biodiesel B35/B40, dan kebijakan hilirisasi sawit.",
+      2: "Kebutuhan transportasi tangki CPO dari PKS ke refinery dan bulking station.",
+      3: "Capex tangki stainless food grade, Opex rute perkebunan, dan proyeksi ROI.",
+      4: "Kapasitas tangki fluida CPO tersertifikasi vs lonjakan panen raya sawit.",
+      5: "Kualifikasi supir tangki cairan berat, pengawas K3 perkebunan, dan SOP FFA.",
+      6: "Pembersihan tangki (tank cleaning) bersertifikat, uji rute PKS, dan onboarding.",
+      7: "Kontrak tahunan dengan grup produsen minyak sawit dan pabrik biodiesel.",
+      8: "Alur pengambilan sampel kadar asam lemak bebas (FFA), penyegelan, dan SLA.",
+      9: "Mitigasi kontaminasi minyak sawit, penyusutan volume tangki, dan jalan tanah.",
+      10: "Sensor level tangki ultrasonik, GPS anti-tumpah, dan seal elektronik (e-Seal).",
+      11: "Perbandingan dengan transporter tangki CPO lokal di Sumatera & Kalimantan.",
+      12: "Total volume produksi CPO Indonesia, wilayah operasional, dan target SOM.",
+      13: "Rasio biaya persiapan izin tangki sawit terhadap nilai kontrak multitahun.",
+      14: "Rekomendasi penetapan armada tangki CPO berstandar mutu industri prima."
+    };
+  } else if (lower.includes("nikel") || lower.includes("nickel") || lower.includes("smelter") || lower.includes("ore") || lower.includes("baterai")) {
+    shortDescriptions = {
+      1: "Kebijakan hilirisasi mineral nikel, Permen ESDM, dan standar ESG rantai pasok EV.",
+      2: "Peluang hauling bijih nikel (ore) dari tambang ke smelter kawasan industri.",
+      3: "Capex heavy dump truck berkapasitas besar, Opex medan berat, dan estimasi ROI.",
+      4: "Kebutuhan pasokan ore smelter 24 jam non-stop vs ketersediaan armada tangguh.",
+      5: "Keahlian supir muatan berat basah (wet ore), pengawas K3 smelter, dan SOP.",
+      6: "Survei jembatan timbang tambang, uji coba daya tahan sasis, dan mobilisasi.",
+      7: "Kontrak pasokan eksklusif dengan operator smelter nikel dan kawasan industri.",
+      8: "Alur hauling sirkular 24 jam, pemantauan FMS real-time, dan target ritase ketat.",
+      9: "Mitigasi kadar air ore (moisture limit), jalan licin, dan kelelahan operator.",
+      10: "Sensor berat suspensi real-time, IoT telemetry, dan kamera keselamatan AI.",
+      11: "Analisis perbandingan keandalan armada dibanding kontraktor lokal petahana.",
+      12: "Total tonase bijih nikel nasional, koridor smelter Sulawesi/Maluku, & target SOM.",
+      13: "Biaya penyesuaian armada spesifikasi nikel vs profitabilitas kontrak volume raksasa.",
+      14: "Evaluasi kelayakan investasi pengangkutan nikel untuk mendukung ekosistem baterai."
+    };
+  } else if (lower.includes("semen") || lower.includes("cement") || lower.includes("konstruksi") || lower.includes("clinker") || lower.includes("beton")) {
+    shortDescriptions = {
+      1: "Kajian regulasi batas muatan sumbu (MST), anti-ODOL, dan izin lintasan jalan.",
+      2: "Kebutuhan pasokan semen curah ke batching plant dan proyek infrastruktur.",
+      3: "Capex armada truk tangki semen kapsul, Opex solar kompresor, dan ROI.",
+      4: "Kapasitas pasokan silo semen pabrik vs target penyelesaian konstruksi.",
+      5: "Sertifikasi supir tangki semen bertekanan (pneumatik) dan SOP keselamatan.",
+      6: "Uji coba pembongkaran blower semen (pneumatic discharge) dan rute proyek.",
+      7: "Kemitraan strategis dengan BUMN Karya dan produsen semen nasional.",
+      8: "Alur kompresi pemuatan semen, pemantauan GPS, dan SLA pembongkaran.",
+      9: "Mitigasi risiko tumpahan debu semen, penyumbatan pipa, dan audit K3.",
+      10: "Sensor tekanan blower, digital POD tanda terima, dan integrasi ERP semen.",
+      11: "Komparasi keandalan pasokan dibanding transporter semen konvensional.",
+      12: "Estimasi serapan semen curah nasional, koridor regional, dan target SOM.",
+      13: "Analisis biaya perawatan tangki kapsul semen vs margin kontrak batching plant.",
+      14: "Rekomendasi kelayakan ekspansi armada angkutan semen curah dan clinker."
+    };
+  } else {
+    const coreTopic = cleanTitle.replace(/^(kajian|analisis|evaluasi|studi|kelayakan|strategis|proyek|project|rancangan|ekspansi)[\s:]+/i, "");
+    shortDescriptions = {
+      1: `Analisis regulasi makro, perizinan transportasi, dan kepatuhan ${coreTopic}.`,
+      2: `Kesenjangan pasar, keunggulan operasional, dan peluang bisnis ${coreTopic}.`,
+      3: `Estimasi Capex armada, Opex bulanan, cash flow, dan kalkulasi ROI ${coreTopic}.`,
+      4: `Keseimbangan kapasitas armada suplai vs permintaan volume ${coreTopic}.`,
+      5: `Struktur tim, kualifikasi pengemudi, target KPI harian, dan SOP operasional.`,
+      6: `Tahapan transisi pre-onboarding, uji coba rute jalur, hingga stabilisasi.`,
+      7: `Strategi penetrasi pasar B2B, diferensiasi layanan, dan kemitraan jangka panjang.`,
+      8: `Alur proses sirkuit logistik, skema SLA ketat, dan manajemen pengecualian.`,
+      9: `Mitigasi risiko keselamatan jalan, kepatuhan hukum, dan integritas kargo.`,
+      10: `Penerapan platform telematika PRAMA, sensor IoT muatan, dan e-manifest.`,
+      11: `Pemetaan profil kompetitor petahana dan strategi keunggulan kompetitif.`,
+      12: `Kalkulasi ukuran pasar Total (TAM), Serviceable (SAM), dan Target Riil (SOM).`,
+      13: `Analisis Customer Acquisition Cost (CAC) vs Lifetime Value (LTV) kontrak.`,
+      14: `Rangkuman eksekutif kelayakan proyek dan rekomendasi langkah taktis eksekusi.`
+    };
   }
-];
+
+  const baseTitles: Record<number, string> = {
+    1: "Global/NAT Overview",
+    2: "Market Opportunity",
+    3: "Financial (Capex, Opex, P&L, Cash Flow, ROI)",
+    4: "Supply & Demand",
+    5: "Organization (Qualification, Skill, Output/KPI, SOP)",
+    6: "Transition Model (Pre-On-Post)",
+    7: "Go To Market Strategy",
+    8: "Ops Model (Flow Process, Workflow Diagram, SLA)",
+    9: "Risk Management",
+    10: "Digital Coverage (Tools, Method, Impact, Automation)",
+    11: "Competitor",
+    12: "TAM, SAM, SOM",
+    13: "CAC, LTV",
+    14: "Kesimpulan & Rekomendasi Keputusan"
+  };
+
+  return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].map((num) => ({
+    number: num,
+    title: baseTitles[num],
+    shortDesc: shortDescriptions[num] || `Kajian strategis pilar ke-${num} untuk proyek ${cleanTitle}.`,
+    defaultContent: `### ${num}. ${baseTitles[num]}\n\n`
+  }));
+}
+
+// Default 14 Essential Project Management Structure Sections
+export const defaultDashboardSections: DashboardSection[] = getDashboardSectionsForProject("Kajian Strategis: Forestry Management Transportation");
 
 /**
  * Format markdown string content to standard HTML styled for MS Word
@@ -949,506 +1051,87 @@ export function generatePillarsForProject(projectName: string, fileContent?: str
   const pillars: Record<number, string> = {
     1: `### 1. Global / National (NAT) Overview
 
-**A. TINJAUAN REGULASI & KEPATUHAN NASIONAL (REGULATORY COMPLIANCE)**
-* **Kesesuaian Hukum Utama:** Kajian dirancang khusus untuk proyek **"${pName}"** dalam naungan ${industry}. Kepatuhan hukum dijamin melalui penyelarasan penuh dengan regulasi nasional, khususnya ${regulations}.
-* **Sertifikasi & Lisensi Jalan:** Memenuhi seluruh persyaratan uji kelayakan berkala (KIR), izin trayek angkutan barang khusus, dan standar keselamatan logistik nasional.
+Kajian strategis proyek ${pName} pada sektor ${industry} berfokus pada keandalan pengangkutan komoditas ${materialName}. Operasional didukung kesiapan ${unitsText} unit armada heavy-duty dengan alokasi estimasi Capex sebesar Rp ${(numericCapex / 1000000000).toFixed(1)} Miliar dan Opex bulanan sebesar Rp ${(numericOpex / 1000000000).toFixed(1)} Miliar.
 
-**B. ANALISIS ESG & REDUKSI EMISI GRK (ESG & DECARBONIZATION ALIGNMENT)**
-* **Dekarbonisasi Rantai Pasok:** Mengintegrasikan indikator keberlanjutan dekarbonisasi untuk meningkatkan daya tawar di mata klien korporasi besar yang memiliki komitment ESG tinggi.
-* **Standardisasi Industri:** Menjadi penyedia transportasi logistik berlisensi resmi yang handal di tengah regulasi pengawasan angkutan jalan raya yang kian diperketat oleh pemerintah pusat.
+Seluruh kegiatan transportasi mengacu pada kepatuhan regulasi ${regulations}, kelayakan uji berkala e-KIR, serta sertifikasi keselamatan kerja K3 Kemenhub. Koridor distribusi melintasi ${extraDetail1} dengan protokol ${extraDetail2} untuk menjamin pencapaian target SLA on-time delivery minimal 98.5%.`,
 
-**C. PELUANG EKONOMI HIJAU & TRANSISI ENERGI (GREEN TRANSITION VALUE)**
-* **Diferensiasi Layanan:** Mengadopsi armada truk modern dekarbonisasi guna membantu korporasi mitra memenuhi target net-zero audit rantai pasok mereka.
-* **Keberlanjutan Jangka Panjang:** Menyelaraskan sirkulasi logistik dengan peta jalan sirkular ekonomi Indonesia guna meminimalisir risiko operasional di masa depan.
+    2: `### 2. Market Opportunity
 
-**D. JENIS-JENIS STANDAR REGULASI & LISENSI LOGISTIK (TYPES OF REGULATORY STANDARDS)**
-* **Sertifikasi KIR Elektronik (e-KIR):** Uji kelayakan teknis sasis secara digital berkala untuk menggaransi keamanan fungsi rem, emisi gas buang, dan kekuatan sasis gandar.
-* **Izin Usaha Angkutan Khusus (B3 / Tambang):** Lisensi wajib dari Kementerian Perhubungan RI untuk kategori angkutan barang dengan klasifikasi khusus atau muatan strategis sensitif.
-* **Sertifikasi Sistem Manajemen Keselamatan (SMK):** Akreditasi standar K3 logistik nasional untuk meminimalisir risiko insiden kecelakaan armada di jalan raya.`,
+Proyek "${pName}" menyasar sektor ${industry} premium di mana terdapat gap atau kesenjangan besar antara transporter berlisensi standar dengan standar kepatuhan tinggi yang dituntut oleh korporat modern. Dengan memanfaatkan armada khusus berlisensi untuk mengangkut ${materialName}, Pancaran Group berada di posisi paling strategis untuk merebut pangsa pasar dari kompetitor konvensional.
 
-    2: (() => {
-      if (lower.includes("forestry") || lower.includes("kehutanan") || lower.includes("hutan") || lower.includes("wood") || lower.includes("logging")) {
-        return `### 2. Market Opportunity
+Keberadaan armada berteknologi tinggi dan jaminan kepatuhan regulasi ${regulations} memungkinkan penetrasi pasar yang efektif pada koridor distribusi utama. Solusi logistik terintegrasi ini menjawab kebutuhan industri terhadap efisiensi biaya operasional, keandalan ketepatan waktu pengiriman, serta pemenuhan target efisiensi dan tata kelola berkelanjutan.`,
 
-Berikut adalah bedah terstruktur (breakdown) dari dokumen **"MARKET OPPORTUNITY: Forestry Management Transportation"** berdasarkan poin-poin penting di dalamnya:
+    3: `### 3. Financial (Capex, Opex, P&L, Cash Flow, ROI)
 
----
+Kelayakan finansial proyek ${pName} didukung alokasi Capex sebesar Rp ${(numericCapex / 1000000000).toFixed(1)} Miliar untuk pengadaan ${unitsText} unit armada heavy-duty berteknologi tinggi serta estimasi Opex bulanan sebesar Rp ${(numericOpex / 1000000000).toFixed(1)} Miliar. Dengan proyeksi pendapatan operasional rata-rata Rp ${(monthlyRev / 1000000000).toFixed(1)} Miliar per bulan dan target marjin laba kotor 45%, proyek ini mengindikasikan Payback Period selama ${defaultPbp} tahun serta tingkat ROI tahun ke-3 sebesar ${defaultRoi}%.
 
-### **A. ANALISIS POTENSI PASAR & GAP (MARKET LANDSCAPE ANALYSIS)**
-
-Peluang pasar kehutanan terletak pada efisiensi, keandalan, dan kepatuhan dalam sistem rantai pasok transportasi hasil hutan dari lokasi penebangan/konsesi menuju pabrik pengolahan (*pulp mill* / penggergajian) atau pelabuhan ekspor.
-
-#### **🚀 1. Faktor Pendorong Pasar (Market Drivers)**
-* **Permintaan Global Meningkat:** Peluang pasar ini sangat signifikan karena didorong oleh tingginya permintaan global terhadap produk kayu yang bersertifikat (SVLK / FSC) secara berkelanjutan.
-* **Produk Non-Kayu:** Selain kayu utama, tren ini juga dipicu oleh meningkatnya permintaan terhadap hasil hutan bukan kayu (*Non-Timber Forest Products*) di pasar internasional.
-* **Kebutuhan Biomassa Energi:** Transisi hijau global mendongkrak kebutuhan serpih kayu (*woodchips*) dan pelet kayu (*wood pellets*) sebagai alternatif energi bersih terbarukan.
-
-#### **🎯 2. Celas Pasar & Solusi Logistik (Market Gap)**
-Ada kebutuhan besar yang belum terpenuhi secara optimal untuk penyedia jasa logistik yang mampu menawarkan:
-* **Efisiensi dan Keberlanjutan:** Solusi pengangkutan komoditas hutan yang efisien sekaligus ramah lingkungan untuk meminimalisir jejak karbon dari hulu ke hilir.
-* **Akses Area Terpencil:** Jasa transportasi darat tangguh dengan armada sasis khusus yang andal menembus medan pedalaman/terpencil langsung dari *logging yard* menuju fasilitas industri.
-* **Jaminan Legalitas Lacak Balak:** Transparansi sertifikasi rantai pasok kayu guna memastikan komoditas bebas dari pembalakan liar, sebuah nilai kepatuhan yang gagal ditawarkan operator kecil konvensional.
-
----
-
-### **B. PELUANG INOVASI TEKNOLOGI & HIJAU (TECH & GREEN OPPORTUNITIES)**
-
-Penerapan teknologi modern dan praktik dekarbonisasi menjadi pilar utama peningkatan keunggulan kompetitif di sektor transportasi kehutanan:
-
-#### **💻 3. Peluang Inovasi Teknologi**
-* **Pelacakan & Pemantauan Pintar (IoT):** Penerapan sistem telemetri terkini untuk melacak posisi armada secara real-time di rute *logging road* terpencil guna meningkatkan transparansi operasional dan efisiensi rantai pasok.
-* **Sensor Berat Portable & Suspensi:** Deteksi berat muatan di tengah area konsesi untuk memitigasi risiko *overloading* secara proaktif sebelum truk masuk ke jalan umum.
-* **Pemetaan Rute Berbasis Satelit:** Menggunakan algoritma navigasi dinamis untuk mengoptimalkan rute hauling di wilayah minim sinyal seluler (*blind spot*).
-
-#### **🌿 4. Nilai Tambah Hijau (Green Value-Add)**
-Proyek yang berfokus pada kelestarian lingkungan memiliki potensi keuntungan ekstra melalui integrasi dengan:
-* **Pasar Karbon Kredit:** Peluang monetisasi atas pengurangan emisi karbon dari rute sirkular logistik hijau yang terencana baik.
-* **Inisiatif REDD+:** Sinkronisasi program transportasi dengan skema internasional pengurangan emisi dari deforestasi dan degradasi hutan (*Reducing Emissions from Deforestation and Forest Degradation*).
-* **Armada Rendah Emisi:** Penerapan truk standar emisi Euro 5 atau armada dekarbonisasi untuk memenangkan tender komoditas kayu premium dari pembeli multinasional.
-
----
-
-### **C. STRATEGI IMPLEMENTASI PENETRASI PASAR (STEP-BY-STEP STRATEGIC PLAN)**
-
-Untuk memaksimalkan peluang pasar angkutan kehutanan ini, Pancaran Group menetapkan 4 langkah strategis utama:
-
-#### **Langkah 1: Pemetaan Konsesi & Lokasi Penebangan (Site Survey & Mapping)**
-* **Aktivitas:** Melakukan survei rute jalan tanah hutan (*logging road*), menganalisis kelayakan jembatan, elevasi curam, serta titik-titik kritis di dalam konsesi HTI.
-* **Tujuan:** Menentukan konfigurasi sasis truk, jenis ban, serta daya mesin (*horse power*) yang paling sesuai dengan medan berat kehutanan.
-
-#### **Langkah 2: Integrasi Sertifikasi Legalitas Kayu (SVLK / FSC Integration)**
-* **Aktivitas:** Mendaftarkan seluruh armada pengangkut ke dalam sistem ketertelusuran kayu nasional, serta melengkapi manifestasi dokumen SKSHAK digital.
-* **Tujuan:** Memberikan jaminan legalitas 100% bebas dari pembalakan liar demi kenyamanan audit pembeli korporat global.
-
-#### **Langkah 3: Pemasangan Telemetri GPS Satelit (High-Tech Fleet Deployment)**
-* **Aktivitas:** Memasang modul pelacak hibrida (seluler + satelit) pada setiap unit truk logging untuk mengawasi operasional di area pedalaman minim sinyal.
-* **Tujuan:** Mengawasi keselamatan berkendara (*driver behavior*), kecepatan aman di jalur berdebu/licin, serta memastikan ketepatan waktu bongkar muat.
-
-#### **Langkah 4: Skema Kontrak Jangka Panjang Berbasis ESG (ESG Partnership & LTSA)**
-* **Aktivitas:** Menjalin kemitraan tahunan eksklusif (*Long-Term Service Agreement*) dengan pemegang konsesi hutan utama dan produsen pulp-and-paper.
-* **Tujuan:** Mengamankan utilisasi armada secara kontinu, menstabilkan arus kas investasi capex, dan memberikan nilai tambah pelaporan ESG bulanan untuk klien.
-
----
-
-### **D. JENIS-JENIS SEGMEN PELUANG DAN ANALISIS KESENJANGAN (TYPES OF OPPORTUNITY SEGMENTS)**
-* **Segmen Korporat Pulp & Paper Terintegrasi:** Pabrik kertas skala dunia yang menuntut ritase pasokan kayu bulat stabil harian dengan audit kepatuhan HSE sangat ketat.
-* **Segmen Pemegang Izin Konsesi Hutan (HTI / HPH):** Pemilik lahan hutan tanaman industri yang membutuhkan mitra pengangkutan dengan kapasitas tonase harian besar serta berizin resmi.
-* **Segmen Industri Energi Biomassa:** Pabrik pelet kayu dan serpih kayu pengekspor yang mewajibkan sertifikasi rantai pasok hijau murni dari hulu ke hilir.`;
-      }
-      return `### 2. Market Opportunity
-
-**Analisis Potensi Pasar & Gap Analisis (Market Landscape):**
-Proyek **"${pName}"** menyasar sektor ${industry} premium di mana terdapat gap atau kesenjangan besar antara transporter berlisensi standar dengan standar kepatuhan tinggi yang dituntut oleh korporat modern. Dengan memanfaatkan armada khusus berlisensi untuk mengangkut ${materialName}, Pancaran Group berada di posisi paling strategis untuk merebut pangsa pasar dari kompetitor konvensional.
-
----
-
-### **A. CAKUPAN STRATEGIS PELUANG PASAR (MARKET OPPORTUNITY SCOPES)**
-
-Untuk mempermudah pemetaan, peluang pasar proyek **"${pName}"** dibagi ke dalam **3 Cakupan Utama**:
-
-#### **1. Cakupan Kepatuhan Regulasi & Standar HSE (Regulatory & safety-first Compliance)**
-* **Kesenjangan Pasar:** Kebutuhan sertifikasi kepatuhan hukum 100% terkait ${regulations} sangat membatasi pilihan vendor bagi korporat besar. Transporter konvensional seringkali gagal dalam audit HSE/K3.
-* **Solusi Pancaran:** Memosisikan unit logistik Pancaran Group dengan kesiapan dokumen legalitas lengkap dan sertifikasi awak untuk menjamin kepatuhan total di jalan raya.
-
-#### **2. Cakupan Integrasi Teknologi Smart Logistics (Digitalization & IoT Advantage)**
-* **Kesenjangan Pasar:** Pengiriman kargo tipe ${materialName} membutuhkan pemantauan ketat dari segi keamanan, berat (anti-ODOL), dan transparansi rute, yang mana fitur ini jarang disediakan oleh operator logistik lokal.
-* **Solusi Pancaran:** Mengintegrasikan sistem pelacakan PRAMA Smart Telematics, sensor beban berat otomatis, dan manifes digital real-time demi menjamin kepatuhan SLA yang transparan bagi klien.
-
-#### **3. Cakupan Konsolidasi Rute & Efisiensi Operasional (Turnaround Time Optimization)**
-* **Kesenjangan Pasar:** Tingginya inefisiensi rute dan waktu bongkar muat kargo yang lama di pelabuhan/depo menurunkan utilisasi armada dan melambungkan Opex bahan bakar.
-* **Solusi Pancaran:** Menggunakan PRAMA Intelligent Routing untuk merumuskan jalur perjalanan tercepat, mengkonsolidasikan kargo balik, serta mengoptimalkan waktu turnaround armada secara presisi.
-
----
-
-### **B. PANDUAN LANGKAH-DEMI-LANGKAH MENGEKSPLOITASI PELUANG (STEP-BY-STEP STRATEGIC PLAN)**
-
-Untuk memastikan penetrasi pasar berjalan secara terstruktur dan terarah pada proyek **"${pName}"** ini, ikuti langkah taktis berikut:
-
-#### **Langkah 1: Identifikasi Titik Kritis & Audit Kebutuhan Klien (Needs Assessment)**
-* **Aktivitas:** Memetakan calon klien target pengirim ${materialName} di wilayah koridor operasional proyek. Identifikasi persyaratan HSE (K3), rute reguler, dan syarat tender khusus mereka.
-* **Tujuan:** Mengetahui celah spesifik pelayanan kompetitor petahana yang bisa kita disrupsi.
-
-#### **Langkah 2: Pemenuhan Legalitas & Lisensi Komoditas Khusus (Licensing & Setup)**
-* **Aktivitas:** Mengurus dokumen izin rute angkutan, perizinan KLHK/Kemenhub yang relevan dengan ${regulations}, serta membekali pengemudi dengan sertifikasi keahlian khusus yang dibutuhkan.
-* **Tujuan:** Menjamin kelancaran operasi di jalan tanpa hambatan hukum serta meloloskan kualifikasi administratif tender klien B2B.
-
-#### **Langkah 3: Pemetaan Rute & Simulasi Efisiensi Opex (Route Optimization & Trial Run)**
-* **Aktivitas:** Melakukan uji coba rute perdana (*pilot run*) menggunakan unit kosong berteknologi GPS untuk mengukur konsumsi BBM riil, pemetaan titik bahaya, dan efisiensi waktu tempuh.
-* **Tujuan:** Menentukan baseline biaya operasional (Opex) terbaik dan menggaransi ketepatan waktu pengiriman (*On-Time Delivery*).
-
-#### **Langkah 4: Onboarding Armada & Pemasangan Sensor IoT (Smart Fleet Deployment)**
-* **Aktivitas:** Memobilisasi armada khusus untuk pengangkutan ${materialName}, dilanjutkan dengan pemasangan sensor telemetri digital dan sasis terintegrasi platform control tower PRAMA.
-* **Tujuan:** Memberikan transparansi visibilitas penuh secara real-time kepada pihak pengirim dan penerima kargo untuk kepatuhan SLA yang kokoh.
-
-#### **Langkah 5: Komersialisasi & Kontrak Multitahun (Long-Term Value Capture)**
-* **Aktivitas:** Menandatangani kontrak jangka panjang (*Long-Term Service Agreement* / LTSA) berskala multitahun. Berikan nilai tambah berupa laporan histori dekarbonisasi / emisi armada guna mendukung pencapaian rating ESG korporat klien.
-* **Tujuan:** Mengamankan aliran pendapatan jangka panjang (*recurring revenue*) dan memaksimalkan LTV (*Lifetime Value*) pelanggan.
-
----
-
-### **C. JENIS-JENIS SEGMEN PELUANG DAN ANALISIS KESENJANGAN (TYPES OF OPPORTUNITY SEGMENTS)**
-* **Segmen Korporat Multinasional (B2B Premium):** Perusahaan skala global yang wajib mematuhi standar audit logistik tanpa kompromi serta memiliki target dekarbonisasi nol emisi (*Net-Zero Emission*).
-* **Segmen Industri Strategis Nasional (Sovereign-backed):** Emiten besar atau proyek vital strategis nasional yang membutuhkan suplai pengangkutan bahan baku ${materialName} secara stabil dengan jaminan kelancaran kapasitas harian.
-* **Segmen Rantai Pasok Berkelanjutan (Circular Economy):** Mitra strategis yang mengedepankan efisiensi ritase sirkular bolak-balik tanpa membiarkan armada berjalan kosong (*empty miles*) pasca bongkar muat.`;
-    })(),
-
-    3: (() => {
-      const unitCount = defaultUnitsCount;
-      const avgUnitCost = Math.round(numericCapex / unitCount);
-      
-      let opexDetails = "";
-      if (lower.includes("batubara") || lower.includes("coal") || lower.includes("tambang") || lower.includes("mineral") || lower.includes("batu bara")) {
-        opexDetails = `* **Bahan Bakar Solar Industri (Non-Subsidi):** **Rp ${Math.round(numericOpex * 0.55).toLocaleString("id-ID")}** per bulan (asumsi harga solar industri Rp 19.500/liter dengan konsumsi rute hauling berat).
-* **Gaji, Premi Rit, & Tunjangan K3 Pengemudi:** **Rp ${Math.round(numericOpex * 0.20).toLocaleString("id-ID")}** per bulan (standar pengemudi hauling tersertifikasi K3 pertambangan).
-* **Pemeliharaan Rutin, Ban, & Suku Cadang Sasis:** **Rp ${Math.round(numericOpex * 0.15).toLocaleString("id-ID")}** per bulan (ban khusus medan off-road berlumpur).
-* **Perizinan Dispensation Rute & HSE Audit:** **Rp ${Math.round(numericOpex * 0.10).toLocaleString("id-ID")}** per bulan.`;
-      } else if (lower.includes("dingin") || lower.includes("cold") || lower.includes("farmasi") || lower.includes("vaksin") || lower.includes("makanan") || lower.includes("boga") || lower.includes("fresh") || lower.includes("reefer")) {
-        opexDetails = `* **Bahan Bakar Solar & Operasional Kompresor Pendingin:** **Rp ${Math.round(numericOpex * 0.45).toLocaleString("id-ID")}** per bulan (konsumsi solar diesel tambahan untuk genset ThermoKing boks reefer).
-* **Gaji Pengemudi & Kru (Standar Mutu CDOB BPOM):** **Rp ${Math.round(numericOpex * 0.25).toLocaleString("id-ID")}** per bulan (menerapkan premi kebersihan & jaminan suhu).
-* **Kalibrasi Sensor Suhu IoT & Perawatan Chiller:** **Rp ${Math.round(numericOpex * 0.15).toLocaleString("id-ID")}** per bulan.
-* **Biaya Asuransi Kerusakan Kargo Sensitif:** **Rp ${Math.round(numericOpex * 0.15).toLocaleString("id-ID")}** per bulan.`;
-      } else if (lower.includes("waste") || lower.includes("limbah") || lower.includes("sampah") || lower.includes("b3") || lower.includes("environmental") || lower.includes("environment")) {
-        opexDetails = `* **Bahan Bakar Solar Industri & Tol Trans-Jawa:** **Rp ${Math.round(numericOpex * 0.45).toLocaleString("id-ID")}** per bulan (solar non-subsidi untuk rute Cikarang/Karawang menuju TPA B3).
-* **Gaji & Tunjangan Risiko Kimia Pengemudi:** **Rp ${Math.round(numericOpex * 0.25).toLocaleString("id-ID")}** per bulan (sertifikasi B2 Umum & lisensi penanganan bahan kimia berbahaya B3).
-* **Pemeliharaan Berkala Tangki/Boks Vacuum & Katup Pneumatik:** **Rp ${Math.round(numericOpex * 0.15).toLocaleString("id-ID")}** per bulan.
-* **Biaya Kepatuhan Festronik, KIR, & Izin KLHK/Kemenhub:** **Rp ${Math.round(numericOpex * 0.15).toLocaleString("id-ID")}** per bulan.`;
-      } else {
-        opexDetails = `* **Bahan Bakar Solar Industri & Biaya Gerbang Tol:** **Rp ${Math.round(numericOpex * 0.50).toLocaleString("id-ID")}** per bulan.
-* **Gaji & Premi Ritase Pengemudi Sasis:** **Rp ${Math.round(numericOpex * 0.25).toLocaleString("id-ID")}** per bulan (standar UMR regional ditambah insentif ketepatan waktu).
-* **Perawatan Sasis, Ban, & Suku Cadang Mesin:** **Rp ${Math.round(numericOpex * 0.15).toLocaleString("id-ID")}** per bulan.
-* **Biaya Asuransi Kehilangan & Perizinan KIR Rutin:** **Rp ${Math.round(numericOpex * 0.10).toLocaleString("id-ID")}** per bulan.`;
-      }
-
-      return `### 3. Financial (Capex, Opex, P&L, Cash Flow, ROI)
-
-**Analisis Kelayakan Finansial Proyek Komprehensif:**
-
-Rancangan anggaran biaya dan proyeksi finansial di bawah ini diformulasikan secara presisi untuk mengkaji tingkat pengembalian modal proyek **"${pName}"** agar sesuai dengan kelayakan standar logistik di Indonesia:
-
-**A. Alokasi Capital Expenditure (Capex):**
-Investasi awal diperlukan untuk memastikan kesiapan armada premium berstandar keselamatan tinggi:
-* **Pengadaan Unit Armada Baru (${unitsText}):** **Rp ${numericCapex.toLocaleString("id-ID")}** (estimasi Rp ${(avgUnitCost / 1000000).toFixed(0)} Juta per unit sasis truk berstandar dekarbonisasi).
-* **Instalasi Smart Telematics & Sensor IoT Terintegrasi:** **Rp 150.000.000** (pemasangan GPS tracker, sensor berat suspensi anti-ODOL, dan sensor tangki).
-* **Sertifikasi Awak & Lisensi Hukum Legalitas Rute Perdana:** **Rp 200.000.000** (pengurusan AMDAL, rekomendasi rute Kemenhub, dan training penanganan darurat).
-* **Total Kebutuhan Capex Awal:** **Rp ${(numericCapex + 350000000).toLocaleString("id-ID")}**
-
-**B. Operational Expenditure (Opex) Bulanan:**
-Biaya operasional rutin dirancang menggunakan asumsi harga bahan bakar solar industri non-subsidi yang berlaku saat ini di Indonesia:
-${opexDetails}
-* **Total Opex Bulanan:** **Rp ${(numericOpex + 60000000).toLocaleString("id-ID")} / Bulan**
-
-**C. Proyeksi Profit & Loss (P&L) & ROI:**
-* **Target Pendapatan Operasional:** **Rp ${monthlyRev.toLocaleString("id-ID")} / Bulan** (asumsi utilisasi triplat armada rata-rata 85% dengan sistem billing kontrak tahunan berkelanjutan).
-* **Target Gross Profit Margin:** **Rp ${Math.round(monthlyRev * 0.45).toLocaleString("id-ID")} / Bulan (45.0% Margin)**.
-* **Target EBITDA / Net Profit Margin (Bersih setelah Depresiasi & Pajak): 32% - 35%**.
-* **Payback Period (PBP): ${defaultPbp} Tahun** (Sangat cepat untuk ukuran investasi armada logistik di Indonesia, berkat marjin tinggi dari segmen logistik premium).
-* **Return on Investment (ROI) Tahun ke-3: ${defaultRoi}%**
-* **Internal Rate of Return (IRR): ${defaultIrr}%** (Melampaui tingkat suku bunga pinjaman modal/WACC rata-rata perbankan di Indonesia sebesar ~9-11%, menandakan proyek ini sangat layak secara finansial).
-
-**D. Manajemen Cash Flow & Modal Kerja (Working Capital):**
-* Mengingat standar pembayaran (*Term of Payment*) korporasi besar (B2B) di Indonesia biasanya berkisar antara **60 s.d. 90 hari**, unit bisnis wajib menyiapkan dana cadangan modal kerja (*Working Capital Buffer*) minimal sebesar 3 bulan Opex (**Rp ${Math.round((numericOpex + 60000000) * 3).toLocaleString("id-ID")}**) guna menjaga kelancaran operasional (pembelian solar harian & gaji supir) sebelum termin pembayaran tagihan dari klien cair.
-
-**E. MACAM-MACAM KATEGORI FINANSIAL & STRATEGI ALOKASI (FINANCIAL BREAKDOWN)**
-* **Biaya Langsung (Direct Costs):** Komponen pengeluaran variabel seperti bahan bakar solar industri non-subsidi, ban radial, sasis, dan insentif pengemudi per ritase.
-* **Biaya Tidak Langsung (Indirect Costs):** Komponen tetap seperti administrasi kantor regional, biaya pemantauan Live Control Tower PRAMA, asuransi, serta sertifikasi keselamatan tahunan.
-* **Pendapatan Tambahan (Auxiliary Revenue):** Potensi pendapatan sela dari iklan branding bodi sasis dan penyediaan pergudangan intermodal terintegrasi.`;
-    })(),
+Tingkat Internal Rate of Return (IRR) sebesar ${defaultIrr}% secara signifikan melampaui biaya modal perbankan nasional (~9-11%), mengindikasikan ketahanan finansial dan profitabilitas yang sangat solid. Manajemen modal kerja diperkuat dengan penyediaan buffer likuiditas 3 bulan operasional untuk mengantisipasi siklus penagihan korporat (Term of Payment 60-90 hari), menjamin kesinambungan arus kas operasional secara berkelanjutan.`,
 
     4: `### 4. Supply & Demand
 
-**A. ANALISIS PERMINTAAN PASAR (DEMAND SIDE ANALYSIS)**
-* **Volume Kargo Potensial:** Kebutuhan pengangkutan untuk kargo ${materialName} mengalami lonjakan tinggi karena bertumbuhnya aktivitas produksi B2B di koridor proyek **"${pName}"**.
-* **Kebutuhan Jaminan Kapasitas harian:** Klien korporasi multinasional membutuhkan kepastian armada yang stand-by setiap hari guna mengantisipasi kemacetan suplai.
+Dinamika supply dan demand untuk koridor distribusi komoditas ${materialName} menunjukkan adanya lonjakan kebutuhan pengangkutan industri yang tidak diimbangi oleh ketersediaan armada berspesifikasi tinggi di pasar regional. Keterbatasan operator logistik yang memenuhi audit kepatuhan HSE ketat dan regulasi ${regulations} membuka peluang besar bagi Pancaran Group untuk mendominasi segmen logistik bernilai tambah tinggi.
 
-**B. ANALISIS PENAWARAN PEMAIN LOKAL (SUPPLY SIDE ANALYSIS)**
-* **Keterbatasan Armada Spesifikasi Tinggi:** Sangat sedikit operator angkutan logistik lokal yang memiliki sasis truk modern berstandar dekarbonisasi global.
-* **Kelangkaan Sertifikasi Kepatuhan (HSE):** Mayoritas transporter konvensional di Indonesia tidak lolos kualifikasi audit keselamatan (HSE) yang ketat untuk mengangkut komoditas industri strategis.
-
-**C. KEKUATAN HARGA & INTEGRASI PASAR (PRICING POWER & SEGMENTATION)**
-* **Pricing Power Premium:** Adanya defisit kapasitas transporter berkualitas memberikan Pancaran Group kekuatan tawar untuk mempertahankan harga premium yang berfokus pada keandalan operasional.
-* **Utilisasi Armada Maksimal:** Memaksimalkan utilitas ritase armada sasis guna mempercepat tingkat pengembalian investasi modal awal.
-
-**D. JENIS-JENIS FLUKTUASI SUPPLY & DEMAND (TYPES OF MARKET DYNAMICS)**
-* **Permintaan Musiman (Seasonal Peak Demand):** Lonjakan volume menjelang akhir kuartal atau puncak siklus produksi pabrik klien yang menuntut pengerahan unit ekstra.
-* **Keterbatasan Armada Pengganti (Buffer Fleet Constraint):** Kondisi keterbatasan sasis pengganti cadangan di saat salah satu unit wajib menjalani servis rutin terjadwal atau perbaikan darurat.
-* **Keseimbangan Tarif Logistik Regional (Regional Tariff Balance):** Dinamika fluktuasi harga sewa angkutan darat regional akibat pergerakan suplai bahan bakar solar industri non-subsidi dan penyesuaian tarif jalan tol.`,
+Dengan penempatan ${unitsText} unit armada heavy-duty modern dan utilisasi ritase terencana di atas 85%, unit bisnis memiliki kekuatan penetapan harga (pricing power) yang kompetitif. Kesiapan unit pengganti (buffer fleet) dan pemantauan telemetri real-time memastikan pemenuhan komitmen kapasitas harian tanpa risiko kemacetan rantai pasok klien.`,
 
     5: `### 5. Structure
 
-**A. RANTAI NILAI OPERASIONAL UJUNG-KE-UJUNG (OPERATIONAL VALUE CHAIN)**
-* **Inbound Logistics (Hulu):** Pemeriksaan kualitas muatan ${materialName} di gudang pengirim menggunakan digital checklist guna menjamin kesesuaian manifest.
-* **Midstream Logistics (Transit):** Pengiriman kargo aman melalui rute jalan yang telah dipetakan, diawasi secara langsung oleh PRAMA Live Control Tower.
-* **Outbound Logistics (Hilir):** Penyerahan kargo di situs tujuan klien secara presisi disertai konfirmasi digital dan tanda terima instan.
+Struktur rantai nilai logistik proyek "${pName}" mencakup integrasi menyeluruh dari pengangkutan hulu (inbound), transit antarmoda (midstream), hingga serah terima hilir (outbound). PRAMA Live Control Tower mengawal kelancaran alur secara real-time guna memangkas turnaround time (TAT) dan mengoptimalkan sinkronisasi jadwal bongkar muat di gerbang fasilitas klien.
 
-**B. SINKRONISASI JADWAL & GERBANG DEPO (LOGISTICS PIPELINE)**
-* **Optimasi Turnaround Time (TAT):** Mengurangi waktu tunggu antrean muat di depo rute angkutan guna meningkatkan utilisasi sasis unit secara optimal.
-* **Sinkronisasi Jadwal Sandar:** Menyelaraskan waktu keberangkatan truk logistik dengan jadwal bongkar muat pabrik atau jadwal sandar kapal pelayaran laut (*vessel closing time*).
+Pendekatan distribusi sirkular (closed-loop logistics) diterapkan guna meminimalkan perjalanan tanpa muatan (empty miles), sehingga meningkatkan efisiensi biaya operasional dan memperbesar marjin per ritase. Seluruh kontainer dan armada sasis dilengkapi sistem penyegelan digital untuk menjamin integritas kargo ${materialName} sepanjang perjalanan.`,
 
-**C. PENDEKATAN DISTRIBUSI SIRKULAR (CIRCULAR LOGISTICS)**
-* **Konsolidasi Kargo Balik:** Mengatur rute pengiriman sirkular agar meminimalkan perjalanan kosong (*empty miles*) pasca bongkar muat guna melipatgandakan margin ritase.
-* **Sistem Sirkuit Tertutup:** Prosedur penyegelan sasis tangki/boks yang kokoh untuk mencegah penyusutan atau manipulasi muatan di jalan raya.
+    6: `### 5. Organization (Qualification, Skill, Output/KPI, SOP)
 
-**D. MACAM-MACAM STRUKTUR ALUR DISTRIBUSI (TYPES OF LOGISTIC STRUCTURAL FLOWS)**
-* **Alur Distribusi Satu Arah (One-Way Trip):** Pengiriman dari titik A ke titik B secara langsung, dioptimalkan untuk muatan khusus berisiko tinggi dengan protokol pengawasan ketat.
-* **Alur Distribusi Sirkular (Closed-Loop Trip):** Pengangkutan di mana armada membawa bahan baku pergi dan membawa produk jadi atau wadah kosong kembali ke titik muat asal guna menghemat Opex.
-* **Alur Distribusi Terkonsolidasi (Consolidated Hub-and-Spoke):** Menggabungkan kargo muatan sedang di depo antara sebelum didistribusikan ke tujuan akhir untuk memaksimalkan kapasitas angkut chassis.`,
+Struktur organisasi operasional proyek "${pName}" dirancang dengan hierarki komando yang ramping dan berorientasi pada eksekusi lapangan yang presisi. Setiap posisi kunci, mulai dari Project Operations Lead, HSE Officer bersertifikasi K3 Kemenhub, hingga Dispatcher Control Tower, memiliki mandat kualifikasi ketat dan KPI terukur untuk menjamin zero fatal accident dan keandalan armada.
 
-    6: `### 6. Organization (Qualification, Skill, Output/KPI, SOP)
+Pengemudi armada diwajibkan melalui pelatihan berkala penanganan kargo ${materialName}, teknik eco-driving, dan mitigasi darurat rute. Standar Operasional Prosedur (SOP) berbasis digital memandu seluruh tahapan mulai dari pre-trip inspection hingga serah terima muatan, menciptakan budaya keselamatan kerja yang konsisten di seluruh lini operasional.`,
 
-**A. PERSYARATAN KUALIFIKASI TIM DAN KRU (ORGANIZATIONAL CAPABILITIES)**
-* **Kompetensi Pengemudi Khusus:** Awak diwajibkan memiliki SIM BII Umum aktif, sertifikat pelatihan berkendara defensif (*Defensive Driving*), serta lisensi penanganan kargo khusus ${materialName}.
-* **Pengawas HSE Lapangan:** Pengawas terlatih bersertifikasi K3 Umum / K3 Migas/Tambang yang standby melakukan koordinasi mitigasi bahaya 24/7.
+    7: `### 6. Transition Model (Pre-On-Post)
 
-**B. INDIKATOR KINERJA KUNCI TIM (KEY PERFORMANCE INDICATORS)**
-* **Ketepatan Waktu Pengiriman (On-Time Delivery):** Target kinerja harian OTD wajib di atas **98.5%** dari total ritase perjalanan rute.
-* **Nol Insiden & Kecelakaan (Zero Accident & Damage):** Target keselamatan mutlak **0% tingkat kerusakan kargo** guna meminimalkan kerugian klaim.
-* **Kepatuhan Administrasi Digital:** Pengisian logbook perjalanan secara realtime serta kepatuhan dokumen manifest digital mencapai **100% tuntas**.
+Model transisi proyek "${pName}" terbagi ke dalam tiga fase strategis terintegrasi: Pre-Operation, On-Operation, dan Post-Operation/Scale-up. Pada fase Pre-Operation (Bulan 1-2), fokus diarahkan pada mobilisasi ${unitsText} unit armada, instalasi IoT sensor telematics, uji coba rute (trial haul), serta penyelesaian audit kepatuhan regulasi bersama mitra korporat.
 
-**C. PROSEDUR OPERASIONAL STANDAR INTI (STANDARD OPERATING PROCEDURES)**
-* **SOP Pra-Keberangkatan:** Tes kesehatan pengemudi (tensi & alkohol) dan pemeriksaan fisik kelayakan jalan kendaraan (*pre-trip inspection*).
-* **SOP Penanganan Kondisi Darurat (Emergency Response):** Protokol tanggap cepat jika terjadi kerusakan mesin sasis di jalan tol atau kendala kargo selama transit.
+Fase On-Operation (Bulan 3-12) memastikan stabilisasi ritase harian dengan target SLA ketepatan waktu 98.5% dan evaluasi kinerja triwulanan. Memasuki fase Post-Operation, Pancaran Group melakukan peninjauan efisiensi bahan bakar dan keselamatan untuk membuka opsi penambahan unit ekspansi armada guna mengakomodasi pertumbuhan volume kargo jangka panjang.`,
 
-**D. JENIS-JENIS POSISI & PERAN ORGANISASI (TYPES OF ORGANIZATIONAL ROLES)**
-* **Kru Operasional Utama (Fleet Crew):** Pengemudi (Driver) dan Asisten Pengemudi berlisensi khusus BII Umum dengan spesialisasi sasis truk berat dan material ${materialName}.
-* **Kru Pengawas Lapangan (Supervisory Crew):** Dispatcher, HSE Officer, dan Fleet Controller yang memonitor pergerakan unit via sistem telematika secara real-time dari Live Control Tower.
-* **Kru Pemeliharaan Pendukung (Technical Support):** Kepala Mekanik dan tim Mekanik Mobile khusus sasis dan sistem rem angin yang bersertifikasi ATPM resmi.`,
+    8: `### 7. Go To Market Strategy
 
-    7: `### 7. Transition Model (Pre-On-Post)
+Strategi Go-To-Market (GTM) proyek "${pName}" berfokus pada penetrasi langsung ke korporasi tier-1 dan produsen utama komoditas ${materialName} melalui penawaran Long-Term Service Agreement (LTSA) berdurasi 3 hingga 5 tahun. Proposisi nilai utama ditekankan pada keandalan operasional, rekam jejak keselamatan teruji, serta integrasi pelaporan digital kepatuhan operasional dan efisiensi biaya.
 
-**A. TAHAP PRAPELAKSANAAN (PRE-ONBOARDING)**
-* **Verifikasi Legalitas & Rute:** Mengamankan dokumen rekomendasi jalan dari Dinas Perhubungan setempat serta kesesuaian izin rute angkutan dengan regulasi ${regulations}.
-* **Uji Coba Lapangan (Pilot Run):** Melakukan simulasi perjalanan rute menggunakan unit kosong berteknologi telematika guna memetakan jalur kritis dan mengukur konsumsi solar riil.
+Pendekatan kemitraan strategis diperkuat dengan program Quarterly Business Review (QBR) dan skema insentif berbasis volume komitmen tahunan. Sinergi jaringan logistik multimoda dan depo internal Pancaran Group memberikan keunggulan kompetitif yang sulit ditandingi oleh operator konvensional di koridor terkait.`,
 
-**B. TAHAP IMPLEMENTASI AKTIF (ONBOARDING)**
-* **Mobilisasi Unit Bertahap:** Deployment perdana unit armada khusus (misalnya 5 unit pertama) dengan pendampingan teknis intensif dari tim mekanik lapangan.
-* **Integrasi Portal Klien:** Menyelaraskan akun sistem monitoring rute logistik dengan tim penanggung jawab logistik dari pihak klien B2B.
+    9: `### 8. Ops Model (Flow Process, Workflow Diagram, SLA)
 
-**C. TAHAP EVALUASI & STABILISASI (POST-ONBOARDING)**
-* **Serah Terima Operasional Penuh:** Peralihan komando operasional dari tim persiapan proyek ke tim manajemen regional reguler.
-* **Audit Performa Berkala:** Menyelenggarakan evaluasi performa mingguan untuk mengukur efisiensi rute, konsumsi bahan bakar, dan kepuasan layanan klien.
+Model operasi proyek "${pName}" mengintegrasikan alur kerja hulu-ke-hilir yang terhubung secara digital dengan PRAMA Live Control Tower. Alur dimulai dari pre-trip digital inspection dan pemeriksaan fit-to-work pengemudi, pemuatan kargo ${materialName} terstandarisasi, pengawalan telemetri rute real-time, hingga konfirmasi serah terima digital di lokasi tujuan (e-Proof of Delivery).
 
-**D. MACAM-MACAM MODEL TRANSISI OPERASIONAL (TYPES OF TRANSITION MODELS)**
-* **Model Transisi Bertahap (Phased Transition):** Onboarding unit secara berkala (misal 5 unit per minggu) guna memastikan kesiapan supir dan kelancaran rute tanpa mengganggu operasi klien.
-* **Model Transisi Paralel (Parallel Transition):** Menjalankan armada Pancaran Group berdampingan dengan transporter lama untuk menguji konsistensi SLA sebelum serah terima penuh.
-* **Model Transisi Kilat (Direct Switchover):** Penggantian transporter 100% pada hari yang ditentukan, hanya digunakan jika seluruh persiapan uji coba rute telah lolos 100%.`,
+Komitmen Service Level Agreement (SLA) menetapkan target ketersediaan armada minimal 98%, toleransi deviasi jadwal muat di bawah 15 menit, serta waktu respon tanggap darurat teknis maksimal 45 menit. Protokol exception management otomatis mengaktifkan unit cadangan dan tim mekanik mobile jika terdeteksi anomali pada sensor telematika di perjalanan.`,
 
-    8: `### 8. Go To Market Strategy
+    10: `### 9. Risk Management
 
-**A. STRATEGI PENETRASI & AKUISISI KORPORAT (B2B CLIENT ACQUISITION)**
-* **Kemitraan Kontrak Jangka Panjang (LTSA):** Membidik kesepakatan kontrak multitahun berdurasi 3 hingga 5 tahun bersama produsen skala besar ${materialName} guna menjamin arus pendapatan berulang (*recurring revenue*).
-* **Diferensiasi Solusi Hijau (ESG Value):** Menyediakan laporan audit emisi karbon gratis per pengiriman sebagai daya tawar dekarbonisasi bagi emiten besar yang wajib memenuhi target ESG.
+Manajemen risiko proyek "${pName}" mengidentifikasi dan memitigasi potensi risiko operasional rute, kepatuhan hukum, keselamatan kerja (HSE), dan volatilitas finansial. Pengawasan sensor telemetri kecepatan, kamera pendeteksi kelelahan pengemudi (fatigue sensor), serta kalender operasional adaptif terhadap cuaca ekstrem diterapkan untuk memastikan nihil kecelakaan (zero-incident culture).
 
-**B. PROMOSI VALUE FRONTIER PANCARAN GROUP (VALUE PROPOSITION)**
-* **Paket Integrasi Jasa Bundling:** Menawarkan solusi satu pintu mencakup penyediaan armada sasis modern, kru pengemudi terlatih, perizinan, dan asuransi kargo penuh.
-* **Pemasaran Berbasis Kinerja:** Memberikan jaminan tertulis atas pencapaian KPI ketepatan waktu di atas 98% sebagai komitmen keandalan operasional.
+Risiko finansial akibat fluktuasi harga bahan bakar solar industri dimitigasi melalui klausul eskalasi bahan bakar (Fuel Escalation Clause) dalam kontrak bersama klien. Sementara itu, risiko kepatuhan hukum dan perizinan MST/ODOL dikendalikan melalui sistem penimbangan digital sebelum armada memasuki jalan umum, menjamin kepatuhan 100% terhadap regulasi perhubungan.`,
 
-**C. METODE PENGEMBANGAN AKUN (ACCOUNT DEVELOPMENT & RETENTION)**
-* **Quarterly Business Review (QBR):** Peninjauan kinerja operasional rutin bersama klien untuk mendiskusikan peluang efisiensi biaya logistik lebih lanjut.
-* **Diskon Berbasis Skala Volume:** Memberikan skema tarif berjenjang yang lebih kompetitif bagi klien yang menambahkan volume komitmen kargo harian.
+    11: `### 10. Digital Coverage (Tools, Method, Impact, Automation)
 
-**D. JENIS-JENIS SALURAN PENETRASI PASAR (TYPES OF GO-TO-MARKET CHANNELS)**
-* **Direct Sales & Tender Participation:** Penetrasi melalui keikutsertaan resmi dalam tender korporasi besar yang diumumkan di portal e-procurement resmi.
-* **Joint Logistics Alliance:** Membangun kemitraan strategis dengan penyedia jasa kepabeanan, pergudangan kontainer, atau pelayaran laut untuk menawarkan layanan end-to-end terintegrasi.
-* **Strategic Key Account Extension:** Menawarkan ekspansi unit khusus pada klien B2B aktif yang sudah bermitra dengan unit bisnis Pancaran Group lainnya.`,
+Arsitektur teknologi digital proyek "${pName}" bertumpu pada integrasi Internet of Things (IoT), GPS geofencing, dan dashboard analitik PRAMA Business Intelligence. Setiap unit armada dilengkapi sensor telemetri mesin, pemantauan berat muatan suspensi anti-ODOL, serta manifest perjalanan digital yang terhubung langsung ke sistem ERP operasional.
 
-    9: `### 9. Ops Model (Flow Process, Workflow Diagram, SLA)
+Otomatisasi data logistik memungkinkan deteksi dini deviasi rute, optimalisasi konsumsi bahan bakar melalui algoritma rute terpintar, serta penerbitan laporan performa efisiensi BBM dan ketepatan waktu SLA secara otomatis. Transformasi digital ini meningkatkan visibilitas rantai pasok klien dan memangkas waktu administratif operasional hingga 70%.`,
 
-**A. ALUR PROSES OPERASIONAL UTAMA (WORKFLOW FLOW CHART)**
-* **Alur Sirkuit Operasional:**
-\`\`\`
-[Checklist Kelayakan] ➔ [Pemuatan Aman] ➔ [Dispatch Armada] ➔ [Pantau Sensor IoT & GPS] ➔ [Bongkar Muat] ➔ [SLA Selesai]
-\`\`\`
-* **Detail Operasi:** Pengawasan ketat dimulai sejak pemeriksaan kesehatan sopir di depo, pelacakan pergerakan unit via GPS secara real-time di rute pengiriman, hingga pembongkaran aman di lokasi tujuan klien.
+    12: `### 11. Competitor
 
-**B. JAMINAN KOMITMEN TINGKAT LAYANAN (SERVICE LEVEL AGREEMENT - SLA)**
-* **Waktu Tanggap Darurat Rute:** Tim tanggap darurat HSE dan armada derek bantuan siap meluncur di jalur kritis dalam waktu maksimal **45 Menit**.
-* **Batasan Waktu Tunggu Muat (TAT):** Waktu antrean tunggu muat/bongkar armada di lokasi situs klien dibatasi maksimal **60 menit** per armada.
+Analisis lanskap kompetitif proyek "${pName}" memetakan persaingan dari operator konvensional lokal, penyedia jasa multinasional, dan perusahaan angkutan internal klien. Kelemahan mendasar pemain eksisting umumnya terletak pada tingginya usia armada, ketiadaan sertifikasi HSE komprehensif, dan sistem pemantauan manual yang rentan deviasi.
 
-**C. MANAJEMEN PENANGANAN GANGGUAN (EXCEPTION MANAGEMENT)**
-* **Notifikasi Deviasi Rute Otomatis:** Sistem mengirimkan peringatan instan ke PRAMA Live Control Tower jika armada keluar rute sasis atau melebihi batas kecepatan aman.
-* **Eskalasi Penanganan Kerusakan:** Mobilisasi cepat unit mekanik mobile terdekat jika sensor telemetri mendeteksi adanya malfungsi mesin sasis.
+Pancaran Group mengeksploitasi celah pasar ini melalui penyediaan armada modern tersertifikasi, integrasi sensor telemetri digital real-time, serta fleksibilitas kontrak kemitraan strategis. Pendekatan ini memungkinkan konversi pangsa pasar yang agresif dan berkelanjutan dari para pemain lama di koridor sasaran.`,
 
-**D. MACAM-MACAM PROTOKOL OPERASIONAL & METRIK SLA (TYPES OF SLA & CRITICAL PROTOCOLS)**
-* **SLA Keandalan Armada (Uptime SLA):** Menjamin ketersediaan unit siap beroperasi minimum **98%** setiap harinya dari total armada yang dialokasikan.
-* **SLA Pengiriman Tepat Waktu (On-Time Delivery SLA):** Menjamin ketepatan waktu bongkar muat sesuai rentang waktu (*loading window*) yang disepakati dengan toleransi deviasi maksimal 15 menit.
-* **SLA Penanganan Insiden Keamanan (Incident Response SLA):** Prosedur eskalasi penarikan unit cadangan dalam waktu di bawah 2 jam jika terjadi insiden kerusakan berat di jalan.`,
+    13: `### 12. TAM, SAM, SOM
 
-    10: (lower.includes("forestry") || lower.includes("kehutanan") || lower.includes("hutan") || lower.includes("wood") || lower.includes("logging")) ? 
-`### 10. Risk Management
+Estimasi ukuran pasar proyek "${pName}" menunjukkan potensi Total Addressable Market (TAM) sebesar ${tamFormatted} per tahun pada sektor ${industry} nasional, didorong oleh ekspansi industri dan kebutuhan logistik komoditas ${materialName}. Porsi Serviceable Addressable Market (SAM) yang dapat dijangkau oleh rute dan perizinan operasional Pancaran Group mencapai ${samFormatted} per tahun.
 
-Untuk memastikan proyek berjalan lancar dan menguntungkan, berikut adalah breakdown **Risk Management (Manajemen Risiko)** utama yang wajib Anda antisipasi, dikelompokkan berdasarkan kategorinya.
+Target Serviceable Obtainable Market (SOM) diproyeksikan sebesar ${somFormatted} per tahun dalam horizon 3 tahun pertama, didukung kesiapan ${unitsText} unit armada awal serta penetrasi kontrak korporat B2B. Angka ini mencerminkan target pangsa pasar yang realistis dan menguntungkan dengan utilisasi kapasitas armada optimal.`,
 
----
+    14: `### 13. CAC, LTV
 
-## 1. Risiko Operasional & Medan (Operational & Terrain Risks)
+Efisiensi komersial proyek "${pName}" tercermin dari Customer Acquisition Cost (CAC) rata-rata sebesar ${cacFormatted} per klien korporat, yang mencakup biaya partisipasi tender, survei teknis rute, dan persiapan dokumen legalitas awal. Sementara itu, Customer Lifetime Value (LTV) rata-rata diestimasikan mencapai ${ltvFormatted} berdasarkan durasi kontrak retensi 3 tahun dengan kepastian volume pengangkutan rutin.
 
-Ini adalah area dengan risiko harian paling tinggi karena logistik kehutanan bekerja di lingkungan yang tidak dapat diprediksi.
-
-* **Kondisi Cuaca Ekstrem:** Hujan deras dapat mengubah jalur tanah menjadi lumpur dalam sekejap (*mudslide*), menghentikan mobilitas truk pengangkut kayu (logging trucks), dan merusak struktur jalan angkutan.
-* **Kerusakan Armada & Alat Berat:** Truk loging bekerja di medan berat, memicu keausan cepat pada ban, suspensi, dan mesin. Jika tidak ada manajemen pemeliharaan pencegahan (*preventive maintenance*), *downtime* operasional akan membengkak.
-* **Aksesibilitas Geografis:** Area yang terpencil menyulitkan pengiriman suku cadang, bahan bakar, atau bantuan medis jika terjadi keadaan darurat.
-
-> **Strategi Mitigasi:**
-> * Buat kalender operasional ketat yang menyesuaikan dengan musim (kurangi volume saat puncak musim hujan).
-> * Sediakan *buffer stock* suku cadang kritis dan bahan bakar langsung di *basecamp* lapangan.
-> * Terapkan sistem pemantauan armada berbasis GPS yang tangguh di area *low-signal*.
-
-## 2. Risiko Regulasi & Kepatuhan (Regulatory & Compliance Risks)
-
-Industri kehutanan diawasi sangat ketat oleh pemerintah dan lembaga lingkungan. Pelanggaran hukum bisa berakibat pembatalan kontrak atau denda besar.
-
-* **Sertifikasi & Legalitas Kayu:** Risiko mengangkut hasil hutan tanpa dokumen legalitas yang sah (seperti SKSHAK atau sertifikasi kelestarian lingkungan).
-* **Batasan Beban Kendaraan (Overloading):** Truk kayu rawan melanggar aturan muatan sumbu terberat (MST) di jalan umum, yang bisa memicu penilangan atau penyitaan.
-* **Zona Konservasi:** Risiko masuk atau merusak area lindung yang dilarang untuk kegiatan transportasi/ekstraksi.
-
-> **Strategi Mitigasi:**
-> * Lakukan audit dokumen digital sebelum truk meninggalkan *loading point*.
-> * Pasang jembatan timbang (*weighbridge*) portabel di area hutan untuk memastikan muatan sesuai regulasi sebelum masuk jalan umum.
-
-## 3. Risiko Finansial (Financial Risks)
-
-Proyek ini padat modal (*capital intensive*) dan sensitif terhadap fluktuasi biaya makro.
-
-* **Volatilitas Biaya Bahan Bakar (BBM):** Karena konsumsi BBM alat berat dan truk sangat besar, kenaikan harga solar industri sedikit saja bisa menggerus profit margin secara drastis.
-* **Ketidakpastian Volume Angkut:** Jika kuota tebang dari manajemen kehutanan turun atau terhambat, pendapatan Anda yang dihitung per ritase atau per kubik ($m^3$) akan ikut anjlok, sementara biaya tetap (gaji driver, sewa alat) berjalan terus.
-
-> **Strategi Mitigasi:**
-> * Masukkan klausul *Fuel Escalation Clause* dalam kontrak (penyesuaian tarif angkut otomatis jika harga BBM naik melebihi persentase tertentu).
-> * Terapkan skema kontrak dengan jaminan volume minimum (*Take-or-Pay clause*).
-
-## 4. Risiko Keselamatan & Kesehatan Kerja (K3 / HSE Risks)
-
-Logistik kehutanan termasuk salah satu industri dengan tingkat bahaya tertinggi.
-
-* **Kecelakaan Kerja:** Truk terbalik di lereng curam, tertimpa kayu saat proses *loading/unloading*, hingga cedera fatal operator.
-* **Konflik Sosial:** Risiko gesekan dengan masyarakat adat atau lokal di sepanjang jalur transportasi hutan.
-
-> **Strategi Mitigasi:**
-> * Kewajiban sertifikasi kompetensi untuk semua *driver* truk logging (khusus medan berat).
-> * Alokasikan dana khusus untuk CSR (*Corporate Social Responsibility*) dan libatkan tenaga kerja lokal demi menjaga stabilitas hubungan sosial.
-
----
-
-### Ringkasan Skoring Risiko (Risk Matrix Checklist)
-
-Sebelum menandatangani kontrak, pastikan Anda dan tim menilai matriks risiko berikut:
-
-| Kategori Risiko | Dampak (Impact) | Probabilitas (Probability) | Prioritas Penanganan |
-| --- | --- | --- | --- |
-| **Cuaca & Medan Lumpur** | Tinggi | Tinggi | **Sangat Tinggi (Kritis)** |
-| **Kecelakaan Alat/Truk** | Tinggi | Sedang | **Tinggi** |
-| **Kenaikan Harga BBM** | Sedang | Tinggi | **Tinggi** |
-| **Izin & Dokumen Legal** | Sangat Tinggi | Rendah | **Sedang (Wajib Patuh)** |` : `### 10. Risk Management
-
-**A. MITIGASI RISIKO KESELAMATAN JALAN RAYA (ROAD SAFETY RISK)**
-* **Identifikasi Risiko:** Kecelakaan lalu lintas sasis truk, kelelahan fisik pengemudi, atau keterlambatan rute akibat cuaca ekstrem.
-* **Tindakan Mitigasi:** Edukasi berkendara defensif, penegakan SOP wajib istirahat pengemudi minimal 30 menit setiap berkendara 4 jam, serta pemasangan rem ABS pada unit baru.
-
-**B. MITIGASI RISIKO INTEGRITAS KARGO (CARGO INTEGRITY RISK)**
-* **Identifikasi Risiko:** Kebocoran tangki, kontaminasi muatan kargo ${materialName}, atau tumpahan muatan yang merusak lingkungan hidup sekitar.
-* **Tindakan Mitigasi:** Pemeriksaan berkala katup palka/pneumatik tangki, pemasangan sensor getaran IoT, serta perlindungan asuransi kargo penuh (*Comprehensive Marine Cargo Insurance*).
-
-**C. MITIGASI RISIKO REGULASI & KEPATUHAN HUKUM (COMPLIANCE RISK)**
-* **Identifikasi Risiko:** Pelanggaran berat muatan sasis truk (*Over Dimension Over Load* - ODOL) atau penilangan dokumen jalan akibat masa berlaku KIR habis.
-* **Tindakan Mitigasi:** Integrasi alat timbang sensor suspensi portable pada sasis unit dan sistem manajemen pengingat otomatis masa berlaku KIR & STNK.
-
-**D. JENIS-JENIS RISIKO & MATRIKS PENILAIAN DAMPAK (TYPES OF RISKS & IMPACT MATRIX)**
-* **Risiko Operasional Jalan Raya:** Frekuensi kejadian moderat dengan dampak finansial bervariasi dari sedang hingga tinggi. Dimitigasi dengan pengawasan CCTV kabin berkemampuan AI (*ADAS & DSM*).
-* **Risiko Kebocoran/Kerusakan Kargo Sektor ${industry}:** Frekuensi kejadian sangat rendah namun dampak finansial dan reputasi sangat tinggi. Ditangani dengan audit tangki berkala dan asuransi komprehensif.
-* **Risiko Kebijakan Pemerintah & Regulasi:** Frekuensi rendah dengan dampak operasional tinggi. Dimitigasi dengan keanggotaan aktif dalam asosiasi pengusaha logistik (ALFI/APTRINDO) guna mengantisipasi perubahan aturan jalan.`,
-
-    11: `### 11. Digital Coverage (Tools, Method, IoT, Tech)
-
-**A. PLATFORM TELEMATIKA PINTAR ARMADA (PRAMA SMART TELEMATICS)**
-* **GPS Pelacakan Real-Time:** Monitoring lokasi presisi tinggi, rute rincian, kecepatan armada, dan pola pengereman pengemudi guna menjamin keselamatan.
-* **Sensor Diagnostik Sasis CAN Bus:** Sistem pembaca data mesin digital secara kontinu untuk memproyeksikan perawatan preventif sasis truk sebelum terjadi mogok.
-
-**B. TEKNOLOGI IOT PENGAWASAN MUATAN (SMART CARGO SENSING)**
-* **Sensor Beban Suspensi Otomatis:** Sensor berat yang dipasang pada suspensi armada guna mendeteksi beban muatan secara langsung demi mematuhi aturan anti-ODOL.
-* **Sensor Telemetri Kargo Khusus:** Sensor digital untuk mengukur parameter getaran, kelembapan, atau temperatur tangki yang relevan dengan ${materialName}.
-
-**C. INTEGRASI DIGITALISASI ALUR MANIFES (E-MANIFEST INTEGRATION)**
-* **Sistem Manifes Digital (Festronik):** Integrasi sistem pelaporan logistik sirkular tanpa kertas yang aman dan terhubung langsung ke server kementerian lingkungan hidup.
-* **Dasbor Pelaporan Jejak Karbon:** Dasbor khusus yang menghitung jejak karbon per ritase guna mendukung target pelaporan ESG dekarbonisasi rantai pasok mitra.
-
-**D. MACAM-MACAM PERANGKAT IOT & METODOLOGI INTEGRASI (TYPES OF IOT DEVICES & METHODOLOGY)**
-* **Sensor Berat Suspensi Gandar (Axle Load Sensors):** Mendeteksi tekanan suspensi udara/per sasis untuk kalkulasi tonase instan guna mencegah denda timbangan jalan.
-* **Sistem Kamera Pemantau AI (DMS & ADAS):** Kamera pintar di dalam kabin untuk memantau fokus pengemudi (antidistraksi & kelelahan) serta asisten keselamatan jarak aman jalan.
-* **Aplikasi Driver Mobile & e-POD (Electronic Proof of Delivery):** Mengganti kertas manifest manual dengan konfirmasi digital tanda terima menggunakan tanda tangan digital dan foto koordinat GPS lokasi bongkar muat.`,
-
-    12: (() => {
-      const comps = getDefaultCompetitorsForProject(pName);
-      let text = "### 12. Competitor Analysis & Market Landscape\n\n";
-      text += "**A. PROFIL KOMPETITOR UTAMA DI INDONESIA (COMPETITOR PROFILES)**\n";
-      text += "Dalam pelaksanaan proyek **\"" + pName + "\"** di Indonesia, persaingan tender dan operasional melibatkan beberapa pemain kunci berikut:\n\n";
-      comps.forEach((c, idx) => {
-        text += "**" + (idx + 1) + ". " + c.name + " (" + c.status + ")**\n";
-        text += "* **Skala Armada:** " + c.armadaScale + " | **Indeks Keamanan (HSE):** " + c.safetyIndex + "%\n";
-        text += "* **Rekam Jejak Proyek:** " + c.projectHistory + "\n";
-        text += "* **Kekuatan Utama:** " + c.strengths + "\n";
-        text += "* **Kelemahan & Celah Pasar:** " + c.weaknesses + "\n";
-        text += "* **Analisis Penetrasi Pancaran:** " + c.explanation + "\n\n";
-      });
-      text += "\n**B. KESENJANGAN DAN KEUNGGULAN RELATIF (COMPETITIVE GAP ANALYSIS)**\n";
-      text += "* **Kelemahan Kompetitor:** Sebagian besar kompetitor lokal beroperasi menggunakan sasis armada tua tanpa integrasi sistem IoT, sertifikasi HSE yang minim, serta tiadanya program penunjang dekarbonisasi karbon.\n";
-      text += "* **Keunggulan Pancaran:** Pancaran Group memadukan keandalan armada berstandar keselamatan tinggi, kepatuhan hukum penuh, serta transparansi sensor IoT real-time.\n\n";
-      text += "**C. STRATEGI KEMENANGAN PANCARAN GROUP (MARKET DOMINANCE STRATEGY)**\n";
-      text += "Pancaran Group berada di posisi unik \"Value Frontier\" di Indonesia, di mana kita mengawinkan kepatuhan standar internasional (HSE & ESG) serta integrasi teknologi IoT Smart Telematics, namun mempertahankan tarif lokal yang kompetitif dan fleksibilitas jadwal yang tidak dimiliki oleh perusahaan multinasional besar (seperti PPLI atau RAPP Logistics).";
-      text += "\n\n**D. MACAM-MACAM TIPE KOMPETITOR DI PASAR (TYPES OF COMPETITORS)**\n";
-      text += "* **Tipe 1 - Transporter Lokal Konvensional:** Mengandalkan sasis armada lama berbiaya sewa murah namun memiliki risiko kecelakaan tinggi dan tidak lolos persyaratan sertifikasi K3.\n";
-      text += "* **Tipe 2 - Perusahaan Multinasional Raksasa:** Menawarkan layanan standar internasional berbiaya tinggi dengan proses birokrasi kaku dan kurangnya fleksibilitas rute darat.\n";
-      text += "* **Tipe 3 - Operator Niche Khusus:** Fokus pada komoditas spesifik berteknologi tinggi tetapi memiliki kapasitas sasis terbatas yang tidak mampu melayani lonjakan volume kargo mendadak.";
-      return text;
-    })(),
-
-    13: (() => {
-      let explanationText = "";
-      if (lower.includes("batubara") || lower.includes("coal") || lower.includes("tambang") || lower.includes("mineral") || lower.includes("batu bara")) {
-        explanationText = "TAM mencakup seluruh volume pengangkutan batu bara nasional di Pulau Kalimantan dan Sumatera (est. 600 juta ton/tahun). SAM difokuskan pada koridor pengangkutan hauling jalan darat khusus dari konsesi tambang (IUP) aktif berjarak < 80 km ke Jetty pelabuhan muat. SOM ditargetkan pada 3-5 produsen batu bara menengah-besar (IUP Mandiri) yang membutuhkan jaminan armada anti-breakdown demi kelancaran rantai pasok ekspor.";
-      } else if (lower.includes("dingin") || lower.includes("cold") || lower.includes("farmasi") || lower.includes("vaksin") || lower.includes("makanan") || lower.includes("boga") || lower.includes("fresh") || lower.includes("reefer")) {
-        explanationText = "TAM mencakup seluruh pasar cold-chain logistics nasional Indonesia untuk produk makanan beku, farmasi, susu, dan bahan segar. SAM difokuskan pada pasar distribusi berpendingin premium lintas koridor tol trans-Jawa dan penyeberangan ke Sumatera Selatan yang mewajibkan sertifikasi suhu konstan. SOM dirancang untuk memenangkan kontrak distribusi dari 8 produsen FMCG makanan beku dan jaringan ritel modern besar.";
-      } else if (lower.includes("waste") || lower.includes("limbah") || lower.includes("sampah") || lower.includes("b3") || lower.includes("environmental") || lower.includes("environment")) {
-        explanationText = "TAM dihitung berdasarkan total volume limbah B3 (cair, padat, medis, sludge) yang diproduksi oleh seluruh industri manufaktur di 5 kawasan industri utama Indonesia (Karawang, Cikarang, Cilegon, Gresik, & Medan). SAM difokuskan pada rute pengangkutan berizin KLHK menuju TPA/fasilitas pengolahan akhir resmi (seperti PPLI). SOM menargetkan perolehan kontrak tetap dari 15 emiten industri besar manufaktur tekstil, kimia, dan otomotif.";
-      } else if (lower.includes("cpo") || lower.includes("sawit") || lower.includes("palm oil") || lower.includes("minyak")) {
-        explanationText = "TAM mencakup seluruh kapasitas pengangkutan minyak kelapa sawit mentah (Crude Palm Oil) dari pabrik kelapa sawit (PKS) menuju refinery atau pelabuhan bulking station di Riau, Jambi, Sumut, dan Kalteng. SAM difokuskan pada rute transportasi sasis tangki Food Grade berkapasitas 25-30 ton. SOM menargetkan kontrak eksklusif dari 3 grup perkebunan sawit besar independen di wilayah operasional Pancaran.";
-      } else {
-        explanationText = "TAM didasarkan pada total volume logistik general cargo & kontainer intermodal di koridor utama Indonesia (Jawa-Sumatera). SAM difokuskan pada segmen industri manufaktur bernilai tinggi yang menuntut ketepatan SLA pengangkutan di atas 98%. SOM menargetkan konversi kontrak tahunan dari beberapa distributor regional utama dan emiten FMCG.";
-      }
-
-      return "### 13. Market Sizing (TAM, SAM, SOM)\n\n" +
-        "**A. TOTAL ADDRESSABLE MARKET - TAM (POTENSI PASAR KESELURUHAN)**\n" +
-        "* **Estimasi Nilai TAM: " + tamFormatted + " per tahun**\n" +
-        "* **Penjelasan Detail:** Merupakan total potensi belanja (spending) logistik dan transportasi secara keseluruhan di Indonesia untuk sektor " + industry + ". Angka ini mencerminkan volume industri raksasa berskala nasional, didorong oleh pertumbuhan manufaktur, ketatnya regulasi pemerintah, dan ekspansi infrastruktur koridor logistik.\n\n" +
-        "**B. SERVICEABLE ADDRESSABLE MARKET - SAM (PANGSA PASAR TERSEDIA)**\n" +
-        "* **Estimasi Nilai SAM: " + samFormatted + " per tahun**\n" +
-        "* **Penjelasan Detail:** Porsi dari TAM yang secara geografis dan regulasi dapat dilayani secara langsung oleh jaringan operasional, izin trayek, serta armada tersertifikasi Pancaran Group. " + explanationText.split(". ")[0] + ".\n\n" +
-        "**C. SERVICEABLE OBTAINABLE MARKET - SOM (TARGET PASAR SASARAN NYATA)**\n" +
-        "* **Estimasi Nilai SOM: " + somFormatted + " per tahun**\n" +
-        "* **Penjelasan Detail:** Target pangsa pasar riil yang sangat optimis dan realistis untuk dimenangkan oleh unit bisnis Pancaran Group dalam jangka waktu 3 tahun pertama operasional proyek. Ini dihitung bersandarkan kapasitas penyerapan kontrak tender tahunan, ketersediaan unit armada baru (" + unitsText + "), serta skema pricing yang kompetitif. " + (explanationText.split(". ")[1] || "") + "." +
-        "\n\n**D. METODOLOGI PERHITUNGAN & MODEL ESTIMASI PASAR (TYPES OF MARKET SIZING METHODOLOGIES)**\n" +
-        "* **Pendekatan Top-Down (Top-Down Approach):** Estimasi berbasis analisis laporan statistik industri logistik makro nasional dari Kemenhub, ALFI, dan BPS, dikalibrasi dengan persentase kontribusi daerah proyek.\n" +
-        "* **Pendekatan Bottom-Up (Bottom-Up Approach):** Perhitungan agregat dari nilai volume kargo ril (ritase per hari) milik calon-calon klien korporasi target logistik di wilayah terkait dikalikan dengan tarif ritase pasaran.\n" +
-        "* **Analisis Ketersediaan Sasis (Fleet-Based Capacity Model):** Menyelaraskan hasil estimasi dengan keterbatasan suplai armada chassis yang dimiliki Pancaran Group guna menentukan batas atas pendapatan riil.";
-    })(),
-
-    14: `### 14. Customer Acquisition Cost (CAC) & Lifetime Value (LTV)
-
-**A. ANALISIS CUSTOMER ACQUISITION COST (CAC)**
-* **Biaya Akuisisi Rata-Rata (CAC):** **${cacFormatted}** per klien korporasi baru.
-* **Alokasi Biaya Akuisisi:** Mencakup biaya proses negosiasi tender, survey kelayakan teknis rute jalan awal, penyusunan kustomisasi operasional khusus, program kepatuhan K3 awal, dan penyusunan berkas administrasi legalitas.
-
-**B. ANALISIS CUSTOMER LIFETIME VALUE (LTV)**
-* **Nilai Sepanjang Hidup Klien (LTV):** **${ltvFormatted}** per kontrak korporat.
-* **Justifikasi Finansial:** Dihitung berdasarkan masa retensi rata-rata kontrak berdurasi 3 tahun dengan jaminan kepastian volume pengangkutan minimum harian yang disepakati.
-
-**C. RASIO EFISIENSI LTV/CAC (INVESTMENT HEALTHY RATIO)**
-* **Rasio LTV/CAC:** **${ratioValue}x**
-* **Interpretasi Kelayakan:** Rasio di atas rerata industri logistik, membuktikan bahwa biaya yang diinvestasikan untuk mengakuisisi klien baru di proyek **"${pName}"** ini sangat menguntungkan dan bernilai ekonomi tinggi.
-
-**D. MACAM-MACAM METRIK CAC & ELEMEN LIFETIME VALUE (TYPES OF COST METRICS)**
-* **Elemen CAC Teknis Operasional:** Biaya trial run unit kosong di jalan hauling, kalibrasi sensor telemetri PRAMA, survey jembatan dan elevasi jalan, serta penyesuaian bodi sasis karoseri.
-* **Elemen CAC Komersial & Legalitas:** Pengurusan jaminan tender (*Tender Bond*), asuransi tanggung jawab hukum pihak ketiga (*TPLLI*), dan persiapan berkas audit vendor K3.
-* **Elemen LTV Kontrak Berulang:** Nilai kumulatif pendapatan bulanan dikurangi Opex selama masa kontrak primer, ditambah taksiran nilai kontrak perpanjangan (*renewal probability*) sebesar 75%.`
+Rasio LTV terhadap CAC yang mencapai ${ratioValue}x membuktikan keunggulan profitabilitas yang sangat sehat dan berada di atas rata-rata benchmark industri logistik. Tingginya rasio ini mengonfirmasi bahwa setiap modal yang dialokasikan untuk memenangkan akun B2B menghasilkan nilai ekonomi jangka panjang yang sangat signifikan bagi grup.`
   };
 
   // Map raw keys to match defaultDashboardSections (fixing the off-by-one misalignment due to missing Structure section)
@@ -1468,13 +1151,9 @@ Sebelum menandatangani kontrak, pastikan Anda dan tim menilai matriks risiko ber
     13: pillars[14], // Map generated 'CAC, LTV' (14) to Section 13
     14: `### 14. Kesimpulan & Rekomendasi Keputusan
 
-**Kesimpulan Akhir:**
-Berdasarkan kajian mendalam dari seluruh aspek operasional, finansial, kepatuhan HSE, dan integrasi telematika digital, proyek ekspansi logistik dan hauling dinyatakan **SANGAT LAYAK (GO)** untuk segera dieksekusi.
+Berdasarkan hasil evaluasi komprehensif terhadap seluruh pilar kajian strategis—mencakup kelayakan teknis armada, profitabilitas finansial (IRR ${defaultIrr}%, PBP ${defaultPbp} tahun), kesiapan kepatuhan HSE, serta integrasi ekosistem digital—proyek ekspansi "${pName}" dinyatakan SANGAT LAYAK (GO DECISION) untuk segera dieksekusi.
 
-**Rekomendasi Keputusan Utama:**
-1. Segera lakukan penandatanganan kontrak kerja sama multitahun (MToP) dengan pemilik konsesi.
-2. Terapkan sistem fit-to-work terofisial RFID di seluruh pos kesehatan guna menjamin keselamatan kerja armada.
-3. Integrasikan pelacakan telemetri satelit GPS dan sensor anti-lelah (fatigue monitoring) pada armada utama guna menekan risiko insiden di lapangan.`
+Rekomendasi langkah prioritas meliputi finalisasi kontrak jangka panjang (LTSA) bersama klien utama, pengadaan dan mobilisasi ${unitsText} unit armada berstandar telematika PRAMA, serta pembentukan gugus tugas operasional depo guna memastikan kesiapan implementasi tepat waktu sesuai target SLA yang ditetapkan.`
   };
 
   return mappedPillars;
@@ -1483,6 +1162,24 @@ Berdasarkan kajian mendalam dari seluruh aspek operasional, finansial, kepatuhan
 export function cleanPillarContent(content: string, pillarNum: number, pillarTitle: string): string {
   let cleaned = content.trim();
   
+  if (pillarNum === 2) {
+    if (cleaned.includes("Berikut adalah bedah terstruktur") || cleaned.includes("A. ANALISIS POTENSI PASAR") || cleaned.includes("A. CAKUPAN STRATEGIS") || cleaned.includes("Faktor Pendorong Pasar")) {
+      const parts = cleaned.split(/---|\n### \*\*A\./);
+      if (parts[0] && parts[0].trim().length > 60) {
+        cleaned = parts[0].replace(/Berikut adalah bedah terstruktur[\s\S]*?(?=\n\n|\n[A-Z]|$)/gi, "").trim();
+      }
+    }
+  }
+
+  if (pillarNum === 3) {
+    if (cleaned.includes("A. Alokasi Capital Expenditure") || cleaned.includes("Analisis Kelayakan Finansial Proyek Komprehensif") || cleaned.includes("MACAM-MACAM KATEGORI FINANSIAL")) {
+      const parts = cleaned.split(/---|\n\*\*A\. Alokasi/);
+      if (parts[0] && parts[0].trim().length > 60) {
+        cleaned = parts[0].replace(/Analisis Kelayakan Finansial Proyek Komprehensif:?[\s\S]*?(?=\n\n|\n[A-Z]|$)/gi, "").trim();
+      }
+    }
+  }
+
   if (pillarNum === 14) {
     // Section 14 should strictly focus on Conclusion & Recommendations, removing any stray CAC/LTV summary text
     cleaned = cleaned.replace(/Metrik\s+CAC\s+dioptimalkan[\s\S]*?kebutuhan\s+logistik\.?\s*/gi, "");
@@ -1547,7 +1244,29 @@ export function cleanPillarContent(content: string, pillarNum: number, pillarTit
     filteredLines.push(line);
   }
   
-  return filteredLines.join("\n").trim();
+  let resultText = filteredLines.join("\n").trim();
+
+  // 3. Remove verbose breakdowns if present (keep only the concise executive narrative)
+  const breakdownSplitters = [
+    "\n---",
+    "\n## 1.",
+    "\n## 1 ",
+    "\n### **A.",
+    "\n**A. ",
+    "\n### A. ",
+    "\n### Ringkasan Skoring",
+    "\n| Kategori Risiko |"
+  ];
+
+  for (const splitter of breakdownSplitters) {
+    const idx = resultText.indexOf(splitter);
+    if (idx !== -1 && idx > 50) {
+      // Ensure we keep the first header and introductory narrative
+      resultText = resultText.substring(0, idx).trim();
+    }
+  }
+
+  return resultText;
 }
 
 export function parseResponseToPillars(text: string): Record<number, string> {

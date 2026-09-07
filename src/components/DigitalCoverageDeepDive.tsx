@@ -24,7 +24,8 @@ import {
   Radio,
   Lock,
   ChevronRight,
-  Monitor
+  Monitor,
+  Info
 } from "lucide-react";
 
 interface DigitalCoverageProps {
@@ -287,45 +288,58 @@ export function DigitalCoverageDeepDive({ projectTitle }: DigitalCoverageProps) 
             exit={{ opacity: 0, y: -10 }}
             className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left relative z-10"
           >
-            <div className="lg:col-span-8 bg-slate-950/50 border border-slate-800 rounded-2xl p-4.5">
-              <div className="flex justify-between items-center mb-4">
-                <h4 className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-                  <Database className="h-4 w-4 text-cyan-400" />
-                  Katalog Perangkat Lunak & Sensor IoT Aktif
-                </h4>
-                <span className="text-[10px] text-slate-500 font-bold font-mono">
-                  Standardisasi Industri 4.0 Logistik
-                </span>
+            <div className="lg:col-span-8 bg-slate-950/50 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                    <Database className="h-4 w-4 text-cyan-400" />
+                    Katalog Perangkat Lunak & Sensor IoT Aktif
+                  </h4>
+                  <span className="text-[10px] text-slate-500 font-bold font-mono">
+                    Standardisasi Industri 4.0 Logistik
+                  </span>
+                </div>
+                <p className="text-[10.5px] text-slate-400 font-semibold mb-4 leading-relaxed">
+                  Breakdown rincian perangkat keras sensorik, integrasi platform, dan aplikasi pengemudi yang aktif mendukung operasional armada.
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                  {tools.map((t) => (
+                    <div key={t.id} className="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800 flex flex-col justify-between relative overflow-hidden">
+                      <div className="absolute top-0 left-0 w-1 h-full bg-cyan-500" />
+                      <div>
+                        <div className="flex justify-between items-start gap-2 mb-1.5">
+                          <span className="px-1.5 py-0.5 text-[8px] font-mono font-black rounded uppercase bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                            {t.type}
+                          </span>
+                          <span className={`px-1.5 py-0.5 text-[8px] font-mono font-black rounded uppercase ${
+                            t.status === "Aktif" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                          }`}>
+                            {t.status}
+                          </span>
+                        </div>
+                        <h5 className="text-[11.5px] font-black uppercase tracking-tight text-white mb-1.5">
+                          {t.name}
+                        </h5>
+                        <p className="text-[10px] text-slate-400 font-semibold leading-relaxed">
+                          {t.description}
+                        </p>
+                      </div>
+
+                      <div className="border-t border-slate-800/80 mt-3 pt-2 flex justify-between items-center text-[9px] text-slate-500 font-bold">
+                        <span>KEANDALAN SISTEM</span>
+                        <span className="font-mono text-cyan-400 font-black">{t.reliability}% Uptime</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[310px] overflow-y-auto pr-1">
-                {tools.map((t) => (
-                  <div key={t.id} className="bg-slate-900 p-3.5 rounded-xl border border-slate-850 flex flex-col justify-between">
-                    <div>
-                      <div className="flex justify-between items-start gap-2 mb-1.5">
-                        <span className="px-1.5 py-0.2 text-[8px] font-black rounded uppercase bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-                          {t.type}
-                        </span>
-                        <span className={`px-1.5 py-0.2 text-[8px] font-black rounded uppercase ${
-                          t.status === "Aktif" ? "bg-emerald-500/10 text-emerald-400" : "bg-amber-500/10 text-amber-400"
-                        }`}>
-                          {t.status}
-                        </span>
-                      </div>
-                      <h5 className="text-[11.5px] font-black uppercase tracking-tight text-white mb-1.5">
-                        {t.name}
-                      </h5>
-                      <p className="text-[10.5px] text-slate-400 font-semibold leading-relaxed">
-                        {t.description}
-                      </p>
-                    </div>
-
-                    <div className="border-t border-slate-800/80 mt-3 pt-2 flex justify-between items-center text-[9px] text-slate-500 font-bold">
-                      <span>KEANDALAN SISTEM</span>
-                      <span className="font-mono text-cyan-400">{t.reliability}% Uptime</span>
-                    </div>
-                  </div>
-                ))}
+              <div className="mt-4 pt-3.5 border-t border-slate-800/80 text-[10px] text-slate-400 font-semibold flex items-center gap-2">
+                <Info className="h-4 w-4 text-cyan-400 shrink-0" />
+                <span>
+                  💡 Seluruh modul perangkat keras terhubung langsung ke server telematika terpusat untuk pemantauan rute 24/7.
+                </span>
               </div>
             </div>
 
@@ -339,15 +353,15 @@ export function DigitalCoverageDeepDive({ projectTitle }: DigitalCoverageProps) 
                 </h4>
 
                 <div className="space-y-3.5 text-xs">
-                  <div className="p-3 bg-slate-900/80 border border-slate-850 rounded-xl space-y-2">
-                    <span className="text-[9px] text-slate-500 font-black block">AES-256 ENCRYPTION</span>
+                  <div className="p-3.5 bg-slate-900/80 border border-slate-850 rounded-xl space-y-1.5">
+                    <span className="text-[9px] text-cyan-400 font-mono font-black block uppercase">AES-256 ENCRYPTION</span>
                     <p className="text-[10px] text-slate-300 font-semibold leading-relaxed">
                       Seluruh transmisi data sensor lokasi GPS dan dokumen e-POD dienkripsi menggunakan standar keamanan militer guna mencegah pembajakan sinyal rute.
                     </p>
                   </div>
 
-                  <div className="p-3 bg-slate-900/80 border border-slate-850 rounded-xl space-y-2">
-                    <span className="text-[9px] text-slate-500 font-black block">DASHBOARD INTEGRASI API</span>
+                  <div className="p-3.5 bg-slate-900/80 border border-slate-850 rounded-xl space-y-1.5">
+                    <span className="text-[9px] text-cyan-400 font-mono font-black block uppercase">DASHBOARD INTEGRASI API</span>
                     <p className="text-[10px] text-slate-300 font-semibold leading-relaxed">
                       Klien dapat mengintegrasikan dashboard internal mereka dengan server Prama API secara instan via JSON Web Tokens.
                     </p>
@@ -369,89 +383,69 @@ export function DigitalCoverageDeepDive({ projectTitle }: DigitalCoverageProps) 
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left relative z-10"
+            className="flex flex-col gap-4 text-left relative z-10"
           >
-            <div className="lg:col-span-5 bg-slate-950/50 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between">
-              <div>
-                <h4 className="text-xs font-black uppercase tracking-wider text-slate-300 mb-3 flex items-center gap-1.5">
+            <div className="bg-slate-950/50 border border-slate-800 rounded-2xl p-5">
+              <div className="flex justify-between items-center mb-2">
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
                   <Sliders className="h-4 w-4 text-cyan-400" />
-                  Metodologi Smart Logistics
+                  Metodologi Smart Logistics & Alur Kerja Standardisasi
                 </h4>
-                <p className="text-[10px] text-slate-400 font-semibold mb-4 leading-relaxed">
-                  Pilihlah salah satu metodologi digital di bawah ini untuk mempelajari langkah demi langkah implementasi teknisnya di lapangan:
-                </p>
+                <span className="text-[10px] text-slate-500 font-bold font-mono">
+                  Standard Operating Procedure (SOP) Digital
+                </span>
+              </div>
+              <p className="text-[10.5px] text-slate-400 font-semibold mb-5 leading-relaxed">
+                Breakdown rinci penerapan metodologi logistik pintar beserta sasaran utama dan tahapan langkah alur kerja teknis di lapangan.
+              </p>
 
-                <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1">
-                  {methodologies.map((m) => (
-                    <button
-                      key={m.id}
-                      type="button"
-                      onClick={() => setSelectedMethodology(m.id)}
-                      className={`w-full p-3 rounded-xl border text-left cursor-pointer transition-all ${
-                        selectedMethodology === m.id
-                          ? "bg-cyan-950/20 border-cyan-500/80 text-white"
-                          : "bg-slate-900 border-slate-850 text-slate-400 hover:border-slate-800"
-                      }`}
-                    >
-                      <h5 className="text-[11.5px] font-black uppercase tracking-tight text-white mb-1">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {methodologies.map((m) => (
+                  <div key={m.id} className="bg-slate-900/90 border border-slate-800 rounded-xl p-4 flex flex-col justify-between relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-cyan-500" />
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[8px] font-mono font-black text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20 uppercase">
+                          KESULITAN: {m.difficulty}
+                        </span>
+                        <span className="text-[8px] font-mono font-black text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 uppercase">
+                          NILAI: {m.valueRating}
+                        </span>
+                      </div>
+
+                      <h5 className="text-[12px] font-black uppercase text-white tracking-tight mb-2">
                         {m.title}
                       </h5>
-                      <div className="flex items-center gap-2 mt-2">
-                        <span className="text-[8.5px] font-bold text-slate-500">KESULITAN:</span>
-                        <span className="text-[8.5px] font-black text-amber-400 font-mono">{m.difficulty}</span>
-                        <span className="text-[9px] text-slate-600 font-black">•</span>
-                        <span className="text-[8.5px] font-bold text-slate-500">NILAI:</span>
-                        <span className="text-[8.5px] font-black text-emerald-400 font-mono">{m.valueRating}</span>
+
+                      <div className="bg-slate-950/70 p-2.5 rounded-lg border border-slate-800/80 mb-3">
+                        <span className="text-[8.5px] font-mono font-black text-cyan-400 uppercase block mb-0.5">
+                          🎯 SASARAN UTAMA
+                        </span>
+                        <p className="text-[10px] text-slate-300 font-semibold leading-relaxed">
+                          {m.objective}
+                        </p>
                       </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
 
-              <div className="text-[9px] text-slate-500 font-bold mt-4">
-                PRAMA LOGISTICS METHODOLOGY HUB
-              </div>
-            </div>
-
-            {/* Step-by-Step details of selected Methodology */}
-            <div className="lg:col-span-7 bg-slate-950/70 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
-              {(() => {
-                const methObj = methodologies.find(m => m.id === selectedMethodology) || methodologies[0];
-                return (
-                  <div className="space-y-4">
-                    <div>
-                      <span className="text-[8.5px] font-mono font-black text-cyan-400 block mb-1">
-                        METODOLOGI DETAIL INTERAKTIF
-                      </span>
-                      <h4 className="text-sm font-black text-white uppercase tracking-tight">
-                        {methObj.title}
-                      </h4>
-                      <p className="text-[11px] text-slate-300 font-semibold mt-1.5 bg-slate-900 p-2.5 rounded-lg border border-slate-850/50 leading-relaxed">
-                        🎯 <span className="text-white">Sasaran Utama:</span> {methObj.objective}
-                      </p>
-                    </div>
-
-                    <div className="space-y-3">
-                      <span className="text-[9.5px] text-slate-500 font-black tracking-wider block">LANGKAH-LANGKAH ALUR KERJA (STEP-BY-STEP)</span>
-                      <div className="space-y-2">
-                        {methObj.stepByStep.map((step, idx) => (
-                          <div key={idx} className="bg-slate-900 p-3 rounded-xl border border-slate-850/80 flex gap-2.5 items-start">
-                            <span className="h-5 w-5 bg-cyan-600/10 text-cyan-400 rounded-full flex items-center justify-center text-[10.5px] font-black shrink-0 font-mono">
-                              {idx + 1}
-                            </span>
-                            <p className="text-[10.5px] text-slate-300 font-semibold leading-relaxed">
-                              {step.substring(3)}
-                            </p>
-                          </div>
-                        ))}
+                      <div>
+                        <span className="text-[8.5px] font-mono font-black text-slate-400 uppercase block mb-1.5">
+                          LANGKAH ALUR KERJA (STEP-BY-STEP)
+                        </span>
+                        <div className="space-y-1.5">
+                          {m.stepByStep.map((step, idx) => (
+                            <div key={idx} className="bg-slate-950/40 p-2 rounded border border-slate-850 flex items-start gap-2">
+                              <span className="h-4 w-4 bg-cyan-500/10 text-cyan-400 rounded-full flex items-center justify-center text-[9px] font-black shrink-0 font-mono border border-cyan-500/20">
+                                {idx + 1}
+                              </span>
+                              <p className="text-[9.5px] text-slate-300 font-semibold leading-relaxed">
+                                {step.substring(step.indexOf(".") + 2)}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </div>
-                );
-              })()}
-
-              <div className="text-[9px] text-slate-500 font-bold mt-4">
-                PRAMA STANDARD OPERATING PROCEDURE (SOP) DIGITAL v1.1
+                ))}
               </div>
             </div>
           </motion.div>

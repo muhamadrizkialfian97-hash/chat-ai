@@ -311,74 +311,120 @@ export function SupplyDemandDeepDive({ projectTitle }: SupplyDemandProps) {
             exit={{ opacity: 0, y: -10 }}
             className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left relative z-10"
           >
-            {/* Asset List & Status Controller */}
-            <div className="lg:col-span-8 bg-slate-950/50 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between">
+            {/* Asset List Breakdown */}
+            <div className="lg:col-span-8 bg-slate-950/50 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
               <div>
-                <h4 className="text-xs font-black uppercase tracking-wider text-slate-300 mb-3 flex items-center gap-1.5">
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-300 mb-2 flex items-center gap-1.5">
                   <Truck className="h-4 w-4 text-indigo-400" />
                   Pilar Utama Kapasitas Penawaran (Logistics Fleet Assets)
                 </h4>
-                <p className="text-[10px] text-slate-400 font-semibold mb-4 leading-relaxed">
-                  Konfigurasikan kapasitas armada angkut aktif Anda di lapangan. Klik tombol status untuk mensimulasikan downtime pemeliharaan truk atau kesiapan stasiun transfer mekanis.
+                <p className="text-[10.5px] text-slate-400 font-semibold mb-4 leading-relaxed">
+                  Breakdown dan penjelasan rincian alokasi aset armada penawaran aktif yang disiagakan di lapangan.
                 </p>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {supplyAssets.map((asset) => (
-                    <div
-                      key={asset.id}
-                      onClick={() => toggleAssetStatus(asset.id)}
-                      className={`p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between h-[120px] ${
-                        asset.status === "Siap Tempur"
-                          ? "bg-slate-900 border-indigo-500/40 text-white hover:border-indigo-500"
-                          : asset.status === "Siaga"
-                          ? "bg-slate-900/60 border-amber-600/30 text-slate-300 hover:border-amber-600/60"
-                          : "bg-slate-950/80 border-rose-950/80 text-slate-500 hover:border-rose-900/80"
-                      }`}
-                    >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <span className={`px-1.5 py-0.2 text-[8px] font-mono font-black rounded uppercase ${
-                              asset.category === "Armada" ? "bg-indigo-500/10 text-indigo-400" : "bg-sky-500/10 text-sky-400"
-                            }`}>
-                              {asset.category}
-                            </span>
-                            <span className="text-[9px] text-slate-600">•</span>
-                            <span className="text-[9px] text-slate-400 font-semibold">{asset.unit}</span>
-                          </div>
-                          <h5 className="text-[11.5px] font-black uppercase tracking-tight line-clamp-1">
-                            {asset.name}
-                          </h5>
-                        </div>
-                        
-                        {/* Status badge and dot */}
-                        <div className="flex items-center gap-1">
-                          <span className={`h-1.5 w-1.5 rounded-full ${
-                            asset.status === "Siap Tempur" ? "bg-emerald-500" : asset.status === "Siaga" ? "bg-amber-400" : "bg-rose-500 animate-pulse"
-                          }`} />
-                          <span className="text-[8.5px] font-black uppercase tracking-wider">{asset.status}</span>
-                        </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                  {/* Asset 1 */}
+                  <div className="bg-slate-900/80 border border-slate-800 p-3.5 rounded-xl flex flex-col justify-between relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500" />
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <span className="px-1.5 py-0.5 text-[8px] font-mono font-black rounded uppercase bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                          ARMADA • TRUK
+                        </span>
+                        <span className="text-[8.5px] font-mono font-black text-emerald-400">SIAP TEMPUR</span>
                       </div>
-
-                      <div className="flex justify-between items-end mt-2">
-                        <div>
-                          <span className="text-[9px] text-slate-500 font-black block">KAPASITAS ANGKUT</span>
-                          <span className="text-sm font-black text-white font-mono">{asset.capacity} Ton / Hari</span>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-[9px] text-slate-500 font-black block">OPERATIONAL COST</span>
-                          <span className="text-[10px] font-black text-emerald-400 font-mono">Rp {asset.costPerDay.toLocaleString("id-ID")}/Hari</span>
-                        </div>
-                      </div>
+                      <h5 className="text-[11.5px] font-black text-white uppercase tracking-tight">
+                        Truk Heavy Duty Multi-Axle (15-20 Ton)
+                      </h5>
+                      <p className="text-[10px] text-slate-400 font-semibold mt-1.5 leading-relaxed">
+                        Armada truk angkut berat utama yang beroperasi pada rute pengangkutan jarak jauh (line-haul) dari depo pengumpulan menuju fasilitas pemrosesan dengan keandalan operasional tinggi.
+                      </p>
                     </div>
-                  ))}
+
+                    <div className="mt-3 pt-2 border-t border-slate-800/80 flex justify-between items-center text-[9.5px] font-mono">
+                      <span className="text-slate-400 font-bold">Kapasitas: <strong className="text-white">150 Ton/Hari</strong></span>
+                      <span className="text-emerald-400 font-bold">Rp 450.000/Hari</span>
+                    </div>
+                  </div>
+
+                  {/* Asset 2 */}
+                  <div className="bg-slate-900/80 border border-slate-800 p-3.5 rounded-xl flex flex-col justify-between relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500" />
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <span className="px-1.5 py-0.5 text-[8px] font-mono font-black rounded uppercase bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                          FASILITAS • STASIUN
+                        </span>
+                        <span className="text-[8.5px] font-mono font-black text-emerald-400">SIAP TEMPUR</span>
+                      </div>
+                      <h5 className="text-[11.5px] font-black text-white uppercase tracking-tight">
+                        Stasiun Transfer & Pemadatan (Compactor)
+                      </h5>
+                      <p className="text-[10px] text-slate-400 font-semibold mt-1.5 leading-relaxed">
+                        Fasilitas perantara dengan pemadat mekanis untuk mereduksi volume muatan limbah sebelum dikirim ke TPA/pabrik, mengoptimalkan frekuensi ritase armada.
+                      </p>
+                    </div>
+
+                    <div className="mt-3 pt-2 border-t border-slate-800/80 flex justify-between items-center text-[9.5px] font-mono">
+                      <span className="text-slate-400 font-bold">Kapasitas: <strong className="text-white">100 Ton/Hari</strong></span>
+                      <span className="text-emerald-400 font-bold">Rp 1.200.000/Hari</span>
+                    </div>
+                  </div>
+
+                  {/* Asset 3 */}
+                  <div className="bg-slate-900/80 border border-slate-800 p-3.5 rounded-xl flex flex-col justify-between relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500" />
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <span className="px-1.5 py-0.5 text-[8px] font-mono font-black rounded uppercase bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                          ARMADA • TRUK
+                        </span>
+                        <span className="text-[8.5px] font-mono font-black text-emerald-400">SIAP TEMPUR</span>
+                      </div>
+                      <h5 className="text-[11.5px] font-black text-white uppercase tracking-tight">
+                        Truk Hook Lift Roll-Off (8-10 Ton)
+                      </h5>
+                      <p className="text-[10px] text-slate-400 font-semibold mt-1.5 leading-relaxed">
+                        Unit armada fleksibel dengan sistem penarik kontainer cepat (roll-off) untuk melayani area industri dan komersil bersiklus pengangkutan tinggi.
+                      </p>
+                    </div>
+
+                    <div className="mt-3 pt-2 border-t border-slate-800/80 flex justify-between items-center text-[9.5px] font-mono">
+                      <span className="text-slate-400 font-bold">Kapasitas: <strong className="text-white">80 Ton/Hari</strong></span>
+                      <span className="text-emerald-400 font-bold">Rp 320.000/Hari</span>
+                    </div>
+                  </div>
+
+                  {/* Asset 4 */}
+                  <div className="bg-slate-900/80 border border-slate-800 p-3.5 rounded-xl flex flex-col justify-between relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-amber-500" />
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <span className="px-1.5 py-0.5 text-[8px] font-mono font-black rounded uppercase bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                          FASILITAS • PABRIK
+                        </span>
+                        <span className="text-[8.5px] font-mono font-black text-amber-400">SIAGA</span>
+                      </div>
+                      <h5 className="text-[11.5px] font-black text-white uppercase tracking-tight">
+                        Fasilitas Pemilahan Mekanis (MRF)
+                      </h5>
+                      <p className="text-[10px] text-slate-400 font-semibold mt-1.5 leading-relaxed">
+                        Fasilitas pemisahan material otomatis untuk memilah sampah daur ulang dan mengalihkan residu secara efisien sebelum pengolahan akhir.
+                      </p>
+                    </div>
+
+                    <div className="mt-3 pt-2 border-t border-slate-800/80 flex justify-between items-center text-[9.5px] font-mono">
+                      <span className="text-slate-400 font-bold">Kapasitas: <strong className="text-white">120 Ton/Hari</strong></span>
+                      <span className="text-emerald-400 font-bold">Rp 2.500.000/Hari</span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
               <div className="mt-4 pt-3.5 border-t border-slate-800/80 text-[10px] text-slate-400 font-semibold flex items-center gap-2">
                 <Info className="h-4 w-4 text-indigo-400 shrink-0" />
                 <span>
-                  💡 <strong>Simulasi Klik:</strong> Mengubah status armada ke <strong>Pemeliharaan</strong> memangkas pasokan supply secara real-time untuk melihat kekuatan resiliensi sistem.
+                  💡 <strong>Kesiapan Integrasi:</strong> Seluruh unit armada dan fasilitas saling terhubung untuk menjamin kontinuitas pasokan penawaran secara optimal.
                 </span>
               </div>
             </div>
@@ -397,25 +443,25 @@ export function SupplyDemandDeepDive({ projectTitle }: SupplyDemandProps) {
                   <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-850">
                     <span className="text-[9px] text-slate-500 font-black block mb-0.5">KAPASITAS AKTIF TERSEDIA</span>
                     <div className="text-2xl font-black text-indigo-400 font-mono">
-                      {totalAvailableSupply} Ton <span className="text-xs text-slate-400 font-bold">/ Hari</span>
+                      390 Ton <span className="text-xs text-slate-400 font-bold">/ Hari</span>
                     </div>
                     <div className="w-full bg-slate-950 h-1.5 rounded-full mt-2.5 overflow-hidden">
-                      <div className="bg-indigo-500 h-full" style={{ width: `${Math.min(100, (totalAvailableSupply/500)*100)}%` }} />
+                      <div className="bg-indigo-500 h-full w-[78%]" />
                     </div>
                   </div>
 
                   <div className="bg-slate-900/80 p-3.5 rounded-xl border border-slate-850 text-[10.5px] space-y-2">
                     <div className="flex justify-between font-semibold">
                       <span className="text-slate-400">Armada Siap Tempur:</span>
-                      <span className="text-emerald-400 font-black">{supplyAssets.filter(a => a.status === "Siap Tempur").length} Aktif</span>
+                      <span className="text-emerald-400 font-black">3 Aktif</span>
                     </div>
                     <div className="flex justify-between font-semibold">
                       <span className="text-slate-400">Armada Siaga (50%):</span>
-                      <span className="text-amber-400 font-black">{supplyAssets.filter(a => a.status === "Siaga").length} Siaga</span>
+                      <span className="text-amber-400 font-black">1 Siaga</span>
                     </div>
                     <div className="flex justify-between font-semibold">
                       <span className="text-slate-400">Dalam Perawatan (0%):</span>
-                      <span className="text-rose-400 font-black">{supplyAssets.filter(a => a.status === "Pemeliharaan").length} Bengkel</span>
+                      <span className="text-rose-400 font-black">0 Bengkel</span>
                     </div>
                   </div>
 
@@ -621,56 +667,100 @@ export function SupplyDemandDeepDive({ projectTitle }: SupplyDemandProps) {
             exit={{ opacity: 0, y: -10 }}
             className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left relative z-10"
           >
-            {/* Balance Toggles & Dashboard */}
-            <div className="lg:col-span-8 bg-slate-950/50 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between">
+            {/* Balance Text Breakdown List */}
+            <div className="lg:col-span-8 bg-slate-950/50 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
               <div>
-                <h4 className="text-xs font-black uppercase tracking-wider text-slate-300 mb-3 flex items-center gap-1.5">
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-300 mb-2 flex items-center gap-1.5">
                   <ArrowRightLeft className="h-4 w-4 text-indigo-400" />
                   Manajemen Keseimbangan Operasional Terdistribusi
                 </h4>
-                <p className="text-[10px] text-slate-400 font-semibold mb-4 leading-relaxed">
-                  Pasang taktik mitigasi operasional di bawah untuk menyeimbangkan dinamika logistik secara dinamis guna meminimalkan biaya ritase angkut kosong (deadhead miles).
+                <p className="text-[10.5px] text-slate-400 font-semibold mb-4 leading-relaxed">
+                  Breakdown taktik mitigasi operasional untuk menyeimbangkan dinamika logistik secara berkesinambungan dan meminimalkan biaya ritase angkut kosong (deadhead miles).
                 </p>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {opsStrategies.map((strategy) => (
-                    <div
-                      key={strategy.id}
-                      onClick={() => toggleOpsStrategy(strategy.id)}
-                      className={`p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between h-[105px] ${
-                        strategy.active
-                          ? "bg-indigo-950/20 border-indigo-900/50 text-indigo-300 hover:border-indigo-800"
-                          : "bg-slate-900/40 border-slate-800/80 text-slate-400 hover:border-slate-700"
-                      }`}
-                    >
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <h5 className="text-[10.5px] font-black uppercase tracking-tight truncate max-w-[170px]">
-                            {strategy.title}
-                          </h5>
-                          <div className={`h-4.5 w-4.5 rounded-md border flex items-center justify-center shrink-0 ${
-                            strategy.active ? "bg-indigo-500 border-indigo-400 text-slate-900" : "border-slate-700"
-                          }`}>
-                            {strategy.active && <Check className="h-3 w-3 stroke-[3]" />}
-                          </div>
-                        </div>
-                        <p className="text-[9px] text-slate-400 leading-relaxed font-semibold">
-                          {strategy.description}
-                        </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                  {/* Strategy 1 */}
+                  <div className="bg-slate-900/80 border border-slate-800 p-3.5 rounded-xl relative overflow-hidden flex flex-col justify-between">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500" />
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="px-1.5 py-0.5 text-[8px] font-mono font-black rounded uppercase bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                          MITIGASI RUTE
+                        </span>
+                        <span className="text-[8.5px] font-mono font-black text-emerald-400">✓ SISTEM AKTIF</span>
                       </div>
-
-                      <span className={`text-[8.5px] font-black uppercase mt-1 ${strategy.active ? "text-indigo-400" : "text-slate-500"}`}>
-                        {strategy.active ? "✓ Sistem Aktif" : "✗ Non-Aktif"}
-                      </span>
+                      <h5 className="text-[11.5px] font-black text-white uppercase tracking-tight">
+                        Rute Dinamis Berbasis Sensor IoT
+                      </h5>
+                      <p className="text-[10px] text-slate-400 font-semibold mt-1.5 leading-relaxed">
+                        Pengalihan otomatis rute truk pengangkut ke TPS dengan volume antrean terendah berdasarkan pemantauan data sensor real-time.
+                      </p>
                     </div>
-                  ))}
+                  </div>
+
+                  {/* Strategy 2 */}
+                  <div className="bg-slate-900/80 border border-slate-800 p-3.5 rounded-xl relative overflow-hidden flex flex-col justify-between">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-amber-500" />
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="px-1.5 py-0.5 text-[8px] font-mono font-black rounded uppercase bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                          JADWAL FLEKSIBEL
+                        </span>
+                        <span className="text-[8.5px] font-mono font-black text-slate-500">X NON-AKTIF</span>
+                      </div>
+                      <h5 className="text-[11.5px] font-black text-white uppercase tracking-tight">
+                        Shift Malam Fleksibel (Dynamic Overtime)
+                      </h5>
+                      <p className="text-[10px] text-slate-400 font-semibold mt-1.5 leading-relaxed">
+                        Pengoperasian armada ekstra di jam non-sibuk malam hari untuk menghindari kemacetan jalan raya dan mempercepat siklus ritase.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Strategy 3 */}
+                  <div className="bg-slate-900/80 border border-slate-800 p-3.5 rounded-xl relative overflow-hidden flex flex-col justify-between">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500" />
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="px-1.5 py-0.5 text-[8px] font-mono font-black rounded uppercase bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                          BACKUP FLEET
+                        </span>
+                        <span className="text-[8.5px] font-mono font-black text-emerald-400">✓ SISTEM AKTIF</span>
+                      </div>
+                      <h5 className="text-[11.5px] font-black text-white uppercase tracking-tight">
+                        Kemitraan Swasta Lokal (Sub-Kontraktor)
+                      </h5>
+                      <p className="text-[10px] text-slate-400 font-semibold mt-1.5 leading-relaxed">
+                        Akses jaringan sewa armada pihak ketiga berskala instan untuk menampung lonjakan limbah musiman tanpa menambah investasi kapital tetap.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Strategy 4 */}
+                  <div className="bg-slate-900/80 border border-slate-800 p-3.5 rounded-xl relative overflow-hidden flex flex-col justify-between">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500" />
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="px-1.5 py-0.5 text-[8px] font-mono font-black rounded uppercase bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                          DENSITAS MUATAN
+                        </span>
+                        <span className="text-[8.5px] font-mono font-black text-emerald-400">✓ SISTEM AKTIF</span>
+                      </div>
+                      <h5 className="text-[11.5px] font-black text-white uppercase tracking-tight">
+                        Sistem Pemadatan Volume di Truk
+                      </h5>
+                      <p className="text-[10px] text-slate-400 font-semibold mt-1.5 leading-relaxed">
+                        Meningkatkan densitas angkutan limbah basah menggunakan compactor bawaan, sehingga mengurangi jumlah ritase perjalanan yang dibutuhkan.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
               <div className="mt-4 pt-3.5 border-t border-slate-800/80 text-[10px] text-slate-400 font-semibold flex items-center gap-2">
                 <Info className="h-4 w-4 text-indigo-400 shrink-0" />
                 <span>
-                  Optimalisasi keseimbangan operasional membantu Pancaran Group mempertahankan emisi karbon rute seminimal mungkin (ESG Compliant).
+                  Optimalisasi keseimbangan operasional membantu mempertahankan efisiensi rute dan ketepatan waktu pengiriman seminimal mungkin biaya idle.
                 </span>
               </div>
             </div>

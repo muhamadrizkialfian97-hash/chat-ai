@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { initializeFirestore, getFirestore, persistentLocalCache, doc, getDocFromServer, setLogLevel } from 'firebase/firestore';
+import { getFirestore, doc, getDocFromServer, setLogLevel } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import firebaseConfig from '../firebase-applet-config.json';
 
@@ -13,19 +13,8 @@ try {
   // Ignore fallback if unsupported
 }
 
-// Resilient Firestore initialization wrapping persistent local cache in a try-catch to support restricted sandbox/iframes
-let tempDb;
-try {
-  tempDb = initializeFirestore(app, {
-    localCache: persistentLocalCache({})
-  }, firebaseConfig.firestoreDatabaseId);
-  console.log("Firestore initialized successfully with persistent local cache.");
-} catch (error) {
-  console.warn("Could not initialize with persistent local cache (possible sandbox/iframe restriction), falling back to baseline getFirestore:", error);
-  tempDb = getFirestore(app, firebaseConfig.firestoreDatabaseId);
-}
-
-export const db = tempDb;
+// Initialize Firestore cleanly using standard getFirestore as required by skill guidelines
+export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
 export const storage = getStorage(app);
 

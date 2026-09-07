@@ -314,10 +314,10 @@ export function OpsModelDeepDive({ projectTitle }: OpsModelProps) {
             className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left relative z-10"
           >
             {/* Interactive Flow Visual Track */}
-            <div className="lg:col-span-8 bg-slate-950/50 border border-slate-800 rounded-2xl p-4.5 flex flex-col justify-between">
+            <div className="lg:col-span-8 bg-slate-950/50 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
               <div>
-                <div className="flex justify-between items-center mb-4">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                <div className="flex justify-between items-center mb-3">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-200 flex items-center gap-1.5">
                     <Clock className="h-4 w-4 text-indigo-400" />
                     Rincian Alur Proses Hauling & Pengangkutan
                   </h4>
@@ -326,73 +326,79 @@ export function OpsModelDeepDive({ projectTitle }: OpsModelProps) {
                   </span>
                 </div>
 
-                {/* Horizontal steps flow */}
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-2 mb-5">
+                <p className="text-[10.5px] text-slate-400 font-semibold mb-4 leading-relaxed">
+                  Urutan alur kerja operasional angkutan dari persiapan awal hingga pembongkaran muatan di pabrik tujuan:
+                </p>
+
+                {/* Clean Text-based List (No Boxed Cards) */}
+                <div className="space-y-3 mb-5 border-l-2 border-indigo-500/30 pl-4 py-1">
                   {flowSteps.map((step, idx) => {
                     const adjDuration = getAdjustedDuration(step);
                     const isDelayed = adjDuration > step.durationMins;
                     return (
-                      <div key={step.id} className={`p-2.5 rounded-xl border flex flex-col justify-between ${
-                        isDelayed ? "bg-amber-950/15 border-amber-600/60" : "bg-slate-900 border-slate-850"
-                      }`}>
-                        <div>
-                          <div className="flex justify-between items-center mb-1 text-[8px] font-black">
-                            <span className="text-indigo-400 font-mono">TAHAP {idx + 1}</span>
-                            {isDelayed && <span className="text-amber-400 animate-pulse">DELAY</span>}
-                          </div>
-                          <h5 className="text-[10px] font-black uppercase text-white truncate mb-1">
+                      <div key={step.id} className="relative">
+                        {/* Dot indicator */}
+                        <div className={`absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full border-2 ${
+                          isDelayed ? "bg-amber-400 border-amber-500" : "bg-indigo-400 border-indigo-500"
+                        }`} />
+                        
+                        <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                          <span className="text-[10px] font-mono font-black text-indigo-400 uppercase">
+                            Tahap {idx + 1}:
+                          </span>
+                          <h5 className="text-[12px] font-black uppercase text-white tracking-tight">
                             {step.name}
                           </h5>
-                          <p className="text-[8.5px] text-slate-400 font-semibold leading-relaxed">
-                            PIC: {step.pic}
-                          </p>
-                        </div>
-                        <div className="border-t border-slate-800/80 mt-2.5 pt-1.5 flex justify-between items-center text-[8.5px]">
-                          <span className="text-slate-500 font-bold">DURASI</span>
-                          <span className={`font-mono font-black ${isDelayed ? "text-amber-400" : "text-cyan-400"}`}>
-                            {adjDuration} Mins
+                          <span className={`text-[10px] font-mono font-bold px-1.5 py-0.2 rounded ${
+                            isDelayed ? "bg-amber-500/10 text-amber-400 border border-amber-500/20" : "bg-indigo-500/10 text-indigo-300"
+                          }`}>
+                            Durasi: {adjDuration} Mins {isDelayed && "(Delay)"}
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-mono">
+                            • PIC: <span className="text-slate-300 font-semibold">{step.pic}</span>
                           </span>
                         </div>
+                        <p className="text-[10.5px] text-slate-300 font-semibold leading-relaxed">
+                          {step.description}
+                        </p>
                       </div>
                     );
                   })}
                 </div>
 
-                {/* Detailed card of the first step or list */}
-                <div className="bg-slate-900/60 p-3 rounded-xl border border-slate-850 text-xs space-y-2">
-                  <span className="text-[9px] text-indigo-400 font-black tracking-wider uppercase block">Perangkat IoT Terintegrasi Alur</span>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[10px] text-slate-300 font-semibold">
-                    <div className="bg-slate-950 p-2.5 rounded border border-slate-850 flex gap-2">
-                      <span className="text-indigo-400">✓</span>
-                      <div>
-                        <strong className="text-white block uppercase text-[9px]">SISTEM e-POD MOBILE:</strong>
-                        <span>Mencegah pemalsuan manifes dengan tanda tangan koordinat GPS yang terkunci di depo tujuan.</span>
-                      </div>
-                    </div>
-                    <div className="bg-slate-950 p-2.5 rounded border border-slate-850 flex gap-2">
-                      <span className="text-indigo-400">✓</span>
-                      <div>
-                        <strong className="text-white block uppercase text-[9px]">TIMBANGAN MULTI-NODE API:</strong>
-                        <span>Merekam data tonase langsung ke portal cloud Prama dan Festronik dalam 1 detik.</span>
-                      </div>
-                    </div>
+                {/* Perangkat IoT - Clean Text List */}
+                <div className="pt-3 border-t border-slate-800/80 space-y-2">
+                  <span className="text-[9.5px] font-mono font-black text-indigo-400 uppercase tracking-wider block">
+                    ⚡ PERANGKAT IOT TERINTEGRASI ALUR
+                  </span>
+                  <div className="space-y-1.5 text-[10.5px] text-slate-300 font-semibold">
+                    <p>
+                      <strong className="text-white uppercase font-bold">• Sistem e-POD Mobile:</strong> Mencegah pemalsuan manifes dengan tanda tangan koordinat GPS yang terkunci di depo tujuan.
+                    </p>
+                    <p>
+                      <strong className="text-white uppercase font-bold">• Timbangan Multi-Node API:</strong> Merekam data tonase langsung ke portal cloud Prama dan Festronik dalam 1 detik.
+                    </p>
                   </div>
                 </div>
               </div>
 
               {/* Obstacle / Incident Simulator */}
-              <div className="mt-4 pt-4 border-t border-slate-800/80">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-slate-900 p-3 rounded-xl border border-slate-850">
+              <div className="mt-5 pt-3.5 border-t border-slate-800/80">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                   <div>
-                    <span className="text-[9px] text-amber-400 font-black tracking-wider block uppercase">Simulator Hambatan Hauling</span>
-                    <p className="text-[9.5px] text-slate-400 font-semibold">Simulasikan kejadian tak terduga di rute guna mengevaluasi mitigasi operasional:</p>
+                    <span className="text-[9.5px] font-mono font-black text-amber-400 tracking-wider block uppercase">
+                      SIMULATOR HAMBATAN HAULING
+                    </span>
+                    <p className="text-[10px] text-slate-400 font-semibold">
+                      Uji dampak skenario kejadian lapangan terhadap total waktu perjalanan:
+                    </p>
                   </div>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-1.5">
                     <button
                       type="button"
                       onClick={() => setObstacle("none")}
-                      className={`px-2.5 py-1 text-[9.5px] font-black rounded border cursor-pointer transition-all ${
-                        obstacle === "none" ? "bg-indigo-600 border-indigo-500 text-white" : "bg-slate-950 text-slate-400 border-slate-800 hover:text-white"
+                      className={`px-2.5 py-1 text-[9.5px] font-black rounded font-mono cursor-pointer transition-all ${
+                        obstacle === "none" ? "bg-indigo-600 text-white" : "bg-slate-900 text-slate-400 border border-slate-800 hover:text-white"
                       }`}
                     >
                       Kondisi Normal
@@ -400,29 +406,29 @@ export function OpsModelDeepDive({ projectTitle }: OpsModelProps) {
                     <button
                       type="button"
                       onClick={() => setObstacle("rain")}
-                      className={`px-2.5 py-1 text-[9.5px] font-black rounded border cursor-pointer transition-all ${
-                        obstacle === "rain" ? "bg-indigo-600 border-indigo-500 text-white" : "bg-slate-950 text-slate-400 border-slate-800 hover:text-white"
+                      className={`px-2.5 py-1 text-[9.5px] font-black rounded font-mono cursor-pointer transition-all ${
+                        obstacle === "rain" ? "bg-amber-600 text-white" : "bg-slate-900 text-slate-400 border border-slate-800 hover:text-white"
                       }`}
                     >
-                      🌧️ Hujan Lebat (Jalan Licin)
+                      🌧️ Hujan Lebat (+45m)
                     </button>
                     <button
                       type="button"
                       onClick={() => setObstacle("puncture")}
-                      className={`px-2.5 py-1 text-[9.5px] font-black rounded border cursor-pointer transition-all ${
-                        obstacle === "puncture" ? "bg-indigo-600 border-indigo-500 text-white" : "bg-slate-950 text-slate-400 border-slate-800 hover:text-white"
+                      className={`px-2.5 py-1 text-[9.5px] font-black rounded font-mono cursor-pointer transition-all ${
+                        obstacle === "puncture" ? "bg-rose-600 text-white" : "bg-slate-900 text-slate-400 border border-slate-800 hover:text-white"
                       }`}
                     >
-                      🛠️ Pecah Ban di Jalur Hutan
+                      🛠️ Pecah Ban (+60m)
                     </button>
                     <button
                       type="button"
                       onClick={() => setObstacle("queue")}
-                      className={`px-2.5 py-1 text-[9.5px] font-black rounded border cursor-pointer transition-all ${
-                        obstacle === "queue" ? "bg-indigo-600 border-indigo-500 text-white" : "bg-slate-950 text-slate-400 border-slate-800 hover:text-white"
+                      className={`px-2.5 py-1 text-[9.5px] font-black rounded font-mono cursor-pointer transition-all ${
+                        obstacle === "queue" ? "bg-amber-600 text-white" : "bg-slate-900 text-slate-400 border border-slate-800 hover:text-white"
                       }`}
                     >
-                      🚛 Antrean Jembatan Pabrik
+                      🚛 Antrean Timbangan (+30m)
                     </button>
                   </div>
                 </div>
@@ -430,49 +436,61 @@ export function OpsModelDeepDive({ projectTitle }: OpsModelProps) {
             </div>
 
             {/* Total Analysis of selected obstacle */}
-            <div className="lg:col-span-4 bg-gradient-to-br from-slate-950 to-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
+            <div className="lg:col-span-4 bg-slate-950/60 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
               <div>
-                <span className="text-[8.5px] font-mono font-black text-indigo-400 uppercase tracking-widest block mb-1">
+                <span className="text-[9px] font-mono font-black text-indigo-400 uppercase tracking-wider block mb-1">
                   KPI & EFFICIENCY SUMMARY
                 </span>
-                <h4 className="text-sm font-black text-white uppercase tracking-tight mb-4">
+                <h4 className="text-xs font-black text-white uppercase tracking-tight mb-4">
                   Analisis Efektivitas Waktu
                 </h4>
 
-                <div className="bg-slate-900 p-4 border border-slate-850 rounded-xl space-y-4">
+                <div className="space-y-4">
                   <div>
-                    <span className="text-[9px] text-slate-500 font-black block">AKUMULASI WAKTU PERJALANAN (LEAD TIME)</span>
-                    <span className="text-xl font-black text-cyan-400 font-mono">
+                    <span className="text-[9.5px] font-mono font-black text-slate-400 block uppercase">
+                      AKUMULASI WAKTU PERJALANAN (LEAD TIME)
+                    </span>
+                    <span className="text-2xl font-black text-cyan-400 font-mono tracking-tight block mt-0.5">
                       {Math.floor(totalDurationMins / 60)} Jam {totalDurationMins % 60} Menit
                     </span>
                   </div>
 
-                  <div>
-                    <span className="text-[9px] text-slate-500 font-black block">STATUS SIMULASI HAMBATAN</span>
-                    <div className="text-[10px] font-semibold text-slate-300 mt-1 leading-relaxed">
+                  <div className="pt-3 border-t border-slate-800/80">
+                    <span className="text-[9.5px] font-mono font-black text-slate-400 block uppercase mb-1">
+                      STATUS SIMULASI HAMBATAN
+                    </span>
+                    <div className="text-[10.5px] font-semibold leading-relaxed">
                       {obstacle === "none" && (
-                        <span className="text-emerald-400 font-black">✓ SEMUA BERJALAN LANCAR (SLA TERPENUHI)</span>
+                        <p className="text-emerald-400 font-bold">
+                          ✓ SEMUA BERJALAN LANCAR (SLA TERPENUHI)<br />
+                          <span className="text-slate-300 font-normal">Siklus pengangkutan berjalan sesuai target waktu standar.</span>
+                        </p>
                       )}
                       {obstacle === "rain" && (
-                        <span className="text-amber-400 font-black">⚠ HUJAN DERAS: Kecepatan hauling turun menjadi max 30 km/jam untuk aspek keselamatan HSE.</span>
+                        <p className="text-amber-400 font-bold">
+                          ⚠ HUJAN DERAS (+45 MENIT)<br />
+                          <span className="text-slate-300 font-normal">Kecepatan hauling diturunkan max 30 km/jam untuk aspek keselamatan HSE rute licin.</span>
+                        </p>
                       )}
                       {obstacle === "puncture" && (
-                        <span className="text-rose-400 font-black">⚠ PECAH BAN: Memerlukan bantuan tim mekanik depo terdekat untuk bongkar pasang ban di rute lateral.</span>
+                        <p className="text-rose-400 font-bold">
+                          ⚠ PECAH BAN (+60 MENIT)<br />
+                          <span className="text-slate-300 font-normal">Memerlukan bantuan tim mekanik depo terdekat untuk bongkar pasang ban di rute lateral.</span>
+                        </p>
                       )}
                       {obstacle === "queue" && (
-                        <span className="text-amber-400 font-black">⚠ ANTREAN TIMBANGAN: Pabrik sedang padat muatan, butuh koordinasi alokasi ritase supir selanjutnya.</span>
+                        <p className="text-amber-400 font-bold">
+                          ⚠ ANTREAN TIMBANGAN (+30 MENIT)<br />
+                          <span className="text-slate-300 font-normal">Jembatan timbang pabrik padat muatan, butuh koordinasi alokasi ritase supir selanjutnya.</span>
+                        </p>
                       )}
                     </div>
-                  </div>
-
-                  <div className="border-t border-slate-800/80 pt-3 text-[9px] text-slate-500 font-bold">
-                    PRAMA SIMULATOR CORE v1.0
                   </div>
                 </div>
               </div>
 
-              <div className="text-[9.5px] text-slate-500 font-bold mt-4 font-mono">
-                PRAMA OPERATION CENTER
+              <div className="text-[9px] font-mono font-bold text-slate-500 pt-3 border-t border-slate-800/80 mt-4">
+                PRAMA OPERATION CENTER • SIMULATOR CORE v1.0
               </div>
             </div>
           </motion.div>

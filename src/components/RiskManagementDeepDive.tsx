@@ -411,117 +411,10 @@ export function RiskManagementDeepDive({ projectTitle }: RiskManagementProps) {
         </div>
       </div>
 
-      {/* ROW 3: DETAILED SANDBOX CALCULATOR & AUDIT CHECKLISTS */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left">
-        
-        {/* Sandbox Calculator Left */}
-        <div className="lg:col-span-5 bg-slate-950/60 border border-slate-800 rounded-2xl p-5">
-          <h4 className="text-xs font-black uppercase tracking-wider text-slate-200 mb-3 flex items-center gap-1.5">
-            <Sliders className="h-4 w-4 text-rose-400" />
-            Kalkulator Risiko Kustom & Register Baru
-          </h4>
-          <p className="text-[10px] text-slate-400 font-semibold mb-4 leading-relaxed">
-            Gunakan form ini untuk menilai risiko operasional baru, menghitung skor keparahannya secara otomatis, dan menambahkannya ke register proyek aktif Anda.
-          </p>
-
-          <form onSubmit={handleAddRisk} className="space-y-3 text-xs">
-            <div>
-              <label className="block font-bold text-slate-300 mb-0.5">Judul Risiko</label>
-              <input
-                type="text"
-                placeholder="e.g. Masalah Kualitas Sasis Ban Luar"
-                value={newTitle}
-                onChange={(e) => setNewTitle(e.target.value)}
-                className="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg text-white font-semibold focus:border-rose-500 outline-none transition"
-                required
-              />
-            </div>
-
-            <div className="grid grid-cols-3 gap-2">
-              <div>
-                <label className="block font-bold text-slate-300 mb-0.5">Kategori</label>
-                <select
-                  value={newCat}
-                  onChange={(e: any) => setNewCat(e.target.value)}
-                  className="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-200 font-bold"
-                >
-                  <option value="Operasional">Operasional</option>
-                  <option value="Finansial">Finansial</option>
-                  <option value="Regulasi/Kepatuhan">Regulasi</option>
-                  <option value="Sosial/Lingkungan">Sosial</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-300 mb-0.5">Likelihood (1-5)</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="5"
-                  value={newLikelihood}
-                  onChange={(e) => setNewLikelihood(Number(e.target.value))}
-                  className="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg text-white font-bold"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-300 mb-0.5">Impact (1-5)</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="5"
-                  value={newImpact}
-                  onChange={(e) => setNewImpact(Number(e.target.value))}
-                  className="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg text-white font-bold"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block font-bold text-slate-300 mb-0.5">Definisi Kejadian Bahaya</label>
-              <input
-                type="text"
-                placeholder="Rincian kejadian potensi bahaya di lapangan..."
-                value={newDesc}
-                onChange={(e) => setNewDesc(e.target.value)}
-                className="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg text-white outline-none focus:border-rose-500 font-semibold"
-              />
-            </div>
-
-            <div>
-              <label className="block font-bold text-slate-300 mb-0.5">Dampak Negatif Finansial/Ops</label>
-              <input
-                type="text"
-                placeholder="Deskripsi konsekuensi finansial & operasional..."
-                value={newNegImpact}
-                onChange={(e) => setNewNegImpact(e.target.value)}
-                className="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg text-white outline-none focus:border-rose-500 font-semibold"
-              />
-            </div>
-
-            <div>
-              <label className="block font-bold text-slate-300 mb-0.5">Mitigasi & Rencana Kontinjensi</label>
-              <input
-                type="text"
-                placeholder="Langkah antisipasi & pemulihan darurat..."
-                value={newMitigation}
-                onChange={(e) => setNewMitigation(e.target.value)}
-                className="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg text-white outline-none focus:border-rose-500 font-semibold"
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="w-full py-2 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-black rounded-lg transition border-none cursor-pointer uppercase flex items-center justify-center gap-1.5 mt-2"
-            >
-              <Plus className="h-4 w-4" />
-              Simpan Risiko & Bedah
-            </button>
-          </form>
-        </div>
-
-        {/* Readiness Checklist Audit Right */}
-        <div className="lg:col-span-7 bg-slate-950/60 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
+      {/* ROW 3: AUDIT CHECKLISTS */}
+      <div className="text-left">
+        {/* Readiness Checklist Audit */}
+        <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
           <div>
             <div className="flex justify-between items-center mb-1.5">
               <h4 className="text-xs font-black uppercase tracking-wider text-slate-200 flex items-center gap-1.5">
@@ -545,7 +438,7 @@ export function RiskManagementDeepDive({ projectTitle }: RiskManagementProps) {
             </div>
 
             {/* Checklist Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {readinessChecklist.map((item) => (
                 <div
                   key={item.id}

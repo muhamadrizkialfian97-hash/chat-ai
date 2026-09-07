@@ -47,6 +47,8 @@ export interface SectorOpportunityProfile {
   pingTrucks: TruckItem[];
   pingSuccessMsg: string;
 
+  techList: OpportunityItem[];
+
   greenTitle: string;
   greenSubtitle: string;
   greenList: OpportunityItem[];
@@ -147,15 +149,39 @@ export function getSectorOpportunityProfile(projectTitle: string): SectorOpportu
       ],
       pingSuccessMsg: "✓ Seluruh armada angkutan limbah B3 berhasil di-ping via koneksi satelit Prama Telematics Hub.",
 
-      greenTitle: "🌿 Nilai Tambah Hijau (Green Value-Add)",
-      greenSubtitle: "Monetisasi sertifikasi lingkungan dan reduksi emisi metana dari pengolahan limbah.",
+      techList: [
+        {
+          id: "tech-1",
+          code: "TCH-01 • SENSOR IOT",
+          tag: "WEIGHT MONITORING",
+          title: "Pemantauan Beban Digital & Festronik",
+          description: "Integrasi sensor muatan suspensi dan E-Manifest KLHK untuk memantau kapasitas tonase Limbah B3 secara presisi."
+        },
+        {
+          id: "tech-2",
+          code: "TCH-02 • TELEMETRY HUB",
+          tag: "HYBRID GPS PING",
+          title: "Pelacakan Satelit Hibrida & Geofencing",
+          description: "Pemantauan posisi armada tangki B3 dan compactor secara langsung di rute hauling melalui jaringan satelit dan 4G."
+        },
+        {
+          id: "tech-3",
+          code: "TCH-03 • DIGITAL MANIFEST",
+          tag: "AUTOMATED SLA",
+          title: "Integrasi Manifest Digital & Laporan SLA",
+          description: "Verifikasi dokumen digital otomatis dan pelaporan waktu muat-bongkar untuk kepatuhan operasional klien."
+        }
+      ],
+
+      greenTitle: "🌿 Nilai Tambah Efisiensi & Keberlanjutan",
+      greenSubtitle: "Monetisasi efisiensi bahan bakar dan sertifikasi keselamatan dari pengolahan limbah.",
       greenList: [
         {
           id: "grn-1",
-          code: "GRN-01 • CARBON CREDITS",
-          tag: "METHANE REDUCTION",
-          title: "Kredit Karbon Reduksi Metana",
-          description: "Potensi monetisasi atas pengurangan emisi gas metana melalui logistik terstruktur untuk pasar karbon domestik (IDXCarbon)."
+          code: "GRN-01 • FUEL EFFICIENCY",
+          tag: "ROUTE OPTIMIZATION",
+          title: "Efisiensi Rute & Bahan Bakar",
+          description: "Penghematan konsumsi BBM melalui pengorganisasian rute terstruktur dan manajemen armada cerdas."
         },
         {
           id: "grn-2",
@@ -167,9 +193,9 @@ export function getSectorOpportunityProfile(projectTitle: string): SectorOpportu
         {
           id: "grn-3",
           code: "GRN-03 • BIOFUEL FLEET",
-          tag: "EV & B35 FLEET",
-          title: "Armada Rendah Emisi B35 / EV",
-          description: "Penggunaan armada beremisi rendah untuk pengangkutan limbah perkotaan dan fasilitas pengolahan modern."
+          tag: "B35 FLEET",
+          title: "Armada Efisien Berteknologi Tinggi",
+          description: "Penggunaan armada modern terawat untuk pengangkutan limbah perkotaan dan fasilitas pengolahan."
         }
       ],
       customOpPlaceholder: "e.g. Sinergi Rute Hauling B3 Lintas Kawasan Industri"
@@ -267,28 +293,52 @@ export function getSectorOpportunityProfile(projectTitle: string): SectorOpportu
       ],
       pingSuccessMsg: "✓ Seluruh armada angkutan tambang berhasil di-ping via koneksi satelit Prama Telematics Hub.",
 
-      greenTitle: "🌿 Nilai Tambah Hijau (Green Value-Add)",
-      greenSubtitle: "Praktik dekarbonisasi operasional tambang untuk memenuhi standar ekspor mineral hijau.",
+      techList: [
+        {
+          id: "tech-1",
+          code: "TCH-01 • SIMBARA CONNECT",
+          tag: "ESDM CONNECTIVITY",
+          title: "Integrasi Timbangan Digital & SIMBARA",
+          description: "Otomatisasi pencatatan tonase ore di portal tambang terhubung langsung ke sistem RKAB ESDM."
+        },
+        {
+          id: "tech-2",
+          code: "TCH-02 • HAULING TELEMATICS",
+          tag: "SPEED & SAFETY",
+          title: "Telemetri Satelit Rute Pit-to-Port",
+          description: "Pengawasan kecepatan truk heavy-duty, titik rawan kemacetan jetty, dan status mesin di jalur off-road ekstrim."
+        },
+        {
+          id: "tech-3",
+          code: "TCH-03 • FLEET OPTIMIZATION",
+          tag: "RITASE CONTROL",
+          title: "Algoritma Ritase Bebas Idle",
+          description: "Pengaturan ritase cerdas untuk meminimalkan waktu tunggu di stockpile dan menghemat konsumsi solar."
+        }
+      ],
+
+      greenTitle: "🌿 Nilai Tambah Efisiensi Mining Logistics",
+      greenSubtitle: "Praktik efisiensi operasional tambang untuk memenuhi standar ekspor mineral berkualitas.",
       greenList: [
         {
           id: "grn-1",
-          code: "GRN-01 • CARBON CREDITS",
+          code: "GRN-01 • HIGH-EFFICIENCY LOGISTICS",
           tag: "GREEN MINERALS",
-          title: "Sertifikasi Low-Carbon Mining Transport",
-          description: "Audit emisi solar per ton-km komoditas tambang untuk memenuhi syarat ekspor mineral ramah lingkungan."
+          title: "Sertifikasi Efficient Mining Transport",
+          description: "Audit efisiensi solar per ton-km komoditas tambang untuk memenuhi syarat ekspor mineral kompetitif."
         },
         {
           id: "grn-2",
           code: "GRN-02 • DUAL-FUEL TRUCKING",
-          tag: "LNG & EV TRUCKS",
-          title: "Konversi Dual-Fuel LNG / Electric Truck",
-          description: "Penurunan konsumsi solar industri hingga 20% dengan penggunaan armada berbahan bakar gas terkompresi."
+          tag: "LNG & HEAVY TRUCKS",
+          title: "Konversi Dual-Fuel LNG / Fleet Optimization",
+          description: "Penurunan konsumsi solar industri hingga 20% dengan penggunaan armada berbahan bakar efisien."
         },
         {
           id: "grn-3",
           code: "GRN-03 • ECO RECLAMATION",
           tag: "ROUTE OPTIMIZATION",
-          title: "Dekarbonisasi Rute Pit-to-Port",
+          title: "Optimasi Rute Pit-to-Port",
           description: "Optimalisasi jaringan rute hauling dan backhaul sharing untuk memangkas kilometer perjalanan kosong."
         }
       ],
@@ -384,6 +434,30 @@ export function getSectorOpportunityProfile(projectTitle: string): SectorOpportu
         { id: "TRK-18", name: "Hino FM 260 - Palm Oil Hauler", speed: 0, signal: "Satelit 95%", status: "Bongkar di Tangki Timbun Pelabuhan" }
       ],
       pingSuccessMsg: "✓ Seluruh armada angkutan CPO/TBS berhasil di-ping via koneksi satelit Prama Telematics Hub.",
+
+      techList: [
+        {
+          id: "tech-1",
+          code: "TCH-01 • E-SEAL & IOT",
+          tag: "CPO SECURITY",
+          title: "Penguncian E-Seal Digital & Sensor Suhu CPO",
+          description: "Sensor keamanan GPS pada kran tangki dan pengawasan suhu CPO guna mencegah manipulasi volume dan degradasi kualitas di perjalanan."
+        },
+        {
+          id: "tech-2",
+          code: "TCH-02 • SATELLITE PING",
+          tag: "AFDELING ROUTE",
+          title: "Pelacakan Satelit Rute Kebun-ke-PKS",
+          description: "Pemantauan real-time posisi truk TBS di area afdeling pedalaman minim sinyal seluler untuk kepastian ritase harian."
+        },
+        {
+          id: "tech-3",
+          code: "TCH-03 • DIGITAL WEIGHBRIDGE",
+          tag: "ISPO DIGITAL",
+          title: "Integrasi Timbangan Digital PKS & Manifest",
+          description: "Otomatisasi surat angkut digital kebun mitra yang langsung terhubung ke database ISPO/EUDR pabrik pengolahan."
+        }
+      ],
 
       greenTitle: "🌿 Nilai Tambah Hijau (Green Value-Add)",
       greenSubtitle: "Pemanfaatan biogas POME dan lacak balik geolokasi kebun.",
@@ -504,29 +578,53 @@ export function getSectorOpportunityProfile(projectTitle: string): SectorOpportu
       ],
       pingSuccessMsg: "✓ Seluruh armada angkutan heavy-lift EBT berhasil di-ping via koneksi satelit Prama Telematics Hub.",
 
-      greenTitle: "🌿 Nilai Tambah Hijau (Green Value-Add)",
-      greenSubtitle: "Integrasi kredit karbon dan pelaporan emisi proyek energi terbarukan.",
+      techList: [
+        {
+          id: "tech-1",
+          code: "TCH-01 • HEAVY-LIFT IOT",
+          tag: "CARGO TELEMETRY",
+          title: "Pemantauan Beban Heavy-Lift",
+          description: "Sensor kemiringan dan berat suspensi untuk pengangkutan komponen turbin angin, modul solar, dan transformer."
+        },
+        {
+          id: "tech-2",
+          code: "TCH-02 • SATELLITE TRACKING",
+          tag: "REMOTE ROUTE",
+          title: "Pelacakan Satelit Rute Terpencil",
+          description: "Jaringan komunikasi GPS satelit penuh untuk pengawasan rute proyek EBT di pelosok dan area tanpa sinyal seluler."
+        },
+        {
+          id: "tech-3",
+          code: "TCH-03 • DISPATCH DIGITAL",
+          tag: "SLA TRACKING",
+          title: "Dashboard Logistik Proyek Terintegrasi",
+          description: "Pencatatan SLA ketepatan waktu pengiriman material proyek secara digital dan transparan bagi pemilik proyek."
+        }
+      ],
+
+      greenTitle: "🌿 Nilai Tambah Efisiensi Energi & Logistik",
+      greenSubtitle: "Integrasi pelaporan performa operasional proyek energi terbarukan.",
       greenList: [
         {
           id: "grn-1",
-          code: "GRN-01 • CARBON CREDITS",
+          code: "GRN-01 • CLEAN LOGISTICS",
           tag: "CLEAN INFRASTRUCTURE",
-          title: "Kredit Karbon Infrastruktur Bersih",
-          description: "Integrasi pengurangan emisi armada dengan klaim kredit hijau proyek."
+          title: "Infrastruktur Logistik Andal",
+          description: "Integrasi pengangkutan armada berstandar tinggi untuk keandalan proyek."
         },
         {
           id: "grn-2",
-          code: "GRN-02 • GREEN TRANSPORT",
-          tag: "ESG REPORTING",
-          title: "Sertifikasi Green Logistics EBT",
-          description: "Pelaporan jejak emisi transportasi transparan untuk pendanaan hijau."
+          code: "GRN-02 • EFFICIENT TRANSPORT",
+          tag: "SLA REPORTING",
+          title: "Sertifikasi Logistik Efisien",
+          description: "Pelaporan efisiensi transportasi transparan untuk keandalan rantai pasok."
         },
         {
           id: "grn-3",
           code: "GRN-03 • HYBRID FLEET",
-          tag: "EV SERVICE VEHICLES",
-          title: "Armada Operasional Hybrid / EV",
-          description: "Penggunaan kendaraan pemeliharaan beremisi nol di lokasi proyek."
+          tag: "SERVICE VEHICLES",
+          title: "Armada Operasional Efisien",
+          description: "Penggunaan kendaraan pemeliharaan berteknologi tinggi di lokasi proyek."
         }
       ],
       customOpPlaceholder: "e.g. Rute Khusus Pengangkutan Modul BESS"
@@ -621,29 +719,53 @@ export function getSectorOpportunityProfile(projectTitle: string): SectorOpportu
       ],
       pingSuccessMsg: "✓ Seluruh armada berhasil di-ping via koneksi satelit Prama Telematics Hub.",
 
-      greenTitle: "🌿 Nilai Tambah Hijau (Green Value-Add)",
-      greenSubtitle: "Eksploitasi potensi pendapatan alternatif serta kepatuhan emisi untuk profitabilitas jangka panjang.",
+      techList: [
+        {
+          id: "tech-1",
+          code: "TCH-01 • AXLE SENSOR",
+          tag: "ODOL PREVENTION",
+          title: "Sensor Beban As Truk Kayu (Axle IoT)",
+          description: "Pemantauan berat muatan kayu logs secara digital untuk mencegah kelebihan beban (ODOL) dan denda operasional."
+        },
+        {
+          id: "tech-2",
+          code: "TCH-02 • SATELLITE TELEMATICS",
+          tag: "HTI ROUTE PING",
+          title: "Pelacakan Satelit Hibrida Rute Hutan",
+          description: "Pemantauan posisi unit armada Logging Rig dan Woodchips Carrier di rute Hutan Tanaman Industri menuju Mill Port."
+        },
+        {
+          id: "tech-3",
+          code: "TCH-03 • SVLK TRACKING",
+          tag: "DIGITAL MANIFEST",
+          title: "Manifest Kayu Digital & Integrasi SVLK",
+          description: "Verifikasi dokumen asal usul kayu legal (SVLK) berbasis barcode digital yang terhubung langsung ke sistem ERP."
+        }
+      ],
+
+      greenTitle: "🌿 Nilai Tambah Keberlanjutan Forestry",
+      greenSubtitle: "Eksploitasi potensi efisiensi operasional serta kepatuhan SVLK untuk profitabilitas jangka panjang.",
       greenList: [
         {
           id: "grn-1",
-          code: "GRN-01 • CARBON CREDITS",
-          tag: "CARBON MARKET",
-          title: "Sertifikasi Karbon Perdagangan",
-          description: "Potensi integrasi rute logistik hemat bahan bakar dengan pasar karbon kredit domestik (IDXCarbon)."
+          code: "GRN-01 • ROUTE EFFICIENCY",
+          tag: "EFFICIENCY MARKET",
+          title: "Sertifikasi Efisiensi Logistik",
+          description: "Potensi integrasi rute logistik hemat bahan bakar dengan standar operasional tinggi."
         },
         {
           id: "grn-2",
-          code: "GRN-02 • REDD+ SYNCHRONY",
-          tag: "EMISSION REDUCTION",
-          title: "Kemitraan Inisiatif REDD+",
-          description: "Sinergitas operasi pengangkutan kayu HTI dengan program pengurangan emisi deforestasi nasional."
+          code: "GRN-02 • SVLK SYNCHRONY",
+          tag: "SUSTAINABLE TIMBER",
+          title: "Kemitraan Inisiatif Kelestarian Hutan",
+          description: "Sinergitas operasi pengangkutan kayu HTI dengan program kelestarian hutan nasional."
         },
         {
           id: "grn-3",
           code: "GRN-03 • EURO 5 TRUCKS",
           tag: "EURO 5 STANDARD",
-          title: "Armada Rendah Emisi Euro 5",
-          description: "Mengganti truk tua ke standar Euro 5 untuk memberikan jaminan laporan dekarbonisasi bulanan."
+          title: "Armada Efisien Euro 5",
+          description: "Mengganti truk tua ke standar Euro 5 untuk memberikan jaminan laporan performa BBM bulanan."
         }
       ],
       customOpPlaceholder: "e.g. Sinergi Jalur Hauling Musim Hujan"
@@ -732,29 +854,53 @@ export function getSectorOpportunityProfile(projectTitle: string): SectorOpportu
     ],
     pingSuccessMsg: "✓ Seluruh armada transportasi proyek berhasil di-ping via koneksi satelit Prama Telematics Hub.",
 
-    greenTitle: "🌿 Nilai Tambah Hijau (Green Value-Add)",
-    greenSubtitle: "Penerapan dekarbonisasi dan armada ramah lingkungan untuk nilai tambah ESG.",
+    techList: [
+      {
+        id: "tech-1",
+        code: "TCH-01 • IOT SENSORS",
+        tag: "WEIGHT & FUEL",
+        title: "Pemantauan Muatan & Konsumsi BBM",
+        description: "Sensor suspensi digital dan pemantau bahan bakar terhubung IoT untuk efisiensi biaya operasional armada."
+      },
+      {
+        id: "tech-2",
+        code: "TCH-02 • FLEET TELEMATICS",
+        tag: "REAL-TIME GPS",
+        title: "Telemetri Armada Satelit & Seluler",
+        description: "Pelacakan lokasi, kecepatan, dan status kendaraan secara real-time pada seluruh rute pengangkutan proyek."
+      },
+      {
+        id: "tech-3",
+        code: "TCH-03 • DIGITAL CONTROL",
+        tag: "SLA REPORTING",
+        title: "Dashboard Laporan SLA & Manifest Digital",
+        description: "Otomatisasi pelaporan ketepatan waktu, bukti pengiriman, dan manifest perjalanan untuk kepuasan klien."
+      }
+    ],
+
+    greenTitle: "🌿 Nilai Tambah Keberlanjutan & Efisiensi",
+    greenSubtitle: "Penerapan efisiensi operasional dan armada modern untuk nilai tambah bisnis.",
     greenList: [
       {
         id: "grn-1",
-        code: "GRN-01 • CARBON CREDITS",
-        tag: "ESG IMPACT",
-        title: "Perhitungan Reduksi Emisi Karbon",
-        description: "Integrasi rute hemat bahan bakar dan pelaporan dekarbonisasi berkala bagi pemilik proyek."
+        code: "GRN-01 • FUEL SAVINGS",
+        tag: "COST SAVINGS",
+        title: "Perhitungan Penghematan Bahan Bakar",
+        description: "Integrasi rute hemat bahan bakar dan pelaporan efisiensi operasional berkala bagi pemilik proyek."
       },
       {
         id: "grn-2",
         code: "GRN-02 • BIOFUEL FLEET",
         tag: "B35 / B40 FUEL",
-        title: "Penggunaan Armada Biofuel Ramah Lingkungan",
-        description: "Penggunaan bahan bakar ramah lingkungan untuk memangkas jejak emisi karbon harian."
+        title: "Penggunaan Armada Biofuel Efisien",
+        description: "Penggunaan bahan bakar terbarukan untuk memangkas biaya operasional harian."
       },
       {
         id: "grn-3",
         code: "GRN-03 • SUSTAINABLE LOGISTICS",
-        tag: "GREEN CERTIFICATE",
+        tag: "QUALITY CERTIFICATE",
         title: "Sertifikasi Logistik Berkelanjutan",
-        description: "Penjaminan rantai pasok hijau yang meningkatkan daya saing proyek di mata pemangku kepentingan."
+        description: "Penjaminan rantai pasok handal yang meningkatkan daya saing proyek di mata pemangku kepentingan."
       }
     ],
     customOpPlaceholder: "e.g. Optimasi Rute Koridor Hauling"
@@ -1302,7 +1448,10 @@ export function getSectorRiskProfile(projectTitle: string): SectorRiskProfile {
 // ==========================================
 export interface SectorCacLtvProfile {
   sectorNote: string;
+  ltvNote: string;
   defaultAvgRevenuePerMonth: number;
+  defaultMargin: number;
+  defaultDuration: number;
   cacCosts: Array<{
     id: string;
     name: string;
@@ -1312,7 +1461,8 @@ export interface SectorCacLtvProfile {
 }
 
 export function getSectorCacLtvProfile(projectTitle: string): SectorCacLtvProfile {
-  const titleLower = (projectTitle || "").toLowerCase();
+  const title = projectTitle || "Logistik Strategis";
+  const titleLower = title.toLowerCase();
 
   if (
     titleLower.includes("limbah") ||
@@ -1322,7 +1472,10 @@ export function getSectorCacLtvProfile(projectTitle: string): SectorCacLtvProfil
   ) {
     return {
       sectorNote: "Rantai pasok industri pengolahan limbah & B3 memiliki durasi kontrak rata-rata 3-5 tahun berkat kewajiban izin Festronik KLHK.",
+      ltvNote: "Sistem kontrak pengangkutan limbah & B3 memberikan keandalan arus kas berulang (recurring revenue) yang tinggi bagi PRAMA.",
       defaultAvgRevenuePerMonth: 55000000,
+      defaultMargin: 15,
+      defaultDuration: 36,
       cacCosts: [
         { id: "cac-1", name: "Jaminan Tender & Lisensi B3 (Tender Bond)", category: "Legalitas & K3", costIDR: 15000000 },
         { id: "cac-2", name: "Survey Verifikasi Rute & Fasilitas Pemusnahan", category: "Teknis Operasional", costIDR: 8000000 },
@@ -1337,30 +1490,126 @@ export function getSectorCacLtvProfile(projectTitle: string): SectorCacLtvProfil
     titleLower.includes("mining") ||
     titleLower.includes("tambang") ||
     titleLower.includes("nikel") ||
-    titleLower.includes("batubara")
+    titleLower.includes("batubara") ||
+    titleLower.includes("ore")
   ) {
     return {
       sectorNote: "Kontrak hauling pertambangan & smelter umumnya berdurasi 3 hingga 5 tahun dengan kepastian jaminan ritase minimum.",
-      defaultAvgRevenuePerMonth: 85000000,
+      ltvNote: "Kontrak hauling pertambangan menjamin volume angkut raksasa dengan stabilitas arus kas jangka panjang yang sangat sehat.",
+      defaultAvgRevenuePerMonth: 90000000,
+      defaultMargin: 16,
+      defaultDuration: 48,
       cacCosts: [
-        { id: "cac-1", name: "Jaminan Tender & Kualifikasi Pit (Tender Bond)", category: "Legalitas & K3", costIDR: 20000000 },
-        { id: "cac-2", name: "Survey Geometri Jalan Hauling & Jembatan Tambang", category: "Teknis Operasional", costIDR: 12000000 },
-        { id: "cac-3", name: "Trial Run Dump Truck Heavy-Duty (Simulasi Pit-Port)", category: "Teknis Operasional", costIDR: 18000000 },
+        { id: "cac-1", name: "Jaminan Tender & Kualifikasi Pit (Tender Bond)", category: "Legalitas & K3", costIDR: 22000000 },
+        { id: "cac-2", name: "Survey Geometri Jalan Hauling & Jembatan Tambang", category: "Teknis Operasional", costIDR: 15000000 },
+        { id: "cac-3", name: "Trial Run Dump Truck Heavy-Duty (Simulasi Pit-Port)", category: "Teknis Operasional", costIDR: 20000000 },
         { id: "cac-4", name: "Penyusunan Proposal & Presentasi Komersial", category: "Komersial", costIDR: 7000000 },
         { id: "cac-5", name: "Audit CSMS Pertambangan & Sertifikasi SIMBARA", category: "Legalitas & K3", costIDR: 6000000 }
       ]
     };
   }
 
+  if (
+    titleLower.includes("sawit") ||
+    titleLower.includes("cpo") ||
+    titleLower.includes("palm") ||
+    titleLower.includes("tbs") ||
+    titleLower.includes("kebun")
+  ) {
+    return {
+      sectorNote: "Rantai pasok logistik kelapa sawit & CPO memiliki siklus panen berulang dengan durasi kontrak rata-rata 3 tahun.",
+      ltvNote: "Volume pengangkutan rutin dari afdeling ke PKS memberikan kepastian margin usaha dan efisiensi armada yang terprediksi.",
+      defaultAvgRevenuePerMonth: 65000000,
+      defaultMargin: 14,
+      defaultDuration: 36,
+      cacCosts: [
+        { id: "cac-1", name: "Jaminan Tender & Kemitraan Pabrik Kelapa Sawit", category: "Legalitas & K3", costIDR: 16000000 },
+        { id: "cac-2", name: "Survey Jalur Afdeling & Akses Jalan Kebun", category: "Teknis Operasional", costIDR: 10000000 },
+        { id: "cac-3", name: "Trial Run Truk Tangki CPO & Angkutan TBS", category: "Teknis Operasional", costIDR: 15000000 },
+        { id: "cac-4", name: "Proposal Komersial & Verifikasi ISPO/EUDR", category: "Komersial", costIDR: 6000000 },
+        { id: "cac-5", name: "Audit Keselamatan Armada & E-Seal Tangki", category: "Legalitas & K3", costIDR: 5000000 }
+      ]
+    };
+  }
+
+  if (
+    titleLower.includes("forestry") ||
+    titleLower.includes("kehutanan") ||
+    titleLower.includes("kayu") ||
+    titleLower.includes("hti") ||
+    titleLower.includes("logging")
+  ) {
+    return {
+      sectorNote: "Rantai pasok logistik kehutanan & HTI memiliki durasi kontrak rata-rata 3-5 tahun berkat kestabilan suplai kayu industri.",
+      ltvNote: "Pengangkutan log kayu & woodchips rutin menuju mill port menghasilkan nilai LTV kontrak yang sangat solid.",
+      defaultAvgRevenuePerMonth: 75000000,
+      defaultMargin: 14,
+      defaultDuration: 36,
+      cacCosts: [
+        { id: "cac-1", name: "Jaminan Tender & Lisensi Konsesi HTI", category: "Legalitas & K3", costIDR: 18000000 },
+        { id: "cac-2", name: "Survey Jalur Off-Road Hutan & Jembatan Log", category: "Teknis Operasional", costIDR: 11000000 },
+        { id: "cac-3", name: "Trial Run Logging Rig Multi-Axle di Jalur HTI", category: "Teknis Operasional", costIDR: 16000000 },
+        { id: "cac-4", name: "Penyusunan Proposal Komersial & Integrasi SVLK", category: "Komersial", costIDR: 6000000 },
+        { id: "cac-5", name: "Audit K3LL Kehutanan & Sistem Sensor Axle", category: "Legalitas & K3", costIDR: 5000000 }
+      ]
+    };
+  }
+
+  if (
+    titleLower.includes("ebt") ||
+    titleLower.includes("energi") ||
+    titleLower.includes("renewable") ||
+    titleLower.includes("solar") ||
+    titleLower.includes("wind") ||
+    titleLower.includes("heavy")
+  ) {
+    return {
+      sectorNote: "Proyek logistik angkutan berat (heavy-lift) infrastruktur energi terbarukan berdurasi kontrak rata-rata 2 hingga 4 tahun.",
+      ltvNote: "Pengangkutan kargo bernilai tinggi untuk infrastruktur energi menghasilkan margin LTV yang sangat atraktif.",
+      defaultAvgRevenuePerMonth: 95000000,
+      defaultMargin: 17,
+      defaultDuration: 42,
+      cacCosts: [
+        { id: "cac-1", name: "Jaminan Tender & Registrasi Vendor Heavy-Lift", category: "Legalitas & K3", costIDR: 25000000 },
+        { id: "cac-2", name: "Route Survey Khusus Kargo Over-Dimension (ODOW)", category: "Teknis Operasional", costIDR: 16000000 },
+        { id: "cac-3", name: "Trial Run Multi-Axle Trailer & Mobil Pengawal", category: "Teknis Operasional", costIDR: 22000000 },
+        { id: "cac-4", name: "Penyusunan Studi Kelayakan Teknik & Proposal", category: "Komersial", costIDR: 7000000 },
+        { id: "cac-5", name: "Sertifikasi Rigging & Audit Keselamatan K3", category: "Legalitas & K3", costIDR: 6000000 }
+      ]
+    };
+  }
+
+  // Fallback: Dynamic Seed Calculation based on projectTitle string hash
+  let seed = 0;
+  for (let i = 0; i < title.length; i++) {
+    seed = (seed << 5) - seed + title.charCodeAt(i);
+    seed |= 0;
+  }
+  const absSeed = Math.abs(seed);
+
+  const dynamicRevenue = (40 + (absSeed % 45)) * 1000000; // 40M - 84M IDR
+  const dynamicMargin = 12 + (absSeed % 7); // 12% - 18%
+  const durations = [24, 30, 36, 42, 48];
+  const dynamicDuration = durations[absSeed % durations.length];
+
+  const c1 = (9 + (absSeed % 9)) * 1000000;
+  const c2 = (6 + (absSeed % 6)) * 1000000;
+  const c3 = (11 + (absSeed % 9)) * 1000000;
+  const c4 = (4 + (absSeed % 4)) * 1000000;
+  const c5 = (3 + (absSeed % 4)) * 1000000;
+
   return {
-    sectorNote: `Rantai pasok proyek "${projectTitle || "Logistik Strategis"}" memiliki durasi kontrak rata-rata 2 hingga 3 tahun.`,
-    defaultAvgRevenuePerMonth: 45000000,
+    sectorNote: `Rantai pasok proyek "${title}" memiliki durasi kontrak rata-rata ${(dynamicDuration/12).toFixed(1)} tahun berkat ikatan kerjasama komersial B2B.`,
+    ltvNote: `Sistem kontrak jangka panjang proyek "${title}" memberikan keandalan arus kas berulang (recurring revenue) yang stabil bagi PRAMA.`,
+    defaultAvgRevenuePerMonth: dynamicRevenue,
+    defaultMargin: dynamicMargin,
+    defaultDuration: dynamicDuration,
     cacCosts: [
-      { id: "cac-1", name: "Jaminan Tender (Tender Bond / Admin)", category: "Legalitas & K3", costIDR: 12000000 },
-      { id: "cac-2", name: "Survey Rute & Kelayakan Jalur Pengiriman", category: "Teknis Operasional", costIDR: 8500000 },
-      { id: "cac-3", name: "Trial Run Uji Coba Armada Kosong & Bermuatan", category: "Teknis Operasional", costIDR: 15000000 },
-      { id: "cac-4", name: "Biaya Presentasi & Proposal Komersial", category: "Komersial", costIDR: 5000000 },
-      { id: "cac-5", name: "Penyusunan Berkas Audit K3 / CSMS", category: "Legalitas & K3", costIDR: 4500000 }
+      { id: "cac-1", name: `Jaminan Tender & Registrasi Kontrak (${title})`, category: "Legalitas & K3", costIDR: c1 },
+      { id: "cac-2", name: "Survey Verifikasi Rute & Studi Kelayakan Jalur", category: "Teknis Operasional", costIDR: c2 },
+      { id: "cac-3", name: "Trial Run Uji Coba Armada & Simulasi Angkut", category: "Teknis Operasional", costIDR: c3 },
+      { id: "cac-4", name: "Penyusunan Proposal Komersial & Dokumen Tender", category: "Komersial", costIDR: c4 },
+      { id: "cac-5", name: "Sertifikasi K3LL & Audit Standar Keselamatan Armada", category: "Legalitas & K3", costIDR: c5 }
     ]
   };
 }

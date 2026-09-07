@@ -20,6 +20,7 @@ import { exportToWord, exportToPPTX, extractProjectTitle, downloadPDFDirect } fr
 import { exportToInteractiveHTML } from "./utils/htmlExporter";
 import { 
   defaultDashboardSections, 
+  getDashboardSectionsForProject,
   exportSingleSectionToWord, 
   exportAllSectionsToWord, 
   exportAllSectionsToPPTX,
@@ -49,6 +50,7 @@ import { RiskManagementDeepDive } from "./components/RiskManagementDeepDive";
 import { GoToMarketDeepDive } from "./components/GoToMarketDeepDive";
 import { SupplyDemandDeepDive } from "./components/SupplyDemandDeepDive";
 import { GlobalNatOverviewDeepDive } from "./components/GlobalNatOverviewDeepDive";
+import { MarketOpportunityDeepDive } from "./components/MarketOpportunityDeepDive";
 import { TransitionModelDeepDive } from "./components/TransitionModelDeepDive";
 import { DigitalCoverageDeepDive } from "./components/DigitalCoverageDeepDive";
 import { CacLtvDeepDive } from "./components/CacLtvDeepDive";
@@ -280,7 +282,7 @@ export const DASHBOARD_PRESETS = [
     id: "forestry",
     name: "Layanan Ekspedisi Perhutanan (Default Kayu & Timber - Bawaan)",
     title: "Kajian Strategis: Forestry Management Transportation",
-    description: "Preset bawaan pabrik untuk transportasi kayu logs dekarbonisasi.",
+    description: "Preset bawaan pabrik untuk transportasi kayu logs terintegrasi.",
     sectionsOverride: null
   },
   {
@@ -377,7 +379,7 @@ export const DASHBOARD_PRESETS = [
     title: "Kajian Baru: Rencana Strategis Project Management Baru",
     description: "Mulai dari draf bersih kosong tanpa teks bawaan untuk kebebasan menulis.",
     sectionsOverride: {
-      1: "### 1. Global / National (NAT) Overview\n\n[Tulis ulasan makro, hukum, regulasi, dan dekarbonisasi di sini...]",
+      1: "### 1. Global / National (NAT) Overview\n\n[Tulis ulasan makro, hukum, regulasi, dan efisiensi operasional di sini...]",
       2: "### 2. Market Opportunity\n\n[Tulis riset pasar, dan ceruk persaingan di sini...]",
       3: "### 3. Financial Analysis\n\n**A. Capital Expenditure (Capex):**\n* [Tulis rincian capex di sini...]\n\n**B. Operational Expenditure (Opex) Bulanan:**\n* [Tulis rincian opex di sini...]\n\n**C. Proyeksi P&L & ROI:**\n* [Tulis perhitungan kelayakan modal di sini...]",
       4: "### 4. Supply & Demand\n\n[Tulis ulasan penawaran kompetitor versus jumlah permintaan industri di sini...]",
@@ -1501,93 +1503,35 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
         }
 
         const savedTitle = localStorage.getItem("prama_dashboard_project_title") || "Kajian Strategis: Forestry Management Transportation";
-        const isWaste = savedTitle.toLowerCase().includes("waste") || savedTitle.toLowerCase().includes("limbah") || savedTitle.toLowerCase().includes("sampah");
-        const p2 = parsed[2] || "";
-        const isCorrupted = p2.includes("Baik, terima kasih") || p2.includes("GLOBAL/NAT OVERVIEW") || p2.trim().length === 0;
-        if (isWaste && isCorrupted) {
-          parsed[2] = `### 2. Market Opportunity
+        const generatedPillars = generatePillarsForProject(savedTitle);
 
-**Analisis Potensi Pasar & Gap Analisis:**
-Pasar transportasi limbah industri, terutama limbah Bahan Berbahaya dan Beracun (B3), memiliki tingkat marjin keuntungan yang jauh lebih tinggi daripada logistik general cargo biasa karena regulasi ketat, pengawasan lingkungan hidup, dan persyaratan armada yang spesifik.
+        for (let num = 1; num <= 14; num++) {
+          const content = parsed[num] || "";
+          const isBreakdownOrOld = 
+            !content.trim() ||
+            content.includes("**A. ") ||
+            content.includes("### **A.") ||
+            content.includes("A. ANALISIS") ||
+            content.includes("A. Alokasi") ||
+            content.includes("A. RANTAI") ||
+            content.includes("A. PERSYARATAN") ||
+            content.includes("A. TAHAP") ||
+            content.includes("A. STRATEGI") ||
+            content.includes("A. ALUR PROSES") ||
+            content.includes("A. MITIGASI") ||
+            content.includes("A. PLATFORM") ||
+            content.includes("A. PROFIL KOMPETITOR") ||
+            content.includes("A. TOTAL ADDRESSABLE") ||
+            content.includes("Berikut adalah bedah terstruktur") ||
+            content.includes("breakdown **Risk Management") ||
+            content.includes("Risiko Operasional & Medan") ||
+            content.includes("MACAM-MACAM KATEGORI") ||
+            content.includes("JENIS-JENIS STANDAR REGULASI") ||
+            content.includes("PROJECT SCOPE & IDENTITY");
 
-**Kesenjangan Layanan (Service Gaps):**
-* **Izin Khusus Terbatas:** Sangat sedikit operator logistik nasional yang memiliki lisensi pengangkutan terpadu (Kemenhub + KLHK) berskala armada besar untuk melayani rute kawasan industri Jawa Barat (Cikarang, Karawang).
-* **Integrasi Digital & Festronik:** Mayoritas transporter limbah konvensional masih mengandalkan manifest fisik kertas, sementara emiten/perusahaan multinasional membutuhkan pelaporan manifest digital terintegrasi (Festronik) untuk kepatuhan ESG.
-
-**Strategi Eksploitasi Ceruk Pasar:**
-* **Armada B3 Tersertifikasi:** Mempersiapkan armada tangki/box BRAMA dengan kelayakan uji kir, safety check, asuransi, serta sopir berlisensi BII Umum bersertifikat khusus.
-* **Kemitraan Aliansi Pengolahan:** Bekerja sama dengan Pihak Ketiga (fasilitas pengolahan akhir berizin seperti PPLI) untuk menawarkan jasa bundling hulu-ke-hilir (*end-to-end service*).`;
-        }
-
-        const isForestry = savedTitle.toLowerCase().includes("forestry") || savedTitle.toLowerCase().includes("kehutanan") || savedTitle.toLowerCase().includes("hutan") || savedTitle.toLowerCase().includes("wood") || savedTitle.toLowerCase().includes("logging");
-        const p10 = parsed[10] || "";
-        const isDefaultOrOldP10 = p10.includes("MITIGASI RISIKO KESELAMATAN JALAN RAYA") || p10.includes("Kecelakaan lalu lintas sasis") || p10.trim() === "### 10. Risk Management" || p10.trim().length <= 350;
-        if (isForestry && isDefaultOrOldP10) {
-          parsed[10] = `### 10. Risk Management
-
-Untuk memastikan proyek berjalan lancar dan menguntungkan, berikut adalah breakdown **Risk Management (Manajemen Risiko)** utama yang wajib Anda antisipasi, dikelompokkan berdasarkan kategorinya.
-
----
-
-## 1. Risiko Operasional & Medan (Operational & Terrain Risks)
-
-Ini adalah area dengan risiko harian paling tinggi karena logistik kehutanan bekerja di lingkungan yang tidak dapat diprediksi.
-
-* **Kondisi Cuaca Ekstrem:** Hujan deras dapat mengubah jalur tanah menjadi lumpur dalam sekejap (*mudslide*), menghentikan mobilitas truk pengangkut kayu (logging trucks), dan merusak struktur jalan angkutan.
-* **Kerusakan Armada & Alat Berat:** Truk loging bekerja di medan berat, memicu keausan cepat pada ban, suspensi, dan mesin. Jika tidak ada manajemen pemeliharaan pencegahan (*preventive maintenance*), *downtime* operasional akan membengkak.
-* **Aksesibilitas Geografis:** Area yang terpencil menyulitkan pengiriman suku cadang, bahan bakar, atau bantuan medis jika terjadi keadaan darurat.
-
-> **Strategi Mitigasi:**
-> * Buat kalender operasional ketat yang menyesuaikan dengan musim (kurangi volume saat puncak musim hujan).
-> * Sediakan *buffer stock* suku cadang kritis dan bahan bakar langsung di *basecamp* lapangan.
-> * Terapkan sistem pemantauan armada berbasis GPS yang tangguh di area *low-signal*.
-
-## 2. Risiko Regulasi & Kepatuhan (Regulatory & Compliance Risks)
-
-Industri kehutanan diawasi sangat ketat oleh pemerintah dan lembaga lingkungan. Pelanggaran hukum bisa berakibat pembatalan kontrak atau denda besar.
-
-* **Sertifikasi & Legalitas Kayu:** Risiko mengangkut hasil hutan tanpa dokumen legalitas yang sah (seperti SKSHAK atau sertifikasi kelestarian lingkungan).
-* **Batasan Beban Kendaraan (Overloading):** Truk kayu rawan melanggar aturan muatan sumbu terberat (MST) di jalan umum, yang bisa memicu penilangan atau penyitaan.
-* **Zona Konservasi:** Risiko masuk atau merusak area lindung yang dilarang untuk kegiatan transportasi/ekstraksi.
-
-> **Strategi Mitigasi:**
-> * Lakukan audit dokumen digital sebelum truk meninggalkan *loading point*.
-> * Pasang jembatan timbang (*weighbridge*) portabel di area hutan untuk memastikan muatan sesuai regulasi sebelum masuk jalan umum.
-
-## 3. Risiko Finansial (Financial Risks)
-
-Proyek ini padat modal (*capital intensive*) dan sensitif terhadap fluktuasi biaya makro.
-
-* **Volatilitas Biaya Bahan Bakar (BBM):** Karena konsumsi BBM alat berat dan truk sangat besar, kenaikan harga solar industri sedikit saja bisa menggerus profit margin secara drastis.
-* **Ketidakpastian Volume Angkut:** Jika kuota tebang dari manajemen kehutanan turun atau terhambat, pendapatan Anda yang dihitung per ritase atau per kubik ($m^3$) akan ikut anjlok, sementara biaya tetap (gaji driver, sewa alat) berjalan terus.
-
-> **Strategi Mitigasi:**
-> * Masukkan klausul *Fuel Escalation Clause* dalam kontrak (penyesuaian tarif angkut otomatis jika harga BBM naik melebihi persentase tertentu).
-> * Terapkan skema kontrak dengan jaminan volume minimum (*Take-or-Pay clause*).
-
-## 4. Risiko Keselamatan & Kesehatan Kerja (K3 / HSE Risks)
-
-Logistik kehutanan termasuk salah satu industri dengan tingkat bahaya tertinggi.
-
-* **Kecelakaan Kerja:** Truk terbalik di lereng curam, tertimpa kayu saat proses *loading/unloading*, hingga cedera fatal operator.
-* **Konflik Sosial:** Risiko gesekan dengan masyarakat adat atau lokal di sepanjang jalur transportasi hutan.
-
-> **Strategi Mitigasi:**
-> * Kewajiban sertifikasi kompetensi untuk semua *driver* truk logging (khusus medan berat).
-> * Alokasikan dana khusus untuk CSR (*Corporate Social Responsibility*) dan libatkan tenaga kerja lokal demi menjaga stabilitas hubungan sosial.
-
----
-
-### Ringkasan Skoring Risiko (Risk Matrix Checklist)
-
-Sebelum menandatangani kontrak, pastikan Anda dan tim menilai matriks risiko berikut:
-
-| Kategori Risiko | Dampak (Impact) | Probabilitas (Probability) | Prioritas Penanganan |
-| --- | --- | --- | --- |
-| **Cuaca & Medan Lumpur** | Tinggi | Tinggi | **Sangat Tinggi (Kritis)** |
-| **Kecelakaan Alat/Truk** | Tinggi | Sedang | **Tinggi** |
-| **Kenaikan Harga BBM** | Sedang | Tinggi | **Tinggi** |
-| **Izin & Dokumen Legal** | Sangat Tinggi | Rendah | **Sedang (Wajib Patuh)** |`;
+          if (isBreakdownOrOld && generatedPillars[num]) {
+            parsed[num] = generatedPillars[num];
+          }
         }
         return parsed;
       } catch (e) {
@@ -1643,6 +1587,10 @@ Sebelum menandatangani kontrak, pastikan Anda dan tim menilai matriks risiko ber
     localStorage.setItem("prama_dashboard_sections", JSON.stringify(dashboardSectionsState));
   }, [dashboardSectionsState]);
 
+  const currentDashboardSections = useMemo(() => {
+    return getDashboardSectionsForProject(dashboardProjectTitle);
+  }, [dashboardProjectTitle]);
+
   // Automated sanitization and optimization for Market Opportunity (Pillar 2) has been removed to respect clean slates and allow empty dashboards.
 
   // Right side Chat Menu state
@@ -1697,7 +1645,7 @@ Sebelum menandatangani kontrak, pastikan Anda dan tim menilai matriks risiko ber
       textToSpeak = `Demikian pemaparan seluruh tiga belas pilar strategis dari Prama Advisor Intelligent Assistant. Terima kasih yang sebesar-besarnya atas perhatian dan waktu Bapak Ibu sekalian. Semoga rencana transisi dan ekspedisi Pancaran Group berjalan sukses. Sampai jumpa.`;
     } else {
       // Pillars 1 to 13
-      const sec = defaultDashboardSections[projectPptSlideIndex - 1];
+      const sec = currentDashboardSections[projectPptSlideIndex - 1] || defaultDashboardSections[projectPptSlideIndex - 1];
       const docVal = dashboardSectionsState[sec.number] || sec.defaultContent;
       
       // Clean contents for voice reader
@@ -3423,6 +3371,48 @@ PENTING: Jangan gunakan karakter bintang (*) maupun pagar (#) sama sekali karena
     } catch (err) {
       console.error(err);
     }
+  };
+
+  const renderPreviewMarkdown = (text: string) => {
+    if (!text) return null;
+    const lines = text.split("\n");
+    return lines.map((line, idx) => {
+      const trimmed = line.trim();
+      if (!trimmed) return <div key={idx} className="h-2" />;
+      if (trimmed.startsWith("### ")) {
+        return (
+          <h3 key={idx} className="text-base font-bold text-slate-800 mt-4 mb-2">
+            {trimmed.replace(/^###\s+/, "")}
+          </h3>
+        );
+      }
+      if (trimmed.startsWith("## ")) {
+        return (
+          <h2 key={idx} className="text-lg font-bold text-slate-900 mt-5 mb-2">
+            {trimmed.replace(/^##\s+/, "")}
+          </h2>
+        );
+      }
+      if (trimmed.startsWith("# ")) {
+        return (
+          <h1 key={idx} className="text-xl font-extrabold text-slate-900 mt-6 mb-3">
+            {trimmed.replace(/^#\s+/, "")}
+          </h1>
+        );
+      }
+      if (trimmed.startsWith("* ") || trimmed.startsWith("- ")) {
+        return (
+          <li key={idx} className="ml-4 list-disc text-slate-700 my-1">
+            {trimmed.replace(/^[\*\-]\s+/, "").replace(/\*\*(.*?)\*\*/g, "$1")}
+          </li>
+        );
+      }
+      return (
+        <p key={idx} className="text-slate-700 leading-relaxed my-2 text-justify">
+          {trimmed.replace(/\*\*(.*?)\*\*/g, "$1")}
+        </p>
+      );
+    });
   };
 
   const handleExportPPT = async (lastMsgText: string) => {
@@ -5265,7 +5255,7 @@ ${lastMsgText}`;
                           onClick={() => {
                             let extractedConclusions: string[] = [];
 
-                            const mappedSlides = defaultDashboardSections.map((sec) => {
+                            const mappedSlides = currentDashboardSections.map((sec) => {
                               const rawContent = dashboardSectionsState[sec.number] || sec.defaultContent;
                               
                               // Extract conclusion if present
@@ -5387,7 +5377,7 @@ ${lastMsgText}`;
                         <button
                           type="button"
                           onClick={async () => {
-                            const mappedSlides = defaultDashboardSections.map((sec) => {
+                            const mappedSlides = currentDashboardSections.map((sec) => {
                               const rawContent = dashboardSectionsState[sec.number] || sec.defaultContent;
                               const lines = rawContent.split("\n")
                                 .map(l => l.trim())
@@ -5421,7 +5411,7 @@ ${lastMsgText}`;
                         </button>
                         <button
                           onClick={() => {
-                            const mappedSlides = defaultDashboardSections.map((sec) => {
+                            const mappedSlides = currentDashboardSections.map((sec) => {
                               const rawContent = dashboardSectionsState[sec.number] || sec.defaultContent;
                               const lines = rawContent.split("\n")
                                 .map(l => l.trim())
@@ -5478,7 +5468,7 @@ ${lastMsgText}`;
                   </div>
 
                   <div className="divide-y divide-slate-100 flex-grow select-none">
-                    {defaultDashboardSections.map((sec) => {
+                    {currentDashboardSections.map((sec) => {
                       const isActive = activeDashboardSection === sec.number;
                       return (
                         <div
@@ -5531,7 +5521,7 @@ ${lastMsgText}`;
                 {/* RIGHT EXPLORER & EDITING WORKSPACE CANVAS */}
                 <div className="flex-grow p-6 flex flex-col min-h-0 bg-slate-50 relative">
                   {(() => {
-                    const activeSec = defaultDashboardSections.find(s => s.number === activeDashboardSection);
+                    const activeSec = currentDashboardSections.find(s => s.number === activeDashboardSection) || defaultDashboardSections.find(s => s.number === activeDashboardSection);
                     if (!activeSec) return null;
                     const val = dashboardSectionsState[activeDashboardSection] || "";
                     const isSectionEmpty = !val.trim() || 
@@ -5782,109 +5772,16 @@ ${lastMsgText}`;
                                     </div>
                                   </div>
 
-                                  <div className="prose prose-sm max-w-none text-slate-700 leading-relaxed font-sans mt-4">
-                                    {(() => {
-                                      const rawLines = val.split("\n");
-                                      const paragraphs = rawLines.map(p => p.trim()).filter(Boolean);
-
-                                      const handleDeleteLine = (targetIdx: number) => {
-                                        let count = -1;
-                                        const filteredRaw = rawLines.filter(line => {
-                                          if (line.trim()) {
-                                            count++;
-                                            return count !== targetIdx;
-                                          }
-                                          return true;
-                                        });
-                                        setDashboardSectionsState(prev => ({
-                                          ...prev,
-                                          [activeDashboardSection]: filteredRaw.join("\n")
-                                        }));
-                                      };
-
-                                      return paragraphs.map((textLine, sIdx) => {
-                                        if (activeDashboardSection === 14) {
-                                          const lineLower = textLine.toLowerCase();
-                                          if (
-                                            lineLower.includes("metrik cac") ||
-                                            lineLower.includes("saas atau biaya") ||
-                                            lineLower.includes("dukungan teknis 24/7") ||
-                                            (lineLower.includes("cac") && lineLower.includes("ltv") && lineLower.includes("retensi"))
-                                          ) {
-                                            return null;
-                                          }
-                                        }
-
-                                        if (textLine.startsWith("###")) {
-                                          return (
-                                            <div key={sIdx} className="group relative my-3">
-                                              <h4 className="text-[13px] font-black text-indigo-900 border-b border-indigo-100 pb-1 mt-5 mb-2 uppercase tracking-wide pr-16">
-                                                {textLine.replace(/^###\s*/, "")}
-                                              </h4>
-                                              <button
-                                                type="button"
-                                                onClick={() => handleDeleteLine(sIdx)}
-                                                className="opacity-0 group-hover:opacity-100 transition-opacity absolute right-0 top-1 text-slate-400 hover:text-rose-600 bg-white border border-slate-200 rounded px-1.5 py-0.5 shadow-sm text-[9px] flex items-center gap-1 cursor-pointer font-sans"
-                                                title="Hapus sub-judul ini"
-                                              >
-                                                <Trash2 className="h-3 w-3 text-rose-500" />
-                                                <span>Hapus</span>
-                                              </button>
-                                            </div>
-                                          );
-                                        }
-                                        if (textLine.startsWith("* ") || textLine.startsWith("- ")) {
-                                          return (
-                                            <div key={sIdx} className="group relative flex gap-2 items-start pl-4 py-1.5 border-l-2 border-emerald-500 bg-slate-50 rounded-r-lg my-1.5 font-sans pr-16">
-                                              <span className="text-emerald-500 font-bold text-[10px] select-none">✓</span>
-                                              <p className="text-[11px] font-bold text-slate-600 m-0 animate-none">
-                                                {textLine.replace(/^[\*\-]\s*/, "").replace(/\*\*/g, "")}
-                                              </p>
-                                              <button
-                                                type="button"
-                                                onClick={() => handleDeleteLine(sIdx)}
-                                                className="opacity-0 group-hover:opacity-100 transition-opacity absolute right-2 top-1.5 text-slate-400 hover:text-rose-600 bg-white border border-slate-200 rounded px-1.5 py-0.5 shadow-sm text-[9px] flex items-center gap-1 cursor-pointer font-sans"
-                                                title="Hapus poin ini"
-                                              >
-                                                <Trash2 className="h-3 w-3 text-rose-500" />
-                                                <span>Hapus</span>
-                                              </button>
-                                            </div>
-                                          );
-                                        }
-
-                                        const strippedLine = textLine.replace(/\*\*/g, "");
-
-                                        return (
-                                          <div key={sIdx} className="group relative my-2.5">
-                                            <p className={`text-[11.5px] leading-relaxed text-slate-650 ${textLine.startsWith("**") ? "font-black text-indigo-950 mt-4 border-l-2 border-indigo-200 pl-2 pr-16" : "font-semibold pr-16"} my-0 text-justify font-sans`}>
-                                              {strippedLine}
-                                            </p>
-                                            <button
-                                              type="button"
-                                              onClick={() => handleDeleteLine(sIdx)}
-                                              className="opacity-0 group-hover:opacity-100 transition-opacity absolute right-0 top-0 text-slate-400 hover:text-rose-600 bg-white border border-slate-200 rounded px-1.5 py-0.5 shadow-sm text-[9px] flex items-center gap-1 cursor-pointer font-sans"
-                                              title="Hapus paragraf/bagian ini"
-                                            >
-                                              <Trash2 className="h-3 w-3 text-rose-500" />
-                                              <span>Hapus Bagian</span>
-                                            </button>
-                                          </div>
-                                        );
-                                      });
-                                    })()}
-                                  </div>
-
                                   {/* PRAMA LIVE FLOWCHART HUB (PILAR 5 ONLY) */}
                                   {activeDashboardSection === 5 && (
-                                    <div className="mt-8 pt-6 border-t border-slate-200">
+                                    <div className="mb-8">
                                       <PramaFlowchartHub projectTitle={dashboardProjectTitle} />
                                     </div>
                                   )}
 
                                   {/* INTERACTIVE FINANCIAL SIMULATOR (PILAR 3 & 12) */}
                                   {(activeDashboardSection === 3 || activeDashboardSection === 12) && (
-                                    <div className="mt-8 pt-6 border-t border-slate-200 space-y-6">
+                                    <div className="mb-8 space-y-6">
                                       <InteractiveFinancialSimulator 
                                         projectTitle={dashboardProjectTitle} 
                                         division={activeDivision || "Logistics Swarnadwipa"}
@@ -5906,51 +5803,60 @@ ${lastMsgText}`;
                                     </div>
                                   )}
 
-                                  {/* PRAMA SUPPLY & DEMAND DEEP-DIVE HUB (PILAR 4 ONLY) */}
+                                  {/* PRAMA GLOBAL & NATIONAL OVERVIEW DEEP-DIVE HUB (PILAR 1 ONLY) */}
+                                   {activeDashboardSection === 1 && (
+                                     <div className="mb-8">
+                                       <GlobalNatOverviewDeepDive projectTitle={dashboardProjectTitle} />
+                                     </div>
+                                   )}
+
+                                   {/* PRAMA MARKET OPPORTUNITY DEEP-DIVE HUB (PILAR 2 ONLY) */}
+                                   {activeDashboardSection === 2 && (
+                                     <div className="mb-8">
+                                       <MarketOpportunityDeepDive projectTitle={dashboardProjectTitle} />
+                                     </div>
+                                   )}
+
+                                   {/* PRAMA SUPPLY & DEMAND DEEP-DIVE HUB (PILAR 4 ONLY) */}
                                   {activeDashboardSection === 4 && (
-                                    <div className="mt-8 pt-6 border-t border-slate-200">
+                                    <div className="mb-8">
                                       <SupplyDemandDeepDive projectTitle={dashboardProjectTitle} />
                                     </div>
                                   )}
 
-                                  {/* PRAMA GLOBAL & NATIONAL OVERVIEW DEEP-DIVE HUB (PILAR 1 ONLY) */}
-                                  {activeDashboardSection === 1 && (
-                                    <div className="mt-8 pt-6 border-t border-slate-200">
-                                      <GlobalNatOverviewDeepDive projectTitle={dashboardProjectTitle} />
-                                    </div>
-                                  )}
+                                  
 
                                   {/* PRAMA TRANSITION MODEL DEEP-DIVE HUB (PILAR 6 ONLY) */}
                                   {activeDashboardSection === 6 && (
-                                    <div className="mt-8 pt-6 border-t border-slate-200">
+                                    <div className="mb-8">
                                       <TransitionModelDeepDive projectTitle={dashboardProjectTitle} />
                                     </div>
                                   )}
 
                                   {/* PRAMA GO-TO-MARKET STRATEGY DEEP-DIVE HUB (PILAR 7 ONLY) */}
                                   {activeDashboardSection === 7 && (
-                                    <div className="mt-8 pt-6 border-t border-slate-200">
+                                    <div className="mb-8">
                                       <GoToMarketDeepDive projectTitle={dashboardProjectTitle} />
                                     </div>
                                   )}
 
                                   {/* PRAMA RISK MANAGEMENT DEEP-DIVE HUB (PILAR 9 ONLY) */}
                                   {activeDashboardSection === 9 && (
-                                    <div className="mt-8 pt-6 border-t border-slate-200">
+                                    <div className="mb-8">
                                       <RiskManagementDeepDive projectTitle={dashboardProjectTitle} />
                                     </div>
                                   )}
 
                                   {/* PRAMA DIGITAL COVERAGE DEEP-DIVE HUB (PILAR 10 ONLY) */}
                                   {activeDashboardSection === 10 && (
-                                    <div className="mt-8 pt-6 border-t border-slate-200">
+                                    <div className="mb-8">
                                       <DigitalCoverageDeepDive projectTitle={dashboardProjectTitle} />
                                     </div>
                                   )}
 
                                   {/* PRAMA LIVE COMPETITOR INTELLIGENCE HUB (PILAR 11 ONLY) */}
                                   {activeDashboardSection === 11 && (
-                                    <div className="mt-8 pt-6 border-t border-slate-200">
+                                    <div className="mb-8">
                                       <div className="bg-gradient-to-r from-violet-600 to-indigo-700 rounded-2xl p-5 text-white shadow-md relative overflow-hidden mb-6">
                                         <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-10 -mt-10 blur-xl" />
                                         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -6299,24 +6205,131 @@ ${lastMsgText}`;
 
                                   {/* PRAMA FINANCIALS DEEP-DIVE - CAC, LTV (PILAR 13 ONLY) */}
                                   {activeDashboardSection === 13 && (
-                                    <div className="mt-8 pt-6 border-t border-slate-200">
+                                    <div className="mb-8">
                                       <CacLtvDeepDive projectTitle={dashboardProjectTitle} />
                                     </div>
                                   )}
 
                                   {/* EXECUTIVE SUMMARY & RECOMMENDATIONS (PILAR 14 ONLY) */}
                                   {activeDashboardSection === 14 && (
-                                    <div className="mt-8 pt-6 border-t border-slate-200">
+                                    <div className="mb-8">
                                       <ExecutiveSummaryDashboard projectTitle={dashboardProjectTitle} />
                                     </div>
                                   )}
 
                                   {/* PRAMA OPS MODEL DEEP-DIVE (PILAR 8 ONLY) */}
                                   {activeDashboardSection === 8 && (
-                                    <div className="mt-8 pt-6 border-t border-slate-200">
+                                    <div className="mb-8">
                                       <OpsModelDeepDive projectTitle={dashboardProjectTitle} />
                                     </div>
                                   )}
+
+                                  {/* RINGKASAN TEKS DOKUMEN KAJIAN */}
+                                  <div className="mt-8 pt-6 border-t border-slate-200">
+                                    <div className="flex items-center justify-between mb-3">
+                                      <div>
+                                        <span className="text-[9px] font-mono font-black tracking-widest text-slate-500 uppercase block mb-0.5">
+                                          RINGKASAN NARATIF KAJIAN
+                                        </span>
+                                        <h4 className="text-sm font-black text-slate-800 uppercase tracking-tight font-display">
+                                          Uraian Ringkas Dokumen
+                                        </h4>
+                                      </div>
+                                    </div>
+
+                                    <div className="prose prose-sm max-w-none text-slate-700 leading-relaxed font-sans mt-4">
+                                    {(() => {
+                                      const rawLines = val.split("\n");
+                                      const paragraphs = rawLines.map(p => p.trim()).filter(Boolean);
+
+                                      const handleDeleteLine = (targetIdx: number) => {
+                                        let count = -1;
+                                        const filteredRaw = rawLines.filter(line => {
+                                          if (line.trim()) {
+                                            count++;
+                                            return count !== targetIdx;
+                                          }
+                                          return true;
+                                        });
+                                        setDashboardSectionsState(prev => ({
+                                          ...prev,
+                                          [activeDashboardSection]: filteredRaw.join("\n")
+                                        }));
+                                      };
+
+                                      return paragraphs.map((textLine, sIdx) => {
+                                        if (activeDashboardSection === 14) {
+                                          const lineLower = textLine.toLowerCase();
+                                          if (
+                                            lineLower.includes("metrik cac") ||
+                                            lineLower.includes("saas atau biaya") ||
+                                            lineLower.includes("dukungan teknis 24/7") ||
+                                            (lineLower.includes("cac") && lineLower.includes("ltv") && lineLower.includes("retensi"))
+                                          ) {
+                                            return null;
+                                          }
+                                        }
+
+                                        if (textLine.startsWith("###")) {
+                                          return (
+                                            <div key={sIdx} className="group relative my-3">
+                                              <h4 className="text-[13px] font-black text-indigo-900 border-b border-indigo-100 pb-1 mt-5 mb-2 uppercase tracking-wide pr-16">
+                                                {textLine.replace(/^###\s*/, "")}
+                                              </h4>
+                                              <button
+                                                type="button"
+                                                onClick={() => handleDeleteLine(sIdx)}
+                                                className="opacity-0 group-hover:opacity-100 transition-opacity absolute right-0 top-1 text-slate-400 hover:text-rose-600 bg-white border border-slate-200 rounded px-1.5 py-0.5 shadow-sm text-[9px] flex items-center gap-1 cursor-pointer font-sans"
+                                                title="Hapus sub-judul ini"
+                                              >
+                                                <Trash2 className="h-3 w-3 text-rose-500" />
+                                                <span>Hapus</span>
+                                              </button>
+                                            </div>
+                                          );
+                                        }
+                                        if (textLine.startsWith("* ") || textLine.startsWith("- ")) {
+                                          return (
+                                            <div key={sIdx} className="group relative flex gap-2 items-start pl-4 py-1.5 border-l-2 border-emerald-500 bg-slate-50 rounded-r-lg my-1.5 font-sans pr-16">
+                                              <span className="text-emerald-500 font-bold text-[10px] select-none">✓</span>
+                                              <p className="text-[11px] font-bold text-slate-600 m-0 animate-none">
+                                                {textLine.replace(/^[\*\-]\s*/, "").replace(/\*\*/g, "")}
+                                              </p>
+                                              <button
+                                                type="button"
+                                                onClick={() => handleDeleteLine(sIdx)}
+                                                className="opacity-0 group-hover:opacity-100 transition-opacity absolute right-2 top-1.5 text-slate-400 hover:text-rose-600 bg-white border border-slate-200 rounded px-1.5 py-0.5 shadow-sm text-[9px] flex items-center gap-1 cursor-pointer font-sans"
+                                                title="Hapus poin ini"
+                                              >
+                                                <Trash2 className="h-3 w-3 text-rose-500" />
+                                                <span>Hapus</span>
+                                              </button>
+                                            </div>
+                                          );
+                                        }
+
+                                        const strippedLine = textLine.replace(/\*\*/g, "");
+
+                                        return (
+                                          <div key={sIdx} className="group relative my-2.5">
+                                            <p className={`text-[11.5px] leading-relaxed text-slate-650 ${textLine.startsWith("**") ? "font-black text-indigo-950 mt-4 border-l-2 border-indigo-200 pl-2 pr-16" : "font-semibold pr-16"} my-0 text-justify font-sans`}>
+                                              {strippedLine}
+                                            </p>
+                                            <button
+                                              type="button"
+                                              onClick={() => handleDeleteLine(sIdx)}
+                                              className="opacity-0 group-hover:opacity-100 transition-opacity absolute right-0 top-0 text-slate-400 hover:text-rose-600 bg-white border border-slate-200 rounded px-1.5 py-0.5 shadow-sm text-[9px] flex items-center gap-1 cursor-pointer font-sans"
+                                              title="Hapus paragraf/bagian ini"
+                                            >
+                                              <Trash2 className="h-3 w-3 text-rose-500" />
+                                              <span>Hapus Bagian</span>
+                                            </button>
+                                          </div>
+                                        );
+                                      });
+                                    })()}
+                                  </div>
+                                  </div>
                                 </div>
                               )}
 
@@ -6501,7 +6514,7 @@ ${lastMsgText}`;
                                   INSTRUKSI PANDUAN KELAYAKAN
                                 </h5>
                                 <p className="text-slate-300 text-[11px] mb-4 leading-relaxed font-semibold">
-                                  Pastikan artikel memuat spesifikasi logistik logis PT Pancaran Group. Untuk bagian finansial, detail perhitungan amortisasi armada vacuum truck dan target margin ROI diestimasi 35% dekarbonisasi.
+                                  Pastikan artikel memuat spesifikasi logistik logis PT Pancaran Group. Untuk bagian finansial, detail perhitungan amortisasi armada vacuum truck dan target margin ROI diestimasi 35% efisiensi operasional.
                                 </p>
                                 
                                 <div className="mt-auto pt-3 border-t border-slate-800/80 flex flex-col gap-2.5 font-mono text-[9px] text-slate-400">
@@ -9105,1457 +9118,9 @@ ${lastMsgText}`;
               onOpenExcelSimulator={() => setIsExcelPreviewOpen(true)}
             />
 
-            {/* Dynamic Floating indicator button removed as requested by user */}
           </div>
-
-          {/* Column 2: 14 Pillars Interactive Right Panel */}
-          {isRightPillarPanelOpen && (
-            <aside className="w-full md:w-[350px] lg:w-[410px] bg-white border-l border-slate-200 flex flex-col h-full shrink-0 overflow-hidden shadow-xl relative transition-all duration-300">
-              {/* Panel Header */}
-              <div className="bg-slate-900 text-white px-4 py-3.5 flex items-center justify-between border-b border-slate-800 shrink-0 select-none">
-                <div className="flex items-center gap-2.5">
-                  <div className="h-6 w-6 bg-indigo-950 text-indigo-450 text-indigo-400 border border-indigo-850 rounded-lg flex items-center justify-center font-bold text-xs shadow-inner">
-                    ✨
-                  </div>
-                  <div>
-                    <h4 className="text-[11.5px] font-black uppercase tracking-wider font-mono">14 Pilar Strategis</h4>
-                    <span className="text-[8.5px] font-extrabold text-slate-400 font-mono tracking-widest block uppercase">PRAMA FORMULATOR BI</span>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      exportAllSectionsToWord(dashboardProjectTitle, dashboardSectionsState);
-                    }}
-                    className="p-1.5 px-2 bg-slate-800 hover:bg-slate-750 text-white hover:text-indigo-300 rounded-lg text-[9.5px] font-black border border-slate-700 transition cursor-pointer shrink-0"
-                    title="Unduh draf dari seluruh 14 pilar sekaligus (.doc)"
-                  >
-                    Ekspor Semua
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsRightPillarPanelOpen(false)}
-                    className="text-slate-450 hover:text-white transition duration-200 cursor-pointer p-1.5 rounded-full hover:bg-slate-800"
-                    title="Sembunyikan Panel"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Quick Search */}
-              <div className="p-3 border-b border-slate-100 bg-slate-50/70 shrink-0 select-none">
-                <div className="relative flex items-center bg-white border border-slate-200 rounded-xl overflow-hidden px-3 shadow-3sm">
-                  <Search className="h-3.5 w-3.5 text-slate-400 shrink-0 mr-1.5" />
-                  <input
-                    type="text"
-                    placeholder="Saring berdasarkan nama pilar..."
-                    value={searchRightPilarQuery}
-                    onChange={(e) => setSearchRightPilarQuery(e.target.value)}
-                    className="w-full bg-transparent border-none text-xs text-slate-800 focus:outline-none focus:ring-0 py-2.5 font-sans font-semibold"
-                  />
-                  {searchRightPilarQuery && (
-                    <button
-                      type="button"
-                      onClick={() => setSearchRightPilarQuery("")}
-                      className="text-[10px] text-slate-450 hover:text-slate-700 font-extrabold mr-1 shrink-0"
-                    >
-                      Batal
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Description Info Banner */}
-              <div className="bg-amber-50/70 border-b border-amber-100 px-4 py-2.5 text-[10px] text-amber-850 font-medium leading-normal flex items-start gap-2 shrink-0 select-none">
-                <CircleAlert className="h-3.5 w-3.5 text-amber-600 shrink-0 mt-0.5" />
-                <span>
-                  Ketuk salah satu pilar di bawah untuk **melihat isi draf**, **mengunduh file Word** individu, atau **membahas** secara interaktif bersama asisten AI.
-                </span>
-              </div>
-
-              {/* Pillars Interactive List Card with scrolling wrapper */}
-              <div className="flex-1 overflow-y-auto p-3 space-y-2 pb-12 bg-slate-100/40 divide-y divide-transparent select-none">
-                {defaultDashboardSections
-                  .filter(sec => {
-                    const q = searchRightPilarQuery.toLowerCase().trim();
-                    if (!q) return true;
-                    return sec.title.toLowerCase().includes(q) || 
-                           sec.number.toString() === q ||
-                           sec.shortDesc.toLowerCase().includes(q);
-                  })
-                  .map((sec) => {
-                    const isSelected = selectedRightPilar === sec.number;
-                    const val = dashboardSectionsState[sec.number] || sec.defaultContent;
-                    
-                    return (
-                      <div
-                        key={sec.number}
-                        className={`bg-white rounded-2xl border transition-all duration-300 overflow-hidden flex flex-col ${
-                          isSelected 
-                            ? "border-indigo-500 ring-1 ring-indigo-200 shadow-md transform scale-[0.99]" 
-                            : "border-slate-200/80 hover:border-slate-350 hover:shadow-sm"
-                        }`}
-                      >
-                        {/* Summary Header of Card */}
-                        <div
-                          onClick={() => setSelectedRightPilar(isSelected ? null : sec.number)}
-                          className="p-3.5 flex items-center justify-between gap-3 cursor-pointer select-none text-left"
-                        >
-                          <div className="min-w-0 flex-1 flex items-start gap-3">
-                            <span className={`block h-6.5 w-6.5 mt-0.5 shrink-0 flex items-center justify-center rounded-xl text-[10.5px] font-black transition-colors ${
-                              isSelected 
-                                ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/20" 
-                                : "bg-slate-100 text-slate-550 border border-slate-200"
-                            }`}>
-                              {sec.number}
-                            </span>
-                            <div className="min-w-0 flex-1">
-                              <h5 className={`text-[12px] font-black truncate uppercase tracking-tight ${
-                                isSelected ? "text-indigo-950" : "text-slate-800"
-                              }`}>
-                                {sec.title}
-                              </h5>
-                              <p className="text-[10px] font-semibold text-slate-400 line-clamp-1 mt-0.5">
-                                {sec.shortDesc}
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            {/* Download Single Pillar Button */}
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                exportSingleSectionToWord(dashboardProjectTitle, sec, val);
-                              }}
-                              title={`Unduh Dokumen ${sec.title} (.doc)`}
-                              className="h-8 w-8 rounded-xl bg-slate-50 hover:bg-emerald-600 border border-slate-200 hover:border-emerald-600 text-slate-550 hover:text-white flex items-center justify-center transition shadow-3sm cursor-pointer"
-                            >
-                              <Download className="h-3.5 w-3.5" />
-                            </button>
-                            
-                            <span className="text-slate-400 font-extrabold text-[10px] w-4 text-center">
-                              {isSelected ? "▲" : "▼"}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Detailed Description Block - If selected/expanded ("bisa liat") */}
-                        {isSelected && (
-                          <div className="px-4 pb-4 pt-2.5 border-t border-slate-100 bg-slate-50/50 text-left text-xs leading-relaxed space-y-3 animate-fade-in select-text">
-                            <div className="flex items-center justify-between">
-                              <div className="text-[9.5px] font-black text-indigo-700 font-mono uppercase tracking-widest flex items-center gap-1.5">
-                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                <span>Preview Konten Draf</span>
-                              </div>
-                              <span className="text-[8px] font-black font-mono text-slate-400 uppercase tracking-tight">
-                                Terakhir Diedit: Lokal
-                              </span>
-                            </div>
-                            
-                            {/* Scrollable live preview of content */}
-                            <div className="bg-white rounded-xl border border-slate-200 p-3 max-h-56 overflow-y-auto font-mono text-[10px] text-slate-700 leading-relaxed whitespace-pre-wrap select-all">
-                              {val}
-                            </div>
-
-                            {/* Action buttons inside detail */}
-                            <div className="flex gap-2 pt-1">
-                              {/* Download Word button */}
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  exportSingleSectionToWord(dashboardProjectTitle, sec, val);
-                                }}
-                                className="flex-1 flex items-center justify-center gap-1 bg-emerald-600 hover:bg-emerald-500 text-[10.5px] font-black text-white rounded-lg py-2 shadow-sm transition active:scale-97 cursor-pointer"
-                              >
-                                <Download className="h-3.5 w-3.5" />
-                                <span>Unduh Bab Word</span>
-                              </button>
-
-                              {/* Ask/collaborate on chat */}
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  handleSendMessage(`Tolong berikan komentar taktis, optimasi operasional, dan masukan inovatif untuk Draf Pilar ${sec.number} ("${sec.title}") berikut:\n\n${val}`, false);
-                                }}
-                                className="flex-1 flex items-center justify-center gap-1 bg-[#5B4DFB] hover:bg-[#4a3ce0] text-[10.5px] font-black text-white rounded-lg py-2 shadow-sm transition active:scale-97 cursor-pointer"
-                              >
-                                <Sparkles className="h-3.5 w-3.5 text-indigo-200" />
-                                <span>Bahas di Chat</span>
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                
-                {defaultDashboardSections.filter(sec => {
-                  const q = searchRightPilarQuery.toLowerCase().trim();
-                  if (!q) return true;
-                  return sec.title.toLowerCase().includes(q) || 
-                         sec.number.toString() === q ||
-                         sec.shortDesc.toLowerCase().includes(q);
-                }).length === 0 && (
-                  <div className="py-12 text-center text-slate-400">
-                    <p className="text-xs font-bold font-mono">Data pilar tidak ditemukan</p>
-                    <p className="text-[10px] mt-1 text-slate-450">Cobalah kata kunci pencarian yang lain.</p>
-                  </div>
-                )}
-              </div>
-            </aside>
-          )}
-
         </div>
-
       </main>
-
-      {/* KOLEKSI SIDEBAR MODAL */}
-      {showKoleksiSidebarModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs overflow-y-auto animate-fade-in">
-          <div className="flex flex-col bg-white rounded-3xl w-full max-w-4xl max-h-[85vh] shadow-2xl border border-slate-150 overflow-hidden animate-scale-up">
-            {/* Modal Header */}
-            <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-indigo-100 flex items-center justify-center text-[#5B4DFB]">
-                  <Grid className="h-5 w-5" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-extrabold text-slate-800">Koleksi Dokumen Strategis ({activeDivision ? `${activeDivision.toUpperCase()} Unit` : "Semua Unit"})</h3>
-                  <p className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-widest">Akses dan Unduh Hasil Analisis & Laporan</p>
-                </div>
-              </div>
-              <button
-                onClick={() => {
-                  setShowKoleksiSidebarModal(false);
-                  setKoleksiSearch("");
-                }}
-                className="h-8 w-8 rounded-full border border-slate-200 hover:border-red-200 bg-white hover:bg-red-50 flex items-center justify-center text-slate-500 hover:text-red-650 transition cursor-pointer"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            {/* Modal search bar and filters */}
-            <div className="p-4 bg-slate-50/50 border-b border-slate-150 flex flex-col sm:flex-row gap-3 items-center justify-between">
-              <div className="relative w-full sm:w-80">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Cari berdasarkan nama file..."
-                  value={koleksiSearch}
-                  onChange={(e) => setKoleksiSearch(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 text-xs font-bold rounded-xl border border-slate-200 bg-white text-slate-700 focus:border-[#5B4DFB] outline-none transition"
-                />
-              </div>
-              <span className="text-[10px] font-mono text-slate-400 font-bold bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200 select-none">
-                Total Dokumen: {
-                  files.filter(f => !activeDivision || !f.division || f.division === activeDivision).length
-                }
-              </span>
-            </div>
-
-            {/* Modal Body: files grid */}
-            <div className="flex-1 overflow-y-auto p-6 bg-[#f8fafc]">
-              {(() => {
-                const filteredCol = files
-                  .filter((f) => !activeDivision || !f.division || f.division === activeDivision)
-                  .filter((f) => !koleksiSearch || f.name.toLowerCase().includes(koleksiSearch.toLowerCase()));
-
-                if (filteredCol.length === 0) {
-                  return (
-                    <div className="flex flex-col items-center justify-center text-center py-12">
-                      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-500 border border-amber-100 shadow-sm">
-                        <FileText className="h-6 w-6" />
-                      </div>
-                      <h4 className="font-extrabold text-sm text-slate-800">Tidak ada dokumen</h4>
-                      <p className="mt-1 text-xs text-slate-500 max-w-sm">
-                        Belum ada dokumen yang disimpan untuk unit ini atau pencarian Anda tidak menemukan hasil.
-                      </p>
-                    </div>
-                  );
-                }
-
-                return (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {filteredCol.map((f) => (
-                      <div key={f.id} className="bg-white rounded-2xl border border-slate-150 p-4 shadow-3sm hover:border-[#5B4DFB]/30 hover:shadow-2sm transition flex flex-col justify-between">
-                        <div>
-                          <div className="flex items-start justify-between gap-2.5 mb-2">
-                            <span className="text-[9px] font-mono font-black text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-md uppercase tracking-wider">
-                              {f.division || "PORTAL"} UNIT
-                            </span>
-                            <span className="text-[10px] font-mono text-slate-400 font-bold">
-                              {(f.size / 1024).toFixed(1)} KB
-                            </span>
-                          </div>
-                          <h4 className="font-extrabold text-xs text-slate-800 line-clamp-2 leading-snug mb-1" title={f.name}>
-                            {f.name}
-                          </h4>
-                          <p className="text-[10px] text-slate-400 mb-4 font-mono">
-                            Diperbarui: {new Date(f.updatedAt).toLocaleDateString("id-ID", {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit"
-                            })}
-                          </p>
-                        </div>
-
-                        {/* Actions row */}
-                        <div className="flex items-center gap-1.5 flex-wrap pt-3 border-t border-slate-100">
-                          <button
-                            onClick={() => {
-                              setArticlePreview({
-                                title: f.name.replace(".md", "").toUpperCase(),
-                                content: f.content,
-                                fileName: f.name
-                              });
-                            }}
-                            className="flex-1 min-w-[70px] flex items-center justify-center gap-1 px-2.5 py-1.5 bg-[#5B4DFB] hover:bg-[#4a3ce3] text-white rounded-xl text-[10px] font-bold shadow-3sm hover:shadow-2sm transition cursor-pointer"
-                          >
-                            <FileText className="h-3 w-3" />
-                            <span>Lihat</span>
-                          </button>
-                          
-                          <button
-                            onClick={() => exportToWord(f.name, f.content, f.division || "PRAMA")}
-                            className="flex items-center justify-center h-8 w-8 bg-slate-50 hover:bg-sky-50 text-slate-600 hover:text-sky-700 border border-slate-200 hover:border-sky-200 rounded-xl transition cursor-pointer"
-                            title="Unduh Microsoft Word"
-                          >
-                            <Download className="h-3.5 w-3.5" />
-                          </button>
-
-                          <button
-                            onClick={() => downloadPDFDirect(f.name, f.content, f.division || "PRAMA")}
-                            className="flex items-center justify-center h-8 w-8 bg-slate-50 hover:bg-emerald-50 text-slate-600 hover:text-emerald-700 border border-slate-200 hover:border-emerald-200 rounded-xl transition cursor-pointer"
-                            title="Unduh PDF"
-                          >
-                            <Presentation className="h-3.5 w-3.5 text-slate-600" />
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              const isConfirmed = window.confirm(`Apakah Anda yakin ingin menghapus dokumen "${f.name}"?`);
-                              if (isConfirmed) {
-                                handleDeleteFile(f.id);
-                              }
-                            }}
-                            className="h-8 w-8 bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-[#e11d48] border border-slate-200 hover:border-red-200 rounded-xl flex items-center justify-center transition cursor-pointer"
-                            title="Hapus Dokumen"
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                );
-              })()}
-            </div>
-
-            {/* Modal Footer */}
-            <div className="bg-slate-50 px-6 py-3 border-t border-slate-150 flex justify-end">
-              <button
-                onClick={() => {
-                  setShowKoleksiSidebarModal(false);
-                  setKoleksiSearch("");
-                }}
-                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-xl transition cursor-pointer"
-              >
-                Tutup
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* =========================================================================
-          🆕 CREATE NEW DASHBOARD WORKSPACE MODAL OVERLAY
-          ========================================================================= */}
-      {isCreateNewDashboardOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-md overflow-y-auto animate-fade-in">
-          <div className="flex flex-col bg-white rounded-3xl w-full max-w-2xl max-h-[92vh] shadow-2xl border border-slate-205 border-slate-200 overflow-hidden text-slate-800 text-left">
-            {/* Modal Header */}
-            <div className="bg-slate-900 px-6 py-5 border-b border-slate-800 flex items-center justify-between text-white">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-violet-950 flex items-center justify-center text-violet-400 font-extrabold border border-violet-800">
-                  ➕
-                </div>
-                <div>
-                  <h3 className="text-sm font-black tracking-wider uppercase">Inisialisasi Kajian Baru</h3>
-                  <p className="text-[10px] font-mono font-bold text-slate-400 mt-0.5 uppercase tracking-widest">PRAMA Dashboard Template Builder</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsCreateNewDashboardOpen(false)}
-                className="text-slate-400 hover:text-white transition cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Modal Content */}
-            <div className="p-6 overflow-y-auto space-y-6">
-              {/* Title Section */}
-              <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono">
-                  Judul Proyek / Kajian Baru
-                </label>
-                <input
-                  type="text"
-                  value={newDashboardTitleInput}
-                  onChange={(e) => setNewDashboardTitleInput(e.target.value)}
-                  placeholder="Contoh: Kajian Strategis: Ekspansi Distribusi Nikel Freeport..."
-                  className="w-full px-4 py-3 text-xs font-extrabold border border-slate-205 border-slate-200 rounded-xl focus:border-indigo-500 outline-none shadow-inner bg-white text-slate-800"
-                />
-                <span className="text-[10px] leading-relaxed text-slate-500 block">
-                  Judul ini otomatis akan terintegrasi ke dokumen ekspor Microsoft Word (.doc) dan PowerPoint (.pptx).
-                </span>
-              </div>
-
-              {/* Presets List */}
-              <div className="space-y-3">
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono">
-                  Pilih Template Skenario Preset
-                </label>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                  {DASHBOARD_PRESETS.map((preset) => (
-                    <div
-                      key={preset.id}
-                      onClick={() => {
-                        setNewDashboardPresetId(preset.id);
-                        if (!newDashboardTitleInput || DASHBOARD_PRESETS.some(p => p.title === newDashboardTitleInput)) {
-                          setNewDashboardTitleInput(preset.title);
-                        }
-                      }}
-                      className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between text-left ${
-                        newDashboardPresetId === preset.id
-                          ? "border-violet-600 bg-violet-50/50 ring-4 ring-violet-100"
-                          : "border-slate-205 border-slate-200 hover:border-slate-350 hover:bg-slate-50 bg-white"
-                      }`}
-                    >
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs font-black text-slate-805 text-slate-800 uppercase tracking-tight">
-                            {preset.name}
-                          </span>
-                          <span className="text-[8px] font-black font-mono px-1.5 py-0.5 rounded uppercase leading-none bg-indigo-50 border border-indigo-100 text-indigo-700">
-                            {preset.id}
-                          </span>
-                        </div>
-                        <p className="text-[10.5px] leading-relaxed text-slate-500 font-semibold mb-3">
-                          {preset.description}
-                        </p>
-                      </div>
-
-                      <div className="flex flex-wrap gap-1.5 mt-2">
-                        <span className="text-[8px] font-bold bg-indigo-50 text-indigo-700 rounded px-1.5 py-0.5 uppercase tracking-wide">
-                          {preset.id === "forestry" ? "B3/KAYU" : preset.id === "coal" ? "MINERAL" : preset.id === "cpo" ? "AGRI/LIQUID" : "STRATEGIS"}
-                        </span>
-                        <span className="text-[8px] font-bold bg-emerald-50 text-emerald-700 rounded px-1.5 py-0.5 uppercase tracking-wide">
-                          {preset.id === "forestry" ? "STANDAR HSE" : "HEAVY DUTY"}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Clean Slate Option */}
-              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex items-start gap-3">
-                <input
-                  id="checkbox-is-clean-slate"
-                  type="checkbox"
-                  checked={isCleanSlate}
-                  onChange={(e) => setIsCleanSlate(e.target.checked)}
-                  className="mt-1 h-4 w-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 cursor-pointer"
-                />
-                <div className="space-y-0.5 text-left">
-                  <label htmlFor="checkbox-is-clean-slate" className="text-xs font-black text-slate-800 select-none cursor-pointer flex items-center gap-1.5 uppercase">
-                    🧼 Bersihkan Draf & Isi Penjelasan (Mulai dengan Draf Kosong)
-                  </label>
-                  <p className="text-[10.5px] leading-relaxed text-slate-500 font-semibold">
-                    Jika dicentang, seluruh draf penjelasan pada 14 pilar akan dibersihkan dan dikosongkan total, sehingga Anda bebas menyusun draf Anda sendiri secara bersih, contohnya pada pilar Market Opportunity akan benar-benar kosong tanpa data bawaan.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex items-center justify-end gap-3 shrink-0">
-              <button
-                type="button"
-                onClick={() => setIsCreateNewDashboardOpen(false)}
-                className="px-4.5 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-650 text-slate-650 text-slate-600 font-black text-xs transition cursor-pointer"
-              >
-                Batalkan
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  const preset = DASHBOARD_PRESETS.find(p => p.id === newDashboardPresetId) || DASHBOARD_PRESETS[0];
-                  
-                  // Reset State
-                  const chosenTitle = newDashboardTitleInput.trim() || preset.title;
-                  setDashboardProjectTitle(chosenTitle);
-                  
-                  // Handle sections rehydration securely based on clean slate option
-                  const rehydratedContent: Record<number, string> = {};
-                  defaultDashboardSections.forEach((s) => {
-                    if (!isCleanSlate && preset.sectionsOverride && preset.sectionsOverride[s.number as keyof typeof preset.sectionsOverride]) {
-                      rehydratedContent[s.number] = preset.sectionsOverride[s.number as keyof typeof preset.sectionsOverride];
-                    } else {
-                      rehydratedContent[s.number] = `### ${s.number}. ${s.title}`;
-                    }
-                  });
-                  setDashboardSectionsState(rehydratedContent);
-                  setActiveDashboardSection(1);
-                  
-                  // Setup clean welcoming chat history for new dashboard preset
-                  setDashboardChatMessages([
-                    {
-                      id: "dash-msg-welcome-preset",
-                      role: "model",
-                      text: `Selamat! Anda berhasil menginisialisasi kajian baru:\n"${chosenTitle}"\n\nSesuai instruksi Anda, draf 14 Pilar telah dikosongkan secara total agar Anda memiliki kebebasan penuh menulis draf sendiri. Silakan sampaikan detail atau instruksi Anda di panel chat sebelah kanan, dan saya siap membantu merancang draf pilar step-by-step secara terinci!`,
-                      timestamp: Date.now(),
-                      sender: "PRAMA AI"
-                    }
-                  ]);
-                  
-                  setIsCreateNewDashboardOpen(false);
-                }}
-                className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-550 text-white font-black text-xs transition shadow-md active:scale-97 cursor-pointer"
-              >
-                Buat & Rekonstruksi 14 Pilar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 1. ARTICLE / DOCUMENT PREVIEW MODAL */}
-      <ArticlePreviewModal 
-        articlePreview={articlePreview}
-        setArticlePreview={setArticlePreview}
-        copiedState={copiedState}
-        setCopiedState={setCopiedState}
-        activeDivision={activeDivision}
-        exportToWord={exportToWord}
-        downloadPDFDirect={downloadPDFDirect}
-        renderPreviewMarkdown={renderPreviewMarkdown}
-      />
-
-      {/* 2. PPT SLIDESHOW PREVIEW INTERACTIVE MODAL */}
-      <PPTPreviewModal 
-        pptPreview={pptPreview}
-        setPptPreview={setPptPreview}
-        activeSlideIndex={activeSlideIndex}
-        setActiveSlideIndex={setActiveSlideIndex}
-        isTtsAutoplay={isTtsAutoplay}
-        setIsTtsAutoplay={setIsTtsAutoplay}
-        isPptFullscreen={isPptFullscreen}
-        setIsPptFullscreen={setIsPptFullscreen}
-        activeDivision={activeDivision}
-        isTtsPlaying={isTtsPlaying}
-        stopTtsAndTimers={stopTtsAndTimers}
-        speakCurrentSlide={speakCurrentSlide}
-        exportToPPTX={exportToPPTX}
-        exportToInteractiveHTML={exportToInteractiveHTML}
-        ttsRate={ttsRate}
-        setTtsRate={setTtsRate}
-        ttsVolume={ttsVolume}
-        setTtsVolume={setTtsVolume}
-        pramaLogo={pramaLogo}
-      />
-
-      {/* 3. EXCEL WORKBOOK SIMULATOR INTERACTIVE MODAL */}
-      <ExcelPreviewModal 
-        projectTitle={dashboardView === "chat_intelligence" ? (chatBIState.projectTitle || "Kajian Bisnis Intelijensi") : (dashboardProjectTitle || "Kajian 14 Pilar")}
-        division={dashboardView === "chat_intelligence" ? (chatBIState.division || "BD") : (activeDivision || "UMUM")}
-        isOpen={isExcelPreviewOpen}
-        onClose={() => setIsExcelPreviewOpen(false)}
-        initialCapex={dashboardView === "chat_intelligence" ? chatBIState.initialCapex : undefined}
-        annualSavings={dashboardView === "chat_intelligence" ? chatBIState.annualSavings : undefined}
-        salesIncrease={dashboardView === "chat_intelligence" ? chatBIState.salesIncrease : undefined}
-      />
-      {false && (
-        <div className="hidden">
-          <div className="hidden">
-            {/* Header toolbar */}
-            <div className={`px-6 sm:px-8 py-4 sm:py-5 border-b flex items-center justify-between transition-all ${isPptFullscreen ? "bg-slate-950 border-slate-800" : "bg-white border-slate-100"}`}>
-              <div className="flex items-center gap-3">
-                <div className={`h-10 w-10 rounded-xl flex items-center justify-center shadow-sm border ${isPptFullscreen ? "bg-slate-900 border-slate-800 text-[#00D285]" : "bg-blue-50 border-blue-100 text-blue-600"}`}>
-                  <Presentation className="h-5 w-5" />
-                </div>
-                <div>
-                  <h3 className={`text-xs sm:text-sm font-extrabold uppercase tracking-wider font-display ${isPptFullscreen ? "text-white" : "text-slate-800"}`}>
-                    {isPptFullscreen ? "MODUS PRESENTASI UTAMA (THEATER MODE)" : "SLIDE SHOW & INTERACTIVE PREVIEW"}
-                  </h3>
-                  <p className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest">{pptPreview.fileName.toUpperCase()}.PPTX</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2.5">
-                {/* Visual state pill for TTS autoplay */}
-                {isTtsAutoplay && (
-                  <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-bold font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 animate-pulse">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
-                    AUTOPLAY ACTIVE
-                  </span>
-                )}
-                
-                {!isPptFullscreen && (
-                  <>
-                    <button
-                      onClick={async (e) => {
-                        const btn = e.currentTarget;
-                        const originalText = btn.innerHTML;
-                        btn.disabled = true;
-                        btn.innerHTML = `<span class="flex items-center gap-1.5"><svg class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> <span>Menyiapkan PPTX...</span></span>`;
-                        try {
-                          await exportToPPTX(pptPreview.fileName, pptPreview.slides, activeDivision || "PORTAL");
-                        } catch (error) {
-                          console.error(error);
-                        } finally {
-                          btn.disabled = false;
-                          btn.innerHTML = originalText;
-                        }
-                      }}
-                      className="flex items-center gap-1.5 px-4 py-2.5 text-xs font-black bg-[#0082FB] hover:bg-[#0072DF] text-white border-none rounded-full transition-all cursor-pointer shadow-md shadow-blue-100 disabled:opacity-50"
-                    >
-                      <Download className="h-3.5 w-3.5 stroke-[2.5]" />
-                      <span>Unduh PPTX</span>
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        exportToInteractiveHTML(pptPreview.title || pptPreview.fileName, pptPreview.slides, activeDivision || "PORTAL");
-                      }}
-                      className="flex items-center gap-1.5 px-4 py-2.5 text-xs font-black bg-[#00D285] hover:bg-[#00B472] text-white border-none rounded-full transition-all cursor-pointer shadow-md shadow-emerald-100"
-                      title="Unduh file HTML Presentasi Interaktif dengan Suara TTS dan Auto Next"
-                    >
-                      <Download className="h-3.5 w-3.5 stroke-[2.5]" />
-                      <span>Unduh HTML Interaktif</span>
-                    </button>
-                  </>
-                )}
-
-                <button
-                  onClick={() => setIsPptFullscreen(prev => !prev)}
-                  className={`h-9 items-center gap-1.5 px-3 rounded-full border transition flex text-xs font-bold cursor-pointer ${isPptFullscreen ? "bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700" : "bg-slate-50 hover:bg-slate-100 text-slate-755 border-slate-200"}`}
-                  title="Toggle Layar Penuh"
-                >
-                  {isPptFullscreen ? (
-                    <>
-                      <Minimize2 className="h-4 w-4 text-[#00D285]" />
-                      <span className="hidden sm:inline">Keluar Layar Penuh</span>
-                    </>
-                  ) : (
-                    <>
-                      <Maximize2 className="h-4 w-4 text-[#00D285]" />
-                      <span className="hidden sm:inline">Layar Penuh</span>
-                    </>
-                  )}
-                </button>
-
-                <button
-                  onClick={() => setPptPreview(null)}
-                  className={`h-9 w-9 flex items-center justify-center rounded-full transition cursor-pointer ${isPptFullscreen ? "bg-slate-800 hover:bg-slate-755 text-slate-350 hover:text-white" : "bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800"}`}
-                >
-                  <X className="h-4.5 w-4.5 stroke-[2.5]" />
-                </button>
-              </div>
-            </div>
-
-            {/* Main Interactive Screen with 16:9 canvas and Speaker notes */}
-            <div className={`flex-1 overflow-y-auto flex flex-col lg:flex-row items-stretch justify-center gap-6 transition-all ${isPptFullscreen ? "bg-slate-950 p-4 lg:p-5" : "bg-[#0B0F19] p-6 lg:p-7"}`}>
-              
-              {/* Left Column: Projector slide backdrop container (80% Width for focus) */}
-              <div className="w-full lg:w-[80%] flex flex-col justify-center items-center">
-                <div className={`w-full aspect-[16/9] bg-white rounded-2xl shadow-2xl border flex overflow-hidden relative group transition-all duration-300 ${isPptFullscreen ? "max-w-[100%] max-h-[65vh] border-slate-800" : "border-slate-800/20"}`}>
-                  {activeSlideIndex === 0 ? (
-                    // TITLE COVER SLIDE STYLE (MATCHES SLIDE 1)
-                    (() => {
-                      const rawTitle = pptPreview.title || "";
-                      const cleanTitle = rawTitle
-                        .replace(/^KAJIAN STRATEGIS KOMPREHENSIF:\s*/i, "")
-                        .replace(/^Presentasi_Kajian_/gi, "")
-                        .replace(/^Presentasi\s+Kajian\s+/gi, "")
-                        .replace(/^Presentasi\s+/gi, "")
-                        .replace(/^Kajian\s+/gi, "")
-                        .replace(/Presentasi Kajian Kajian/gi, "Presentasi Kajian")
-                        .replace(/Kajian Kajian/gi, "Kajian")
-                        .replace(/Presentasi Presentasi/gi, "Presentasi")
-                        .replace(/Presentasi Kajian/gi, "")
-                        .replace(/Presentasi/gi, "")
-                        .replace(/Kajian/gi, "")
-                        .trim();
-
-                      return (
-                        <div className="flex-1 flex flex-col justify-between p-6 sm:p-10 text-left select-none relative w-full h-full overflow-hidden bg-slate-950">
-                          {/* 1. Portal Illustration Background */}
-                          <div className="absolute inset-0 w-full h-full overflow-hidden select-none z-0">
-                            <img 
-                              src="https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ" 
-                              alt="Pancaran Group Logistics Illustration" 
-                              referrerPolicy="no-referrer"
-                              className="w-full h-full object-cover origin-center z-0 scale-[1.00]"
-                            />
-                            {/* Elegant dark overlay to ensure excellent readability of the white/green text */}
-                            <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-[1px]" />
-                          </div>
-
-                          {/* 2. Vibrant Green Frames */}
-                          <div className="absolute inset-3 border border-[#00D285] pointer-events-none rounded-sm z-10" />
-
-                          {/* 3. Header Info Left / Right */}
-                          <div className="absolute top-6 left-6 right-6 flex justify-between items-center z-25 select-none">
-                            <span className="text-[8px] sm:text-[10px] font-mono font-black text-[#00D285] uppercase tracking-widest">✦ {cleanTitle.toUpperCase() || "COMERCIAL STRATEGIS"}</span>
-                            <div className="flex items-center gap-1.5">
-                              <img 
-                                src={pramaLogo} 
-                                alt="PT Pancaran Group Logo" 
-                                className="h-6 sm:h-9 w-auto object-contain"
-                                referrerPolicy="no-referrer"
-                              />
-                            </div>
-                          </div>
-
-                          {/* 4. Central Text Overlay Segment */}
-                          <div className="w-full flex flex-col items-center text-center px-6 sm:px-12 z-25 my-auto">
-                            {/* Glowing Center Pill Box */}
-                            <div className="flex justify-center w-full mb-3 sm:mb-4">
-                              <span className="bg-[#004D40]/85 border border-[#00D285]/65 rounded-full px-4 sm:px-6 py-1 sm:py-1.5 text-[8px] sm:text-[10px] text-[#00D285] font-mono tracking-widest uppercase font-black shadow-lg">
-                                KAJIAN STRATEGIS KOMPREHENSIF
-                              </span>
-                            </div>
-
-                            {/* Main Titles */}
-                            <h1 className="text-white text-lg sm:text-2xl md:text-3xl lg:text-4.5xl font-black tracking-wider leading-none select-text drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] uppercase">
-                              PT PANCARAN GROUP
-                            </h1>
-                            
-                            <h2 className="text-[#00D285] text-2xl sm:text-4xl md:text-5xl lg:text-[56px] font-extrabold tracking-widest leading-none select-text drop-shadow-[0_3px_6px_rgba(0,0,0,0.9)] uppercase mt-1 sm:mt-2.5">
-                              {cleanTitle.toUpperCase() || "COMERCIAL STRATEGIS"}
-                            </h2>
-
-                            {/* Main Subtitle Description */}
-                            <p className="text-slate-200 font-medium text-[9px] sm:text-[11.5px] md:text-sm max-w-3xl leading-relaxed mt-4 sm:mt-6 drop-shadow-[0_1.5px_3.5px_rgba(0,0,0,0.85)] select-text px-4">
-                              Kajian Komprehensif Skema Strategis &amp; Operasional Berdasarkan Rekomendasi PRAMA AI Advisor
-                            </p>
-                          </div>
-
-                          {/* 5. Footer Row Left / Right */}
-                          <div className="absolute bottom-6 left-6 right-6 flex justify-between items-center text-[8px] sm:text-[9.5px] font-mono font-bold text-white/80 uppercase tracking-wider z-25 select-none">
-                            <div>UNIT: {(activeDivision || "COMERCIAL").toUpperCase() + " & BUSINESS DEVELOPMENT"}</div>
-                            <div className="flex items-center gap-1.5">
-                              <span>KLASIFIKASI:</span>
-                              <span className="text-[#EF4444] font-black tracking-widest">TERBATAS</span>
-                              <span className="text-[#00D285] font-bold text-xs animate-pulse ml-0.5">✦</span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })()
-                  ) : activeSlideIndex === pptPreview.slides.length + 1 ? (
-                    // THANK YOU / PENUTUP SLIDE STYLE (MATCHES SLIDE 17)
-                    <div className="flex-1 flex flex-col justify-center items-center bg-[#06152B] p-8 sm:p-12 text-center select-none relative w-full h-full overflow-hidden">
-                      {/* 1. Portal Illustration Background */}
-                      <div className="absolute inset-0 w-full h-full overflow-hidden select-none z-0">
-                        <img 
-                          src="https://lh3.googleusercontent.com/d/1tfYW5Z7JUnYGLZ3QAe2Sw1061GWkCExJ" 
-                          alt="Pancaran Group Logistics Illustration" 
-                          referrerPolicy="no-referrer"
-                          className="w-full h-full object-cover origin-center z-0 scale-[1.00]"
-                        />
-                        {/* Elegant dark overlay to ensure excellent readability of the white/green text */}
-                        <div className="absolute inset-0 bg-slate-950/75 backdrop-blur-[1px]" />
-                      </div>
-
-                      {/* Vibrant Green Border */}
-                      <div className="absolute inset-3 border border-[#00D285] pointer-events-none rounded-sm z-10" />
-                      
-                      {/* Logo also displayed on the penutup screen for brand consistency and ultimate perfection */}
-                      <div className="z-20 mb-4 sm:mb-6">
-                        <img 
-                          src={pramaLogo} 
-                          alt="PT Pancaran Group Logo" 
-                          className="h-8 sm:h-12 w-auto object-contain mx-auto"
-                          referrerPolicy="no-referrer"
-                        />
-                      </div>
-
-                      <h1 className="text-white text-3xl sm:text-5xl font-black tracking-widest leading-none mb-3 animate-pulse z-20 drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]">
-                        TERIMA KASIH
-                      </h1>
-                      
-                      <h3 className="text-[#00D285] font-mono font-bold text-xs sm:text-sm uppercase tracking-wider mb-6 sm:mb-8 z-20 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
-                        Sistem Dokumentasi Strategis & Operasional Terintegrasi
-                      </h3>
-                      
-                      <div className="mt-4 sm:mt-6 text-slate-300 font-mono text-[9px] sm:text-xs tracking-wide leading-relaxed z-20 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-                        <div>✦ Diformulasikan secara otomatis oleh PRAMA Strategic AI Advisor</div>
-                        <div className="text-[#00D285] font-semibold mt-1">PT PANCARAN GROUP INDONESIA • RAHASIA INTERNAL SENSITIF</div>
-                      </div>
-                    </div>
-                  ) : (
-                    // BENTO SPLIT LAYOUT CONTENT SLIDE STYLE
-                    (() => {
-                      const currentSlide = pptPreview.slides[activeSlideIndex - 1];
-                      
-                      const cleanLead = (txt: string) => {
-                        if (!txt) return "";
-                        return txt.trim()
-                          .replace(/^[-*•\s+]+/g, "") // strip leading bullet or list markers
-                          .trim();
-                      };
-
-                      let introPara = "Kajian komprehensif implementasi strategi, tata kelola, dan operasional guna mengoptimalkan kinerja proyek.";
-                      let bPoints = currentSlide?.bullets || [];
-                      if (currentSlide?.bullets && currentSlide.bullets.length > 0) {
-                        if (currentSlide.bullets.length >= 3) {
-                          introPara = cleanLead(currentSlide.bullets[0]);
-                          bPoints = currentSlide.bullets.slice(1);
-                        } else {
-                          bPoints = currentSlide.bullets;
-                        }
-                      }
-
-                      const formatBulletText = (text: string) => {
-                        let cleanText = text.replace(/\*\*/g, ""); // strip raw stars
-                        const colonIdx = cleanText.indexOf(":");
-                        if (colonIdx > 0 && colonIdx < 30) {
-                          const boldPrefix = cleanText.slice(0, colonIdx + 1);
-                          const rest = cleanText.slice(colonIdx + 1);
-                          return (
-                            <span>
-                              <strong className="font-extrabold text-slate-900">{boldPrefix}</strong>
-                              {rest}
-                            </span>
-                          );
-                        }
-                        return <span>{cleanText}</span>;
-                      };
-
-                      return (
-                        <div className="w-full h-full flex flex-col md:flex-row bg-white text-slate-800 relative overflow-hidden">
-                          {/* Solid Top Accent Green Bar */}
-                          <div className="absolute top-0 left-0 right-0 h-1.5 bg-[#00D285] z-10" />
-
-                          {/* Left half: Content & Bullets */}
-                          <div className="w-full md:w-7/12 h-full flex flex-col justify-between p-5 sm:p-7 md:p-9 relative overflow-hidden z-10">
-                            <div className="space-y-2.5 pt-1.5 shrink-0">
-                              {/* Header row */}
-                              <div className="text-[9px] font-mono font-bold text-slate-400 uppercase tracking-wider flex justify-between items-center w-full pb-1 shrink-0">
-                                <span>{pptPreview.fileName.toUpperCase()}</span>
-                                <span className="text-[#00D285] font-extrabold">SEKTOR: {(activeDivision || "UMUM").toUpperCase() + " & BD"}</span>
-                              </div>
-                              
-                              <div className="h-[1px] bg-slate-100 w-full shrink-0" />
-
-                              <div className="text-[10px] font-bold text-[#00D285] font-mono uppercase tracking-widest pt-1 shrink-0">
-                                KAJIAN STRATEGIS: BAB {activeSlideIndex}
-                              </div>
-                              
-                              <h2 className="text-slate-900 font-extrabold text-base sm:text-lg md:text-[20px] leading-tight select-text shrink-0">
-                                {currentSlide?.title}
-                              </h2>
-                              
-                              <p className="text-[11px] text-slate-500 font-medium leading-relaxed pb-1 select-text shrink-0">
-                                {introPara.replace(/\*\*/g, "")}
-                              </p>
-
-                              <div className="space-y-1.5 shrink-0 max-h-[140px] overflow-y-auto">
-                                {bPoints.map((bulletText, bIdx) => {
-                                  const bulletClean = cleanLead(bulletText);
-                                  if (!bulletClean) return null;
-                                  return (
-                                    <div key={bIdx} className="flex gap-2 items-start pl-0.5 shrink-0">
-                                      <span className="text-[#00D285] mt-0.5 shrink-0 font-extrabold select-none text-[10px] sm:text-xs">•</span>
-                                      <p className="text-[10.5px] sm:text-xs text-slate-600 font-medium leading-relaxed select-text flex-1 min-w-0 text-left">
-                                        {formatBulletText(bulletClean)}
-                                      </p>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-
-                            {/* Footer row */}
-                            <div className="text-[8px] font-mono font-bold text-slate-400 border-t border-slate-100 pt-2 w-full flex justify-between items-center mt-2 shrink-0">
-                              <span>PANCARAN GROUP &bull; CONFIDENTIAL DOCUMENTATION</span>
-                              <span className="text-slate-700 font-bold uppercase w-max tracking-wide">HALAMAN {activeSlideIndex + 1} DARI {pptPreview.slides.length + 2}</span>
-                            </div>
-                          </div>
-
-                          {/* Right half: Photo Frame */}
-                          <div className="w-full md:w-5/12 h-full bg-slate-50 relative overflow-hidden flex flex-col justify-center items-center p-5 border-l border-slate-100">
-                            <div className="w-full h-full flex flex-col justify-center items-center gap-1.5">
-                              {/* Photo framed with green border */}
-                              <div className="w-full h-[85%] border border-[#00D285] p-1 bg-white shadow-sm relative overflow-hidden rounded-md flex items-center justify-center">
-                                <PramaAnimatedIllustration 
-                                  slideTitle={currentSlide?.title || "Kajian Proyek PRAMA"} 
-                                  slideIndex={activeSlideIndex} 
-                                />
-                              </div>
-                              <span className="text-[8px] text-slate-400 italic font-bold tracking-wide text-center uppercase shrink-0">
-                                ILUSTRASI STRATEGIS: {currentSlide?.title ? currentSlide.title.slice(0, 30) : "PRAMA ANALISA"}...
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })()
-                  )}
-
-                  {/* Left navigation arrow on-slide */}
-                  <button
-                    disabled={activeSlideIndex === 0}
-                    onClick={() => {
-                      // Turn off autoplay on manual navigation to allow users to investigate
-                      setIsTtsAutoplay(false);
-                      stopTtsAndTimers();
-                      setActiveSlideIndex(prev => Math.max(0, prev - 1));
-                    }}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 h-9 w-9 flex items-center justify-center rounded-full bg-slate-900/60 hover:bg-slate-950 text-white disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer shadow-lg transition-all z-20"
-                  >
-                    <ChevronLeft className="h-5 w-5" />
-                  </button>
-
-                  {/* Right navigation arrow on-slide */}
-                  <button
-                    disabled={activeSlideIndex === pptPreview.slides.length + 1}
-                    onClick={() => {
-                      // Turn off autoplay on manual navigation to allow users to investigate
-                      setIsTtsAutoplay(false);
-                      stopTtsAndTimers();
-                      setActiveSlideIndex(prev => Math.min(pptPreview.slides.length + 1, prev + 1));
-                    }}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 h-9 w-9 flex items-center justify-center rounded-full bg-slate-900/60 hover:bg-slate-950 text-white disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer shadow-lg transition-all z-20"
-                  >
-                    <ChevronRight className="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Right Column: Compact Advanced TTS Voice Narrator & Autoplay Sidebar (20% Width for focus) */}
-              <div className="w-full lg:w-[20%] bg-[#0D1527] rounded-3xl p-4 sm:p-4.5 border border-slate-800 shadow-xl flex flex-col justify-between gap-4 shrink-0">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                    <span className="font-mono text-[10px] text-[#00D285] font-black tracking-widest uppercase flex items-center gap-1.5">
-                      <span className="h-1.5 w-1.5 rounded-full bg-[#00D285] animate-pulse" />
-                      🎙️ PANEL NARRATOR AI
-                    </span>
-                    <div className="flex items-center gap-1.5">
-                      <span className="bg-slate-900 text-[#00D285] font-mono text-[9px] font-bold px-2 py-0.5 rounded-full border border-slate-800 shadow-inner">
-                        Slide {activeSlideIndex + 1} / {pptPreview.slides.length + 2}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Playback Controls Stack */}
-                  <div className="flex flex-col gap-2">
-                    {/* Speak Button */}
-                    <button
-                      onClick={() => {
-                        if (isTtsPlaying) {
-                          stopTtsAndTimers();
-                        } else {
-                          speakCurrentSlide();
-                        }
-                      }}
-                      className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer border ${
-                        isTtsPlaying 
-                          ? "bg-red-500 hover:bg-red-605 text-white border-red-400" 
-                          : "bg-[#00D285]/10 hover:bg-[#00D285]/18 text-[#00D285] border border-[#00D285]/20"
-                      }`}
-                    >
-                      {isTtsPlaying ? (
-                        <>
-                          <VolumeX className="h-4 w-4" />
-                          <span>Hentikan Audio</span>
-                        </>
-                      ) : (
-                        <>
-                          <Volume2 className="h-4 w-4" />
-                          <span>Bicarakan Slide</span>
-                        </>
-                      )}
-                    </button>
-
-                    {/* Autoplay Slide Deck Button */}
-                    <button
-                      onClick={() => {
-                        const targetState = !isTtsAutoplay;
-                        setIsTtsAutoplay(targetState);
-                        if (targetState) {
-                          speakCurrentSlide();
-                        } else {
-                          stopTtsAndTimers();
-                        }
-                      }}
-                      className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer border ${
-                        isTtsAutoplay 
-                          ? "bg-emerald-500 text-white border-emerald-400 shadow-md shadow-emerald-950/40" 
-                          : "bg-slate-800 hover:bg-slate-750 text-slate-300 border-slate-700"
-                      }`}
-                    >
-                      <Play className={`h-3.5 w-3.5 ${isTtsAutoplay ? "animate-spin text-white" : "text-emerald-400"}`} />
-                      <span>{isTtsAutoplay ? "Autoplay ON" : "Mulai Auto Presentation"}</span>
-                    </button>
-                  </div>
-
-                  {/* Speech parameters */}
-                  <div className="space-y-2.5 bg-[#121c33]/70 border border-slate-800 p-3 rounded-xl">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-slate-400 font-mono text-[9px] uppercase font-bold">Kecepatan:</span>
-                      <div className="flex gap-1 bg-slate-900 p-0.5 rounded-lg border border-slate-800">
-                        {[0.85, 1.0, 1.2, 1.4].map((rate) => (
-                          <button
-                            key={rate}
-                            onClick={() => {
-                              setTtsRate(rate);
-                              if (isTtsPlaying || isTtsAutoplay) {
-                                setTimeout(() => speakCurrentSlide(), 50);
-                              }
-                            }}
-                            className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono transition cursor-pointer ${
-                              ttsRate === rate 
-                                ? "bg-[#00D285] text-slate-950 font-black" 
-                                : "text-slate-400 hover:text-slate-200"
-                            }`}
-                          >
-                            {rate}x
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-slate-400 font-mono text-[9px] uppercase font-bold">Volume:</span>
-                      <div className="flex items-center gap-1.5 bg-slate-900 px-2 py-1 rounded-lg border border-slate-800">
-                        <Volume2 className="h-3 w-3 text-slate-400" />
-                        <input 
-                          type="range" 
-                          min="0.2" 
-                          max="1.0" 
-                          step="0.1" 
-                          value={ttsVolume} 
-                          onChange={(e) => {
-                            const val = parseFloat(e.target.value);
-                            setTtsVolume(val);
-                            if (isTtsPlaying || isTtsAutoplay) {
-                              setTimeout(() => speakCurrentSlide(), 50);
-                            }
-                          }}
-                          className="w-16 h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-[#00D285]"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Dual Column/Stack Speaker Notes */}
-                  <div className="space-y-3">
-                    {/* Speak full script box */}
-                    <div className="bg-[#121c33]/55 p-3 rounded-xl border border-slate-800/65 max-h-[140px] overflow-y-auto">
-                      <div className="text-[9px] uppercase font-mono font-black text-blue-400 flex items-center gap-1.5 mb-1.5 select-none">
-                        🎙️ NASKAH PIDATO PRESENTER
-                      </div>
-                      <p className="text-[11px] text-slate-200 leading-relaxed font-semibold italic select-text">
-                        &quot;{activeSlideIndex === 0 ? "Selamat pagi/siang bapak dan ibu sekalian. Slide pembuka ini menjelaskan judul dan pilar utama kajian proyek strategis PRAMA untuk PT Pancaran Group." : activeSlideIndex === pptPreview.slides.length + 1 ? "Sesi presentasi komprehensif selesai. Kami mengucapkan terima kasih kepada pimpinan komite, direksi, dan jajaran tim operasional PT Pancaran Group." : (pptPreview.slides[activeSlideIndex - 1]?.speakerNotes || "Penjelasan pendukung slide.")}&quot;
-                      </p>
-                    </div>
-
-                    {/* Penjelasan Singkat */}
-                    <div className="bg-[#121c33]/50 p-3 rounded-xl border border-slate-800/60 max-h-[110px] overflow-y-auto">
-                      <div className="text-[9px] uppercase font-mono font-black text-[#00D285] flex items-center gap-1.5 mb-1 select-none">
-                        💡 PENJELASAN SINGKAT SLIDE
-                      </div>
-                      <p className="text-[11px] text-slate-300 leading-relaxed font-semibold font-sans select-text">
-                        {(() => {
-                          if (activeSlideIndex === 0) {
-                            return `Slide pembuka hasil kajian strategis komprehensif PRAMA untuk proyek "${pptPreview.title}" di PT Pancaran Group pada unit ${(activeDivision || "UMUM").toUpperCase() + " & BD"}.`;
-                          } else if (activeSlideIndex === pptPreview.slides.length + 1) {
-                            return "Slide penutup formal menyampaikan apresiasi mendalam, penegasan kerahasiaan dokumen, serta membuka sesi diskusi interaktif.";
-                          } else {
-                            const slide = pptPreview.slides[activeSlideIndex - 1];
-                            const bulletsText = slide?.bullets && slide.bullets.length > 0 
-                              ? slide.bullets.slice(0, 2).map(b => b.replace(/\*\*/g, "")).join("; ")
-                              : "";
-                            return `Fokus utama pada slide "${slide?.title || "Judul"}" merangkum analisis strategis serta usulan operasional terperinci terkait: ${bulletsText || "Rencana aksi, evaluasi, dan optimasi operasional berkelanjutan."}`;
-                          }
-                        })()}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="hidden lg:block border-t border-slate-800/60 pt-2 text-[9px] font-mono text-slate-500 italic text-right select-none">
-                  {isTtsAutoplay ? (
-                    <span className="text-emerald-400 animate-pulse">● Autoplay aktif...</span>
-                  ) : (
-                    <span>Gunakan tombol untuk memutar suara.</span>
-                  )}
-                </div>
-              </div>
-
-            </div>
-
-            {/* Bottom slideshow controls & paginator */}
-            <div className={`border-t px-6 sm:px-8 py-5 flex flex-col sm:flex-row justify-between items-center shrink-0 rounded-b-[2rem] gap-4 transition-all ${isPptFullscreen ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"}`}>
-              <div className="flex gap-1.5 overflow-x-auto max-w-full sm:max-w-[70%] py-1.5">
-                {Array.from({ length: pptPreview.slides.length + 2 }).map((_, dotIdx) => (
-                  <button
-                    key={dotIdx}
-                    onClick={() => {
-                      setIsTtsAutoplay(false);
-                      stopTtsAndTimers();
-                      setActiveSlideIndex(dotIdx);
-                    }}
-                    className={`h-2.5 rounded-full transition-all cursor-pointer shrink-0 ${
-                      activeSlideIndex === dotIdx 
-                        ? (isPptFullscreen ? "w-8 bg-[#00D285]" : "w-7 bg-[#00D285]") 
-                        : (isPptFullscreen ? "w-2.5 bg-slate-700 hover:bg-slate-605" : "w-2.5 bg-slate-200 hover:bg-slate-350")
-                    }`}
-                  />
-                ))}
-              </div>
-
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setPptPreview(null)}
-                  className={`px-6 py-2.5 text-xs font-black rounded-full transition cursor-pointer ${isPptFullscreen ? "bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-705" : "text-slate-600 hover:text-slate-850 bg-slate-50 hover:bg-slate-105 border border-slate-200"}`}
-                >
-                  Tutup Slideshow
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 3. CONFIRM PROJECT DETECTED UPDATE MODAL (MANDATORILY SPECIFIED BY USER) */}
-      {isConfirmProjectUpdateOpen && (
-        <div className="fixed inset-0 z-55 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md animate-fade-in" style={{ zIndex: 9999 }}>
-          <div className="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl border border-slate-200 transition-all duration-300 transform scale-100 flex flex-col p-6 space-y-4">
-            
-            {/* Header */}
-            <div className="flex items-center gap-3.5 border-b border-slate-100 pb-3">
-              <div className="h-11 w-11 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
-                <FolderSync className="h-6 w-6 stroke-[2]" />
-              </div>
-              <div className="flex-1">
-                <span className="font-mono text-[9px] font-black text-emerald-600 block uppercase tracking-widest">PRAMA STRATEGIC SYSTEM</span>
-                <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-tight">Pergantian Proyek Terdeteksi</h3>
-              </div>
-            </div>
-
-            {/* Body */}
-            <div className="space-y-3 py-1">
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Asisten PRAMA mendeteksi instruksi penggantian pembahasan menuju proyek baru:
-              </p>
-              <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-3">
-                <span className="font-mono text-[8px] font-bold text-emerald-600 block uppercase tracking-wider mb-0.5">Nama Proyek Baru:</span>
-                <span className="text-xs font-black text-emerald-950 uppercase block leading-normal">
-                  {proposedNewProjectName}
-                </span>
-              </div>
-              <p className="text-xs text-slate-700 leading-relaxed font-semibold">
-                Apakah Anda ingin mereset dan memperbarui seluruh isi 14 pilar strategis pada dashboard secara penuh agar selaras dengan proyek baru ini secara instan?
-              </p>
-              <div className="text-[10px] bg-slate-50 border border-slate-150 rounded-lg p-2.5 text-slate-500 leading-normal flex gap-2">
-                <span className="text-emerald-600 shrink-0 font-bold select-none">•</span>
-                <span><strong>Catatan:</strong> Jika Anda menyetujui, kalkulasi finansial, estimasi TAM/SAM/SOM, segmentasi pasar, SOP mitigasi risiko, and kualifikasi organisasi pada dashboard 14 pilar akan direkonstruksi menyesuaikan proyek baru <strong>&quot;{proposedNewProjectName}&quot;</strong>.</span>
-              </div>
-            </div>
-
-            {/* Footer buttons */}
-            <div className="flex gap-2.5 pt-2 justify-end border-t border-slate-100">
-              <button
-                onClick={() => handleConfirmProjectUpdate(false)}
-                className="px-4 py-2 text-xs font-extrabold text-slate-500 hover:text-slate-800 hover:bg-slate-50 border border-slate-200 rounded-xl transition cursor-pointer"
-              >
-                Ganti Judul Saja
-              </button>
-              <button
-                onClick={() => handleConfirmProjectUpdate(true)}
-                className="px-4.5 py-2 text-xs font-extrabold bg-[#00D285] hover:bg-[#00b270] text-slate-900 rounded-xl transition cursor-pointer shadow-md shadow-emerald-50"
-              >
-                Ya, Rekonstruksi 14 Pilar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* Immersive 3D Portal Room Transition Overlay */}
-      {portalTransition && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={portalTransition.isRevealing ? { opacity: 0 } : { opacity: 1 }}
-          transition={{ duration: 0.25, ease: "easeInOut" }}
-          className="fixed inset-0 z-[9999] bg-slate-50/45 backdrop-blur-xl flex flex-col items-center justify-center overflow-hidden"
-        >
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={portalTransition.isRevealing ? { scale: 1.05, opacity: 0 } : { scale: 1, opacity: 1 }}
-            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="flex flex-col items-center gap-4"
-          >
-            <div className="relative flex items-center justify-center">
-              <div className="h-10 w-10 rounded-full border-[3px] border-indigo-600/10 border-t-indigo-600 animate-spin" />
-              <div className="absolute inset-0 bg-indigo-500/10 rounded-full blur-md" />
-            </div>
-            <div className="flex flex-col items-center text-center px-6">
-              <span className="text-[10px] font-mono font-black text-indigo-600 uppercase tracking-[0.2em] animate-pulse">
-                PRAMA INTELLIGENCE SYSTEM
-              </span>
-              <span className="text-xs font-bold text-slate-800 uppercase tracking-wider mt-1 block">
-                Menyiapkan Workspace...
-              </span>
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-
-      </motion.div>
+    </motion.div>
   );
-}
-
-function renderPreviewMarkdown(text: string) {
-  if (!text) return null;
-
-  const lines = text.split("\n");
-  const elements: React.ReactNode[] = [];
-  let currentTableRows: string[][] = [];
-  let inTable = false;
-
-  const flushTable = (key: string | number) => {
-    if (currentTableRows.length === 0) return null;
-
-    const cleanRows = currentTableRows.filter(row => !row.some(cell => /^:?-+:?$/.test(cell.trim())));
-    if (cleanRows.length === 0) {
-      currentTableRows = [];
-      inTable = false;
-      return null;
-    }
-
-    let hasHeader = currentTableRows.length > 1 && currentTableRows[1].some(cell => /^:?-+:?$/.test(cell.trim()));
-    
-    const tableElement = (
-      <div key={key} className="overflow-x-auto my-4 border border-slate-200 rounded-xl shadow-xs max-w-full">
-        <table className="min-w-full divide-y divide-slate-200 text-left border-collapse">
-          {hasHeader && (
-            <thead className="bg-[#0f172a] text-white">
-              <tr>
-                {cleanRows[0].map((cell, cIdx) => (
-                  <th key={cIdx} className="px-3 py-2 text-[10px] sm:text-xs font-bold uppercase tracking-wider font-display border border-slate-700">
-                    {parsePreviewInlineMarkdown(cell.trim())}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-          )}
-          <tbody className="divide-y divide-slate-200 bg-white">
-            {cleanRows.slice(hasHeader ? 1 : 0).map((row, rIdx) => (
-              <tr key={rIdx} className={rIdx % 2 === 0 ? "bg-slate-50/50 hover:bg-slate-50" : "bg-white hover:bg-slate-50"}>
-                {row.map((cell, cIdx) => (
-                  <td key={cIdx} className="px-3 py-2 text-[11px] sm:text-xs text-slate-700 leading-relaxed border border-slate-100">
-                    {parsePreviewInlineMarkdown(cell.trim())}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
-
-    currentTableRows = [];
-    inTable = false;
-    return tableElement;
-  };
-
-  for (let idx = 0; idx < lines.length; idx++) {
-    const line = lines[idx];
-    const trimmed = line.trim();
-
-    // Table checking
-    if (trimmed.startsWith("|") && trimmed.endsWith("|")) {
-      inTable = true;
-      const cells = trimmed.split("|").slice(1, -1);
-      currentTableRows.push(cells);
-      continue;
-    } else {
-      if (inTable) {
-        const table = flushTable(`table-${idx}`);
-        if (table) {
-          elements.push(table);
-        }
-      }
-    }
-
-    if (!trimmed) {
-      elements.push(<div key={`empty-${idx}`} className="h-1.5" />);
-      continue;
-    }
-
-    // 1. Headings (### or ## or #)
-    if (trimmed.startsWith("###")) {
-      elements.push(
-        <h4 key={`h3-${idx}`} className="font-display font-extrabold text-slate-900 border-none text-sm mt-5 mb-2 block uppercase tracking-wide">
-          {parsePreviewInlineMarkdown(trimmed.replace(/^###\s+/, ""))}
-        </h4>
-      );
-      continue;
-    }
-    if (trimmed.startsWith("##")) {
-      elements.push(
-        <h3 key={`h2-${idx}`} className="font-display font-extrabold text-[#0369a1] border-b pb-1 mt-6 mb-3 tracking-tight text-base block">
-          {parsePreviewInlineMarkdown(trimmed.replace(/^##\s+/, ""))}
-        </h3>
-      );
-      continue;
-    }
-    if (trimmed.startsWith("#")) {
-      elements.push(
-        <h2 key={`h1-${idx}`} className="font-display font-black text-indigo-900 border-b-2 pb-2 mt-8 mb-4 tracking-tight text-lg block">
-          {parsePreviewInlineMarkdown(trimmed.replace(/^#\s+/, ""))}
-        </h2>
-      );
-      continue;
-    }
-
-    // 2. Ordered lists (1. 2. etc)
-    const orderedListMatch = trimmed.match(/^(\d+)\.\s+(.*)/);
-    if (orderedListMatch) {
-      elements.push(
-        <div key={`ol-${idx}`} className="flex gap-2.5 ml-3 my-1.5 text-xs sm:text-sm text-slate-700 leading-relaxed">
-          <span className="font-mono text-indigo-700 font-bold shrink-0">
-            {orderedListMatch[1]}.
-          </span>
-          <p className="flex-1 font-medium">{parsePreviewInlineMarkdown(orderedListMatch[2])}</p>
-        </div>
-      );
-      continue;
-    }
-
-    // 2b. Indented alphabetical lists (a. b. c. etc for narrowing/sub-points)
-    const alphaListMatch = trimmed.match(/^([a-zA-Z])\.\s+(.*)/);
-    if (alphaListMatch) {
-      elements.push(
-        <div key={`al-${idx}`} className="flex gap-2.5 ml-8 my-1 text-xs text-slate-600 leading-relaxed">
-          <span className="font-mono text-slate-600 font-bold shrink-0 uppercase">
-            {alphaListMatch[1]}.
-          </span>
-          <p className="flex-1">{parsePreviewInlineMarkdown(alphaListMatch[2])}</p>
-        </div>
-      );
-      continue;
-    }
-
-    // 3. Bullet points (- or * or • or + or o followed by spaces)
-    if (trimmed.startsWith("- ") || trimmed.startsWith("* ") || trimmed.startsWith("• ") || trimmed.startsWith("+ ") || /^o\s+/.test(trimmed)) {
-      const content = trimmed.replace(/^([-*•+]|o)\s+/, "");
-      elements.push(
-        <div key={`ul-${idx}`} className="flex gap-2.5 ml-3 my-1.5 text-xs sm:text-sm text-slate-700 items-start leading-relaxed">
-          <span className="text-indigo-600 font-bold select-none">•</span>
-          <p className="flex-1">{parsePreviewInlineMarkdown(content)}</p>
-        </div>
-      );
-      continue;
-    }
-
-    // 4. Standard Paragraph / Line
-    elements.push(
-      <p key={`p-${idx}`} className="text-slate-700 text-xs sm:text-sm text-justify leading-relaxed whitespace-pre-wrap">
-        {parsePreviewInlineMarkdown(line)}
-      </p>
-    );
-  }
-
-  if (inTable) {
-    const table = flushTable(`table-end`);
-    if (table) {
-      elements.push(table);
-    }
-  }
-
-  return <div className="space-y-4">{elements}</div>;
-}
-
-function parsePreviewInlineMarkdown(text: string) {
-  const parts: React.ReactNode[] = [];
-  let currentText = text;
-  let keyIdx = 0;
-
-  while (currentText.length > 0) {
-    const boldIndex = currentText.indexOf("**");
-    const linkIndex = currentText.indexOf("[");
-
-    if (boldIndex === -1 && linkIndex === -1) {
-      parts.push(<span key={keyIdx++}>{currentText}</span>);
-      break;
-    }
-
-    if (boldIndex !== -1 && (linkIndex === -1 || boldIndex < linkIndex)) {
-      if (boldIndex > 0) {
-        parts.push(<span key={keyIdx++}>{currentText.substring(0, boldIndex)}</span>);
-      }
-      const rest = currentText.substring(boldIndex + 2);
-      const nextBoldIndex = rest.indexOf("**");
-      if (nextBoldIndex !== -1) {
-        parts.push(
-          <strong key={keyIdx++} className="font-extrabold text-slate-900 bg-slate-100 rounded px-1 py-0.5 inline border border-slate-200 shadow-3sm">
-            {rest.substring(0, nextBoldIndex)}
-          </strong>
-        );
-        currentText = rest.substring(nextBoldIndex + 2);
-      } else {
-        parts.push(<span key={keyIdx++}>**</span>);
-        currentText = rest;
-      }
-    } else {
-      if (linkIndex > 0) {
-        parts.push(<span key={keyIdx++}>{currentText.substring(0, linkIndex)}</span>);
-      }
-      const rest = currentText.substring(linkIndex + 1);
-      const closingBracketIndex = rest.indexOf("]");
-      if (closingBracketIndex !== -1) {
-        const linkText = rest.substring(0, closingBracketIndex);
-        const urlPart = rest.substring(closingBracketIndex + 1);
-        if (urlPart.startsWith("(")) {
-          const closingParenthesisIndex = urlPart.indexOf(")");
-          if (closingParenthesisIndex !== -1) {
-            const url = urlPart.substring(1, closingParenthesisIndex);
-            parts.push(
-              <a
-                key={keyIdx++}
-                href={url}
-                target="_blank"
-                rel="noreferrer"
-                className="text-sky-600 hover:text-sky-800 underline font-semibold inline"
-              >
-                {linkText}
-              </a>
-            );
-            currentText = urlPart.substring(closingParenthesisIndex + 1);
-            continue;
-          }
-        }
-      }
-      parts.push(<span key={keyIdx++}>[</span>);
-      currentText = rest;
-    }
-  }
-
-  return parts;
 }

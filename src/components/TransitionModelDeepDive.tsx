@@ -17,7 +17,8 @@ import {
   FileSpreadsheet,
   Settings,
   Sliders,
-  Sparkles
+  Sparkles,
+  CheckSquare
 } from "lucide-react";
 
 interface TransitionModelDeepDiveProps {
@@ -139,12 +140,12 @@ export function TransitionModelDeepDive({ projectTitle }: TransitionModelDeepDiv
     },
     {
       id: "post-2",
-      name: "Audit Kepatuhan Karbon & Efisiensi Rute",
+      name: "Audit Kepatuhan & Efisiensi Rute",
       weight: 25,
       completed: false,
-      owner: "HSE & Carbon Auditor",
+      owner: "HSE & Operational Auditor",
       duration: "Minggu 11-12",
-      description: "Penghitungan emisi gas rumah kaca logistik dan verifikasi kepatuhan SVLK tahap pasca-operasional."
+      description: "Verifikasi kepatuhan SVLK, kelaikan armada, dan audit efisiensi rute tahap pasca-operasional."
     },
     {
       id: "post-3",
@@ -317,260 +318,332 @@ export function TransitionModelDeepDive({ projectTitle }: TransitionModelDeepDiv
             <ShieldCheck className="h-4.5 w-4.5" />
           </div>
           <div>
-            <span className="text-[9px] font-black uppercase tracking-wider text-violet-400 font-mono">Tahap 3</span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[9px] font-black uppercase tracking-wider text-violet-400 font-mono">Tahap 3</span>
+              {postTasks.every(t => t.completed) && (
+                <span className="px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-400 text-[8px] font-bold uppercase">Lengkap</span>
+              )}
+            </div>
             <h4 className="text-[12px] font-black text-white uppercase mt-0.5 tracking-tight">POST-TRANSITION (Pasca)</h4>
             <p className="text-[10px] text-slate-400 font-semibold mt-1 leading-normal">
-              Serah terima operasional (Handover), audit karbon KLHK, dan optimasi SLA logistik rute balik.
+              Serah terima operasional (Handover), audit kelaikan armada, dan optimasi SLA logistik rute balik.
             </p>
           </div>
         </button>
       </div>
 
-      {/* DETAILED LAYOUT GRID */}
+      {/* DYNAMIC PENJELASAN TAHAP SESUAI DENGAN PHASE YANG DI-KLIK */}
       <AnimatePresence mode="wait">
         <motion.div
           key={activePhase}
-          initial={{ opacity: 0, y: 15 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -15 }}
-          transition={{ duration: 0.2 }}
-          className="grid grid-cols-1 lg:grid-cols-12 gap-6 relative z-10 text-left"
+          exit={{ opacity: 0, y: -12 }}
+          transition={{ duration: 0.25 }}
+          className="space-y-6 relative z-10"
         >
-          
-          {/* LEFT PANEL: Phase Tasks list and progress checking */}
-          <div className="lg:col-span-7 bg-slate-950/50 border border-slate-800/80 rounded-2xl p-4.5">
-            <div className="flex justify-between items-center mb-4">
-              <h4 className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-                <CheckCircle className="h-4 w-4 text-violet-400" />
-                Daftar Milestone Proyek - {activePhase === "pre" ? "PRE-TRANSITION" : activePhase === "on" ? "ON-TRANSITION" : "POST-TRANSITION"}
-              </h4>
-              <span className="text-[10px] text-slate-500 font-bold font-mono">
-                Ketuk tugas untuk menandai selesai
-              </span>
-            </div>
+          {/* Active Phase Overview Box */}
+          {(() => {
+            let activeTasks = preTasks;
+            let activeToggle = togglePreTask;
+            let phaseTitle = "TAHAP 1: PRE-TRANSITION (Persiapan Proyek & Legalitas)";
+            let phaseBadge = "PENYUSUNAN FONDASI & PERIZINAN";
+            let phaseDesc = "Fase krusial untuk memastikan seluruh perizinan resmi, studi rute jalan hauling, kesiapan armada truk heavy-duty, dan sertifikasi pengemudi telah terpenuhi sebelum armada beroperasi.";
+            let keyGoals = [
+              "Memastikan kepatuhan perizinan jalan Andalalin dan lacak balak SVLK / Festronik KLHK.",
+              "Studi kelayakan rute jalan hauling, jembatan timbang, dan titik rawan jalan licin.",
+              "Mobilisasi unit truk heavy-duty dan rekrutmen supir bersertifikat defensive driving."
+            ];
+            let deliverables = [
+              "Laporan Route Survey & Risk Mapping Rute",
+              "Dokumen Resmi Andalalin & SVLK KLHK",
+              "Sertifikasi Kru & Driver Safety Training Log",
+              "Kesiapan Depo Satelit & Bengkel Rute"
+            ];
 
-            {/* Render Tasks based on selected phase tab */}
-            <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1">
-              
-              {/* PRE-TRANSITION list */}
-              {activePhase === "pre" && preTasks.map((t) => (
-                <div
-                  key={t.id}
-                  onClick={() => togglePreTask(t.id)}
-                  className={`p-3.5 rounded-xl border transition-all cursor-pointer flex justify-between items-start gap-3 ${
-                    t.completed
-                      ? "bg-violet-950/10 border-violet-900/50 text-violet-300"
-                      : "bg-slate-900 border-slate-850 text-slate-400 hover:border-slate-800"
-                  }`}
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="px-1.5 py-0.1 text-[8px] font-black rounded uppercase bg-violet-500/10 text-violet-400 border border-violet-500/20 font-mono">
-                        {t.duration}
-                      </span>
-                      <span className="text-[9px] text-slate-600 font-bold">•</span>
-                      <span className="text-[9px] text-slate-400 font-bold">PIC: {t.owner}</span>
+            if (activePhase === "on") {
+              activeTasks = onTasks;
+              activeToggle = toggleOnTask;
+              phaseTitle = "TAHAP 2: ON-TRANSITION (Implementasi & Pilot Run)";
+              phaseBadge = "UJI COBA APLIKATIF & STABILISASI RUTE";
+              phaseDesc = "Fase eksekusi rute percobaan (pilot run) untuk menguji waktu siklus (cycle time) aktual, kalibrasi sensor telemetri GPS di area hutan/tambang, dan penambahan armada secara bertahap.";
+              keyGoals = [
+                "Meluncurkan pilot run 5-10 unit truk bermuatan penuh untuk verifikasi cycle time.",
+                "Uji coba telemetri GPS & integrasi API Command Center di area blank-spot.",
+                "Pencatatan konsumsi BBM solar aktual dan evaluasi kenyamanan supir."
+              ];
+              deliverables = [
+                "Laporan Evaluasi Pilot Run & Cycle Time Actual",
+                "Log Sinkronisasi Telemetri GPS & API Command Center",
+                "Berita Acara Penambahan Armada (Ramp-up Stage)",
+                "Integrasi Manifes Digital e-POD & Festronik"
+              ];
+            } else if (activePhase === "post") {
+              activeTasks = postTasks;
+              activeToggle = togglePostTask;
+              phaseTitle = "TAHAP 3: POST-TRANSITION (Serah Terima & Pasca-Transisi)";
+              phaseBadge = "HANDOVER OPERASIONAL & OPTIMASI SLA";
+              phaseDesc = "Fase penyelesaian transisi meliputi serah terima resmi (Handover) ke manajemen operasional reguler, audit kepatuhan berkala, dan optimasi muatan balik (backhaul sharing).";
+              keyGoals = [
+                "Penandatanganan Berita Acara Serah Terima Operasional (Handover) secara resmi.",
+                "Audit berkala tingkat kepatuhan SLA logistik dan kelaikan armada rutin.",
+                "Penerapan insentif supir berkinerja tinggi dan optimasi rute balik."
+              ];
+              deliverables = [
+                "Dokumen Official Handover Sign-off",
+                "Laporan Audit Kepatuhan SLA Logistik B2B",
+                "Perencanaan Rute Balik (Backhaul Allocation Plan)",
+                "Laporan Finansial Margin Operasional Pasca-Transisi"
+              ];
+            }
+
+            const completedCount = activeTasks.filter(t => t.completed).length;
+            const progressPercent = Math.round((completedCount / activeTasks.length) * 100);
+
+            return (
+              <div className="space-y-6">
+                {/* Header Detail Active Phase */}
+                <div className="bg-slate-950/60 border border-violet-500/30 rounded-2xl p-5 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-2 h-full bg-violet-500" />
+                  
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-3">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="px-2 py-0.5 text-[8.5px] font-mono font-black rounded uppercase bg-violet-500/10 text-violet-400 border border-violet-500/20">
+                          {phaseBadge}
+                        </span>
+                        <span className="text-[10px] font-mono font-black text-slate-400">
+                          Progress Milestone Tahap Ini: <span className="text-violet-400 font-bold">{completedCount}/{activeTasks.length} ({progressPercent}%)</span>
+                        </span>
+                      </div>
+                      <h3 className="text-sm md:text-base font-black uppercase text-white tracking-tight flex items-center gap-2">
+                        {activePhase === "pre" && <Clock className="h-4.5 w-4.5 text-violet-400" />}
+                        {activePhase === "on" && <Play className="h-4.5 w-4.5 text-violet-400" />}
+                        {activePhase === "post" && <ShieldCheck className="h-4.5 w-4.5 text-violet-400" />}
+                        {phaseTitle}
+                      </h3>
                     </div>
-                    <h5 className="text-[11.5px] font-black uppercase tracking-tight text-white">
-                      {t.name}
-                    </h5>
-                    <p className="text-[10.5px] text-slate-400 font-semibold mt-1 leading-relaxed">
-                      {t.description}
-                    </p>
-                  </div>
-                  <div className={`h-5 w-5 rounded-md border flex items-center justify-center shrink-0 mt-0.5 ${
-                    t.completed ? "bg-violet-500 border-violet-400 text-slate-950" : "border-slate-700 bg-slate-950"
-                  }`}>
-                    {t.completed && <CheckCircle className="h-3.5 w-3.5 text-slate-950" />}
-                  </div>
-                </div>
-              ))}
 
-              {/* ON-TRANSITION list */}
-              {activePhase === "on" && onTasks.map((t) => (
-                <div
-                  key={t.id}
-                  onClick={() => toggleOnTask(t.id)}
-                  className={`p-3.5 rounded-xl border transition-all cursor-pointer flex justify-between items-start gap-3 ${
-                    t.completed
-                      ? "bg-violet-950/10 border-violet-900/50 text-violet-300"
-                      : "bg-slate-900 border-slate-850 text-slate-400 hover:border-slate-800"
-                  }`}
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="px-1.5 py-0.1 text-[8px] font-black rounded uppercase bg-violet-500/10 text-violet-400 border border-violet-500/20 font-mono">
-                        {t.duration}
-                      </span>
-                      <span className="text-[9px] text-slate-600 font-bold">•</span>
-                      <span className="text-[9px] text-slate-400 font-bold">PIC: {t.owner}</span>
+                    <div className="w-full md:w-36 bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-800">
+                      <div
+                        className="bg-gradient-to-r from-violet-500 to-indigo-500 h-full transition-all duration-500"
+                        style={{ width: `${progressPercent}%` }}
+                      />
                     </div>
-                    <h5 className="text-[11.5px] font-black uppercase tracking-tight text-white">
-                      {t.name}
-                    </h5>
-                    <p className="text-[10.5px] text-slate-400 font-semibold mt-1 leading-relaxed">
-                      {t.description}
-                    </p>
                   </div>
-                  <div className={`h-5 w-5 rounded-md border flex items-center justify-center shrink-0 mt-0.5 ${
-                    t.completed ? "bg-violet-500 border-violet-400 text-slate-950" : "border-slate-700 bg-slate-950"
-                  }`}>
-                    {t.completed && <CheckCircle className="h-3.5 w-3.5 text-slate-950" />}
-                  </div>
-                </div>
-              ))}
 
-              {/* POST-TRANSITION list */}
-              {activePhase === "post" && postTasks.map((t) => (
-                <div
-                  key={t.id}
-                  onClick={() => togglePostTask(t.id)}
-                  className={`p-3.5 rounded-xl border transition-all cursor-pointer flex justify-between items-start gap-3 ${
-                    t.completed
-                      ? "bg-violet-950/10 border-violet-900/50 text-violet-300"
-                      : "bg-slate-900 border-slate-850 text-slate-400 hover:border-slate-800"
-                  }`}
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="px-1.5 py-0.1 text-[8px] font-black rounded uppercase bg-violet-500/10 text-violet-400 border border-violet-500/20 font-mono">
-                        {t.duration}
+                  <p className="text-[11px] text-slate-300 font-semibold leading-relaxed mb-4">
+                    {phaseDesc}
+                  </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-slate-800/80">
+                    <div className="space-y-2">
+                      <span className="text-[9.5px] font-mono font-black text-violet-400 uppercase block tracking-wider">
+                        🎯 FOKUS SASARAN UTAMA TAHAP INI
                       </span>
-                      <span className="text-[9px] text-slate-600 font-bold">•</span>
-                      <span className="text-[9px] text-slate-400 font-bold">PIC: {t.owner}</span>
+                      <div className="space-y-1.5">
+                        {keyGoals.map((goal, idx) => (
+                          <div key={idx} className="flex items-start gap-2 text-[10.5px] text-slate-300 font-semibold">
+                            <span className="h-4 w-4 bg-violet-500/10 text-violet-400 rounded-full flex items-center justify-center text-[9px] font-black shrink-0 font-mono border border-violet-500/20 mt-0.5">
+                              {idx + 1}
+                            </span>
+                            <span>{goal}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <h5 className="text-[11.5px] font-black uppercase tracking-tight text-white">
-                      {t.name}
-                    </h5>
-                    <p className="text-[10.5px] text-slate-400 font-semibold mt-1 leading-relaxed">
-                      {t.description}
-                    </p>
-                  </div>
-                  <div className={`h-5 w-5 rounded-md border flex items-center justify-center shrink-0 mt-0.5 ${
-                    t.completed ? "bg-violet-500 border-violet-400 text-slate-950" : "border-slate-700 bg-slate-950"
-                  }`}>
-                    {t.completed && <CheckCircle className="h-3.5 w-3.5 text-slate-950" />}
+
+                    <div className="space-y-2">
+                      <span className="text-[9.5px] font-mono font-black text-indigo-400 uppercase block tracking-wider">
+                        📄 DOKUMEN HASIL & DELIVERABLES KUNCI
+                      </span>
+                      <div className="grid grid-cols-1 gap-1.5">
+                        {deliverables.map((del, idx) => (
+                          <div key={idx} className="flex items-center gap-2 text-[10px] text-slate-300 font-semibold bg-slate-900/80 px-2.5 py-1.5 rounded-lg border border-slate-850">
+                            <CheckCircle className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                            <span>{del}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              ))}
 
-            </div>
-          </div>
+                {/* Checklist Milestones & Tasks Table for Active Phase */}
+                <div className="bg-slate-950/50 border border-slate-800 rounded-2xl p-5">
+                  <div className="flex justify-between items-center mb-3">
+                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-200 flex items-center gap-1.5">
+                      <CheckSquare className="h-4 w-4 text-violet-400" />
+                      Checklist Tugas & Item Kontrol ({activePhase.toUpperCase()}-TRANSITION)
+                    </h4>
+                    <span className="text-[10px] text-slate-400 font-bold font-mono">
+                      Klik checkbox untuk memperbarui skor kesiapan
+                    </span>
+                  </div>
 
-          {/* RIGHT PANEL: Transition Risk, Stepper Gauge, and Dynamic Mitigation Control */}
-          <div className="lg:col-span-5 bg-gradient-to-br from-slate-950 to-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-[8.5px] font-mono font-black text-violet-400 uppercase tracking-widest block">
-                  TRANSITION READINESS SYSTEM
-                </span>
-                <span className="flex items-center gap-1 text-[9px] font-black text-violet-300 bg-violet-500/10 px-2 py-0.5 rounded border border-violet-500/20">
-                  <Sparkles className="h-3 w-3 text-violet-400 animate-pulse" />
-                  DYNAMIC MATRIX
-                </span>
+                  <div className="space-y-2.5">
+                    {activeTasks.map((t) => (
+                      <div
+                        key={t.id}
+                        onClick={() => activeToggle(t.id)}
+                        className={`p-3.5 rounded-xl border text-left cursor-pointer transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 ${
+                          t.completed
+                            ? "bg-slate-900/90 border-emerald-500/40 text-slate-200"
+                            : "bg-slate-900/40 border-slate-850 text-slate-400 hover:border-slate-800"
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <button
+                            type="button"
+                            className={`mt-0.5 shrink-0 transition-all ${
+                              t.completed ? "text-emerald-400 scale-110" : "text-slate-600 hover:text-slate-400"
+                            }`}
+                          >
+                            <CheckCircle className="h-5 w-5" />
+                          </button>
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                              <h5 className={`text-[12px] font-black uppercase tracking-tight ${
+                                t.completed ? "text-white line-through opacity-80" : "text-white"
+                              }`}>
+                                {t.name}
+                              </h5>
+                              <span className="px-1.5 py-0.2 rounded text-[8.5px] font-mono font-bold bg-violet-500/10 text-violet-300 border border-violet-500/20">
+                                {t.duration}
+                              </span>
+                            </div>
+                            <p className="text-[10.5px] text-slate-400 font-semibold leading-relaxed">
+                              {t.description}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 shrink-0 self-end md:self-center border-t md:border-t-0 border-slate-800 pt-2 md:pt-0">
+                          <div className="text-right">
+                            <span className="text-[8.5px] font-mono font-bold text-slate-500 block">PENANGGUNG JAWAB</span>
+                            <span className="text-[10px] font-extrabold text-slate-300">{t.owner}</span>
+                          </div>
+                          <span className={`px-2 py-1 rounded text-[9px] font-mono font-black uppercase ${
+                            t.completed
+                              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                              : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                          }`}>
+                            {t.completed ? "Selesai" : "Pending"}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Interactive Transition Simulator & Readiness Gauge */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                  {/* Readiness Index Bar */}
+                  <div className="lg:col-span-5 bg-slate-950/60 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
+                    <div>
+                      <span className="text-[9px] font-mono font-black text-violet-400 block uppercase tracking-wider mb-1">
+                        EVALUASI KESIAPAN TRANSISI PROYEK
+                      </span>
+                      <h4 className="text-xs font-black uppercase text-white mb-3 flex items-center gap-1.5">
+                        <Sparkles className="h-4 w-4 text-violet-400" />
+                        Operational Readiness Index
+                      </h4>
+
+                      <div className="p-4 bg-slate-900/90 rounded-xl border border-slate-800 text-center mb-3">
+                        <span className="text-3xl font-black font-mono text-white tracking-tight">
+                          {finalReadinessIndex}%
+                        </span>
+                        <span className={`block text-[10px] font-extrabold uppercase mt-1 px-2 py-0.5 rounded-md border ${statusColor}`}>
+                          Status: {readinessStatus}
+                        </span>
+                      </div>
+
+                      <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-850 text-[10.5px] text-slate-300 font-semibold leading-relaxed">
+                        💡 <span className="text-white font-bold">Rekomendasi Strategis:</span> {recommendations}
+                      </div>
+                    </div>
+
+                    <div className="text-[9px] font-mono font-bold text-slate-500 pt-3 border-t border-slate-800/80 mt-3">
+                      PRAMA TRANSITION ENGINE v2.1
+                    </div>
+                  </div>
+
+                  {/* Simulator Controls */}
+                  <div className="lg:col-span-7 bg-slate-950/60 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
+                    <div>
+                      <h4 className="text-xs font-black uppercase text-slate-200 mb-3 flex items-center gap-1.5">
+                        <Sliders className="h-4 w-4 text-indigo-400" />
+                        Simulator Kontinjensi & Mitigasi Risiko Transisi
+                      </h4>
+
+                      <div className="space-y-3.5 text-xs">
+                        {/* Contingency Plan Toggle */}
+                        <div className="p-3 bg-slate-900/80 border border-slate-850 rounded-xl flex justify-between items-center">
+                          <div>
+                            <span className="font-bold text-white block text-[11px]">SOP Rencana Kontinjensi Cuaca & Mogok</span>
+                            <span className="text-[10px] text-slate-400 font-semibold">Prosedur penanganan darurat banjir/jalan licin</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setContingencyPlanEnabled(!contingencyPlanEnabled)}
+                            className={`px-3 py-1.5 rounded-lg text-[10px] font-mono font-black uppercase transition-all cursor-pointer ${
+                              contingencyPlanEnabled
+                                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                                : "bg-rose-500/10 text-rose-400 border border-rose-500/30"
+                            }`}
+                          >
+                            {contingencyPlanEnabled ? "AKTIF (+10%)" : "NON-AKTIF"}
+                          </button>
+                        </div>
+
+                        {/* Backup Driver Slider */}
+                        <div className="p-3 bg-slate-900/80 border border-slate-850 rounded-xl space-y-1.5">
+                          <div className="flex justify-between items-center text-[11px]">
+                            <span className="font-bold text-white">Rasio Supir Cadangan di Depo Satelit</span>
+                            <span className="font-mono font-black text-violet-400">{supirBackupRatio}% dari Total Unit</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="5"
+                            max="30"
+                            step="5"
+                            value={supirBackupRatio}
+                            onChange={(e) => setSupirBackupRatio(Number(e.target.value))}
+                            className="w-full accent-violet-500 cursor-pointer"
+                          />
+                        </div>
+
+                        {/* Communication Picker */}
+                        <div className="p-3 bg-slate-900/80 border border-slate-850 rounded-xl flex justify-between items-center gap-2">
+                          <div>
+                            <span className="font-bold text-white block text-[11px]">Sistem Komunikasi Telemetri</span>
+                            <span className="text-[10px] text-slate-400 font-semibold">Dukungan sinyal komunikasi di rute remote</span>
+                          </div>
+                          <select
+                            value={communicationSystem}
+                            onChange={(e: any) => setCommunicationSystem(e.target.value)}
+                            className="bg-slate-950 border border-slate-800 text-slate-200 text-[10px] font-mono font-bold p-1.5 rounded-lg outline-none"
+                          >
+                            <option value="Hybrid Satelit-GSM">Hybrid Satelit-GSM (+10%)</option>
+                            <option value="Dual-GSM">Dual-GSM (+5%)</option>
+                            <option value="Hanya GSM biasa">Hanya GSM biasa (+0%)</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-[9px] font-mono font-bold text-slate-500 pt-3 border-t border-slate-800/80 mt-3">
+                      PARAMETER SIMULATOR AKTIF • DUKUNGAN KENDALI 24/7
+                    </div>
+                  </div>
+                </div>
               </div>
-              <h4 className="text-sm font-black text-white uppercase tracking-tight mb-4 flex items-center gap-1">
-                <Sliders className="h-4 w-4 text-violet-400" />
-                Penilaian Kesiapan Transisi
-              </h4>
-
-              {/* READINESS RADIAL / PROGRESS BAR */}
-              <div className="mb-5 bg-slate-900/75 p-4 border border-slate-850 rounded-xl">
-                <div className="flex justify-between items-center mb-1.5">
-                  <span className="text-[10px] text-slate-400 font-black uppercase">INDEKS KESIAPAN TRANSISI</span>
-                  <span className="text-lg font-black text-white font-mono">{finalReadinessIndex}%</span>
-                </div>
-                <div className="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden mb-3">
-                  <div
-                    className={`h-full transition-all duration-500 ${
-                      finalReadinessIndex >= 80 ? "bg-emerald-500" : finalReadinessIndex >= 50 ? "bg-amber-400" : "bg-rose-500"
-                    }`}
-                    style={{ width: `${finalReadinessIndex}%` }}
-                  />
-                </div>
-                <div className={`p-2.5 rounded-lg border text-[10px] font-semibold leading-relaxed ${statusColor}`}>
-                  <span className="font-black uppercase block mb-0.5 text-[9px]">DIAGNOSIS OPERASIONAL: {readinessStatus}</span>
-                  {recommendations}
-                </div>
-              </div>
-
-              {/* DYNAMIC RISK MODIFIERS (Interactive sliders/buttons requested) */}
-              <div className="space-y-4 text-xs">
-                {/* Switch 1: Rencana Kontigensi Aktif */}
-                <div className="flex justify-between items-center bg-slate-900/50 p-2.5 rounded-lg border border-slate-850">
-                  <div>
-                    <span className="text-slate-200 font-bold block text-[11px]">Rencana Kontigensi Cuaca</span>
-                    <span className="text-[9.5px] text-slate-400 font-medium block">Penyediaan rute hauling alternatif</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setContingencyPlanEnabled(!contingencyPlanEnabled)}
-                    className={`px-3 py-1 rounded-md text-[9px] font-black uppercase cursor-pointer border ${
-                      contingencyPlanEnabled ? "bg-violet-600 border-violet-500 text-white" : "bg-slate-950 border-slate-800 text-slate-500"
-                    }`}
-                  >
-                    {contingencyPlanEnabled ? "AKTIF (+10)" : "NON-AKTIF"}
-                  </button>
-                </div>
-
-                {/* Slider: Cadangan Supir */}
-                <div>
-                  <div className="flex justify-between mb-1.5 text-[10.5px]">
-                    <span className="text-slate-300 font-bold">Rasio Supir Cadangan Berjaga</span>
-                    <span className="text-violet-400 font-black">{supirBackupRatio}% Supir</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="5"
-                    max="30"
-                    step="5"
-                    value={supirBackupRatio}
-                    onChange={(e) => setSupirBackupRatio(Number(e.target.value))}
-                    className="w-full h-1 bg-slate-850 rounded-lg appearance-none cursor-pointer accent-violet-500"
-                  />
-                  <div className="flex justify-between text-[8px] text-slate-500 font-bold mt-1 uppercase">
-                    <span>Minimal (5%)</span>
-                    <span>SLA Bagus (15%)</span>
-                    <span>High Safety (30%)</span>
-                  </div>
-                </div>
-
-                {/* Option Selector: Komunikasi Rute */}
-                <div>
-                  <span className="text-[10px] text-slate-400 font-bold block mb-1.5">Sistem Komunikasi Kendaraan</span>
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {[
-                      { type: "Hanya GSM biasa", label: "GSM" },
-                      { type: "Dual-GSM", label: "Dual GSM" },
-                      { type: "Hybrid Satelit-GSM", label: "Hybrid" }
-                    ].map((item) => {
-                      const isSel = communicationSystem === item.type;
-                      return (
-                        <button
-                          key={item.type}
-                          type="button"
-                          onClick={() => setCommunicationSystem(item.type as any)}
-                          className={`p-1.5 rounded text-[10px] font-black uppercase transition cursor-pointer border ${
-                            isSel ? "bg-violet-600 border-violet-400 text-white" : "bg-slate-900 border-slate-850 text-slate-400"
-                          }`}
-                        >
-                          {item.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-              </div>
-            </div>
-
-            <div className="text-[9px] text-slate-500 font-bold mt-5 pt-3 border-t border-slate-850">
-              PRAMA PROJECT TRANSITION ANALYTICS SYSTEM v1.2
-            </div>
-          </div>
-
+            );
+          })()}
         </motion.div>
       </AnimatePresence>
+
+
     </div>
   );
 }

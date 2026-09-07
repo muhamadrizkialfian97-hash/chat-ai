@@ -47,12 +47,15 @@ export function CacLtvDeepDive({ projectTitle }: CacLtvProps) {
 
   // LTV Sliders State
   const [avgRevenuePerMonth, setAvgRevenuePerMonth] = useState<number>(cacLtvProfile.defaultAvgRevenuePerMonth); // IDR revenue per month per client contract
-  const [netProfitMargin, setNetProfitMargin] = useState<number>(14); // Net profit % (10% - 25%)
-  const [contractDurationMonths, setContractDurationMonths] = useState<number>(36); // Contract duration in months (typically 12 - 60)
+  const [netProfitMargin, setNetProfitMargin] = useState<number>(cacLtvProfile.defaultMargin ?? 14); // Net profit % (10% - 25%)
+  const [contractDurationMonths, setContractDurationMonths] = useState<number>(cacLtvProfile.defaultDuration ?? 36); // Contract duration in months (typically 12 - 60)
 
   useEffect(() => {
-    setCacCosts(cacLtvProfile.cacCosts);
-    setAvgRevenuePerMonth(cacLtvProfile.defaultAvgRevenuePerMonth);
+    const profile = getSectorCacLtvProfile(projectTitle);
+    setCacCosts(profile.cacCosts);
+    setAvgRevenuePerMonth(profile.defaultAvgRevenuePerMonth);
+    if (profile.defaultMargin) setNetProfitMargin(profile.defaultMargin);
+    if (profile.defaultDuration) setContractDurationMonths(profile.defaultDuration);
   }, [projectTitle]);
 
   // Handlers for CAC cost modification
@@ -427,7 +430,7 @@ export function CacLtvDeepDive({ projectTitle }: CacLtvProps) {
 
               <div className="mt-4 pt-3 border-t border-slate-800/80 text-[10px] text-slate-400 font-semibold flex items-center gap-1.5">
                 <Info className="h-4 w-4 text-rose-400 shrink-0" />
-                <span>Rantai pasok industri kehutanan memiliki durasi kontrak rata-rata 3 tahun.</span>
+                <span>{cacLtvProfile.sectorNote}</span>
               </div>
             </div>
 
@@ -450,7 +453,7 @@ export function CacLtvDeepDive({ projectTitle }: CacLtvProps) {
                   </div>
 
                   <div className="text-[10px] text-slate-300 font-semibold leading-relaxed pt-2 border-t border-slate-800/80">
-                    Sistem kontrak *Waste Management Transportation* memberikan keandalan arus kas (recurring revenue) yang tinggi bagi Pancaran Group dibandingkan dengan angkutan logistik e-commerce ritel harian.
+                    {cacLtvProfile.ltvNote}
                   </div>
                 </div>
               </div>

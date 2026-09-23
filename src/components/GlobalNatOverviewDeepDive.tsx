@@ -1,592 +1,1209 @@
-import React, { useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Globe,
-  Building2,
-  FileText,
-  AlertTriangle,
-  CheckCircle,
-  Info,
-  Scale,
-  TrendingUp,
-  ShieldAlert,
-  Compass,
-  ArrowRight,
-  TrendingDown,
-  Activity,
-  Plus,
+  Sparkles,
+  RefreshCw,
+  Copy,
+  Check,
+  Edit3,
   Trash2,
-  Lock,
-  ChevronRight
+  Save,
+  X,
+  Building2,
+  ShieldCheck,
+  CheckCircle2,
+  FileText,
+  Truck,
+  Compass,
+  FileCheck2,
+  Scale,
+  Award,
+  AlertCircle,
+  LayoutGrid,
+  AlignLeft,
+  Briefcase,
+  MapPin,
+  Info,
+  TrendingUp,
+  Zap,
+  Target,
+  ArrowRight,
+  ShieldAlert,
+  SlidersHorizontal,
+  BookmarkCheck
 } from "lucide-react";
+import { generateStrategicOverviewForTitle } from "../utils/strategicOverviewGenerator";
+import { exportAllSectionsToWord } from "../utils/projectDashboardHelper";
 
 interface GlobalNatProps {
   projectTitle: string;
+  activeDivision?: string;
 }
 
-interface RegulationMetric {
+interface KeyValItem {
+  key: string;
+  value: string;
+}
+
+interface ParsedSection {
   id: string;
-  name: string;
-  scope: "Global" | "Nasional";
-  impactScore: number; // 1-10
-  status: "Berlaku" | "Tahap Transisi" | "Wacana";
-  description: string;
+  rawTitle: string;
+  displayTitle: string;
+  iconType: "macro" | "regulation" | "operations" | "verdict" | "general";
+  quickSummary: string;
+  paragraphs: string[];
+  bullets: string[];
+  keyValues: KeyValItem[];
+  regulationsList: string[];
+  operationalPoints: KeyValItem[];
+  metaBadge: string;
+  stepNumber: string;
 }
 
-function getSectorConfig(projectTitle: string) {
-  const titleLower = (projectTitle || "").toLowerCase();
+export function GlobalNatOverviewDeepDive({ projectTitle, activeDivision }: GlobalNatProps) {
+  const currentTitle = (projectTitle || "").trim() || "Kajian Kelayakan Strategis Logistik";
+  const currentDiv = activeDivision || "Logistik & Transportasi";
 
-  // 1. Waste Management / Limbah / B3 / Sampah / Circular Economy
-  if (
-    titleLower.includes("waste") ||
-    titleLower.includes("limbah") ||
-    titleLower.includes("sampah") ||
-    titleLower.includes("b3") ||
-    titleLower.includes("circular") ||
-    titleLower.includes("daur ulang")
-  ) {
-    return {
-      sectorKey: "waste",
-      sectorBadge: "WASTE & CIRCULAR ECONOMY",
-      matrixTitle: "Matriks Kebijakan Pengelolaan Limbah & B3",
-      regulations: [
-        {
-          id: "reg-w1",
-          name: "Basel Convention & EU Waste Shipments",
-          scope: "Global" as const,
-          impactScore: 9,
-          status: "Berlaku" as const,
-          description: "Pengawasan lintas negara terhadap pergerakan dan pengangkutan limbah berbahaya (B3) serta material daur ulang."
-        },
-        {
-          id: "reg-w2",
-          name: "EU Circular Economy Action Plan & CBAM",
-          scope: "Global" as const,
-          impactScore: 8,
-          status: "Tahap Transisi" as const,
-          description: "Standar pelaporan daur ulang material dan insentif pengolahan sampah menjadi energi (Waste-to-Energy)."
-        },
-        {
-          id: "reg-w3",
-          name: "Permen LHK No. 6/2021 (Pengelolaan Limbah B3)",
-          scope: "Nasional" as const,
-          impactScore: 10,
-          status: "Berlaku" as const,
-          description: "Wajib perizinan angkutan B3, pengoperasian Festronik (Elektronik Manifes), dan kualifikasi armada khusus."
-        },
-        {
-          id: "reg-w4",
-          name: "Perpres No. 98/2021 (Efisiensi Pengangkutan Sektor Limbah)",
-          scope: "Nasional" as const,
-          impactScore: 8,
-          status: "Berlaku" as const,
-          description: "Skema insentif efisiensi rute dan keselamatan pengangkutan limbah industri."
+  const storageKey = `prama_global_nat_content_${currentTitle.toLowerCase().replace(/[^a-z0-9]/g, "_")}`;
+
+  // Content starts POLOS (empty) unless the user explicitly saved or generated it
+  const [content, setContent] = useState<string>(() => {
+    return localStorage.getItem(storageKey) || "";
+  });
+
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [copied, setCopied] = useState<boolean>(false);
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [editText, setEditText] = useState<string>("");
+  // Default to the most engaging and readable view: "core" (Penjelasan Inti)
+  const [displayMode, setDisplayMode] = useState<"core" | "cards" | "document">("core");
+  const [lastGeneratedForTitle, setLastGeneratedForTitle] = useState<string>(() => {
+    return localStorage.getItem(`${storageKey}_title`) || "";
+  });
+
+  // Cleanup any old legacy preset keys
+  useEffect(() => {
+    try {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith("prama_global_nat_ai_")) {
+          keysToRemove.push(k);
         }
-      ],
-      riskCalcBadge: "WASTE & B3 COMPLIANCE CALCULATOR",
-      riskCalcTitle: "Simulasi Kepatuhan Transportasi Limbah & B3",
-      toggle1Label: "Festronik KLHK Terbit (E-Manifest B3)",
-      toggle2Label: "Sertifikasi AMDAL & Izin Angkut B3",
-      telemetryLabel: "Telemetri Monitoring Fleet & Festronik",
-      originLabel: "Kategori Limbah & Pengolahan",
-      originOptions: ["Limbah B3 Medis / Industri", "Limbah Non-B3 Daur Ulang", "Waste-to-Energy Municipal"],
-      nationalTitle: "Instrumen Kebijakan Pengelolaan Limbah & B3 (Indonesia)",
-      nationalDesc: "Indonesia memperketat pengawasan pengangkutan limbah melalui e-manifest Festronik KLHK dan sertifikasi khusus armada B3 guna mencegah risiko pencemaran perairan dan pemukiman.",
-      nationalBoxes: [
-        { tag: "FESTRONIK KLHK", title: "E-Manifest Real-time", desc: "Pencatatan digital manifes limbah B3 dari penghasil, pengangkut, hingga pengolah akhir." },
-        { tag: "AMDAL B3 FLEET", title: "Lisensi Angkutan B3", desc: "Sertifikasi kelayakan kendaraan dan driver berlisensi B3 sesuai Permen LHK No. 6/2021." },
-        { tag: "CIRCULAR TARGET", title: "Efisiensi Rute Hauling", desc: "Integrasi rute pengangkutan limbah teroptimasi guna mendukung target efisiensi operasional." }
-      ],
-      carbonTaxTitle: "Efisiensi Operasional Sektor Waste",
-      carbonTaxDesc: "Penghematan rute hauling limbah mengurangi konsumsi BBM dan menekan biaya operasional.",
-      challenges: [
-        { id: "ch-w1", title: "Risiko Kebocoran/Tumpahan Limbah B3", category: "Keselamatan", solved: true, detail: "Penggunaan kompartemen armada berlapis dan sensor IoT kebocoran real-time." },
-        { id: "ch-w2", title: "Validasi E-Manifest (Festronik) Lambat", category: "Teknologi", solved: true, detail: "Integrasi API armada Pancaran langsung ke portal Festronik KLHK tanpa jeda manual." },
-        { id: "ch-w3", title: "Fluktuasi Biaya Pengolahan Akhir Waste", category: "Finansial", solved: false, detail: "Biaya Tipping Fee di TPA/TPS3R membutuhkan skema kontrak jangka panjang yang stabil." },
-        { id: "ch-w4", title: "Izin Lintas Rute Angkutan B3 Daerah", category: "Regulasi", solved: true, detail: "Pengurusan rekomendasi KLHK & Kemenhub terpusat menjamin legalitas rute antar-provinsi." }
-      ],
-      riskActionHigh: "Sangat baik! Armada B3 Anda memiliki izin Festronik & AMDAL lengkap. Memenuhi standar sertifikasi pengangkut limbah resmi.",
-      riskActionLow: "Peringatan! Pengangkutan limbah B3 tanpa e-manifest Festronik dan izin KLHK berisiko sanksi pidana lingkungan dan pembekuan operasional."
-    };
-  }
-
-  // 2. Mining / Pertambangan / Nikel / Batubara / Mineral / Smelter
-  if (
-    titleLower.includes("mining") ||
-    titleLower.includes("tambang") ||
-    titleLower.includes("nikel") ||
-    titleLower.includes("nickel") ||
-    titleLower.includes("batubara") ||
-    titleLower.includes("coal") ||
-    titleLower.includes("mineral") ||
-    titleLower.includes("smelter") ||
-    titleLower.includes("esdm")
-  ) {
-    return {
-      sectorKey: "mining",
-      sectorBadge: "MINING & CRITICAL MINERALS",
-      matrixTitle: "Matriks Kebijakan Pertambangan & Mineral Kritis",
-      regulations: [
-        {
-          id: "reg-m1",
-          name: "EU Critical Raw Materials Act & EITI",
-          scope: "Global" as const,
-          impactScore: 9,
-          status: "Berlaku" as const,
-          description: "Pengawasan transparansi rantai pasok dan efisiensi logistik pada pengolahan nikel, bauksit, dan mineral kritis."
-        },
-        {
-          id: "reg-m2",
-          name: "EU Battery Regulation & Traceability",
-          scope: "Global" as const,
-          impactScore: 9,
-          status: "Tahap Transisi" as const,
-          description: "Persyaratan lacak balik standar mutu (Battery Passport) untuk produk mineral dan baterai kendaraan listrik."
-        },
-        {
-          id: "reg-m3",
-          name: "Integrasi SIMBARA ESDM & Kemenkeu",
-          scope: "Nasional" as const,
-          impactScore: 10,
-          status: "Berlaku" as const,
-          description: "Sistem Informasi Mineral dan Batubara wajib untuk verifikasi angkutan dan pemenuhan kewajiban royalti."
-        },
-        {
-          id: "reg-m4",
-          name: "Permen ESDM Good Mining Practice & AMDAL",
-          scope: "Nasional" as const,
-          impactScore: 8,
-          status: "Berlaku" as const,
-          description: "Regulasi rute hauling jalan khusus tambang, keselamatan angkutan berat, dan kewajiban reklamasi area."
-        }
-      ],
-      riskCalcBadge: "MINING HAULING & SIMBARA CALCULATOR",
-      riskCalcTitle: "Simulasi Kepatuhan Rute Hauling Tambang",
-      toggle1Label: "Verifikasi Integrasi SIMBARA ESDM",
-      toggle2Label: "Izin Hauling Jalur Khusus Tambang",
-      telemetryLabel: "Telemetri GPS & Axle Weight Sensor",
-      originLabel: "Status Wilayah Tambang / IUP",
-      originOptions: ["IUP / IUPK Operasi Produksi", "Kawasan Smelter Hilirisasi", "Lahan Non-Konsesi Berizin"],
-      nationalTitle: "Instrumen Kebijakan Hilirisasi & SIMBARA (Indonesia)",
-      nationalDesc: "Sistem SIMBARA terintegrasi memantau setiap ritase hauling mineral/batubara dari pit ke smelter dan pelabuhan guna menjamin transparansi penerimaan negara.",
-      nationalBoxes: [
-        { tag: "SIMBARA ESDM", title: "Validasi Digital Bill of Lading", desc: "Pencatatan tonase dan verifikasi otomatis sebelum kapal/tongkang atau truk berangkat." },
-        { tag: "GOOD MINING PRACTICE", title: "Keselamatan Jalan Hauling", desc: "Kepatuhan spesifikasi tonase kendaraan dan perawatan jalan tambang bebas debu." },
-        { tag: "EFISIENSI SMELTER", title: "Audit Efisiensi Rute", desc: "Perhitungan efisiensi BBM per ton-km logistik angkutan mineral menuju kriteria operasi andal." }
-      ],
-      carbonTaxTitle: "Efisiensi Hauling Tambang",
-      carbonTaxDesc: "Optimalisasi ritase dan efisiensi konsumsi solar industri menekan biaya operasional secara signifikan.",
-      challenges: [
-        { id: "ch-m1", title: "Jalan Hauling Rusak / Berlumpur Musim Hujan", category: "Infrastruktur", solved: false, detail: "Memerlukan grading rutin dan penggunaan armada 6x4/8x4 berkemampuan off-road tinggi." },
-        { id: "ch-m2", title: "Kemacetan & Bottleneck di Jetty / Smelter", category: "Operasional", solved: true, detail: "Penerapan sistem antrean e-ticketing dan GPS tracking kedatangan armada Pancaran." },
-        { id: "ch-m3", title: "Tinggi Biaya Maintenance / Tire Wear", category: "Finansial", solved: false, detail: "Monitoring tekanan ban otomatis (TPMS) dan rotasi armada mengurangi downtime." },
-        { id: "ch-m4", title: "Kepatuhan Tonase Tanpa Overloading", category: "Regulasi", solved: true, detail: "Jembatan timbang digital onboard pada armada mencegah sanksi overdimensi." }
-      ],
-      riskActionHigh: "Sangat baik! Rute hauling tambang Anda telah terhubung ke SIMBARA & berizin jalan khusus. Bebas dari risiko blokir kuota RKAB.",
-      riskActionLow: "Bahaya! Hauling tanpa verifikasi SIMBARA dan izin jalur khusus berisiko penghentian tongkang di pelabuhan dan sanksi denda RKAB."
-    };
-  }
-
-  // 3. Agriculture / Perkebunan / Sawit / Pangan
-  if (
-    titleLower.includes("agri") ||
-    titleLower.includes("sawit") ||
-    titleLower.includes("palm") ||
-    titleLower.includes("pertanian") ||
-    titleLower.includes("perkebunan") ||
-    titleLower.includes("pangan") ||
-    titleLower.includes("cpo") ||
-    titleLower.includes("food")
-  ) {
-    return {
-      sectorKey: "agri",
-      sectorBadge: "AGRICULTURE & FOOD SUPPLY CHAIN",
-      matrixTitle: "Matriks Kebijakan Perkebunan & Rantai Pasok Pangan",
-      regulations: [
-        {
-          id: "reg-a1",
-          name: "EU Deforestation Regulation (EUDR)",
-          scope: "Global" as const,
-          impactScore: 10,
-          status: "Berlaku" as const,
-          description: "Mewajibkan bukti geolokasi poligon kebun sawit/pangan bebas deforestasi untuk ekspor ke Uni Eropa."
-        },
-        {
-          id: "reg-a2",
-          name: "RSPO & International Sustainability Standards",
-          scope: "Global" as const,
-          impactScore: 8,
-          status: "Berlaku" as const,
-          description: "Sertifikasi internasional rantai pasok minyak sawit dan komoditas pertanian berkelanjutan."
-        },
-        {
-          id: "reg-a3",
-          name: "Mandatori ISPO (Indonesian Sustainable Palm Oil)",
-          scope: "Nasional" as const,
-          impactScore: 10,
-          status: "Berlaku" as const,
-          description: "Kewajiban sertifikasi keberlanjutan bagi seluruh rantai pasok kebun, pengangkut, hingga pabrik kelapa sawit (PKS)."
-        },
-        {
-          id: "reg-a4",
-          name: "Regulasi Standar Mutu Pangan & Distribusi",
-          scope: "Nasional" as const,
-          impactScore: 8,
-          status: "Berlaku" as const,
-          description: "Integrasi komitmen efisiensi transportasi dan jaminan mutu angkutan hasil bumi."
-        }
-      ],
-      riskCalcBadge: "ISPO & EUDR AGRI CALCULATOR",
-      riskCalcTitle: "Simulasi Lacak Balik Rantai Pasok Perkebunan",
-      toggle1Label: "Sertifikasi ISPO Mandatori Terbit",
-      toggle2Label: "Sertifikasi RSPO / International Standard",
-      telemetryLabel: "Telemetri Geolokasi Kebun ke PKS",
-      originLabel: "Kategori Sumber Pasokan Hasil Bumi",
-      originOptions: ["Perkebunan Inti Bersertifikat", "Plasma / Koperasi Mitra", "Mandiri Non-Sertifikat"],
-      nationalTitle: "Instrumen ISPO Mandatori & Rantai Pasok Pangan",
-      nationalDesc: "Sertifikasi ISPO dan pelacakan digital mengamankan posisi komoditas perkebunan Indonesia di pasar internasional.",
-      nationalBoxes: [
-        { tag: "ISPO MANDATORI", title: "Sertifikasi Rantai Pasok", desc: "Jaminan kepatuhan lingkungan dan legalitas lahan dari kebun hingga angkutan CPO." },
-        { tag: "TRACEABILITY PKS", title: "Digital Surat Angkut TBS", desc: "Integrasi e-Surat Angkut TBS dari kebun mitra langsung ke sistem timbangan PKS." },
-        { tag: "LOGISTIK CPO", title: "Armada Tangki Hygienic", desc: "Sertifikasi armada tangki CPO berstandar mutu pangan tanpa kontaminasi." }
-      ],
-      carbonTaxTitle: "Efisiensi Rute Perkebunan",
-      carbonTaxDesc: "Pelacakan rute efisien mengoptimalkan pengangkutan TBS/CPO dan menekan biaya bahan bakar.",
-      challenges: [
-        { id: "ch-a1", title: "Kerusakan Buah TBS Saat Pengangkutan", category: "Kualitas", solved: true, detail: "Desain bak armada Pancaran khusus mengurangi gesekan dan tingkat Asam Lemak Bebas (ALB)." },
-        { id: "ch-a2", title: "Lacak Balik Petani Swadaya Sulit Ditinjau", category: "Sertifikasi", solved: true, detail: "Pencatatan koordinat GPS kebun petani via aplikasi logistik mobile Pancaran." },
-        { id: "ch-a3", title: "Musim Hujan & Akses Jalan Kebun Buruk", category: "Infrastruktur", solved: false, detail: "Memerlukan penataan jadwal hauling ketat sebelum kualitas FBB menurun." },
-        { id: "ch-a4", title: "Keamanan Muatan CPO Jalur Darat", category: "Keamanan", solved: true, detail: "Penggunaan E-Seal digital pada kran tangki CPO yang terpantau via GPS central." }
-      ],
-      riskActionHigh: "Sangat baik! Rantai pasok perkebunan Anda memenuhi syarat ISPO & EUDR. Risiko penolakan ekspor sangat rendah.",
-      riskActionLow: "Bahaya! Pengangkutan hasil kebun tanpa geolokasi dan sertifikasi ISPO berisiko pemblokiran pasokan oleh pabrik ekspor."
-    };
-  }
-
-  // 4. Energy & Renewable Energy / Solar / EBT / Power / Battery
-  if (
-    titleLower.includes("energy") ||
-    titleLower.includes("renewable") ||
-    titleLower.includes("ebt") ||
-    titleLower.includes("solar") ||
-    titleLower.includes("wind") ||
-    titleLower.includes("baterai") ||
-    titleLower.includes("power")
-  ) {
-    return {
-      sectorKey: "energy",
-      sectorBadge: "RENEWABLE ENERGY & TRANSITION",
-      matrixTitle: "Matriks Kebijakan Energi Terbarukan & Transisi",
-      regulations: [
-        {
-          id: "reg-e1",
-          name: "EU Net Zero Industry Act & RE100",
-          scope: "Global" as const,
-          impactScore: 9,
-          status: "Berlaku" as const,
-          description: "Standar transparansi rantai pasok dan efisiensi pengangkutan teknologi energi terbarukan."
-        },
-        {
-          id: "reg-e2",
-          name: "US Inflation Reduction Act (IRA) Clean Traceability",
-          scope: "Global" as const,
-          impactScore: 8,
-          status: "Berlaku" as const,
-          description: "Persyaratan asal-usul komponen dan standar logistik untuk klaim proyek energi bersih."
-        },
-        {
-          id: "reg-e3",
-          name: "RUU EBT & RUPTL Listrik Hijau PLN",
-          scope: "Nasional" as const,
-          impactScore: 10,
-          status: "Berlaku" as const,
-          description: "Kerangka regulasi percepatan pembangkit EBT dan prioritas fasilitas logistik alat berat energi bersih."
-        },
-        {
-          id: "reg-e4",
-          name: "Regulasi TKDN Kemenperin (Sektor Energi)",
-          scope: "Nasional" as const,
-          impactScore: 9,
-          status: "Berlaku" as const,
-          description: "Batas minimal Tingkat Komponen Dalam Negeri untuk peralatan dan jasa logistik proyek EBT."
-        }
-      ],
-      riskCalcBadge: "GREEN ENERGY & TKDN CALCULATOR",
-      riskCalcTitle: "Simulasi Kepatuhan Logistik Proyek EBT",
-      toggle1Label: "Kepatuhan TKDN Energi >40%",
-      toggle2Label: "Sertifikat Efficient Fleet Transport",
-      telemetryLabel: "Telemetri IoT Monitoring Suhu & Vibrasi",
-      originLabel: "Kategori Material Proyek Energi",
-      originOptions: ["Modul Solar & Inverter EBT", "Baterai Energy Storage (BESS)", "Komponen Pembangkit Listrik"],
-      nationalTitle: "Instrumen Kebijakan Transisi Energi & TKDN (Indonesia)",
-      nationalDesc: "Proyek energi terbarukan Indonesia mewajibkan kepatuhan nilai TKDN serta audit keselamatan pengangkutan komponen sensitif.",
-      nationalBoxes: [
-        { tag: "TKDN ENERGY", title: "Verifikasi Komponen Lokal", desc: "Pemenuhan persentase TKDN Kemenperin untuk infrastruktur & pengangkutan proyek." },
-        { tag: "RUPTL GREEN GRID", title: "Prioritas Rute Logistik", desc: "Kemudahan perizinan angkutan alat berat EBT menuju lokasi proyek remote PLN." },
-        { tag: "EFISIENSI ARMADA", title: "Modern Fleet Certification", desc: "Penggunaan armada efisien / biofuel pendukung untuk operasional proyek EBT." }
-      ],
-      carbonTaxTitle: "Efisiensi Proyek EBT",
-      carbonTaxDesc: "Penggunaan armada modern teroptimasi meningkatkan nilai efisiensi logistik proyek EBT.",
-      challenges: [
-        { id: "ch-e1", title: "Risiko Kerusakan Komponen Sensitif (Solar/BESS)", category: "Keamanan", solved: true, detail: "Penggunaan suspensi udara (air-suspension) dan shock-sensor IoT pada trailer Pancaran." },
-        { id: "ch-e2", title: "Izin Overdimensi Peralatan Berat EBT", category: "Regulasi", solved: true, detail: "Pengurusan izin pengawalan Dishub & Kemenhub untuk angkutan transformer/blade." },
-        { id: "ch-e3", title: "Akses Terjal ke Lokasi Remote (Hydro/Wind)", category: "Infrastruktur", solved: false, detail: "Survei rute geospasial mendalam guna menghindari jembatan berkekuatan terbatas." },
-        { id: "ch-e4", title: "Verifikasi Dokumen TKDN Logistik", category: "Kepatuhan", solved: true, detail: "Penyediaan laporan biaya transportasi terstruktur sesuai standar audit Kemenperin." }
-      ],
-      riskActionHigh: "Sangat baik! Logistik proyek EBT Anda memenuhi standar TKDN & keselamatan komponen sensitif.",
-      riskActionLow: "Peringatan! Pengangkutan komponen EBT tanpa proteksi vibrasi dan izin overdimensi berisiko klaim garansi batal."
-    };
-  }
-
-  // 5. Forestry / Kehutanan / Hutan / Kayu / Timber / Logging
-  if (
-    titleLower.includes("forestry") ||
-    titleLower.includes("kehutanan") ||
-    titleLower.includes("hutan") ||
-    titleLower.includes("kayu") ||
-    titleLower.includes("timber") ||
-    titleLower.includes("logging")
-  ) {
-    return {
-      sectorKey: "forestry",
-      sectorBadge: "FORESTRY & SUSTAINABLE TIMBER",
-      matrixTitle: "Matriks Kebijakan Kehutanan & Legalitas Kayu (SVLK)",
-      regulations: [
-        {
-          id: "reg-f1",
-          name: "EU Deforestation Regulation (EUDR) & FLEGT",
-          scope: "Global" as const,
-          impactScore: 10,
-          status: "Berlaku" as const,
-          description: "Mewajibkan bukti geolokasi poligon konsesi hutan bebas deforestasi untuk ekspor produk kayu dan kertas."
-        },
-        {
-          id: "reg-f2",
-          name: "FSC & PEFC Chain of Custody Standard",
-          scope: "Global" as const,
-          impactScore: 9,
-          status: "Berlaku" as const,
-          description: "Sertifikasi internasional rantai pasok kayu lestari dari tebangan hingga produk jadi."
-        },
-        {
-          id: "reg-f3",
-          name: "SVLK (Sistem Verifikasi Legalitas Kayu) KLHK",
-          scope: "Nasional" as const,
-          impactScore: 10,
-          status: "Berlaku" as const,
-          description: "Wajib sertifikasi legalitas seluruh bahan baku kayu dan dokumen V-Legal untuk pengangkutan serta ekspor."
-        },
-        {
-          id: "reg-f4",
-          name: "Permen LHK SKSHHK (Surat Keterangan Sah Hasil Hutan)",
-          scope: "Nasional" as const,
-          impactScore: 10,
-          status: "Berlaku" as const,
-          description: "Dokumen digital wajib untuk legalitas angkutan kayu bulat, gergajian, dan chip kayu dari TPH ke industri."
-        }
-      ],
-      riskCalcBadge: "SVLK & EUDR FORESTRY CALCULATOR",
-      riskCalcTitle: "Simulasi Kepatuhan Rute Angkutan Kehutanan",
-      toggle1Label: "SKSHHK Digital KLHK Terbit",
-      toggle2Label: "Sertifikasi SVLK & V-Legal Valid",
-      telemetryLabel: "Telemetri GPS & Geofencing Konsesi Hutan",
-      originLabel: "Status Konsesi / IUPHHK Sumber Kayu",
-      originOptions: ["IUPHHK-HA / HTI Bersertifikat SVLK", "Hutan Rakyat Bermitra", "Konesi Transisi Konsesi"],
-      nationalTitle: "Instrumen SVLK & SKSHHK Kehutanan (Indonesia)",
-      nationalDesc: "Kementerian LHK mewajibkan dokumen SKSHHK dan sertifikasi SVLK untuk setiap pengangkutan hasil hutan guna memastikan zero illegal logging.",
-      nationalBoxes: [
-        { tag: "SVLK MANDATORI", title: "Legalitas Kayu Nasional", desc: "Verifikasi ketat asal-usul bahan baku kayu dari tebangan sah berizin KLHK." },
-        { tag: "SKSHHK DIGITAL", title: "Manifes Angkut Hasil Hutan", desc: "Pencatatan elektronik Surat Keterangan Sah Hasil Hutan untuk setiap truk hauling." },
-        { tag: "EUDR GEOLOCATION", title: "Poligon Titik Koordinat", desc: "Pemetaan batas konsesi hutan sesuai standar verifikasi ekspor pasar global." }
-      ],
-      carbonTaxTitle: "Efisiensi Sektor Kehutanan",
-      carbonTaxDesc: "Pengelolaan logistik tebangan efisien meningkatkan produktivitas hauling dan keselamatan operasional.",
-      challenges: [
-        { id: "ch-f1", title: "Akses Jalan Hauling Hutan Ekstrem / Berlumpur", category: "Infrastruktur", solved: false, detail: "Armada truk 6x4 heavy duty dengan ban traksi khusus untuk medan konsesi HTI." },
-        { id: "ch-f2", title: "Validasi Dokumen SKSHHK Lapangan", category: "Regulasi", solved: true, detail: "Integrasi sistem e-SKSHHK KLHK dengan GPS fleet Pancaran mencegah sanksi razia." },
-        { id: "ch-f3", title: "Risiko Tumpahan / Kerusakan Batang Kayu", category: "Operasional", solved: true, detail: "Pengikatan hidrolik otomatis pada trailer pengangkut kayu bulat (Log Trailer)." },
-        { id: "ch-f4", title: "Kepatuhan Mutu SVLK Rantai Pasok", category: "Kepatuhan", solved: true, detail: "Audit berkala rantai pengangkutan kayu dari TPH (Tempat Penumpukan Kayu) ke pabrik pulp/sawmill." }
-      ],
-      riskActionHigh: "Sangat baik! Armada pengangkut kayu Anda memiliki dokumen SKSHHK & SVLK lengkap. Kepatuhan hukum dan ekspor terjamin.",
-      riskActionLow: "Bahaya! Pengangkutan hasil hutan tanpa SKSHHK digital dan sertifikasi SVLK berisiko penyitaan armada dan pidana kehutanan."
-    };
-  }
-
-  // 6. Default General Logistics / Enterprise
-  return {
-    sectorKey: "general",
-    sectorBadge: "ENTERPRISE LOGISTICS & COMPLIANCE",
-    matrixTitle: "Matriks Kebijakan Lintas Batas & Kepatuhan Logistik",
-    regulations: [
-      {
-        id: "reg-g1",
-        name: "ISO 39001 Road Traffic Safety Standard",
-        scope: "Global" as const,
-        impactScore: 8,
-        status: "Berlaku" as const,
-        description: "Standar global manajemen keselamatan transportasi jalan raya untuk armada dan aktivitas rantai pasok."
-      },
-      {
-        id: "reg-g2",
-        name: "EU Supply Chain Due Diligence (CSDDD)",
-        scope: "Global" as const,
-        impactScore: 8,
-        status: "Tahap Transisi" as const,
-        description: "Uji tuntas wajib bagi korporasi internasional untuk menjamin standar keselamatan dan HAM pada mitra logistik."
-      },
-      {
-        id: "reg-g3",
-        name: "Penertiban ODOL (Over Dimension Over Load)",
-        scope: "Nasional" as const,
-        impactScore: 10,
-        status: "Berlaku" as const,
-        description: "Regulasi ketat batas dimensi dan tonase muatan armada angkutan barang demi keselamatan infrastruktur jalan."
-      },
-      {
-        id: "reg-g4",
-        name: "Permenhub Manajemen Keselamatan Angkutan Barang",
-        scope: "Nasional" as const,
-        impactScore: 8,
-        status: "Berlaku" as const,
-        description: "Landasan penerapan pengawasan kelaikan jalan dan efisiensi BBM pada sektor transportasi darat."
       }
-    ],
-    riskCalcBadge: "ODOL & SAFETY LOGISTICS CALCULATOR",
-    riskCalcTitle: "Simulasi Kepatuhan Armada & Beban Tonase",
-    toggle1Label: "Kepatuhan Beban Tonase (Bebas ODOL)",
-    toggle2Label: "Sertifikasi ISO 39001 / Safe Transport",
-    telemetryLabel: "Metode Telemetri GPS & Telematics Driver",
-    originLabel: "Kategori Rute & Infrastruktur",
-    originOptions: ["Jalan Tol & Arterial Utama", "Rute Intermodal River-Land", "Rute Remote Off-Road"],
-    nationalTitle: "Instrumen Kebijakan Logistik & Kepatuhan ODOL (Indonesia)",
-    nationalDesc: "Integrasi teknologi e-weighing dan IoT telematics membantu armada Pancaran menjamin keamanan muatan serta efisiensi konsumsi BBM.",
-    nationalBoxes: [
-      { tag: "KONTROL ODOL", title: "Penimbangan Digital Onboard", desc: "Monitoring berat muatan otomatis untuk mencegah sanksi overdimensi di jembatan timbang." },
-      { tag: "E-MANIFEST DIGITIZATION", title: "Pencegahan Pungli", desc: "Digitalisasi surat jalan (e-POD) menggantikan dokumen fisik manual di pos jalur angkutan." },
-      { tag: "EFISIENSI FLEET", title: "Audit Efisiensi Solar", desc: "Laporan penggunaan solar bulanan per km perjalanan untuk kepatuhan operasional." }
-    ],
-    carbonTaxTitle: "Proyeksi Efisiensi Logistik",
-    carbonTaxDesc: "Efisiensi rute dan penghematan solar industri menekan biaya operasional secara konsisten.",
-    challenges: [
-      { id: "ch-g1", title: "Ketimpangan Infrastruktur Jalan Daerah", category: "Infrastruktur", solved: false, detail: "Jalan rusak dan macet di rute non-tol meningkatkan konsumsi BBM hingga 25%." },
-      { id: "ch-g2", title: "Integrasi Sistem Multimoda Darat-Laut", category: "Konektivitas", solved: true, detail: "Pancaran Group menghubungkan angkutan truk dengan kapal/tongkang secara seamless." },
-      { id: "ch-g3", title: "Tinggi Biaya Solar Industri Non-Subsidi", category: "Finansial", solved: false, detail: "Fluktuasi harga BBM menekan margin usaha logistik jika rute tidak teroptimasi." },
-      { id: "ch-g4", title: "Pelaporan Performa Operasional Manual", category: "Teknologi", solved: true, detail: "Sistem IoT Pancaran menghitung kalkulasi efisiensi ritase otomatis per perjalanan." }
-    ],
-    riskActionHigh: "Sangat baik! Armada Anda bebas ODOL dan didukung telemetri GPS real-time. Memenuhi standar keselamatan enterprise.",
-    riskActionLow: "Peringatan! Risiko kecelakaan dan penindakan jembatan timbang tinggi jika muatan melebihi batas tonase ODOL."
-  };
-}
+      keysToRemove.forEach((k) => localStorage.removeItem(k));
+    } catch (e) {}
+  }, []);
 
-export function GlobalNatOverviewDeepDive({ projectTitle }: GlobalNatProps) {
-  const sectorConfig = getSectorConfig(projectTitle);
-  const globalRegs = sectorConfig.regulations.filter(r => r.scope === "Global");
-  const nationalRegs = sectorConfig.regulations.filter(r => r.scope === "Nasional");
+  // When projectTitle prop changes, load the saved content for that title or start polos
+  useEffect(() => {
+    const saved = localStorage.getItem(storageKey) || "";
+    setContent(saved);
+    setEditText(saved);
+    setIsEditing(false);
+  }, [storageKey]);
+
+  // Handler to generate fresh, 100% title-tailored content
+  const handleGenerateContent = async (targetTitle: string = currentTitle) => {
+    setIsLoading(true);
+    setIsEditing(false);
+
+    try {
+      const clientApiKey = localStorage.getItem("workspace_client_api_key") || "";
+      const res = await fetch("/api/generate-overview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectTitle: targetTitle,
+          division: currentDiv,
+          clientApiKey
+        })
+      });
+
+      let generatedMarkdown = "";
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.content && typeof data.content === "string" && data.content.trim().length > 50) {
+          generatedMarkdown = data.content;
+        }
+      }
+
+      // If server returned fallback or couldn't reach API, use precision title generator
+      if (!generatedMarkdown) {
+        const localResult = generateStrategicOverviewForTitle(targetTitle, currentDiv);
+        generatedMarkdown = localResult.narrativeMarkdown;
+      }
+
+      setContent(generatedMarkdown);
+      setEditText(generatedMarkdown);
+      setLastGeneratedForTitle(targetTitle);
+      localStorage.setItem(storageKey, generatedMarkdown);
+      localStorage.setItem(`${storageKey}_title`, targetTitle);
+    } catch (err) {
+      console.warn("Generating local tailored overview for:", targetTitle, err);
+      const localResult = generateStrategicOverviewForTitle(targetTitle, currentDiv);
+      setContent(localResult.narrativeMarkdown);
+      setEditText(localResult.narrativeMarkdown);
+      setLastGeneratedForTitle(targetTitle);
+      localStorage.setItem(storageKey, localResult.narrativeMarkdown);
+      localStorage.setItem(`${storageKey}_title`, targetTitle);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handler to completely wipe content and make it POLOS (blank)
+  const handleClearAll = () => {
+    setContent("");
+    setEditText("");
+    setIsEditing(false);
+    localStorage.removeItem(storageKey);
+    localStorage.removeItem(`${storageKey}_title`);
+  };
+
+  // Handler to start editing manually
+  const handleStartEdit = () => {
+    setEditText(content);
+    setIsEditing(true);
+  };
+
+  // Save manual edits
+  const handleSaveEdit = () => {
+    setContent(editText);
+    localStorage.setItem(storageKey, editText);
+    setIsEditing(false);
+  };
+
+  // Copy narrative to clipboard
+  const handleCopy = () => {
+    if (!content) return;
+    navigator.clipboard.writeText(content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  // Helper to cleanly format bold markdown text
+  const formatTextWithBold = (text: string, highlightColor = "text-white") => {
+    if (!text) return null;
+    const parts = text.split(/(\*\*.*?\*\*)/g);
+    return parts.map((part, pIdx) => {
+      if (part.startsWith("**") && part.endsWith("**")) {
+        return (
+          <strong key={pIdx} className={`${highlightColor} font-bold tracking-wide`}>
+            {part.slice(2, -2)}
+          </strong>
+        );
+      }
+      return part;
+    });
+  };
+
+  // Smart section parser: breakdown markdown into clean, structured card models
+  const parsedSections = useMemo((): ParsedSection[] => {
+    if (!content || !content.trim()) return [];
+
+    const rawSections = content.split(/(?=^#{1,3}\s+)/m);
+    const result: ParsedSection[] = [];
+
+    rawSections.forEach((sec, idx) => {
+      const trimmed = sec.trim();
+      if (!trimmed) return;
+
+      const lines = trimmed.split("\n");
+      const firstLine = lines[0] || "";
+      const rawTitle = firstLine.replace(/^#{1,3}\s+/, "").trim();
+
+      // Clean display title without leading number prefix
+      let displayTitle = rawTitle.replace(/^\d+[\.\)]\s*/, "").trim();
+      if (!displayTitle) {
+        displayTitle = `Bagian Analisis ${idx + 1}`;
+      }
+
+      // Identify category
+      const titleLower = rawTitle.toLowerCase();
+      let iconType: ParsedSection["iconType"] = "general";
+      let metaBadge = "Kajian Strategis";
+      let stepNumber = `0${idx + 1}`;
+
+      if (titleLower.includes("global") || titleLower.includes("makro") || titleLower.includes("rantai pasok")) {
+        iconType = "macro";
+        metaBadge = "Dimensi Makro & Pasar";
+        stepNumber = "01";
+      } else if (titleLower.includes("regulasi") || titleLower.includes("kebijakan") || titleLower.includes("hukum") || titleLower.includes("nasional")) {
+        iconType = "regulation";
+        metaBadge = "Regulasi & Izin Standar";
+        stepNumber = "02";
+      } else if (titleLower.includes("operasi") || titleLower.includes("lapangan") || titleLower.includes("koridor") || titleLower.includes("armada") || titleLower.includes("tantangan")) {
+        iconType = "operations";
+        metaBadge = "Armada & Operasional";
+        stepNumber = "03";
+      } else if (titleLower.includes("kesimpulan") || titleLower.includes("rekomendasi") || titleLower.includes("verdict") || titleLower.includes("keputusan")) {
+        iconType = "verdict";
+        metaBadge = "Keputusan & Rekomendasi";
+        stepNumber = "04";
+      }
+
+      const bodyLines = lines.slice(1);
+      const paragraphs: string[] = [];
+      const bullets: string[] = [];
+      const keyValues: KeyValItem[] = [];
+      const regulationsList: string[] = [];
+      const operationalPoints: KeyValItem[] = [];
+
+      let isInsideRegBlock = false;
+
+      bodyLines.forEach((bLine) => {
+        const blTrim = bLine.trim();
+        if (!blTrim) return;
+
+        // Check if line indicates start of regulation list
+        if (blTrim.toLowerCase().includes("regulasi acuan") || blTrim.toLowerCase().includes("regulasi rujukan")) {
+          isInsideRegBlock = true;
+          return;
+        }
+
+        // Bullet line
+        if (blTrim.startsWith("- ") || blTrim.startsWith("* ")) {
+          const bulletContent = blTrim.replace(/^[\*\-]\s+/, "").trim();
+
+          // Check if key-value pair like: **Key:** Value
+          const kvMatch = bulletContent.match(/^\*\*(.*?)\*\*:?\s*(.*)$/);
+          if (kvMatch) {
+            const key = kvMatch[1].replace(/:$/, "").trim();
+            const val = kvMatch[2].trim();
+
+            if (key && val) {
+              const lowerKey = key.toLowerCase();
+              if (lowerKey.includes("spesifikasi armada") || lowerKey.includes("koridor") || lowerKey.includes("rute") || lowerKey.includes("armada rekomendasi")) {
+                keyValues.push({ key, value: val });
+              } else {
+                operationalPoints.push({ key, value: val });
+              }
+              return;
+            }
+          }
+
+          if (isInsideRegBlock || iconType === "regulation") {
+            regulationsList.push(bulletContent);
+          } else {
+            bullets.push(bulletContent);
+          }
+        } else {
+          // Regular paragraph line
+          paragraphs.push(blTrim);
+        }
+      });
+
+      // Quick summary: pick the first sentence or synthesize
+      let quickSummary = "";
+      if (paragraphs.length > 0) {
+        const firstP = paragraphs[0];
+        const sentenceMatch = firstP.match(/^([^\.\!\?]+[\.\!\?])/);
+        quickSummary = sentenceMatch ? sentenceMatch[1] : firstP.slice(0, 160) + "...";
+      } else if (bullets.length > 0) {
+        quickSummary = bullets[0];
+      }
+
+      result.push({
+        id: `sec-${idx}`,
+        rawTitle,
+        displayTitle,
+        iconType,
+        quickSummary,
+        paragraphs,
+        bullets,
+        keyValues,
+        regulationsList,
+        operationalPoints,
+        metaBadge,
+        stepNumber
+      });
+    });
+
+    return result;
+  }, [content]);
+
+  // Extract quick key indicators for the top KPI metric boxes
+  const keyMetrics = useMemo(() => {
+    if (!content) return null;
+
+    // Detect fleet
+    const fleetMatch = content.match(/(?:Armada|Spesifikasi Armada|Unit Armada|Tipe Truk)[^:\n]*:\s*([^\n\*\.]+)/i);
+    // Detect corridor
+    const corridorMatch = content.match(/(?:Koridor|Rute|Jangkauan Operasional|Lintasan)[^:\n]*:\s*([^\n\*\.]+)/i);
+    // Detect verdict
+    const isFeasible = /Sangat Layak|Layak Dijalankan|Feasible|GO/i.test(content);
+
+    // Extract quick takeaway summary
+    let executiveSummary = "";
+    if (parsedSections.length > 0) {
+      const macroSec = parsedSections.find((s) => s.iconType === "macro") || parsedSections[0];
+      executiveSummary = macroSec.quickSummary || "Proyek memiliki daya saing kuat dengan kepatuhan regulasi dan rute operasional terencana.";
+    }
+
+    return {
+      fleet: fleetMatch ? fleetMatch[1].trim() : "Armada Heavy Duty Sesuai Muatan",
+      corridor: corridorMatch ? corridorMatch[1].trim() : "Koridor Arteri Nasional Utama",
+      verdict: isFeasible ? "FEASIBLE (LAYAK / GO)" : "CONDITIONAL (REVIEW)",
+      executiveSummary
+    };
+  }, [content, parsedSections]);
+
+  // Markdown renderer for clean unified narrative (Document view)
+  const renderSeamlessNarrative = (rawText: string) => {
+    if (!rawText || !rawText.trim()) return null;
+    const lines = rawText.split("\n");
+    const renderedNodes: React.ReactNode[] = [];
+
+    lines.forEach((line, index) => {
+      const trimmed = line.trim();
+
+      if (!trimmed) {
+        renderedNodes.push(<div key={`empty-${index}`} className="h-3" />);
+        return;
+      }
+
+      if (trimmed.startsWith("### ")) {
+        const headingText = trimmed.replace(/^###\s+/, "");
+        renderedNodes.push(
+          <div key={`h3-${index}`} className="mt-6 mb-3 pt-3 border-t border-slate-800 first:border-t-0 first:pt-0">
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-blue-500 shrink-0" />
+              <h4 className="text-sm md:text-base font-bold text-white uppercase tracking-tight">
+                {headingText}
+              </h4>
+            </div>
+          </div>
+        );
+        return;
+      }
+
+      if (trimmed.startsWith("## ") || trimmed.startsWith("# ")) {
+        const headingText = trimmed.replace(/^#+\s+/, "");
+        renderedNodes.push(
+          <div key={`h2-${index}`} className="mt-7 mb-3.5 border-b border-blue-500/20 pb-2">
+            <h3 className="text-base md:text-lg font-bold text-blue-300 uppercase tracking-tight flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-blue-400" />
+              {headingText}
+            </h3>
+          </div>
+        );
+        return;
+      }
+
+      if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+        const bulletContent = trimmed.replace(/^[\*\-]\s+/, "");
+        renderedNodes.push(
+          <div key={`bullet-${index}`} className="flex items-start gap-2.5 ml-1 my-1.5 text-slate-300 text-xs md:text-[13px] leading-relaxed">
+            <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-blue-400 shrink-0" />
+            <div className="flex-1">{formatTextWithBold(bulletContent)}</div>
+          </div>
+        );
+        return;
+      }
+
+      renderedNodes.push(
+        <p
+          key={`p-${index}`}
+          className="text-xs md:text-[13px] text-slate-300 leading-relaxed font-normal text-justify my-2.5"
+        >
+          {formatTextWithBold(trimmed)}
+        </p>
+      );
+    });
+
+    return renderedNodes;
+  };
+
+  const isBlank = !content || content.trim().length === 0;
+  const isTitleDifferent = content && lastGeneratedForTitle && lastGeneratedForTitle.toLowerCase() !== currentTitle.toLowerCase();
 
   return (
-    <div id="global-nat-overview-deepdive-root" className="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-slate-100 shadow-2xl mt-2 font-sans relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-80 h-80 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
-      
-      {/* Header Info */}
-      <div className="border-b border-slate-800 pb-4 mb-6">
-        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-          <span className="px-2.5 py-0.5 text-[9px] font-black tracking-wider uppercase rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 font-mono">
-            {sectorConfig.sectorBadge}
-          </span>
-          <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
-          <span className="px-2.5 py-0.5 text-[9px] font-black tracking-wider uppercase rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-mono">
-            PROJECT: {projectTitle || "Kajian Strategis PRAMA"}
-          </span>
+    <div
+      id="global-nat-overview-deepdive-root"
+      className="bg-slate-900 border border-slate-800 rounded-3xl p-5 md:p-7 text-slate-100 shadow-xl mt-2 font-sans relative overflow-hidden"
+    >
+      {/* Header Section */}
+      <div className="mb-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+          {/* Left Badge Info */}
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/20 font-mono flex items-center gap-1.5">
+              <Globe className="h-3 w-3 text-blue-400" />
+              PILAR 1 • GLOBAL & NATIONAL OVERVIEW
+            </span>
+            <span className="text-slate-600 hidden sm:inline">•</span>
+            <span className="text-xs text-slate-400 font-medium truncate max-w-xs sm:max-w-md">
+              Proyek: <strong className="text-slate-200">{currentTitle}</strong>
+            </span>
+            <span className="text-slate-600 hidden sm:inline">•</span>
+            <span
+              className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded font-bold ${
+                isBlank
+                  ? "bg-slate-800 text-slate-400 border border-slate-700"
+                  : "bg-emerald-500/10 text-emerald-300 border border-emerald-500/30"
+              }`}
+            >
+              {isBlank ? "Status: Polos" : "Status: Siap Dibaca"}
+            </span>
+          </div>
+
+          {/* Action Buttons Toolbar */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {!isBlank && !isEditing && (
+              <>
+                {/* 3-Way Segmented View Switcher */}
+                <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 shrink-0 select-none">
+                  <button
+                    type="button"
+                    onClick={() => setDisplayMode("core")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                      displayMode === "core"
+                        ? "bg-cyan-600 text-white shadow-xs"
+                        : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
+                    }`}
+                    title="Tampilkan hanya poin-poin penjelasan inti yang sangat mudah dipahami"
+                  >
+                    <SlidersHorizontal className="h-3.5 w-3.5" />
+                    <span>Inti Pokok (Ringkas)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setDisplayMode("cards")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                      displayMode === "cards"
+                        ? "bg-cyan-600 text-white shadow-xs"
+                        : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
+                    }`}
+                    title="Tampilkan analisis dalam kotak-kotak terstruktur"
+                  >
+                    <LayoutGrid className="h-3.5 w-3.5" />
+                    <span>Kotak Rincian</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setDisplayMode("document")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                      displayMode === "document"
+                        ? "bg-cyan-600 text-white shadow-xs"
+                        : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
+                    }`}
+                    title="Tampilkan dalam bentuk dokumen teks mengalir"
+                  >
+                    <AlignLeft className="h-3.5 w-3.5" />
+                    <span>Dokumen Narasi</span>
+                  </button>
+                </div>
+              </>
+            )}
+
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  const saved = localStorage.getItem("prama_dashboard_sections");
+                  const map = saved ? JSON.parse(saved) : {};
+                  map[1] = content;
+                  exportAllSectionsToWord(currentTitle, map);
+                } catch(e) {
+                  exportAllSectionsToWord(currentTitle, { 1: content });
+                }
+              }}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition shadow-md shadow-emerald-600/20 cursor-pointer active:scale-95"
+              title="Unduh seluruh laporan komprehensif ke format Word (.doc)"
+            >
+              <FileText className="h-3.5 w-3.5" />
+              <span>Unduh Word (.doc)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleGenerateContent(currentTitle)}
+              disabled={isLoading}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold transition shadow-md shadow-indigo-600/20 cursor-pointer active:scale-95 disabled:opacity-50"
+              title="Buat isian baru yang sesuai dengan judul proyek"
+            >
+              <Sparkles className={`h-3.5 w-3.5 ${isLoading ? "animate-spin text-blue-200" : ""}`} />
+              <span>{isLoading ? "Menyusun Kajian..." : isBlank ? "Buat Ringkasan Inti" : "Buat Ulang Sesuai Judul"}</span>
+            </button>
+          </div>
         </div>
-        <h3 className="text-lg md:text-xl font-black uppercase tracking-tight text-white flex items-center gap-2">
-          <Globe className="h-5 w-5 text-blue-400" />
-          Global & National (NAT) Overview
-        </h3>
-        <p className="text-xs text-slate-400 mt-1 font-semibold max-w-3xl leading-relaxed">
-          Ringkasan komprehensif sinkronisasi regulasi internasional, tantangan operasional domestik, serta kebijakan strategis nasional untuk memastikan keberlanjutan dan kepatuhan proyek <span className="text-blue-300 font-extrabold">"{projectTitle || "Kajian Strategis PRAMA"}"</span>.
-        </p>
+
+        {/* Main Title Heading */}
+        <div className="mt-4 flex items-start justify-between flex-wrap gap-4">
+          <div className="flex items-start gap-3">
+            <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-blue-500/20 to-indigo-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400 shrink-0 shadow-inner">
+              <Globe className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-xl md:text-2xl font-bold tracking-tight text-white">
+                  Global & National Overview
+                </h3>
+                <span className="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full font-mono">
+                  Visual Brief
+                </span>
+              </div>
+              <p className="text-xs md:text-sm text-slate-400 mt-1 font-normal leading-relaxed">
+                Poin-poin inti strategis kelayakan makro, izin regulasi, kesiapan armada, dan rekomendasi keputusan untuk{" "}
+                <span className="text-blue-300 font-bold">"{currentTitle}"</span>.
+              </p>
+            </div>
+          </div>
+
+          {/* Quick feasibility badge */}
+          {!isBlank && keyMetrics && (
+            <div className="flex items-center gap-2 bg-emerald-950/50 border border-emerald-500/30 px-3.5 py-1.5 rounded-xl">
+              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-[11px] font-bold text-emerald-300 uppercase tracking-wide">
+                Kelayakan: {keyMetrics.verdict}
+              </span>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Main Structured Box Container */}
-      <div className="bg-slate-950/60 border border-slate-800/90 rounded-2xl p-5 space-y-6">
-        
-        {/* 1. Regulasi Global */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="p-2 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/20">
-              <Scale className="h-4 w-4" />
-            </div>
-            <div>
-              <h4 className="text-sm font-black text-white uppercase tracking-tight">Regulasi Global (International Standards)</h4>
-              <p className="text-[10px] text-slate-400 font-semibold">Standar kepatuhan internasional, ESG, dan traktat lintas batas</p>
-            </div>
+      {/* Sync Alert if Title Has Changed */}
+      {isTitleDifferent && (
+        <div className="mb-5 bg-amber-500/10 border border-amber-500/20 rounded-2xl p-3.5 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-2.5 text-xs text-amber-200">
+            <span className="h-2 w-2 rounded-full bg-amber-400 shrink-0 animate-ping" />
+            <span>
+              Judul proyek aktif berubah menjadi: <strong className="text-white">"{currentTitle}"</strong>
+            </span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {globalRegs.map((reg) => (
-              <div key={reg.id} className="bg-slate-950/60 p-3 rounded-lg border border-slate-800/60">
-                <div className="flex justify-between items-start gap-2 mb-1">
-                  <span className="text-[10px] font-black text-purple-300 uppercase">{reg.name}</span>
-                  <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400">{reg.status}</span>
-                </div>
-                <p className="text-[10.5px] text-slate-300 leading-relaxed font-semibold">{reg.description}</p>
-              </div>
-            ))}
-          </div>
+          <button
+            type="button"
+            onClick={() => handleGenerateContent(currentTitle)}
+            className="flex items-center gap-1.5 px-3 py-1 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-xl transition cursor-pointer active:scale-95"
+          >
+            <Sparkles className="h-3 w-3" />
+            <span>Sinkronkan Isian untuk Judul Ini</span>
+          </button>
         </div>
+      )}
 
-        {/* 2. Tantangan & Kebutuhan */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
-              <ShieldAlert className="h-4 w-4" />
+      {/* Main Canvas Area */}
+      <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-5 md:p-6 shadow-inner relative min-h-[220px]">
+        {isLoading ? (
+          <div className="py-16 px-4 text-center flex flex-col items-center justify-center gap-3">
+            <div className="relative">
+              <div className="h-12 w-12 rounded-full border-2 border-blue-500/20 border-t-blue-400 animate-spin" />
+              <Sparkles className="h-5 w-5 text-blue-400 absolute inset-0 m-auto animate-pulse" />
             </div>
-            <div>
-              <h4 className="text-sm font-black text-white uppercase tracking-tight">Tantangan & Kebutuhan Operasional</h4>
-              <p className="text-[10px] text-slate-400 font-semibold">Kendala lapangan, mitigasi risiko, dan kebutuhan kesiapan armada/teknologi</p>
+            <p className="text-sm font-bold text-white tracking-wide">
+              Menyusun Penjelasan Inti Proyek...
+            </p>
+            <p className="text-xs text-slate-400 max-w-md text-center leading-relaxed">
+              Mengekstrak poin-poin penting, regulasi kunci, armada yang tepat, dan rekomendasi eksekutif untuk{" "}
+              <span className="text-blue-300 font-bold">"{currentTitle}"</span>.
+            </p>
+          </div>
+        ) : isEditing ? (
+          /* Manual Edit Mode */
+          <div className="space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-200">
+                <Edit3 className="h-4 w-4 text-blue-400" />
+                <span>Mode Edit Teks (Format Markdown)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(false)}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition cursor-pointer"
+                >
+                  <X className="h-3.5 w-3.5" />
+                  <span>Batal</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveEdit}
+                  className="flex items-center gap-1 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition cursor-pointer"
+                >
+                  <Save className="h-3.5 w-3.5" />
+                  <span>Simpan Perubahan</span>
+                </button>
+              </div>
+            </div>
+
+            <textarea
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              placeholder="Tuliskan poin-poin analisis strategis di sini..."
+              rows={15}
+              className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-xs md:text-sm text-slate-100 font-mono focus:outline-hidden focus:border-blue-500 transition leading-relaxed resize-y"
+            />
+          </div>
+        ) : isBlank ? (
+          /* Clean Blank State */
+          <div className="py-14 px-4 text-center flex flex-col items-center justify-center gap-4">
+            <div className="h-16 w-16 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 shadow-inner">
+              <FileText className="h-8 w-8 text-slate-400" />
+            </div>
+
+            <div className="max-w-md">
+              <h4 className="text-base font-bold text-white mb-1">
+                Kajian Strategis Masih Polos
+              </h4>
+              <p className="text-xs md:text-sm text-slate-400 leading-relaxed">
+                Belum ada data untuk proyek <span className="text-blue-300 font-bold">"{currentTitle}"</span>. Klik tombol di bawah untuk membuat penjelasan inti yang ringkas, visual, dan mudah dipahami.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => handleGenerateContent(currentTitle)}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-indigo-600/20 cursor-pointer active:scale-95"
+              >
+                <Sparkles className="h-4 w-4" />
+                <span>Buat Penjelasan Inti Sesuai Judul</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleStartEdit}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-xl text-xs font-bold transition cursor-pointer active:scale-95"
+              >
+                <Edit3 className="h-3.5 w-3.5 text-slate-400" />
+                <span>Tulis Manual</span>
+              </button>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {sectorConfig.challenges.map((ch) => (
-              <div key={ch.id} className="bg-slate-950/60 p-3 rounded-lg border border-slate-800/60 flex items-start gap-2.5">
-                <div className={`mt-0.5 shrink-0 w-2 h-2 rounded-full ${ch.solved ? "bg-emerald-400" : "bg-amber-400"}`} />
-                <div>
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-[11px] font-black text-slate-200 uppercase">{ch.title}</span>
-                    <span className="text-[8.5px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 font-mono">{ch.category}</span>
+        ) : (
+          /* Populated Unified Content */
+          <div className="space-y-6">
+            {/* Top 3 Key Parameter Metric Cards */}
+            {keyMetrics && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {/* Box 1: Fleet */}
+                <div className="bg-gradient-to-br from-slate-900 to-slate-900/90 border border-slate-800 hover:border-amber-500/40 rounded-2xl p-4 transition shadow-xs flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 font-mono flex items-center gap-1.5">
+                        <Truck className="h-3.5 w-3.5 text-amber-400" />
+                        Armada Tepat Guna
+                      </span>
+                      <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                    </div>
+                    <p className="text-xs md:text-sm font-bold text-white leading-snug line-clamp-2" title={keyMetrics.fleet}>
+                      {keyMetrics.fleet}
+                    </p>
                   </div>
-                  <p className="text-[10px] text-slate-400 leading-relaxed font-semibold">{ch.detail}</p>
+                  <p className="text-[11px] text-slate-400 mt-2.5 pt-2 border-t border-slate-800">
+                    Spesifikasi muatan & daya angkut optimal
+                  </p>
+                </div>
+
+                {/* Box 2: Corridor */}
+                <div className="bg-gradient-to-br from-slate-900 to-slate-900/90 border border-slate-800 hover:border-indigo-500/40 rounded-2xl p-4 transition shadow-xs flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-indigo-400 font-mono flex items-center gap-1.5">
+                        <MapPin className="h-3.5 w-3.5 text-indigo-400" />
+                        Koridor Wilayah / Rute
+                      </span>
+                      <span className="h-1.5 w-1.5 rounded-full bg-indigo-400" />
+                    </div>
+                    <p className="text-xs md:text-sm font-bold text-white leading-snug line-clamp-2" title={keyMetrics.corridor}>
+                      {keyMetrics.corridor}
+                    </p>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-2.5 pt-2 border-t border-slate-800">
+                    Lintasan distribusi & akses jaringan logistik
+                  </p>
+                </div>
+
+                {/* Box 3: Verdict */}
+                <div className="bg-gradient-to-br from-slate-900 to-slate-900/90 border border-slate-800 hover:border-emerald-500/40 rounded-2xl p-4 transition shadow-xs flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 font-mono flex items-center gap-1.5">
+                        <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+                        Status Keputusan
+                      </span>
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                    </div>
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 font-black text-xs tracking-wide">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                      <span>{keyMetrics.verdict}</span>
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-2.5 pt-2 border-t border-slate-800">
+                    Kesiapan regulasi & operasional lapangan
+                  </p>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
+            )}
 
-        {/* 3. Kebijakan Nasional */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              <Building2 className="h-4 w-4" />
-            </div>
-            <div>
-              <h4 className="text-sm font-black text-white uppercase tracking-tight">Kebijakan Nasional (Domestic Framework)</h4>
-              <p className="text-[10px] text-slate-400 font-semibold">{sectorConfig.nationalTitle}</p>
-            </div>
-          </div>
-          <p className="text-[11px] text-slate-300 font-semibold mb-3 leading-relaxed">
-            {sectorConfig.nationalDesc}
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {sectorConfig.nationalBoxes.map((box, idx) => (
-              <div key={idx} className="bg-slate-950/60 p-3 rounded-lg border border-slate-800/60">
-                <span className="text-[8.5px] font-mono font-black text-emerald-400 block mb-1">{box.tag}</span>
-                <h5 className="text-[11px] font-black text-white uppercase tracking-tight">{box.title}</h5>
-                <p className="text-[10px] text-slate-400 font-semibold mt-1 leading-relaxed">{box.desc}</p>
+            {/* VIEW 1: PENJELASAN INTI (RINGKAS, VISUAL, MUDAH DIPAHAMI) */}
+            {displayMode === "core" && (
+              <div className="space-y-5">
+                {/* Executive Quick Takeaway Highlight Banner */}
+                <div className="bg-gradient-to-r from-indigo-950/70 via-blue-950/60 to-slate-900 border border-indigo-500/30 rounded-2xl p-4 md:p-5 shadow-sm">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Zap className="h-4 w-4 text-amber-400" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-indigo-300 font-mono">
+                      Inti Eksekutif (30 Detik Baca)
+                    </span>
+                  </div>
+                  <p className="text-xs md:text-sm text-slate-200 font-medium leading-relaxed">
+                    Proyek <strong className="text-white">"{currentTitle}"</strong> memiliki daya saing tinggi dengan pemenuhan standar regulasi resmi dan pemilihan armada yang efisien. Rantai pasok ini menjawab kebutuhan pasar tanpa melanggar regulasi ODOL ataupun risiko keselamatan kerja.
+                  </p>
+                </div>
+
+                {/* 4 Core Pillars in visual easy-to-digest cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Card 1: Konteks Makro & Pasar */}
+                  <div className="bg-slate-900/90 border border-blue-500/20 hover:border-blue-500/40 rounded-2xl p-4 md:p-5 flex flex-col justify-between transition group">
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-3">
+                        <span className="px-2 py-0.5 rounded text-[9.5px] font-black uppercase tracking-wider bg-blue-500/10 text-blue-400 border border-blue-500/20 font-mono">
+                          01 • Pasar & Makro
+                        </span>
+                        <TrendingUp className="h-4 w-4 text-blue-400" />
+                      </div>
+
+                      <h4 className="text-sm font-bold text-white mb-2">
+                        Peluang & Dinamika Pasar
+                      </h4>
+
+                      {(() => {
+                        const macroSec = parsedSections.find((s) => s.iconType === "macro") || parsedSections[0];
+                        if (!macroSec) return null;
+
+                        return (
+                          <div className="space-y-2.5 text-xs text-slate-300">
+                            <p className="text-[12.5px] text-slate-200 leading-relaxed font-medium">
+                              {macroSec.quickSummary || "Pertumbuhan sektor menuntut efisiensi logistik yang tepat waktu dan terstandarisasi."}
+                            </p>
+
+                            {macroSec.bullets.length > 0 ? (
+                              <div className="space-y-1.5 pt-1">
+                                {macroSec.bullets.slice(0, 3).map((b, bIdx) => (
+                                  <div key={bIdx} className="flex items-start gap-2 text-xs text-slate-300">
+                                    <span className="text-blue-400 font-bold text-xs mt-0.5">•</span>
+                                    <span className="flex-1">{formatTextWithBold(b, "text-blue-200")}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="space-y-1.5 pt-1">
+                                <div className="flex items-center gap-2 text-[11.5px] text-slate-300">
+                                  <Check className="h-3 w-3 text-blue-400 shrink-0" />
+                                  <span>Permintaan stabil dengan potensi kontrak jangka panjang B2B</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-[11.5px] text-slate-300">
+                                  <Check className="h-3 w-3 text-blue-400 shrink-0" />
+                                  <span>Efisiensi konsumsi BBM dan rasio muatan maksimal</span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-blue-400">
+                      <span className="font-semibold">Target Pasar: Industri & Komersial</span>
+                      <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </div>
+
+                  {/* Card 2: Kepatuhan Regulasi & Standar */}
+                  <div className="bg-slate-900/90 border border-indigo-500/20 hover:border-indigo-500/40 rounded-2xl p-4 md:p-5 flex flex-col justify-between transition group">
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-3">
+                        <span className="px-2 py-0.5 rounded text-[9.5px] font-black uppercase tracking-wider bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-mono">
+                          02 • Regulasi & Kepatuhan
+                        </span>
+                        <Scale className="h-4 w-4 text-indigo-400" />
+                      </div>
+
+                      <h4 className="text-sm font-bold text-white mb-2">
+                        Izin Pokok & Standar Keselamatan
+                      </h4>
+
+                      {(() => {
+                        const regSec = parsedSections.find((s) => s.iconType === "regulation") || parsedSections[1];
+                        const regs = regSec?.regulationsList?.length
+                          ? regSec.regulationsList
+                          : [
+                              "UU No. 22 Tahun 2009 tentang Lalu Lintas dan Angkutan Jalan (LLAJ)",
+                              "Kepatuhan Kebijakan Zero ODOL & Muatan Sumbu Terberat (MST)",
+                              "Sistem Manajemen Keselamatan (SMK) Angkutan & K3 Kerja"
+                            ];
+
+                        return (
+                          <div className="space-y-2 text-xs">
+                            <p className="text-[12.5px] text-slate-200 font-medium leading-relaxed">
+                              {regSec?.quickSummary || "Wajib memenuhi perizinan perhubungan, tonase resmi, dan standar keselamatan berkendara."}
+                            </p>
+
+                            <div className="space-y-1.5 pt-1">
+                              {regs.slice(0, 3).map((r, rIdx) => (
+                                <div
+                                  key={rIdx}
+                                  className="p-2 bg-slate-950/70 border border-slate-800 rounded-lg flex items-start gap-2 text-[11.5px] text-indigo-200"
+                                >
+                                  <ShieldCheck className="h-3.5 w-3.5 text-indigo-400 shrink-0 mt-0.5" />
+                                  <span className="line-clamp-2">{r.replace(/\*\*/g, "")}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-indigo-400">
+                      <span className="font-semibold">Status: 100% Legal & Kepatuhan Penuh</span>
+                      <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </div>
+
+                  {/* Card 3: Operasional & Armada */}
+                  <div className="bg-slate-900/90 border border-amber-500/20 hover:border-amber-500/40 rounded-2xl p-4 md:p-5 flex flex-col justify-between transition group">
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-3">
+                        <span className="px-2 py-0.5 rounded text-[9.5px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20 font-mono">
+                          03 • Operasional Lapangan
+                        </span>
+                        <Truck className="h-4 w-4 text-amber-400" />
+                      </div>
+
+                      <h4 className="text-sm font-bold text-white mb-2">
+                        Kesiapan Armada & Mitigasi Rute
+                      </h4>
+
+                      {(() => {
+                        const opsSec = parsedSections.find((s) => s.iconType === "operations") || parsedSections[2];
+
+                        return (
+                          <div className="space-y-2.5 text-xs text-slate-300">
+                            <p className="text-[12.5px] text-slate-200 leading-relaxed font-medium">
+                              {opsSec?.quickSummary || "Armada siap jalan dengan pemeliharaan teratur dan pengawasan rute secara digital."}
+                            </p>
+
+                            <div className="space-y-1.5 pt-1">
+                              {opsSec?.operationalPoints && opsSec.operationalPoints.length > 0 ? (
+                                opsSec.operationalPoints.slice(0, 3).map((op, opIdx) => (
+                                  <div key={opIdx} className="p-2 bg-slate-950/70 border border-slate-800 rounded-lg text-[11.5px]">
+                                    <div className="font-bold text-amber-300 flex items-center gap-1.5">
+                                      <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                                      <span>{op.key}</span>
+                                    </div>
+                                    <p className="text-slate-300 mt-0.5 pl-3 line-clamp-1">{op.value}</p>
+                                  </div>
+                                ))
+                              ) : (
+                                <>
+                                  <div className="flex items-center gap-2 text-[11.5px] text-slate-300">
+                                    <Check className="h-3 w-3 text-amber-400 shrink-0" />
+                                    <span>Pelacakan GPS real-time & Driver Safety Monitoring</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-[11.5px] text-slate-300">
+                                    <Check className="h-3 w-3 text-amber-400 shrink-0" />
+                                    <span>Pemeliharaan rutin ban, rem, dan sistem keselamatan</span>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-amber-400">
+                      <span className="font-semibold">Keandalan Teknis: Terpantau 24/7</span>
+                      <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </div>
+
+                  {/* Card 4: Keputusan & Rekomendasi */}
+                  <div className="bg-slate-900/90 border border-emerald-500/20 hover:border-emerald-500/40 rounded-2xl p-4 md:p-5 flex flex-col justify-between transition group">
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-3">
+                        <span className="px-2 py-0.5 rounded text-[9.5px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
+                          04 • Kesimpulan & Eksekusi
+                        </span>
+                        <Award className="h-4 w-4 text-emerald-400" />
+                      </div>
+
+                      <h4 className="text-sm font-bold text-white mb-2">
+                        Rekomendasi Langkah Nyata
+                      </h4>
+
+                      {(() => {
+                        const verdictSec = parsedSections.find((s) => s.iconType === "verdict") || parsedSections[3];
+
+                        return (
+                          <div className="space-y-2.5 text-xs text-slate-300">
+                            <div className="p-2.5 bg-emerald-950/60 border border-emerald-500/30 rounded-xl">
+                              <span className="text-[10px] font-black uppercase text-emerald-400 block mb-0.5 font-mono">
+                                Verdict Kelayakan:
+                              </span>
+                              <p className="text-xs font-bold text-emerald-200">
+                                {verdictSec?.quickSummary || "Proyek Sangat Layak Dijalankan (Feasible - GO) dengan kepatuhan tonase resmi."}
+                              </p>
+                            </div>
+
+                            <div className="space-y-1.5 pt-1">
+                              <div className="flex items-start gap-2 text-[11.5px] text-slate-300">
+                                <span className="text-emerald-400 font-bold mt-0.5">1.</span>
+                                <span>Kunci kontrak SLA jangka panjang dengan klien utama</span>
+                              </div>
+                              <div className="flex items-start gap-2 text-[11.5px] text-slate-300">
+                                <span className="text-emerald-400 font-bold mt-0.5">2.</span>
+                                <span>Patuhi batasan tonase legal agar terhindar dari tilang ODOL</span>
+                              </div>
+                              <div className="flex items-start gap-2 text-[11.5px] text-slate-300">
+                                <span className="text-emerald-400 font-bold mt-0.5">3.</span>
+                                <span>Jadwalkan preventif maintenance unit berkala</span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-emerald-400">
+                      <span className="font-semibold">Status Aksi: Siap Diluncurkan</span>
+                      <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </div>
+                </div>
               </div>
-            ))}
-          </div>
-        </div>
+            )}
 
+            {/* VIEW 2: KOTAK-KOTAK BREAKDOWN RAPIH */}
+            {displayMode === "cards" && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-800 text-xs">
+                  <span className="font-bold text-slate-200 flex items-center gap-2">
+                    <LayoutGrid className="h-4 w-4 text-blue-400" />
+                    Rincian Penjelasan Ter-Breakdown (Kotak Analisis)
+                  </span>
+                  <span className="text-[11px] text-slate-400 font-mono">
+                    {parsedSections.length} Bab Analisis Terpadu
+                  </span>
+                </div>
+
+                <div className="flex flex-col space-y-4">
+                  {parsedSections.map((sec) => {
+                    const isMacro = sec.iconType === "macro";
+                    const isReg = sec.iconType === "regulation";
+                    const isOps = sec.iconType === "operations";
+                    const isVerdict = sec.iconType === "verdict";
+
+                    let cardBorder = "border-slate-800 hover:border-slate-700 bg-slate-900/90";
+                    let badgeClass = "bg-slate-800 text-slate-300 border-slate-700";
+                    let titleClass = "text-white";
+                    let iconNode = <Briefcase className="h-4 w-4 text-blue-400" />;
+                    let calloutBorder = "border-blue-500/20 bg-blue-500/5 text-blue-200";
+
+                    if (isMacro) {
+                      cardBorder = "border-blue-900/30 hover:border-blue-700/50 bg-slate-900/90";
+                      badgeClass = "bg-blue-500/10 text-blue-400 border-blue-500/30";
+                      titleClass = "text-blue-100";
+                      iconNode = <Globe className="h-4 w-4 text-blue-400" />;
+                      calloutBorder = "border-blue-500/20 bg-blue-500/10 text-blue-200";
+                    } else if (isReg) {
+                      cardBorder = "border-indigo-900/30 hover:border-indigo-700/50 bg-slate-900/90";
+                      badgeClass = "bg-indigo-500/10 text-indigo-400 border-indigo-500/30";
+                      titleClass = "text-indigo-100";
+                      iconNode = <Scale className="h-4 w-4 text-indigo-400" />;
+                      calloutBorder = "border-indigo-500/20 bg-indigo-500/10 text-indigo-200";
+                    } else if (isOps) {
+                      cardBorder = "border-amber-900/30 hover:border-amber-700/50 bg-slate-900/90";
+                      badgeClass = "bg-amber-500/10 text-amber-400 border-amber-500/30";
+                      titleClass = "text-amber-100";
+                      iconNode = <Truck className="h-4 w-4 text-amber-400" />;
+                      calloutBorder = "border-amber-500/20 bg-amber-500/10 text-amber-200";
+                    } else if (isVerdict) {
+                      cardBorder = "border-emerald-900/40 hover:border-emerald-700/60 bg-slate-900/90";
+                      badgeClass = "bg-emerald-500/10 text-emerald-400 border-emerald-500/30";
+                      titleClass = "text-emerald-100";
+                      iconNode = <Award className="h-4 w-4 text-emerald-400" />;
+                      calloutBorder = "border-emerald-500/20 bg-emerald-500/10 text-emerald-200";
+                    }
+
+                    return (
+                      <div
+                        key={sec.id}
+                        className={`rounded-2xl border ${cardBorder} p-5 md:p-6 transition shadow-xs flex flex-col justify-between`}
+                      >
+                        <div className="space-y-3.5">
+                          {/* Card Top Header */}
+                          <div className="flex items-center justify-between gap-2">
+                            <span className={`px-2.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider border font-mono ${badgeClass}`}>
+                              {sec.metaBadge}
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-mono">
+                              Bagian {sec.stepNumber}
+                            </span>
+                          </div>
+
+                          {/* Card Title */}
+                          <h4 className={`text-sm md:text-base font-bold tracking-tight flex items-center gap-2 ${titleClass}`}>
+                            {iconNode}
+                            <span>{sec.displayTitle}</span>
+                          </h4>
+
+                          {/* Penjelasan Singkat (Highlight Callout Box) */}
+                          {sec.quickSummary && (
+                            <div className={`p-3 rounded-xl border ${calloutBorder} flex items-start gap-2.5 text-xs leading-relaxed`}>
+                              <Info className="h-4 w-4 shrink-0 mt-0.5 opacity-80" />
+                              <div className="flex-1">
+                                <span className="font-bold text-[10.5px] uppercase tracking-wider block mb-0.5 opacity-90">
+                                  Poin Inti:
+                                </span>
+                                <div>{formatTextWithBold(sec.quickSummary)}</div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Detailed Narrative Paragraphs */}
+                          {sec.paragraphs.length > 1 && (
+                            <div className="space-y-2 text-xs text-slate-300 leading-relaxed font-normal text-justify">
+                              {sec.paragraphs.slice(1).map((p, pIdx) => (
+                                <p key={`p-${pIdx}`}>
+                                  {formatTextWithBold(p)}
+                                </p>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Regulations List */}
+                          {isReg && sec.regulationsList.length > 0 && (
+                            <div className="mt-3 pt-3 border-t border-slate-800/80 space-y-1.5">
+                              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                                <FileCheck2 className="h-3.5 w-3.5 text-indigo-400" />
+                                Rujukan Regulasi Resmi:
+                              </span>
+                              <div className="grid grid-cols-1 gap-1.5">
+                                {sec.regulationsList.map((reg, rIdx) => (
+                                  <div
+                                    key={`reg-${rIdx}`}
+                                    className="p-2.5 bg-slate-950/60 border border-slate-800/90 rounded-xl flex items-start gap-2.5 text-xs text-slate-200"
+                                  >
+                                    <Scale className="h-3.5 w-3.5 text-indigo-400 shrink-0 mt-0.5" />
+                                    <span className="flex-1 font-medium">{formatTextWithBold(reg)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Operational Key Values */}
+                          {isOps && sec.keyValues.length > 0 && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                              {sec.keyValues.map((kv, kvIdx) => {
+                                const isFleet = kv.key.toLowerCase().includes("armada");
+                                return (
+                                  <div
+                                    key={`kv-${kvIdx}`}
+                                    className="p-3 rounded-xl bg-slate-950/70 border border-slate-800 flex flex-col justify-between"
+                                  >
+                                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5 mb-1 font-mono">
+                                      {isFleet ? <Truck className="h-3 w-3 text-amber-400" /> : <MapPin className="h-3 w-3 text-indigo-400" />}
+                                      {kv.key}
+                                    </span>
+                                    <span className="text-xs font-bold text-white">
+                                      {kv.value}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {/* Operational Technical Points */}
+                          {isOps && sec.operationalPoints.length > 0 && (
+                            <div className="mt-3 pt-3 border-t border-slate-800/80 space-y-1.5">
+                              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                                <AlertCircle className="h-3.5 w-3.5 text-amber-400" />
+                                Poin Kesiapan Lapangan:
+                              </span>
+                              <div className="space-y-1.5">
+                                {sec.operationalPoints.map((op, opIdx) => (
+                                  <div
+                                    key={`op-${opIdx}`}
+                                    className="p-2.5 bg-slate-950/60 border border-slate-800/90 rounded-xl text-xs space-y-1"
+                                  >
+                                    <div className="font-bold text-amber-300 flex items-center gap-1.5">
+                                      <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                                      <span>{op.key}</span>
+                                    </div>
+                                    <p className="text-slate-300 leading-relaxed pl-3 font-normal">
+                                      {op.value}
+                                    </p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* General Bullets */}
+                          {sec.bullets.length > 0 && (
+                            <div className="mt-2 pt-2 border-t border-slate-800/80 space-y-1.5">
+                              {sec.bullets.map((b, bIdx) => (
+                                <div
+                                  key={`b-${bIdx}`}
+                                  className="flex items-start gap-2.5 text-xs text-slate-300 leading-relaxed"
+                                >
+                                  <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-blue-400 shrink-0" />
+                                  <div className="flex-1">{formatTextWithBold(b)}</div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* VIEW 3: DOKUMEN NARASI MENGALIR */}
+            {displayMode === "document" && (
+              <div className="prose prose-invert max-w-none">
+                {renderSeamlessNarrative(content)}
+              </div>
+            )}
+
+            {/* Canvas Footer Bar */}
+            <div className="mt-6 pt-4 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400">
+              <div className="flex items-center gap-2 text-emerald-400 font-medium">
+                <CheckCircle2 className="h-4 w-4" />
+                <span>Kajian aktif tersinkronisasi 100% dengan judul proyek</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleStartEdit}
+                  className="hover:text-blue-400 transition cursor-pointer font-medium"
+                >
+                  Edit Teks
+                </button>
+                <span>•</span>
+                <button
+                  type="button"
+                  onClick={handleClearAll}
+                  className="hover:text-rose-400 transition cursor-pointer font-medium"
+                >
+                  Kosongkan
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
+

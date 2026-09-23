@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { auth } from "../firebase";
 import { signOut, User } from "firebase/auth";
-import { Database, LogOut, Briefcase, ChevronRight, Bell, HardDrive, Users, CheckCircle, Info, LayoutDashboard } from "lucide-react";
+import { Database, LogOut, Briefcase, ChevronRight, Bell, HardDrive, Users, CheckCircle, Info, LayoutDashboard, Download, Cpu, Settings } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 const pramaLogo = "https://lh3.googleusercontent.com/d/1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X";
 
@@ -15,6 +15,8 @@ interface NavbarProps {
   pendingRequestsCount?: number;
   filesCount?: number;
   onNavigateToView?: (view: "divisions" | "saved_docs" | "approval_requests" | "project_dashboard") => void;
+  onDownloadFullHTML?: () => void;
+  onOpenAISettings?: () => void;
 }
 
 export default function Navbar({ 
@@ -26,7 +28,9 @@ export default function Navbar({
   onLogout,
   pendingRequestsCount = 0,
   filesCount = 0,
-  onNavigateToView
+  onNavigateToView,
+  onDownloadFullHTML,
+  onOpenAISettings
 }: NavbarProps) {
   
   const [showNotifications, setShowNotifications] = useState(false);
@@ -49,6 +53,7 @@ export default function Navbar({
   const getDivisionLabel = (id: string) => {
     switch (id) {
       case "comercial": return "Comercial & Business Dev";
+      case "multifungsi": return "Chat Multi Fungsi";
       case "hca": return "Human Capital & Affairs";
       case "fina": return "Finance & Accounting";
       case "lga": return "Legal & Governance";
@@ -102,16 +107,29 @@ export default function Navbar({
         </div>
 
         {/* Right Navigation & Status Indicators */}
-        <div className="flex items-center gap-4">
-          
+        <div className="flex items-center gap-3 sm:gap-4">
+
           {/* Database Synchronization Status Node */}
           <div className="hidden items-center gap-2 rounded-xl bg-slate-50 border border-slate-200/80 px-2.5 py-1.5 text-xs font-bold text-slate-600 sm:flex shadow-2sm">
             <span className={`h-2 w-2 rounded-full ${user ? "bg-emerald-500 animate-pulse" : "bg-amber-500 animate-pulse"}`} />
-            <Database className="h-3.w w-3 text-sky-600" />
+            <Database className="h-3.5 w-3.5 text-sky-600" />
             <span className="font-mono text-[10px] tracking-wide">
               {user ? "KONEKSI PORTAL: ONLINE" : "MODE LOCAL OFFLINE"}
             </span>
           </div>
+
+          {/* AI Settings Button (Available for authenticated / logged-in users) */}
+          {user && onOpenAISettings && (
+            <button
+              type="button"
+              onClick={onOpenAISettings}
+              className="flex items-center gap-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/80 px-3 py-1.5 text-xs font-bold text-indigo-700 transition cursor-pointer shadow-sm active:scale-95"
+              title="Konfigurasi Hub Koneksi AI & API Key"
+            >
+              <Cpu className="h-3.5 w-3.5 text-indigo-600 animate-pulse" />
+              <span className="hidden sm:inline">Setelan AI</span>
+            </button>
+          )}
 
           {loading ? (
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-100 border-t-sky-600" />

@@ -1,34 +1,41 @@
 import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import {
-  Target,
+  Layers,
   Sparkles,
+  RefreshCw,
   Copy,
   Check,
   Edit3,
   Trash2,
   Save,
   X,
+  Building2,
   ShieldCheck,
   CheckCircle2,
+  ArrowRight,
   FileText,
-  Briefcase,
-  TrendingUp
+  TrendingUp,
+  DollarSign,
+  Target,
+  Truck,
+  Compass
 } from "lucide-react";
-import { generateGoToMarketForTitle } from "../utils/goToMarketGenerator";
+import { generateTamSamSomForTitle } from "../utils/tamSamSomGenerator";
 import { exportAllSectionsToWord } from "../utils/projectDashboardHelper";
 
-interface GoToMarketProps {
+interface TamSamSomDeepDiveProps {
   projectTitle: string;
   activeDivision?: string;
 }
 
-export function GoToMarketDeepDive({ projectTitle, activeDivision }: GoToMarketProps) {
-  const currentTitle = (projectTitle || "").trim() || "Kajian Strategi Go-To-Market & Komersialisasi Logistik";
+export function TamSamSomDeepDive({ projectTitle, activeDivision }: TamSamSomDeepDiveProps) {
+  const currentTitle = (projectTitle || "").trim() || "Kajian Potensi Pasar Logistik TAM SAM SOM";
   const currentDiv = activeDivision || "Logistik & Transportasi Komersial";
 
-  const storageKey = `prama_gtm_content_${currentTitle.toLowerCase().replace(/[^a-z0-9]/g, "_")}`;
+  const storageKey = `prama_tamsamsom_content_${currentTitle.toLowerCase().replace(/[^a-z0-9]/g, "_")}`;
 
-  // Content starts POLOS (empty) unless explicitly generated or saved
+  // Content starts POLOS (empty) unless the user explicitly saved or generated it
   const [content, setContent] = useState<string>(() => {
     return localStorage.getItem(storageKey) || "";
   });
@@ -41,7 +48,7 @@ export function GoToMarketDeepDive({ projectTitle, activeDivision }: GoToMarketP
     return localStorage.getItem(`${storageKey}_title`) || "";
   });
 
-  // Cleanup legacy preset keys
+  // Cleanup any old legacy preset keys
   useEffect(() => {
     try {
       const keysToRemove: string[] = [];
@@ -49,11 +56,11 @@ export function GoToMarketDeepDive({ projectTitle, activeDivision }: GoToMarketP
         const k = localStorage.key(i);
         if (
           k &&
-          (k.startsWith("prama_gtm_legacy_") ||
-            k.startsWith("gtm_custom_") ||
-            k.startsWith("gtm_audience_") ||
-            k.startsWith("gtm_channels_") ||
-            k.startsWith("prama_gtm_ai_"))
+          (k.startsWith("prama_tamsamsom_legacy_") ||
+            k.startsWith("tamsamsom_slider_") ||
+            k.startsWith("prama_tamsamsom_entities_") ||
+            k.startsWith("tam_sam_som_custom_") ||
+            k.startsWith("prama_tamsamsom_ai_"))
         ) {
           keysToRemove.push(k);
         }
@@ -62,7 +69,7 @@ export function GoToMarketDeepDive({ projectTitle, activeDivision }: GoToMarketP
     } catch (e) {}
   }, []);
 
-  // When projectTitle changes, load saved content for that title or start polos
+  // When projectTitle prop changes, load the saved content for that title or start polos
   useEffect(() => {
     const saved = localStorage.getItem(storageKey) || "";
     setContent(saved);
@@ -77,7 +84,7 @@ export function GoToMarketDeepDive({ projectTitle, activeDivision }: GoToMarketP
 
     try {
       const clientApiKey = localStorage.getItem("workspace_client_api_key") || "";
-      const res = await fetch("/api/generate-gtm", {
+      const res = await fetch("/api/generate-tamsamsom", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -97,7 +104,7 @@ export function GoToMarketDeepDive({ projectTitle, activeDivision }: GoToMarketP
 
       // If server returned fallback or couldn't reach API, use precision title generator
       if (!generatedMarkdown) {
-        const localResult = generateGoToMarketForTitle(targetTitle, currentDiv);
+        const localResult = generateTamSamSomForTitle(targetTitle, currentDiv);
         generatedMarkdown = localResult.narrativeMarkdown;
       }
 
@@ -107,8 +114,8 @@ export function GoToMarketDeepDive({ projectTitle, activeDivision }: GoToMarketP
       localStorage.setItem(storageKey, generatedMarkdown);
       localStorage.setItem(`${storageKey}_title`, targetTitle);
     } catch (err) {
-      console.warn("Generating local tailored GTM for:", targetTitle, err);
-      const localResult = generateGoToMarketForTitle(targetTitle, currentDiv);
+      console.warn("Generating local tailored TAM SAM SOM for:", targetTitle, err);
+      const localResult = generateTamSamSomForTitle(targetTitle, currentDiv);
       setContent(localResult.narrativeMarkdown);
       setEditText(localResult.narrativeMarkdown);
       setLastGeneratedForTitle(targetTitle);
@@ -185,7 +192,7 @@ export function GoToMarketDeepDive({ projectTitle, activeDivision }: GoToMarketP
         renderedNodes.push(
           <div key={`h2-${index}`} className="mt-7 mb-3.5 border-b border-cyan-500/20 pb-2">
             <h3 className="text-base md:text-lg font-black text-cyan-300 uppercase tracking-tight flex items-center gap-2">
-              <Briefcase className="h-4 w-4 text-cyan-400" />
+              <Layers className="h-4 w-4 text-cyan-400" />
               {headingText}
             </h3>
           </div>
@@ -250,8 +257,8 @@ export function GoToMarketDeepDive({ projectTitle, activeDivision }: GoToMarketP
 
   return (
     <div
-      id="go-to-market-deepdive-root"
-      className="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-slate-100 shadow-2xl mt-8 font-sans relative overflow-hidden"
+      id="tamsamsom-deepdive-root"
+      className="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-slate-100 shadow-2xl mt-2 font-sans relative overflow-hidden"
     >
       <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
 
@@ -260,8 +267,8 @@ export function GoToMarketDeepDive({ projectTitle, activeDivision }: GoToMarketP
         <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="px-2.5 py-0.5 text-[9.5px] font-black tracking-wider uppercase rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-mono flex items-center gap-1.5">
-              <Target className="h-3 w-3 text-cyan-400" />
-              PILAR 7 • GO-TO-MARKET STRATEGY (B2B COMMERCIAL ROADMAP)
+              <Layers className="h-3 w-3 text-cyan-400" />
+              PILAR 12 • TAM, SAM, SOM (TOTAL & SERVICEABLE MARKET SIZING)
             </span>
             <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
             <span className="px-2.5 py-0.5 text-[9.5px] font-bold uppercase rounded-md bg-slate-800 text-slate-300 border border-slate-700/80 font-mono">
@@ -282,10 +289,10 @@ export function GoToMarketDeepDive({ projectTitle, activeDivision }: GoToMarketP
                 try {
                   const saved = localStorage.getItem("prama_dashboard_sections");
                   const map = saved ? JSON.parse(saved) : {};
-                  map[7] = content;
+                  map[12] = content;
                   exportAllSectionsToWord(currentTitle, map);
                 } catch(e) {
-                  exportAllSectionsToWord(currentTitle, { 7: content });
+                  exportAllSectionsToWord(currentTitle, { 12: content });
                 }
               }}
               className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition shadow-md shadow-emerald-600/20 cursor-pointer active:scale-95"
@@ -303,17 +310,17 @@ export function GoToMarketDeepDive({ projectTitle, activeDivision }: GoToMarketP
               title="Buat isian baru yang sesuai dengan judul proyek"
             >
               <Sparkles className={`h-3.5 w-3.5 ${isLoading ? "animate-spin text-cyan-200" : ""}`} />
-              <span>{isLoading ? "Menyusun Strategi GTM..." : isBlank ? "Buat Isian Sesuai Judul" : "Buat Ulang Sesuai Judul"}</span>
+              <span>{isLoading ? "Menghitung Potensi Pasar..." : isBlank ? "Buat Isian Sesuai Judul" : "Buat Ulang Sesuai Judul"}</span>
             </button>
           </div>
         </div>
 
         <h3 className="text-lg md:text-xl font-black uppercase tracking-tight text-white flex items-center gap-2">
-          <TrendingUp className="h-5 w-5 text-cyan-400" />
-          Go-To-Market Strategy: B2B Commercial & Market Penetration
+          <Layers className="h-5 w-5 text-cyan-400" />
+          TAM, SAM, SOM & Fleet Monetization Breakdown
         </h3>
         <p className="text-xs text-slate-400 mt-1 font-medium leading-relaxed">
-          Rencana penetrasi pasar, segmentasi target akun korporat B2B, struktur kontrak & proteksi margin, hingga proyeksi akuisisi klien untuk proyek{" "}
+          Kajian potensi pasar makro (Total Addressable Market), jangkauan koridor logistik terjangkau (Serviceable Addressable Market), serta target penetrasi riil armada (Serviceable Obtainable Market) khusus untuk proyek{" "}
           <span className="text-cyan-300 font-extrabold">"{currentTitle}"</span>.
         </p>
       </div>
@@ -347,10 +354,10 @@ export function GoToMarketDeepDive({ projectTitle, activeDivision }: GoToMarketP
               <Sparkles className="h-4 w-4 text-cyan-400 absolute inset-0 m-auto animate-pulse" />
             </div>
             <p className="text-sm font-bold text-white tracking-wide">
-              Menyusun Strategi Go-To-Market Sesuai Judul...
+              Menghitung Estimasi Pasar TAM, SAM, SOM Sesuai Judul...
             </p>
             <p className="text-xs text-slate-400 max-w-md text-center leading-relaxed">
-              Menganalisis segmen akun B2B sasaran, struktur penetapan tarif & klausul kontrak, dan kanal akuisisi untuk{" "}
+              Menganalisis volume komoditas regional, tarif jasa angkut riil, batas koridor geografis, serta alokasi kapasitas armada untuk{" "}
               <span className="text-cyan-300 font-bold">"{currentTitle}"</span>.
             </p>
           </div>
@@ -360,7 +367,7 @@ export function GoToMarketDeepDive({ projectTitle, activeDivision }: GoToMarketP
             <div className="flex items-center justify-between pb-2 border-b border-slate-800">
               <div className="flex items-center gap-2 text-xs font-bold text-slate-200">
                 <Edit3 className="h-4 w-4 text-cyan-400" />
-                <span>Mode Edit Teks Mandiri (Pilar 7)</span>
+                <span>Mode Edit Teks Mandiri (Pilar 12: TAM, SAM, SOM)</span>
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -385,7 +392,7 @@ export function GoToMarketDeepDive({ projectTitle, activeDivision }: GoToMarketP
             <textarea
               value={editText}
               onChange={(e) => setEditText(e.target.value)}
-              placeholder="Tuliskan kajian strategi Go-To-Market Anda di sini (mendukung format Markdown: ### Judul, **Tebal**, - Poin)..."
+              placeholder="Tuliskan analisis potensi pasar TAM, SAM, SOM di sini (mendukung format Markdown: ### Judul, **Tebal**, - Poin)..."
               rows={14}
               className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-xs md:text-sm text-slate-100 font-mono focus:outline-hidden focus:border-cyan-500 transition leading-relaxed resize-y"
             />
@@ -399,10 +406,10 @@ export function GoToMarketDeepDive({ projectTitle, activeDivision }: GoToMarketP
 
             <div className="max-w-md">
               <h4 className="text-sm font-bold text-white mb-1">
-                Kanvas Go-To-Market Strategy Masih Polos
+                Kanvas Potensi Pasar (TAM, SAM, SOM) Masih Polos
               </h4>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Belum ada isian untuk proyek <span className="text-cyan-300 font-bold">"{currentTitle}"</span>. Klik tombol di bawah untuk menghasilkan strategi penetrasi pasar dan komersial B2B yang 100% se-arah dengan judul ini, atau tulis sendiri secara manual.
+                Belum ada perhitungan potensi pasar untuk proyek <span className="text-cyan-300 font-bold">"{currentTitle}"</span>. Klik tombol di bawah untuk menghasilkan estimasi nilai pasar makro (TAM), pasar koridor terjangkau (SAM), dan target penetrasi riil armada (SOM) yang 100% se-arah dengan judul ini, atau tulis sendiri secara manual.
               </p>
             </div>
 
@@ -434,7 +441,7 @@ export function GoToMarketDeepDive({ projectTitle, activeDivision }: GoToMarketP
               <div className="flex items-center gap-2.5 min-w-0">
                 <ShieldCheck className="h-4 w-4 text-cyan-400 shrink-0" />
                 <span className="text-xs font-bold text-cyan-200 truncate">
-                  Fokus Strategi Komersial & GTM: <span className="text-white font-extrabold">{currentTitle}</span>
+                  Fokus Analisis Potensi Pasar: <span className="text-white font-extrabold">{currentTitle}</span>
                 </span>
               </div>
               <span className="text-[10px] font-mono uppercase bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded shrink-0 font-bold">
@@ -451,7 +458,7 @@ export function GoToMarketDeepDive({ projectTitle, activeDivision }: GoToMarketP
             <div className="mt-6 pt-4 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
               <div className="flex items-center gap-1.5 text-cyan-400 font-bold">
                 <CheckCircle2 className="h-3.5 w-3.5" />
-                <span>Strategi Go-To-Market aktif tersinkronisasi dengan judul proyek</span>
+                <span>Analisis TAM, SAM, SOM aktif tersinkronisasi dengan judul proyek</span>
               </div>
               <div className="flex items-center gap-2">
                 <button

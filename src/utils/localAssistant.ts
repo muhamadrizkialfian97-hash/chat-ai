@@ -70,17 +70,18 @@ ${profile.gapsList.map(item => `* **${item.title}:** ${item.description}`).join(
 
 ---
 
-### **B. PELUANG INOVASI TEKNOLOGI & HIJAU (TECH & GREEN OPPORTUNITIES)**
+### **B. PELUANG INOVASI TEKNOLOGI & EFISIENSI OPERASIONAL (TECH & OPERATIONAL EXCELLENCE)**
 
-Penerapan teknologi modern dan praktik dekarbonisasi menjadi pilar utama keunggulan kompetitif Pancaran Group:
+Penerapan teknologi modern dan standarisasi operasional prima menjadi pilar utama keunggulan kompetitif Pancaran Group:
 
 #### **💻 3. Peluang Inovasi Teknologi**
 * **${profile.axleSimulatorTitle}:** ${profile.axleSimulatorSubtitle}
 * **${profile.pingTitle}:** ${profile.pingSubtitle}
 * **Sistem Pemantauan Telemetri:** Menggunakan GPS satelit hibrida untuk transparansi rute dan estimasi waktu tiba (ETA) real-time.
 
-#### **🌿 4. Nilai Tambah Hijau (Green Value-Add)**
-${profile.greenList.map(item => `* **${item.title}:** ${item.description}`).join("\n")}
+#### **⚙️ 4. Nilai Tambah Keandalan & Keselamatan Operasional**
+* **Standardisasi Keselamatan K3:** Protokol inspeksi harian pra-jalan untuk menjamin zero accident di setiap rute hauling darat.
+* **Optimalisasi Utilisasi Bahan Bakar:** Sistem manajemen rute cerdas untuk memangkas waktu tunggu armada dan mengoptimalkan efisiensi rasio konsumsi solar industri.
 
 ---
 
@@ -100,9 +101,9 @@ Untuk memaksimalkan peluang pasar angkutan ini, Pancaran Group menetapkan 4 lang
 * **Aktivitas:** Memasang modul pelacak hibrida (seluler + satelit) pada setiap unit truk untuk mengawasi operasional di rute remote.
 * **Tujuan:** Mengawasi keselamatan berkendara (*driver behavior*), pencegahan kelebihan muatan, serta kelancaran bongkar muat.
 
-#### **Langkah 4: Skema Kontrak Jangka Panjang Berbasis ESG (ESG Partnership & LTSA)**
+#### **Langkah 4: Skema Kontrak Jangka Panjang Berbasis Keandalan (Long-Term SLA Partnership)**
 * **Aktivitas:** Menjalin kemitraan tahunan eksklusif (*Long-Term Service Agreement*) dengan pemilik proyek korporat.
-* **Tujuan:** Mengamankan utilisasi armada secara kontinu dan memberikan nilai tambah pelaporan dekarbonisasi bulanan.`
+* **Tujuan:** Mengamankan utilisasi armada secara kontinu dan memberikan kepastian ketersediaan unit armada darat berkapasitas tinggi.`
     };
   }
 

@@ -1,649 +1,468 @@
-import React, { useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import React, { useState, useEffect } from "react";
 import {
-  Calendar,
-  CheckCircle,
-  Clock,
-  AlertTriangle,
-  Play,
-  RotateCcw,
-  ArrowRight,
-  ShieldCheck,
-  Zap,
-  Layers,
-  ChevronRight,
-  Truck,
-  Users,
-  FileSpreadsheet,
-  Settings,
-  Sliders,
   Sparkles,
-  CheckSquare
+  Copy,
+  Check,
+  Edit3,
+  Trash2,
+  Save,
+  X,
+  ShieldCheck,
+  CheckCircle2,
+  FileText,
+  Calendar,
+  Milestone
 } from "lucide-react";
+import { generateTransitionModelForTitle } from "../utils/transitionModelGenerator";
+import { exportAllSectionsToWord } from "../utils/projectDashboardHelper";
 
-interface TransitionModelDeepDiveProps {
+interface TransitionModelProps {
   projectTitle: string;
+  activeDivision?: string;
 }
 
-interface MilestoneTask {
-  id: string;
-  name: string;
-  weight: number; // contribution to preparedness score
-  completed: boolean;
-  owner: string;
-  duration: string;
-  description: string;
-}
+export function TransitionModelDeepDive({ projectTitle, activeDivision }: TransitionModelProps) {
+  const currentTitle = (projectTitle || "").trim() || "Kajian Model Transisi & Deployment Operasional Logistik";
+  const currentDiv = activeDivision || "Logistik & Transportasi Komersial";
 
-export function TransitionModelDeepDive({ projectTitle }: TransitionModelDeepDiveProps) {
-  const [activePhase, setActivePhase] = useState<"pre" | "on" | "post">("pre");
+  const storageKey = `prama_transition_model_content_${currentTitle.toLowerCase().replace(/[^a-z0-9]/g, "_")}`;
 
-  // PRE-TRANSITION (Persiapan) Tasks
-  const [preTasks, setPreTasks] = useState<MilestoneTask[]>([
-    {
-      id: "pre-1",
-      name: "Studi Kelayakan Rute & Pemetaan Hauling Lateral",
-      weight: 15,
-      completed: true,
-      owner: "Prama Strategic Advisor",
-      duration: "Minggu 1-2",
-      description: "Analisis kemiringan jalan hauling, ketahanan tonase, jembatan timbang, dan titik rawan kemacetan rute."
-    },
-    {
-      id: "pre-2",
-      name: "Pengadaan Awal & Mobilisasi Armada Truk Heavy Duty",
-      weight: 25,
-      completed: true,
-      owner: "Pancaran Fleet Div",
-      duration: "Minggu 2-4",
-      description: "Pemeriksaan fisik sasis truk, pemasangan ban cadangan, tangki BBM ekstra, dan pengetesan ketahanan."
-    },
-    {
-      id: "pre-3",
-      name: "Sertifikasi Perizinan (ANDALALIN & SVLK)",
-      weight: 20,
-      completed: false,
-      owner: "Legal & Regulatory Team",
-      duration: "Minggu 3-5",
-      description: "Pengurusan izin analisis dampak lalu lintas (Andalalin) jalur logistik serta registrasi lacak balak SVLK."
-    },
-    {
-      id: "pre-4",
-      name: "Rekrutmen & Pelatihan Safety Driving Pengemudi Inti",
-      weight: 15,
-      completed: false,
-      owner: "HR & HSE Pancaran",
-      duration: "Minggu 4-5",
-      description: "Pelatihan khusus defensive driving, navigasi telemetri GPS, dan standar pelaporan kecelakaan kerja."
-    },
-    {
-      id: "pre-5",
-      name: "Penyediaan Depo Satelit & Bengkel Darurat Rute",
-      weight: 15,
-      completed: false,
-      owner: "Infrastructure & Ops Dev",
-      duration: "Minggu 5-6",
-      description: "Pembangunan bengkel mini darurat, pos pergantian supir, dan tangki penampungan BBM solar non-subsidi."
+  // Content starts POLOS (empty) unless explicitly generated or saved
+  const [content, setContent] = useState<string>(() => {
+    return localStorage.getItem(storageKey) || "";
+  });
+
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [copied, setCopied] = useState<boolean>(false);
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [editText, setEditText] = useState<string>("");
+  const [lastGeneratedForTitle, setLastGeneratedForTitle] = useState<string>(() => {
+    return localStorage.getItem(`${storageKey}_title`) || "";
+  });
+
+  // Cleanup legacy preset keys
+  useEffect(() => {
+    try {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && (k.startsWith("prama_transition_legacy_") || k.startsWith("transition_custom_") || k.startsWith("transition_model_tasks_"))) {
+          keysToRemove.push(k);
+        }
+      }
+      keysToRemove.forEach((k) => localStorage.removeItem(k));
+    } catch (e) {}
+  }, []);
+
+  // When projectTitle changes, load saved content for that title or start polos
+  useEffect(() => {
+    const saved = localStorage.getItem(storageKey) || "";
+    setContent(saved);
+    setEditText(saved);
+    setIsEditing(false);
+  }, [storageKey]);
+
+  // Handler to generate fresh, 100% title-tailored content
+  const handleGenerateContent = async (targetTitle: string = currentTitle) => {
+    setIsLoading(true);
+    setIsEditing(false);
+
+    try {
+      const clientApiKey = localStorage.getItem("workspace_client_api_key") || "";
+      const res = await fetch("/api/generate-transition-model", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectTitle: targetTitle,
+          division: currentDiv,
+          clientApiKey
+        })
+      });
+
+      let generatedMarkdown = "";
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.content && typeof data.content === "string" && data.content.trim().length > 50) {
+          generatedMarkdown = data.content;
+        }
+      }
+
+      // If server returned fallback or couldn't reach API, use precision title generator
+      if (!generatedMarkdown) {
+        const localResult = generateTransitionModelForTitle(targetTitle, currentDiv);
+        generatedMarkdown = localResult.narrativeMarkdown;
+      }
+
+      setContent(generatedMarkdown);
+      setEditText(generatedMarkdown);
+      setLastGeneratedForTitle(targetTitle);
+      localStorage.setItem(storageKey, generatedMarkdown);
+      localStorage.setItem(`${storageKey}_title`, targetTitle);
+    } catch (err) {
+      console.warn("Generating local tailored transition model for:", targetTitle, err);
+      const localResult = generateTransitionModelForTitle(targetTitle, currentDiv);
+      setContent(localResult.narrativeMarkdown);
+      setEditText(localResult.narrativeMarkdown);
+      setLastGeneratedForTitle(targetTitle);
+      localStorage.setItem(storageKey, localResult.narrativeMarkdown);
+      localStorage.setItem(`${storageKey}_title`, targetTitle);
+    } finally {
+      setIsLoading(false);
     }
-  ]);
-
-  // ON-TRANSITION (Implementasi Awal) Tasks
-  const [onTasks, setOnTasks] = useState<MilestoneTask[]>([
-    {
-      id: "on-1",
-      name: "Kick-off Pilot Run (Rute Percobaan Pertama)",
-      weight: 20,
-      completed: false,
-      owner: "Operations Lead",
-      duration: "Minggu 6-7",
-      description: "Peluncuran 5 unit truk pertama bermuatan penuh untuk menguji waktu siklus (cycle time) aktual."
-    },
-    {
-      id: "on-2",
-      name: "Kalibrasi & Pengujian Telemetri Sensor GPS",
-      weight: 20,
-      completed: false,
-      owner: "IT & Telematics Team",
-      duration: "Minggu 7",
-      description: "Sinkronisasi sinyal GPS satelit dengan Command Center Pancaran di area blank spot 3T."
-    },
-    {
-      id: "on-3",
-      name: "Evaluasi & Pengumpulan Umpan Balik Operasional",
-      weight: 20,
-      completed: false,
-      owner: "QA & Continuous Improvement",
-      duration: "Minggu 7-8",
-      description: "Pencatatan hambatan fisik, kelelahan supir, konsumsi BBM per kilometer, dan friksi jalan lateral."
-    },
-    {
-      id: "on-4",
-      name: "Stabilisasi Ritase & Skala Armada Menengah",
-      weight: 25,
-      completed: false,
-      owner: "Operations Lead",
-      duration: "Minggu 8-10",
-      description: "Penambahan armada secara bertahap hingga mencapai 60% dari kapasitas penuh target proyek."
-    }
-  ]);
-
-  // POST-TRANSITION (Pasca-Transisi) Tasks
-  const [postTasks, setPostTasks] = useState<MilestoneTask[]>([
-    {
-      id: "post-1",
-      name: "Serah Terima Penuh Operasional (Handover)",
-      weight: 30,
-      completed: false,
-      owner: "Prama Strategic & Client Ops",
-      duration: "Minggu 10-11",
-      description: "Penandatanganan berita acara serah terima aset, rute, dan sistem kendali digital ke tim manajemen reguler."
-    },
-    {
-      id: "post-2",
-      name: "Audit Kepatuhan & Efisiensi Rute",
-      weight: 25,
-      completed: false,
-      owner: "HSE & Operational Auditor",
-      duration: "Minggu 11-12",
-      description: "Verifikasi kepatuhan SVLK, kelaikan armada, dan audit efisiensi rute tahap pasca-operasional."
-    },
-    {
-      id: "post-3",
-      name: "SLA Optimization & Program Peningkatan Berkelanjutan",
-      weight: 25,
-      completed: false,
-      owner: "Continuous Improvement Dev",
-      duration: "Minggu 12+",
-      description: "Penerapan sistem insentif supir berkinerja tinggi dan optimasi rute balik (backhaul sharing)."
-    }
-  ]);
-
-  // Interactive simulators
-  const [contingencyPlanEnabled, setContingencyPlanEnabled] = useState<boolean>(true);
-  const [supirBackupRatio, setSupirBackupRatio] = useState<number>(15); // 5% to 30% back-up driver ratio
-  const [communicationSystem, setCommunicationSystem] = useState<"Dual-GSM" | "Hybrid Satelit-GSM" | "Hanya GSM biasa">("Hybrid Satelit-GSM");
-
-  // Toggle tasks helper
-  const togglePreTask = (id: string) => {
-    setPreTasks(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
-  };
-  const toggleOnTask = (id: string) => {
-    setOnTasks(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
-  };
-  const togglePostTask = (id: string) => {
-    setPostTasks(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
   };
 
-  // CALCULATE READYNESS INDEX
-  let baseScore = 0;
-  preTasks.forEach(t => { if (t.completed) baseScore += t.weight * 0.4; });
-  onTasks.forEach(t => { if (t.completed) baseScore += t.weight * 0.4; });
-  postTasks.forEach(t => { if (t.completed) baseScore += t.weight * 0.2; });
+  // Handler to completely wipe content and make it POLOS (blank)
+  const handleClearAll = () => {
+    setContent("");
+    setEditText("");
+    setIsEditing(false);
+    localStorage.removeItem(storageKey);
+    localStorage.removeItem(`${storageKey}_title`);
+  };
 
-  // Add simulator modifiers
-  if (contingencyPlanEnabled) baseScore += 10;
-  if (supirBackupRatio >= 15) baseScore += 5;
-  if (supirBackupRatio >= 25) baseScore += 5;
+  // Handler to start editing manually
+  const handleStartEdit = () => {
+    setEditText(content);
+    setIsEditing(true);
+  };
 
-  if (communicationSystem === "Hybrid Satelit-GSM") baseScore += 10;
-  else if (communicationSystem === "Dual-GSM") baseScore += 5;
+  // Save manual edits
+  const handleSaveEdit = () => {
+    setContent(editText);
+    localStorage.setItem(storageKey, editText);
+    setIsEditing(false);
+  };
 
-  const finalReadinessIndex = Math.min(100, Math.round(baseScore));
+  // Copy narrative to clipboard
+  const handleCopy = () => {
+    if (!content) return;
+    navigator.clipboard.writeText(content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
-  // Determine readiness status
-  let readinessStatus: "Kritis" | "Siap Terkendali" | "Optimal Sempurna" = "Kritis";
-  let statusColor = "text-rose-400 border-rose-500/20 bg-rose-500/10";
-  let recommendations = "Selesaikan sertifikasi ANDALALIN & SVLK di tahap PRE-TRANSITION segera agar tidak menghambat kick-off pilot run!";
+  // Markdown renderer for clean unified narrative
+  const renderSeamlessNarrative = (rawText: string) => {
+    if (!rawText || !rawText.trim()) return null;
+    const lines = rawText.split("\n");
+    const renderedNodes: React.ReactNode[] = [];
 
-  if (finalReadinessIndex >= 80) {
-    readinessStatus = "Optimal Sempurna";
-    statusColor = "text-emerald-400 border-emerald-500/20 bg-emerald-500/10";
-    recommendations = "Rencana transisi Anda sangat matang dan memiliki jaring pengaman kuat. Siap untuk komisioning penuh rute komersial.";
-  } else if (finalReadinessIndex >= 50) {
-    readinessStatus = "Siap Terkendali";
-    statusColor = "text-amber-400 border-amber-500/20 bg-amber-500/10";
-    recommendations = "Kesiapan cukup baik. Pastikan bengkel rute dan depo satelit sudah berdiri kokoh sebelum pilot run dimulai.";
-  }
+    lines.forEach((line, index) => {
+      const trimmed = line.trim();
 
-  // Count milestones completion
-  const totalMilestones = preTasks.length + onTasks.length + postTasks.length;
-  const completedMilestones = 
-    preTasks.filter(t => t.completed).length +
-    onTasks.filter(t => t.completed).length +
-    postTasks.filter(t => t.completed).length;
+      if (!trimmed) {
+        renderedNodes.push(<div key={`empty-${index}`} className="h-3" />);
+        return;
+      }
+
+      // Heading 3
+      if (trimmed.startsWith("### ")) {
+        const headingText = trimmed.replace(/^###\s+/, "");
+        renderedNodes.push(
+          <div key={`h3-${index}`} className="mt-6 mb-3 pt-3 border-t border-slate-800 first:border-t-0 first:pt-0">
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-indigo-400 shrink-0" />
+              <h4 className="text-sm md:text-base font-black text-white uppercase tracking-tight">
+                {headingText}
+              </h4>
+            </div>
+          </div>
+        );
+        return;
+      }
+
+      // Heading 2 or 1
+      if (trimmed.startsWith("## ") || trimmed.startsWith("# ")) {
+        const headingText = trimmed.replace(/^#+\s+/, "");
+        renderedNodes.push(
+          <div key={`h2-${index}`} className="mt-7 mb-3.5 border-b border-indigo-500/20 pb-2">
+            <h3 className="text-base md:text-lg font-black text-indigo-300 uppercase tracking-tight flex items-center gap-2">
+              <Milestone className="h-4 w-4 text-indigo-400" />
+              {headingText}
+            </h3>
+          </div>
+        );
+        return;
+      }
+
+      // Bullet points
+      if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+        const bulletContent = trimmed.replace(/^[\*\-]\s+/, "");
+        const formatted = bulletContent.split(/(\*\*.*?\*\*)/g).map((part, pIdx) => {
+          if (part.startsWith("**") && part.endsWith("**")) {
+            return (
+              <strong key={pIdx} className="text-white font-extrabold">
+                {part.slice(2, -2)}
+              </strong>
+            );
+          }
+          return part;
+        });
+
+        renderedNodes.push(
+          <div key={`bullet-${index}`} className="flex items-start gap-2.5 ml-1 my-1.5 text-slate-300 text-xs md:text-[13px] leading-relaxed">
+            <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-indigo-400 shrink-0" />
+            <div className="flex-1">{formatted}</div>
+          </div>
+        );
+        return;
+      }
+
+      // Regular paragraph
+      const parts = trimmed.split(/(\*\*.*?\*\*)/g);
+      const formattedParts = parts.map((part, pIdx) => {
+        if (part.startsWith("**") && part.endsWith("**")) {
+          return (
+            <strong key={pIdx} className="text-white font-extrabold tracking-wide">
+              {part.slice(2, -2)}
+            </strong>
+          );
+        }
+        return part;
+      });
+
+      renderedNodes.push(
+        <p
+          key={`p-${index}`}
+          className="text-xs md:text-[13px] text-slate-300 leading-relaxed font-normal text-justify my-2.5"
+        >
+          {formattedParts}
+        </p>
+      );
+    });
+
+    return renderedNodes;
+  };
+
+  const isBlank = !content || content.trim().length === 0;
+  const isTitleDifferent = content && lastGeneratedForTitle && lastGeneratedForTitle.toLowerCase() !== currentTitle.toLowerCase();
 
   return (
-    <div id="transition-model-deepdive-root" className="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-slate-100 shadow-2xl mt-8 overflow-hidden font-sans relative">
-      {/* Decorative gradient overlays */}
-      <div className="absolute top-0 right-0 w-80 h-80 bg-violet-500/5 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-80 h-80 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
+    <div
+      id="transition-model-deepdive-root"
+      className="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-slate-100 shadow-2xl mt-8 font-sans relative overflow-hidden"
+    >
+      <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Header Info Panel */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-5 mb-6 gap-4 relative z-10">
-        <div>
-          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-            <span className="px-2.5 py-0.5 text-[9px] font-black tracking-wider uppercase rounded bg-violet-500/10 text-violet-400 border border-violet-500/20 font-mono">
-              PRAMA OPERATIONAL ROADMAP
+      {/* Header Bar */}
+      <div className="border-b border-slate-800 pb-5 mb-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="px-2.5 py-0.5 text-[9.5px] font-black tracking-wider uppercase rounded-md bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-mono flex items-center gap-1.5">
+              <Milestone className="h-3 w-3 text-indigo-400" />
+              PILAR 6 • TRANSITION MODEL (PRE-ON-POST)
             </span>
-            <span className="px-2.5 py-0.5 text-[9px] font-black tracking-wider uppercase rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-mono flex items-center gap-1">
-              ⚡ SINKRON CHAT: <span className="text-white font-bold">{projectTitle || "Kajian Strategis PRAMA"}</span>
+            <span className="h-1.5 w-1.5 rounded-full bg-indigo-400" />
+            <span className="px-2.5 py-0.5 text-[9.5px] font-bold uppercase rounded-md bg-slate-800 text-slate-300 border border-slate-700/80 font-mono">
+              JUDUL PROYEK: {currentTitle}
             </span>
-            <span className="h-1.5 w-1.5 rounded-full bg-violet-500 animate-pulse" />
+            {isBlank && (
+              <span className="px-2 py-0.5 text-[9px] font-bold uppercase rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/20 font-mono">
+                STATUS: POLOS
+              </span>
+            )}
           </div>
-          <h3 className="text-lg md:text-xl font-black uppercase tracking-tight text-white flex items-center gap-2 font-display">
-            <Layers className="h-5 w-5 text-violet-400" />
-            Interactive Transition Playbook (PRE-ON-POST)
-          </h3>
-          <p className="text-xs text-slate-400 mt-1 font-semibold max-w-2xl leading-relaxed">
-            Panduan operasional interaktif untuk mengawal transisi logistik rute dari tahap persiapan (Pre), peluncuran rute percobaan (On), hingga serah terima penuh operasional (Post).
-          </p>
+
+          {/* Action buttons */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  const saved = localStorage.getItem("prama_dashboard_sections");
+                  const map = saved ? JSON.parse(saved) : {};
+                  map[6] = content;
+                  exportAllSectionsToWord(currentTitle, map);
+                } catch(e) {
+                  exportAllSectionsToWord(currentTitle, { 6: content });
+                }
+              }}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition shadow-md shadow-emerald-600/20 cursor-pointer active:scale-95"
+              title="Unduh seluruh laporan komprehensif ke format Word (.doc)"
+            >
+              <FileText className="h-3.5 w-3.5" />
+              <span>Unduh Word (.doc)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleGenerateContent(currentTitle)}
+              disabled={isLoading}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition shadow-md shadow-indigo-600/20 cursor-pointer active:scale-95 disabled:opacity-50"
+              title="Buat isian baru yang sesuai dengan judul proyek"
+            >
+              <Sparkles className={`h-3.5 w-3.5 ${isLoading ? "animate-spin text-indigo-200" : ""}`} />
+              <span>{isLoading ? "Menyusun Model Transisi..." : isBlank ? "Buat Isian Sesuai Judul" : "Buat Ulang Sesuai Judul"}</span>
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="text-[10px] font-bold text-slate-400 uppercase font-mono">Milestone Status:</span>
-          <span className="px-2.5 py-1 text-[9.5px] font-extrabold rounded-lg bg-violet-500/10 text-violet-400 border border-violet-500/20 uppercase font-mono">
-            {completedMilestones} / {totalMilestones} SELESAI
-          </span>
-        </div>
+
+        <h3 className="text-lg md:text-xl font-black uppercase tracking-tight text-white flex items-center gap-2">
+          <Calendar className="h-5 w-5 text-indigo-400" />
+          Transition Model: Pre-On-Post Implementation Roadmap
+        </h3>
+        <p className="text-xs text-slate-400 mt-1 font-medium leading-relaxed">
+          Peta jalan transisi operasional, persiapan armada, pengujian rute (trial run), hingga stabilisasi SLA jangka panjang untuk proyek{" "}
+          <span className="text-indigo-300 font-extrabold">"{currentTitle}"</span>.
+        </p>
       </div>
 
-      {/* 3 COLUMN PHASE TABS (PRE, ON, POST) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 mb-6 relative z-10">
-        
-        {/* PHASE 1: PRE-TRANSITION */}
-        <button
-          type="button"
-          onClick={() => setActivePhase("pre")}
-          className={`p-3.5 rounded-2xl transition-all cursor-pointer border text-left flex items-start gap-3 relative overflow-hidden ${
-            activePhase === "pre"
-              ? "bg-gradient-to-br from-violet-950/45 to-slate-900 border-violet-500 shadow-lg shadow-violet-600/10"
-              : "bg-slate-950/40 text-slate-400 border-slate-800/80 hover:border-slate-750"
-          }`}
-        >
-          <div className={`p-2 rounded-xl shrink-0 ${
-            activePhase === "pre" ? "bg-violet-600 text-white animate-pulse" : "bg-slate-900 text-slate-400"
-          }`}>
-            <Clock className="h-4.5 w-4.5" />
+      {/* If current title is different from what was previously generated, show quick sync badge */}
+      {isTitleDifferent && (
+        <div className="mb-4 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-xs text-amber-200">
+            <span className="h-2 w-2 rounded-full bg-amber-400 shrink-0 animate-ping" />
+            <span>
+              Judul proyek telah diperbarui menjadi: <strong className="text-white">"{currentTitle}"</strong>
+            </span>
           </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-[9px] font-black uppercase tracking-wider text-violet-400 font-mono">Tahap 1</span>
-              {preTasks.every(t => t.completed) && (
-                <span className="px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-400 text-[8px] font-bold uppercase">Lengkap</span>
-              )}
+          <button
+            type="button"
+            onClick={() => handleGenerateContent(currentTitle)}
+            className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-bold rounded-lg transition cursor-pointer"
+          >
+            <Sparkles className="h-3 w-3" />
+            <span>Buat Isian Baru untuk Judul Ini</span>
+          </button>
+        </div>
+      )}
+
+      {/* Main Canvas Area */}
+      <div className="bg-slate-950/70 border border-slate-800/90 rounded-2xl p-5 md:p-6 shadow-inner relative min-h-[220px]">
+        {isLoading ? (
+          <div className="py-14 px-4 text-center flex flex-col items-center justify-center gap-3">
+            <div className="relative">
+              <div className="h-10 w-10 rounded-full border-2 border-indigo-500/20 border-t-indigo-400 animate-spin" />
+              <Sparkles className="h-4 w-4 text-indigo-400 absolute inset-0 m-auto animate-pulse" />
             </div>
-            <h4 className="text-[12px] font-black text-white uppercase mt-0.5 tracking-tight">PRE-TRANSITION (Persiapan)</h4>
-            <p className="text-[10px] text-slate-400 font-semibold mt-1 leading-normal">
-              Studi kelayakan, pengadaan armada, rekrutmen pengemudi, perizinan Andalalin & SVLK.
+            <p className="text-sm font-bold text-white tracking-wide">
+              Menyusun Model Transisi Sesuai Judul...
+            </p>
+            <p className="text-xs text-slate-400 max-w-md text-center leading-relaxed">
+              Menganalisis tahapan persiapan teknis armada, simulasi uji coba rute lintasan, dan stabilisasi SLA jangka panjang untuk{" "}
+              <span className="text-indigo-300 font-bold">"{currentTitle}"</span>.
             </p>
           </div>
-        </button>
-
-        {/* PHASE 2: ON-TRANSITION */}
-        <button
-          type="button"
-          onClick={() => setActivePhase("on")}
-          className={`p-3.5 rounded-2xl transition-all cursor-pointer border text-left flex items-start gap-3 relative overflow-hidden ${
-            activePhase === "on"
-              ? "bg-gradient-to-br from-violet-950/45 to-slate-900 border-violet-500 shadow-lg shadow-violet-600/10"
-              : "bg-slate-950/40 text-slate-400 border-slate-800/80 hover:border-slate-750"
-          }`}
-        >
-          <div className={`p-2 rounded-xl shrink-0 ${
-            activePhase === "on" ? "bg-violet-600 text-white animate-pulse" : "bg-slate-900 text-slate-400"
-          }`}>
-            <Play className="h-4.5 w-4.5" />
-          </div>
-          <div>
-            <span className="text-[9px] font-black uppercase tracking-wider text-violet-400 font-mono">Tahap 2</span>
-            <h4 className="text-[12px] font-black text-white uppercase mt-0.5 tracking-tight">ON-TRANSITION (Implementasi)</h4>
-            <p className="text-[10px] text-slate-400 font-semibold mt-1 leading-normal">
-              Kick-off pilot run (rute uji coba), pengetesan GPS telemetri, dan evaluasi konsumsi solar.
-            </p>
-          </div>
-        </button>
-
-        {/* PHASE 3: POST-TRANSITION */}
-        <button
-          type="button"
-          onClick={() => setActivePhase("post")}
-          className={`p-3.5 rounded-2xl transition-all cursor-pointer border text-left flex items-start gap-3 relative overflow-hidden ${
-            activePhase === "post"
-              ? "bg-gradient-to-br from-violet-950/45 to-slate-900 border-violet-500 shadow-lg shadow-violet-600/10"
-              : "bg-slate-950/40 text-slate-400 border-slate-800/80 hover:border-slate-750"
-          }`}
-        >
-          <div className={`p-2 rounded-xl shrink-0 ${
-            activePhase === "post" ? "bg-violet-600 text-white animate-pulse" : "bg-slate-900 text-slate-400"
-          }`}>
-            <ShieldCheck className="h-4.5 w-4.5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-[9px] font-black uppercase tracking-wider text-violet-400 font-mono">Tahap 3</span>
-              {postTasks.every(t => t.completed) && (
-                <span className="px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-400 text-[8px] font-bold uppercase">Lengkap</span>
-              )}
-            </div>
-            <h4 className="text-[12px] font-black text-white uppercase mt-0.5 tracking-tight">POST-TRANSITION (Pasca)</h4>
-            <p className="text-[10px] text-slate-400 font-semibold mt-1 leading-normal">
-              Serah terima operasional (Handover), audit kelaikan armada, dan optimasi SLA logistik rute balik.
-            </p>
-          </div>
-        </button>
-      </div>
-
-      {/* DYNAMIC PENJELASAN TAHAP SESUAI DENGAN PHASE YANG DI-KLIK */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activePhase}
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -12 }}
-          transition={{ duration: 0.25 }}
-          className="space-y-6 relative z-10"
-        >
-          {/* Active Phase Overview Box */}
-          {(() => {
-            let activeTasks = preTasks;
-            let activeToggle = togglePreTask;
-            let phaseTitle = "TAHAP 1: PRE-TRANSITION (Persiapan Proyek & Legalitas)";
-            let phaseBadge = "PENYUSUNAN FONDASI & PERIZINAN";
-            let phaseDesc = "Fase krusial untuk memastikan seluruh perizinan resmi, studi rute jalan hauling, kesiapan armada truk heavy-duty, dan sertifikasi pengemudi telah terpenuhi sebelum armada beroperasi.";
-            let keyGoals = [
-              "Memastikan kepatuhan perizinan jalan Andalalin dan lacak balak SVLK / Festronik KLHK.",
-              "Studi kelayakan rute jalan hauling, jembatan timbang, dan titik rawan jalan licin.",
-              "Mobilisasi unit truk heavy-duty dan rekrutmen supir bersertifikat defensive driving."
-            ];
-            let deliverables = [
-              "Laporan Route Survey & Risk Mapping Rute",
-              "Dokumen Resmi Andalalin & SVLK KLHK",
-              "Sertifikasi Kru & Driver Safety Training Log",
-              "Kesiapan Depo Satelit & Bengkel Rute"
-            ];
-
-            if (activePhase === "on") {
-              activeTasks = onTasks;
-              activeToggle = toggleOnTask;
-              phaseTitle = "TAHAP 2: ON-TRANSITION (Implementasi & Pilot Run)";
-              phaseBadge = "UJI COBA APLIKATIF & STABILISASI RUTE";
-              phaseDesc = "Fase eksekusi rute percobaan (pilot run) untuk menguji waktu siklus (cycle time) aktual, kalibrasi sensor telemetri GPS di area hutan/tambang, dan penambahan armada secara bertahap.";
-              keyGoals = [
-                "Meluncurkan pilot run 5-10 unit truk bermuatan penuh untuk verifikasi cycle time.",
-                "Uji coba telemetri GPS & integrasi API Command Center di area blank-spot.",
-                "Pencatatan konsumsi BBM solar aktual dan evaluasi kenyamanan supir."
-              ];
-              deliverables = [
-                "Laporan Evaluasi Pilot Run & Cycle Time Actual",
-                "Log Sinkronisasi Telemetri GPS & API Command Center",
-                "Berita Acara Penambahan Armada (Ramp-up Stage)",
-                "Integrasi Manifes Digital e-POD & Festronik"
-              ];
-            } else if (activePhase === "post") {
-              activeTasks = postTasks;
-              activeToggle = togglePostTask;
-              phaseTitle = "TAHAP 3: POST-TRANSITION (Serah Terima & Pasca-Transisi)";
-              phaseBadge = "HANDOVER OPERASIONAL & OPTIMASI SLA";
-              phaseDesc = "Fase penyelesaian transisi meliputi serah terima resmi (Handover) ke manajemen operasional reguler, audit kepatuhan berkala, dan optimasi muatan balik (backhaul sharing).";
-              keyGoals = [
-                "Penandatanganan Berita Acara Serah Terima Operasional (Handover) secara resmi.",
-                "Audit berkala tingkat kepatuhan SLA logistik dan kelaikan armada rutin.",
-                "Penerapan insentif supir berkinerja tinggi dan optimasi rute balik."
-              ];
-              deliverables = [
-                "Dokumen Official Handover Sign-off",
-                "Laporan Audit Kepatuhan SLA Logistik B2B",
-                "Perencanaan Rute Balik (Backhaul Allocation Plan)",
-                "Laporan Finansial Margin Operasional Pasca-Transisi"
-              ];
-            }
-
-            const completedCount = activeTasks.filter(t => t.completed).length;
-            const progressPercent = Math.round((completedCount / activeTasks.length) * 100);
-
-            return (
-              <div className="space-y-6">
-                {/* Header Detail Active Phase */}
-                <div className="bg-slate-950/60 border border-violet-500/30 rounded-2xl p-5 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-2 h-full bg-violet-500" />
-                  
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-3">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="px-2 py-0.5 text-[8.5px] font-mono font-black rounded uppercase bg-violet-500/10 text-violet-400 border border-violet-500/20">
-                          {phaseBadge}
-                        </span>
-                        <span className="text-[10px] font-mono font-black text-slate-400">
-                          Progress Milestone Tahap Ini: <span className="text-violet-400 font-bold">{completedCount}/{activeTasks.length} ({progressPercent}%)</span>
-                        </span>
-                      </div>
-                      <h3 className="text-sm md:text-base font-black uppercase text-white tracking-tight flex items-center gap-2">
-                        {activePhase === "pre" && <Clock className="h-4.5 w-4.5 text-violet-400" />}
-                        {activePhase === "on" && <Play className="h-4.5 w-4.5 text-violet-400" />}
-                        {activePhase === "post" && <ShieldCheck className="h-4.5 w-4.5 text-violet-400" />}
-                        {phaseTitle}
-                      </h3>
-                    </div>
-
-                    <div className="w-full md:w-36 bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-800">
-                      <div
-                        className="bg-gradient-to-r from-violet-500 to-indigo-500 h-full transition-all duration-500"
-                        style={{ width: `${progressPercent}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  <p className="text-[11px] text-slate-300 font-semibold leading-relaxed mb-4">
-                    {phaseDesc}
-                  </p>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-slate-800/80">
-                    <div className="space-y-2">
-                      <span className="text-[9.5px] font-mono font-black text-violet-400 uppercase block tracking-wider">
-                        🎯 FOKUS SASARAN UTAMA TAHAP INI
-                      </span>
-                      <div className="space-y-1.5">
-                        {keyGoals.map((goal, idx) => (
-                          <div key={idx} className="flex items-start gap-2 text-[10.5px] text-slate-300 font-semibold">
-                            <span className="h-4 w-4 bg-violet-500/10 text-violet-400 rounded-full flex items-center justify-center text-[9px] font-black shrink-0 font-mono border border-violet-500/20 mt-0.5">
-                              {idx + 1}
-                            </span>
-                            <span>{goal}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <span className="text-[9.5px] font-mono font-black text-indigo-400 uppercase block tracking-wider">
-                        📄 DOKUMEN HASIL & DELIVERABLES KUNCI
-                      </span>
-                      <div className="grid grid-cols-1 gap-1.5">
-                        {deliverables.map((del, idx) => (
-                          <div key={idx} className="flex items-center gap-2 text-[10px] text-slate-300 font-semibold bg-slate-900/80 px-2.5 py-1.5 rounded-lg border border-slate-850">
-                            <CheckCircle className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
-                            <span>{del}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Checklist Milestones & Tasks Table for Active Phase */}
-                <div className="bg-slate-950/50 border border-slate-800 rounded-2xl p-5">
-                  <div className="flex justify-between items-center mb-3">
-                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-200 flex items-center gap-1.5">
-                      <CheckSquare className="h-4 w-4 text-violet-400" />
-                      Checklist Tugas & Item Kontrol ({activePhase.toUpperCase()}-TRANSITION)
-                    </h4>
-                    <span className="text-[10px] text-slate-400 font-bold font-mono">
-                      Klik checkbox untuk memperbarui skor kesiapan
-                    </span>
-                  </div>
-
-                  <div className="space-y-2.5">
-                    {activeTasks.map((t) => (
-                      <div
-                        key={t.id}
-                        onClick={() => activeToggle(t.id)}
-                        className={`p-3.5 rounded-xl border text-left cursor-pointer transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 ${
-                          t.completed
-                            ? "bg-slate-900/90 border-emerald-500/40 text-slate-200"
-                            : "bg-slate-900/40 border-slate-850 text-slate-400 hover:border-slate-800"
-                        }`}
-                      >
-                        <div className="flex items-start gap-3">
-                          <button
-                            type="button"
-                            className={`mt-0.5 shrink-0 transition-all ${
-                              t.completed ? "text-emerald-400 scale-110" : "text-slate-600 hover:text-slate-400"
-                            }`}
-                          >
-                            <CheckCircle className="h-5 w-5" />
-                          </button>
-                          <div>
-                            <div className="flex items-center gap-2 flex-wrap mb-1">
-                              <h5 className={`text-[12px] font-black uppercase tracking-tight ${
-                                t.completed ? "text-white line-through opacity-80" : "text-white"
-                              }`}>
-                                {t.name}
-                              </h5>
-                              <span className="px-1.5 py-0.2 rounded text-[8.5px] font-mono font-bold bg-violet-500/10 text-violet-300 border border-violet-500/20">
-                                {t.duration}
-                              </span>
-                            </div>
-                            <p className="text-[10.5px] text-slate-400 font-semibold leading-relaxed">
-                              {t.description}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-3 shrink-0 self-end md:self-center border-t md:border-t-0 border-slate-800 pt-2 md:pt-0">
-                          <div className="text-right">
-                            <span className="text-[8.5px] font-mono font-bold text-slate-500 block">PENANGGUNG JAWAB</span>
-                            <span className="text-[10px] font-extrabold text-slate-300">{t.owner}</span>
-                          </div>
-                          <span className={`px-2 py-1 rounded text-[9px] font-mono font-black uppercase ${
-                            t.completed
-                              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                              : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                          }`}>
-                            {t.completed ? "Selesai" : "Pending"}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Interactive Transition Simulator & Readiness Gauge */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-                  {/* Readiness Index Bar */}
-                  <div className="lg:col-span-5 bg-slate-950/60 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
-                    <div>
-                      <span className="text-[9px] font-mono font-black text-violet-400 block uppercase tracking-wider mb-1">
-                        EVALUASI KESIAPAN TRANSISI PROYEK
-                      </span>
-                      <h4 className="text-xs font-black uppercase text-white mb-3 flex items-center gap-1.5">
-                        <Sparkles className="h-4 w-4 text-violet-400" />
-                        Operational Readiness Index
-                      </h4>
-
-                      <div className="p-4 bg-slate-900/90 rounded-xl border border-slate-800 text-center mb-3">
-                        <span className="text-3xl font-black font-mono text-white tracking-tight">
-                          {finalReadinessIndex}%
-                        </span>
-                        <span className={`block text-[10px] font-extrabold uppercase mt-1 px-2 py-0.5 rounded-md border ${statusColor}`}>
-                          Status: {readinessStatus}
-                        </span>
-                      </div>
-
-                      <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-850 text-[10.5px] text-slate-300 font-semibold leading-relaxed">
-                        💡 <span className="text-white font-bold">Rekomendasi Strategis:</span> {recommendations}
-                      </div>
-                    </div>
-
-                    <div className="text-[9px] font-mono font-bold text-slate-500 pt-3 border-t border-slate-800/80 mt-3">
-                      PRAMA TRANSITION ENGINE v2.1
-                    </div>
-                  </div>
-
-                  {/* Simulator Controls */}
-                  <div className="lg:col-span-7 bg-slate-950/60 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
-                    <div>
-                      <h4 className="text-xs font-black uppercase text-slate-200 mb-3 flex items-center gap-1.5">
-                        <Sliders className="h-4 w-4 text-indigo-400" />
-                        Simulator Kontinjensi & Mitigasi Risiko Transisi
-                      </h4>
-
-                      <div className="space-y-3.5 text-xs">
-                        {/* Contingency Plan Toggle */}
-                        <div className="p-3 bg-slate-900/80 border border-slate-850 rounded-xl flex justify-between items-center">
-                          <div>
-                            <span className="font-bold text-white block text-[11px]">SOP Rencana Kontinjensi Cuaca & Mogok</span>
-                            <span className="text-[10px] text-slate-400 font-semibold">Prosedur penanganan darurat banjir/jalan licin</span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setContingencyPlanEnabled(!contingencyPlanEnabled)}
-                            className={`px-3 py-1.5 rounded-lg text-[10px] font-mono font-black uppercase transition-all cursor-pointer ${
-                              contingencyPlanEnabled
-                                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
-                                : "bg-rose-500/10 text-rose-400 border border-rose-500/30"
-                            }`}
-                          >
-                            {contingencyPlanEnabled ? "AKTIF (+10%)" : "NON-AKTIF"}
-                          </button>
-                        </div>
-
-                        {/* Backup Driver Slider */}
-                        <div className="p-3 bg-slate-900/80 border border-slate-850 rounded-xl space-y-1.5">
-                          <div className="flex justify-between items-center text-[11px]">
-                            <span className="font-bold text-white">Rasio Supir Cadangan di Depo Satelit</span>
-                            <span className="font-mono font-black text-violet-400">{supirBackupRatio}% dari Total Unit</span>
-                          </div>
-                          <input
-                            type="range"
-                            min="5"
-                            max="30"
-                            step="5"
-                            value={supirBackupRatio}
-                            onChange={(e) => setSupirBackupRatio(Number(e.target.value))}
-                            className="w-full accent-violet-500 cursor-pointer"
-                          />
-                        </div>
-
-                        {/* Communication Picker */}
-                        <div className="p-3 bg-slate-900/80 border border-slate-850 rounded-xl flex justify-between items-center gap-2">
-                          <div>
-                            <span className="font-bold text-white block text-[11px]">Sistem Komunikasi Telemetri</span>
-                            <span className="text-[10px] text-slate-400 font-semibold">Dukungan sinyal komunikasi di rute remote</span>
-                          </div>
-                          <select
-                            value={communicationSystem}
-                            onChange={(e: any) => setCommunicationSystem(e.target.value)}
-                            className="bg-slate-950 border border-slate-800 text-slate-200 text-[10px] font-mono font-bold p-1.5 rounded-lg outline-none"
-                          >
-                            <option value="Hybrid Satelit-GSM">Hybrid Satelit-GSM (+10%)</option>
-                            <option value="Dual-GSM">Dual-GSM (+5%)</option>
-                            <option value="Hanya GSM biasa">Hanya GSM biasa (+0%)</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="text-[9px] font-mono font-bold text-slate-500 pt-3 border-t border-slate-800/80 mt-3">
-                      PARAMETER SIMULATOR AKTIF • DUKUNGAN KENDALI 24/7
-                    </div>
-                  </div>
-                </div>
+        ) : isEditing ? (
+          /* Manual Edit Mode */
+          <div className="space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-200">
+                <Edit3 className="h-4 w-4 text-indigo-400" />
+                <span>Mode Edit Teks Mandiri (Pilar 6)</span>
               </div>
-            );
-          })()}
-        </motion.div>
-      </AnimatePresence>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(false)}
+                  className="flex items-center gap-1 px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-lg transition"
+                >
+                  <X className="h-3.5 w-3.5" />
+                  <span>Batal</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveEdit}
+                  className="flex items-center gap-1 px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg transition"
+                >
+                  <Save className="h-3.5 w-3.5" />
+                  <span>Simpan Perubahan</span>
+                </button>
+              </div>
+            </div>
 
+            <textarea
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              placeholder="Tuliskan kajian model transisi Anda di sini (mendukung format Markdown: ### Judul, **Tebal**, - Poin)..."
+              rows={14}
+              className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-xs md:text-sm text-slate-100 font-mono focus:outline-hidden focus:border-indigo-500 transition leading-relaxed resize-y"
+            />
+          </div>
+        ) : isBlank ? (
+          /* Clean Blank State (POLOS) */
+          <div className="py-12 px-4 text-center flex flex-col items-center justify-center gap-4">
+            <div className="h-14 w-14 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 shadow-inner">
+              <FileText className="h-7 w-7 text-slate-400" />
+            </div>
 
+            <div className="max-w-md">
+              <h4 className="text-sm font-bold text-white mb-1">
+                Kanvas Model Transisi Masih Polos
+              </h4>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Belum ada isian untuk proyek <span className="text-indigo-300 font-bold">"{currentTitle}"</span>. Klik tombol di bawah untuk menghasilkan peta jalan transisi yang 100% se-arah dengan judul ini, atau tulis sendiri secara manual.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => handleGenerateContent(currentTitle)}
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-indigo-600/20 cursor-pointer active:scale-95"
+              >
+                <Sparkles className="h-4 w-4" />
+                <span>Buat Isian Baru Sesuai Judul</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleStartEdit}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-xl text-xs font-bold transition cursor-pointer active:scale-95"
+              >
+                <Edit3 className="h-3.5 w-3.5 text-slate-400" />
+                <span>Tulis Manual</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* Populated Unified Content */
+          <div className="space-y-2">
+            {/* Top Insight Bar */}
+            <div className="mb-4 bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <ShieldCheck className="h-4 w-4 text-indigo-400 shrink-0" />
+                <span className="text-xs font-bold text-indigo-200 truncate">
+                  Fokus Model Transisi: <span className="text-white font-extrabold">{currentTitle}</span>
+                </span>
+              </div>
+              <span className="text-[10px] font-mono uppercase bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded shrink-0 font-bold">
+                100% Se-arah Judul
+              </span>
+            </div>
+
+            {/* Seamless Narrative Content */}
+            <div className="prose prose-invert max-w-none">
+              {renderSeamlessNarrative(content)}
+            </div>
+
+            {/* Footer Bar */}
+            <div className="mt-6 pt-4 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
+              <div className="flex items-center gap-1.5 text-indigo-400 font-bold">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                <span>Model transisi aktif tersinkronisasi dengan judul proyek</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleStartEdit}
+                  className="hover:text-indigo-400 transition cursor-pointer font-medium"
+                >
+                  Edit Teks
+                </button>
+                <span>•</span>
+                <button
+                  type="button"
+                  onClick={handleClearAll}
+                  className="hover:text-rose-400 transition cursor-pointer font-medium"
+                >
+                  Kosongkan
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

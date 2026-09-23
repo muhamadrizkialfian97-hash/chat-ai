@@ -12,11 +12,18 @@ export interface ExcelData {
   tamValue: number;
   samValue: number;
   somValue: number;
+  tamDesc?: string;
+  samDesc?: string;
+  somDesc?: string;
   // Capex components
   capexTrucks: number;
   capexIT: number;
   capexGudang: number;
   capexIzin: number;
+  capex1Label?: string;
+  capex2Label?: string;
+  capex3Label?: string;
+  capex4Label?: string;
   // Year 1-3 Revenue
   revenueY1: number;
   revenueY2: number;
@@ -26,6 +33,10 @@ export interface ExcelData {
   bbmY1: number; bbmY2: number; bbmY3: number;
   maintY1: number; maintY2: number; maintY3: number;
   sewaY1: number; sewaY2: number; sewaY3: number;
+  opex1Label?: string;
+  opex2Label?: string;
+  opex3Label?: string;
+  opex4Label?: string;
 }
 
 export function exportToExcelFile(data: ExcelData) {

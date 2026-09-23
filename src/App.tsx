@@ -17,7 +17,8 @@ import { db, storage, handleFirestoreError, OperationType } from "./firebase";
 import { ChatMessage, SavedFile, CompetitorIntel } from "./types";
 import { generateLocalSmartResponse, cleanChatMessages } from "./utils/localAssistant";
 import { exportToWord, exportToPPTX, extractProjectTitle, downloadPDFDirect } from "./utils/documentExporter";
-import { exportToInteractiveHTML } from "./utils/htmlExporter";
+import { exportToInteractiveHTML, exportFullPortalWithChatHTML } from "./utils/htmlExporter";
+import { generateAcademicMakalah } from "./utils/academicMakalahGenerator";
 import { 
   defaultDashboardSections, 
   getDashboardSectionsForProject,
@@ -40,10 +41,12 @@ import {
   exportChatBIToPPTX
 } from "./utils/chatIntelligenceHelper";
 import Navbar from "./components/Navbar";
+import { AISettingsModal } from "./components/AISettingsModal";
 import { PramaAnimatedIllustration } from "./components/PramaAnimatedIllustration";
 import { ArticlePreviewModal } from "./components/ArticlePreviewModal";
 import { PPTPreviewModal } from "./components/PPTPreviewModal";
 import { ExcelPreviewModal } from "./components/ExcelPreviewModal";
+import { PillarPDFModal } from "./components/PillarPDFModal";
 import { PramaFlowchartHub } from "./components/PramaFlowchartHub";
 import { InteractiveFinancialSimulator } from "./components/InteractiveFinancialSimulator";
 import { RiskManagementDeepDive } from "./components/RiskManagementDeepDive";
@@ -58,6 +61,10 @@ import { OpsModelDeepDive } from "./components/OpsModelDeepDive";
 import { ExecutiveSummaryDashboard } from "./components/ExecutiveSummaryDashboard";
 import { FinancialFocusCards } from "./components/FinancialFocusCards";
 import { TamSamSomFocusCards } from "./components/TamSamSomFocusCards";
+import { TamSamSomDeepDive } from "./components/TamSamSomDeepDive";
+import { ServiceDesignDeepDive } from "./components/ServiceDesignDeepDive";
+import { PotentialConsumersDeepDive } from "./components/PotentialConsumersDeepDive";
+import { PillarVisualSummaryCard } from "./components/PillarVisualSummaryCard";
 const pramaLogo = "https://lh3.googleusercontent.com/d/1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X";
 
 export interface User {
@@ -248,15 +255,51 @@ const divisions = [
     code: "COMC",
     name: "Comercial & Business Development",
     desc: "Manajemen Penawaran (Bidding), Tarif Logistik, & Kontrak Bisnis",
-    details: "Fokus pada analisis tarif logistik darat & laut, pembuatan simulasi bidding proyek tambang/kargo, estimasi profitabilitas rute armada, serta pemeliharaan kontrak klien.",
+    details: "Fokus pada analisis tarif logistik darat, pembuatan simulasi bidding proyek tambang/kargo, estimasi profitabilitas rute armada, serta pemeliharaan kontrak klien.",
     color: "sky",
     lightAccent: "bg-sky-50 text-sky-800 border-sky-100",
     hoverAccent: "group-hover:border-sky-400 group-hover:bg-sky-50/40",
     indicatorColor: "bg-sky-500",
     icon: TrendingUp,
+    buttonTitle: "Chat Model AI Agent Prama",
+    badge: "KAMAR 1",
     locked: false
   }
 ];
+
+// Helper functions for separate chat room states and document keys
+export const getChatDocId = (divId?: string | null) => {
+  if (divId === "multifungsi") return "active_chat_multifungsi";
+  return "active_chat";
+};
+
+export const getChatStorageKey = (divId?: string | null) => {
+  if (divId === "multifungsi") return "gemini_mirror_chats_multifungsi";
+  return "gemini_mirror_chats";
+};
+
+export const getChatInitialMessage = (divId?: string | null): ChatMessage[] => {
+  if (divId === "multifungsi") {
+    return [
+      {
+        id: "init-msg-multi",
+        role: "model",
+        text: "Halo! Selamat datang di Ruang Chat Multi Fungsi PRAMA AI. Kamar ini didedikasikan untuk analisis operasional lintas fungsi, pembuatan draf dokumen cepat, kalkulasi biaya & armada, HSSE, dan konsultasi multi-peran. Topik atau kebutuhan apa yang ingin kita kerjakan di kamar ini?",
+        timestamp: Date.now(),
+        sender: "PRAMA AI"
+      }
+    ];
+  }
+  return [
+    {
+      id: "init-msg",
+      role: "model",
+      text: "Halo! Saya PRAMA, konsultan manajemen proyek strategis Anda di Pancaran Group. Sebelum kita melangkah lebih jauh, boleh tahu proyek atau topik bisnis apa yang ingin kita bahas hari ini agar arah diskusi kita menjadi jelas?",
+      timestamp: Date.now(),
+      sender: "PRAMA AI"
+    }
+  ];
+};
 
 const slideImagesList = [
   "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80", // Slide 0 Cover
@@ -289,22 +332,22 @@ export const DASHBOARD_PRESETS = [
     id: "waste",
     name: "Pengolahan Limbah & B3 (Waste Management Transportation)",
     title: "Kajian Kelayakan: Transportasi & Pengolahan Limbah Industri B3 (Waste Management)",
-    description: "Analisis logistik pengangkutan dan pengelolaan limbah B3 berizin KLHK & Festronik.",
+    description: "Analisis logistik pengangkutan dan pengelolaan limbah B3 berizin resmi Festronik.",
     sectionsOverride: {
-      1: "### 1. Global / National (NAT) Overview\n\n**Regulasi Pengelolaan Lingkungan Hidup KLHK:**\nKajian kepatuhan terhadap UU No. 18 Tahun 2008 tentang Pengelolaan Sampah dan PP No. 22 Tahun 2021 tentang Penyelenggaraan Perlindungan dan Pengelolaan Lingkungan Hidup, serta integrasi pelacakan manifest elektronik Festronik Kementerian Lingkungan Hidup dan Kehutanan.",
-      2: "### 2. Market Opportunity\n\n**Pasar Layanan Limbah Industri B3:**\nPermintaan yang sangat masif dari pabrik manufaktur, smelter, dan fasilitas kesehatan untuk bermitra dengan transporter berizin resmi KLHK demi menjamin kepatuhan audit K3LL dan standar ESG perusahaan multinasional.",
-      3: "### 3. Financial Analysis\n\n**Proyeksi Capex & Opex Waste Management:**\n\n**A. Capital Expenditure (Capex):**\n* Pembelian 10 Unit Tronton Tangki & Box Khusus B3: **Rp 14.500.000.000**\n* Perangkat IoT Festronik & Spill-Kit Darurat: **Rp 350.000.000**\n* *Total Capex:* **Rp 14.850.000.000**\n\n**B. Opex Operasional Bulanan:**\n* Pemeliharaan Tangki & Sertifikasi Kalibrasi KLHK: **Rp 65.000.000**\n* BBM & Insentif Keselamatan Driver: **Rp 120.000.000**\n* *Total Opex:* **Rp 185.000.000 / Bulan**\n\n**C. Metrik Finansial:**\n* Payback Period (PBP): **2.3 Tahun**\n* ROI Proyek: **42.8%**\n* IRR: **33.5%**",
-      4: "### 4. Supply & Demand\n\n**Kebutuhan Transporter Berizin Resmi:**\nSisi suplai operator truk tangki berizin resmi KLHK sangat terbatas dibandingkan volume limbah B3 industri yang terus melonjak, menciptakan peluang tarif margin tinggi bagi Pancaran Group.",
-      5: "### 5. Organization (Qualification, Skill, Output/KPI, SOP)\n\n**Kualifikasi Tim Operasional B3:**\n* Pengemudi: Wajib memiliki sertifikat penanganan Bahan Berbahaya dan Beracun (B3), pelatihan tanggap darurat (Spill Response), serta pemahaman e-manifest Festronik.\n* Supervisor HSE: Sertifikasi K3 Umum & Lingkungan Hidup.",
-      6: "### 6. Transition Model (Pre-On-Post)\n\n**Tahap Transisi Pengangkutan Limbah:**\n* Pre-Onboarding: Audit kelayakan fisik tangki dan izin trayek Dishub-KLHK.\n* Onboarding: Sinkronisasi e-manifest Festronik real-time antara pabrik penghasil dan fasilitas pengolahan akhir.\n* Post-Onboarding: Evaluasi bulanan audit K3LL.",
-      7: "### 7. Go-To-Market (GTM) Strategy\n\n**Strategi Penetrasi Korporat ESG:**\nMenawarkan kontrak layanan terintegrasi (End-to-End Waste Logistics Solution) dengan garansi kepatuhan hukum 100% dan pelaporan ESG otomatis bagi klien industri multinasional.",
+      1: "### 1. Global / National (NAT) Overview\n\n**Regulasi Pengelolaan Limbah B3:**\nKajian kepatuhan terhadap UU No. 18 Tahun 2008 tentang Pengelolaan Sampah dan PP No. 22 Tahun 2021 tentang Penyelenggaraan Perlindungan Pengelolaan B3, serta integrasi pelacakan manifest elektronik Festronik KLHK.",
+      2: "### 2. Market Opportunity\n\n**Pasar Layanan Limbah Industri B3:**\nPermintaan yang sangat masif dari pabrik manufaktur dan smelter untuk bermitra dengan transporter darat berizin resmi demi menjamin kepatuhan audit K3LL dan standar keselamatan industri multinasional.",
+      3: "### 3. Financial Analysis\n\n**Proyeksi Capex & Opex Waste Management:**\n\n**A. Capital Expenditure (Capex):**\n* Pembelian 10 Unit Tronton Tangki & Box Khusus B3: **Rp 14.500.000.000**\n* Perangkat IoT Festronik & Spill-Kit Darurat: **Rp 350.000.000**\n* *Total Capex:* **Rp 14.850.000.000**\n\n**B. Opex Operasional Bulanan:**\n* Pemeliharaan Tangki & Sertifikasi Kalibrasi: **Rp 65.000.000**\n* BBM & Insentif Keselamatan Driver: **Rp 120.000.000**\n* *Total Opex:* **Rp 185.000.000 / Bulan**\n\n**C. Metrik Finansial:**\n* Payback Period (PBP): **2.3 Tahun**\n* ROI Proyek: **42.8%**\n* IRR: **33.5%**",
+      4: "### 4. Supply & Demand\n\n**Kebutuhan Transporter Berizin Resmi:**\nSisi suplai operator truk tangki berizin resmi sangat terbatas dibandingkan volume limbah B3 industri yang terus melonjak, menciptakan peluang tarif margin tinggi bagi Pancaran Group.",
+      5: "### 5. Organization (Qualification, Skill, Output/KPI, SOP)\n\n**Kualifikasi Tim Operasional B3:**\n* Pengemudi: Wajib memiliki sertifikat penanganan Bahan Berbahaya dan Beracun (B3), pelatihan tanggap darurat (Spill Response), serta pemahaman e-manifest Festronik.\n* Supervisor HSE: Sertifikasi K3 Umum & K3 Industri.",
+      6: "### 6. Transition Model (Pre-On-Post)\n\n**Tahap Transisi Pengangkutan Limbah:**\n* Pre-Onboarding: Audit kelayakan fisik tangki dan izin trayek Dishub.\n* Onboarding: Sinkronisasi e-manifest Festronik real-time antara pabrik penghasil dan fasilitas pengolahan akhir.\n* Post-Onboarding: Evaluasi bulanan audit K3LL.",
+      7: "### 7. Go-To-Market (GTM) Strategy\n\n**Strategi Penetrasi Korporat Industri:**\nMenawarkan kontrak layanan terintegrasi (End-to-End Waste Logistics Solution) dengan garansi kepatuhan hukum 100% dan pelaporan keselamatan otomatis bagi klien industri multinasional.",
       8: "### 8. Ops Model (Flow Process, Workflow Diagram, SLA)\n\n**SOP Penanganan Muatan B3:**\n* Pengecekan segel pengaman sebelum truk diberangkatkan.\n* Waktu tanggap darurat tumpahan (Spill Response Time): Maksimal 30 menit di titik darurat.",
-      9: "### 9. Risk Management\n\n**Mitigasi Risiko Lingkungan:**\n* Risiko kebocoran limbah cair di jalan: Penyediaan alat pelindung tumpahan (Spill-Kit), katup darurat otomatis, dan asuransi pertanggungjawaban pencemaran lingkungan (Environmental Liability Insurance).",
-      10: "### 10. Digital Coverage (Tools, Method, Impact, Automation)\n\n**Sistem Telemetri & Festronik:**\nPemberlakuan pelacakan GPS satelit terkoneksi langsung dengan sistem pelaporan elektronik manifes KLHK untuk transparansi penuh.",
-      11: "### 11. Competitor\n\n**Posisi Pesaing:**\nSebagian besar pesaing kecil mengandalkan armada konvensional tanpa izin KLHK resmi. Pancaran unggul dalam kepatuhan hukum penuh dan keandalan armada berstandar tinggi.",
+      9: "### 9. Risk Management\n\n**Mitigasi Risiko Pengangkutan:**\n* Risiko kebocoran limbah cair di jalan: Penyediaan alat pelindung tumpahan (Spill-Kit), katup darurat otomatis, dan asuransi pertanggungjawaban keselamatan pengangkutan (Cargo Liability Insurance).",
+      10: "### 10. Digital Coverage (Tools, Method, Impact, Automation)\n\n**Sistem Telemetri & Festronik:**\nPemberlakuan pelacakan GPS satelit terkoneksi langsung dengan sistem pelaporan elektronik manifes untuk transparansi penuh.",
+      11: "### 11. Competitor\n\n**Posisi Pesaing:**\nSebagian besar pesaing kecil mengandalkan armada konvensional tanpa izin resmi. Pancaran unggul dalam kepatuhan hukum penuh dan keandalan armada berstandar tinggi.",
       12: "### 12. TAM, SAM, SOM\n\n• TAM: Rp 3.8 Triliun (potensi pasar pengolahan dan angkutan limbah B3 industri nasional)\n• SAM: Rp 1.1 Triliun (koridor industri Jawa & Sumatera)\n• SOM: Rp 240 Miliar (target pangsa pasar logistik limbah Pancaran Group)",
       13: "### 13. Customer Acquisition Cost (CAC) & Lifetime Value (LTV)\n\n• CAC: Rp 45.000.000\n• LTV Kontrak: Rp 2.200.000.000 per korporasi klien pertahun\n• Rasio LTV/CAC: 48.8x (Sangat Tinggi karena tingginya loyalitas kontrak limbah berizin)",
-      14: "### 14. Kesimpulan & Rekomendasi Keputusan\n\n**Kesimpulan Akhir:**\nDengan proyeksi ROI 42.8% dan dukungan regulasi KLHK yang ketat, proyek Transportasi & Pengolahan Limbah B3 dinyatakan **SANGAT LAYAK (GO)** untuk segera dieksekusi.\n\n**Rekomendasi Keputusan Utama:**\n1. Selesaikan perpanjangan seluruh izin trayek khusus tangki B3 KLHK.\n2. Latih seluruh awak armada dengan modul tanggap darurat tumpahan."
+      14: "### 14. Kesimpulan & Rekomendasi Keputusan\n\n**Kesimpulan Akhir:**\nDengan proyeksi ROI 42.8% dan dukungan regulasi perizinan resmi, proyek Transportasi & Pengolahan Limbah B3 dinyatakan **SANGAT LAYAK (GO)** untuk segera dieksekusi.\n\n**Rekomendasi Keputusan Utama:**\n1. Selesaikan perpanjangan seluruh izin trayek khusus tangki B3.\n2. Latih seluruh awak armada dengan modul tanggap darurat tumpahan."
     }
   },
   {
@@ -313,13 +356,13 @@ export const DASHBOARD_PRESETS = [
     title: "Analisis Kelayakan: Transportasi Koridor Batu Bara Swarnadwipa",
     description: "Analisis logistik mineral berat, curah, dengan armada heavy-duty tipper.",
     sectionsOverride: {
-      1: "### 1. Global / National (NAT) Overview\n\n**Kepatuhan Regulasi Tambang:**\nKajian kepatuhan terhadap regulasi Dirjen Minerba dan UU No. 3 Tahun 2020 tentang Pertambangan Mineral dan Batubara. Mengaitkan de-sulfurisasi pada rantai pasok batubara domestik dan sanksi ODOL kementerian perhubungan.",
-      2: "### 2. Market Opportunity\n\n**Rute Logistik Strategis Batubara:**\nTerdapat kesenjangan ketersediaan transporter dengan indeks keselamatan HSE standar internasional untuk rute hauling dari mulut tambang batubara (Sumatera Selatan / Kalimantan Timur) ke stockpile pelabuhan pemuatan.",
+      1: "### 1. Global / National (NAT) Overview\n\n**Kepatuhan Regulasi Tambang:**\nKajian kepatuhan terhadap regulasi Dirjen Minerba dan UU No. 3 Tahun 2020 tentang Pertambangan Mineral dan Batubara, SIMBARA, serta standarisasi tonase jalur darat.",
+      2: "### 2. Market Opportunity\n\n**Rute Logistik Strategis Batubara:**\nTerdapat kesenjangan ketersediaan transporter dengan indeks keselamatan HSE standar tinggi untuk rute hauling dari mulut tambang batubara (Sumatera Selatan / Kalimantan Timur) ke stockpile penampungan & terminal darat.",
       3: "### 3. Financial Analysis\n\n**Proyeksi Capex & Opex Batubara Swarnadwipa:**\n\n**A. Capital Expenditure (Capex):**\n* Pembelian 15 Unit Tipper Truck Heavy Duty: **Rp 18.500.000.000**\n* Fasilitas Bengkel Penyelamat Lapangan: **Rp 1.200.000.005**\n* *Total Capex:* **Rp 19.700.000.005**\n\n**B. Opex Bulanan:**\n* BBM Solar Industri & Pelumas Spesial: **Rp 450.000.000**\n* Gaji Supir Hauling Lapangan: **Rp 120.000.000**\n* Ban & Suku Cadang Keras: **Rp 110.000.050**\n* *Total Opex:* **Rp 680.000.000 / Bulan**\n\n**C. Kelayakan Finansial:**\n* Payback Period (PBP): **3.1 Tahun**\n* ROI Proyek: **38.5%**\n* IRR: **29.1%**",
-      4: "### 4. Supply & Demand\n\n**Kapasitas Pengangkutan Curah Tambang:**\nPermintaan sangat tinggi dari pemilik PKP2B untuk mengamankan slot angkutan sebelum musim penghujan tiba. Sisi suplai kontainer dump-tipper berbadan hukum resmi sangat terbatas.",
-      5: "### 5. Organization (Qualification, Skill, Output/KPI, SOP)\n\n**Organisasi Hauling Lapangan:**\n* Pengemudi: Memiliki SIM Barkas Heavy-Duty, sertifikasi Kesehatan Kerja B3, dan sertifikat Defensive Driving Course tambang.\n* Supervisor Safety Alat Berat: Kualifikasi K3 Pertambangan (Pengawas Operasional Pertama - POP).",
+      4: "### 4. Supply & Demand\n\n**Kapasitas Pengangkutan Curah Tambang:**\nPermintaan sangat tinggi dari pemilik tambang untuk mengamankan slot angkutan sebelum musim penghujan tiba. Sisi suplai dump-tipper berbadan hukum resmi sangat terbatas.",
+      5: "### 5. Organization (Qualification, Skill, Output/KPI, SOP)\n\n**Organisasi Hauling Lapangan:**\n* Pengemudi: Memiliki SIM Heavy-Duty, sertifikasi Kesehatan Kerja, dan sertifikat Defensive Driving Course tambang.\n* Supervisor Safety Alat Berat: Kualifikasi K3 Pertambangan (Pengawas Operasional Pertama - POP).",
       6: "### 6. Transition Model (Pre-On-Post)\n\n**Tahap Transisi Deployment:**\n* Pre-Onboarding: Pengecekan kontur kelandaian jalan hauling tambang.\n* Onboarding: Pembagian rute shift sopir gilir 12 jam.\n* Post-Onboarding: Monitoring real-time cycle time armada batubara via IoT panel.",
-      7: "### 7. Go-To-Market (GTM) Strategy\n\n**Penetrasi B2B Minerba:**\nMenandatangani kontrak jangka panjang Minimum Take-or-Pay (MToP) dengan jaminan utilisasi armada di atas 85% bersama perusahaan tambang batubara pemegang IPPKH.",
+      7: "### 7. Go-To-Market (GTM) Strategy\n\n**Penetrasi B2B Minerba:**\nMenandatangani kontrak jangka panjang Minimum Take-or-Pay (MToP) dengan jaminan utilisasi armada di atas 85% bersama perusahaan tambang batubara.",
       8: "### 8. Ops Model (Flow Process, Workflow Diagram, SLA)\n\n**Prosedur Alur Kerja Dispatching:**\nSistem konvoi armada (Platooning) dengan batas kecepatan 40km/jam di rute hauling utama untuk menghindari debu tebal dan risiko senggolan alat berat.",
       9: "### 9. Risk Management\n\n**Manajemen Risiko Hauling:**\n* Risiko amblas di rute hauling berlumpur: Penyediaan unit bulldoser rescue stand-by di titik kritis.\n* Risiko polusi debu ke warga sekitar: Penyiraman jalan menggunakan water tank truck berkala 3x sehari.",
       10: "### 10. Digital Coverage (Tools, Method, Impact, Automation)\n\n**Teknologi Pelacakan Minerba:**\nPenerapan sensor pengukur suspensi muatan otomatis untuk mencegah muatan berlebih (Anti-ODOL sensor) dan kamera anti-mengantuk (fatigue sensor) pada kemudi pengemudi.",
@@ -336,14 +379,14 @@ export const DASHBOARD_PRESETS = [
     description: "Analisis logistik khusus kontainer pendingin (reefer container) dengan kontrol suhu konstan.",
     sectionsOverride: {
       1: "### 1. Global / National (NAT) Overview\n\n**Kepatuhan Distribusi Farmasi CDOB:**\nKajian kepatuhan terhadap standarisasi BPOM tentang Cara Distribusi Obat yang Baik (CDOB) dan regulasi sistem mutu ISO 9001 untuk menjaga integritas vaksin serta bahan makanan segar rentan rusak selama masa pengangkutan darat.",
-      2: "### 2. Market Opportunity\n\n**Pertumbuhan Logistik Suhu Terkontrol:**\nPemulihan sektor FMCG dan lonjakan konsumsi obat-obatan memerlukan transporter bersertifikat BPOM dengan fitur termometer cloud-realtime guna memitigasi risiko pembusukan bahan baku di transit.",
+      2: "### 2. Market Opportunity\n\n**Pertumbuhan Logistik Suhu Terkontrol:**\nPemulihan sektor FMCG dan lonjakan konsumsi obat-obatan memerlukan transporter bersertifikat BPOM dengan fitur termometer cloud-realtime guna memitigasi risiko pembusukan bahan baku di transit darat.",
       3: "### 3. Financial Analysis\n\n**Proyeksi Capex & Opex Cold Chain:**\n\n**A. Capital Expenditure (Capex):**\n* Pembelian 8 unit Reefer Box ThermoKing 6-Wheeler: **Rp 6.400.000.000**\n* Perangkat Pengontrol Suhu IoT Telematika: **Rp 220.005.000**\n* *Total Capex:* **Rp 6.620.000.000**\n\n**B. Opex Kontrol Suhu Bulanan:**\n* Konsumsi Solar Tambahan untuk Generator Reefer: **Rp 95.000.000**\n* Perawatan Kompresor Pendingin Berkala: **Rp 35.000.000**\n* Gaji Driver Terlatih Suhu: **Rp 48.000.000**\n* *Total Opex:* **Rp 178.000.000 / Bulan**\n\n**C. Metrik ROI:**\n* Payback Period (PBP): **2.4 Tahun**\n* ROI Proyek: **41.2%**\n* IRR: **31.3%**",
       4: "### 4. Supply & Demand\n\n**Suplai Reefer Terbatas:**\nSuplai unit berpendingin berkualitas tinggi yang memiliki kalibrasi suhu berkala BPOM sangatlah minim. Kebanyakan adalah truk boks kering biasa yang diubah seadanya. Permintaan dari produsen es krim dan vaksin internasional melonjak hebat.",
       5: "### 5. Organization (Qualification, Skill, Output/KPI, SOP)\n\n**Struktur Staf Pengatur Suhu:**\n* Supervisor Gudang Beku: Bersertifikat CDOB Farmasi.\n* Pengemudi Reefer: Menguasai pengaturan kelistrikan generator genset box reefer dan penanganan alarm penyimpangan suhu di jalan.",
-      6: "### 6. Transition Model (Pre-On-Post)\n\n**Transition Deployment Plan:**\n* Pre-Onboarding: Kalibrasi sensor suhu oleh badan meteorologi independen.\n* Onboarding: Uji coba pengiriman boks reefer kosong untuk memastikan stabilitas suhu di dalam boks selama 12 jam perjalanan.\n* Post-Onboarding: Pengiriman perdana muatan cokelat premium.",
+      6: "### 6. Transition Model (Pre-On-Post)\n\n**Transition Deployment Plan:**\n* Pre-Onboarding: Kalibrasi sensor suhu oleh badan meteorologi independen.\n* Onboarding: Uji coba pengiriman boks reefer kosong untuk memastikan stabilitas suhu di dalam boks selama 12 jam perjalanan.\n* Post-Onboarding: Pengiriman perdana muatan produk dingin.",
       7: "### 7. Go-To-Market (GTM) Strategy\n\n**Fokus Pasar Pabrikan Boga & Obat-obatan:**\nMenyediakan Layanan Garansi Zero-Defect (Suhu Konstan atau Uang Kembali) untuk memenangkan kontrak distribusi dengan merk farmasi besar multinasional.",
       8: "### 8. Ops Model (Flow Process, Workflow Diagram, SLA)\n\n**SOP SLA Distribusi Boga Segar:**\n* Batas Deviasi Suhu Box: **Maksimal ±2°C** dari target suhu setpoint.\n* Waktu Pemuatan Kargo: **Maksimal 45 Menit** semenjak pintu gudang pendingin dibuka.",
-      9: "### 9. Risk Management\n\n**Mitigasi Kegagalan Pendinginan:**\n* Risiko genset reefer mati mendadak: Pemasangan genset cadangan (Dual-Power Genset backup) terpasang di sasis bawah truk.\n* Risiko kemacetan panjang di pelabuhan feri: Penyediaan suplai daya listrik darat di pelabuhan penyeberangan.",
+      9: "### 9. Risk Management\n\n**Mitigasi Kegagalan Pendinginan:**\n* Risiko genset reefer mati mendadak: Pemasangan genset cadangan (Dual-Power Genset backup) terpasang di sasis bawah truk.\n* Risiko kemacetan jalur darat: Pemilihan rute tol prioritas dan monitoring GPS 24 jam.",
       10: "### 10. Digital Coverage (Tools, Method, Impact, Automation)\n\n**Sistem Telemetri Suhu Real-time:**\nIntegrasi API dengan dashboard pengirim yang memperlihatkan grafik fluktuasi grafik suhu boks reefer setiap 5 menit secara otomatis via satelit GPS.",
       11: "### 11. Competitor\n\n**Analisis Pembanding Pasar:**\nPesaing lokal tidak memiliki sistem pelaporan suhu digital terpusat secara langsung, memberikan Pancaran keunggulan teknologi mutlak untuk memenuhi persyaratan jaminan kualitas BPOM.",
       12: "### 12. TAM, SAM, SOM\n\n• TAM: Rp 2.8 Triliun (pasar cold chain nasional Indonesia)\n• SAM: Rp 820 Miliar (distribusi farmasi & boga beku koridor Jawa-Bali)\n• SOM: Rp 160 Miliar (target perolehan kontrak logistik FMCG reefer Pancaran)",
@@ -352,25 +395,25 @@ export const DASHBOARD_PRESETS = [
     }
   },
   {
-    id: "oceanport",
-    name: "Hub Intermodal & Kontainer Pelabuhan (Port & Sea Freight)",
-    title: "Kajian Kelayakan: Port Intermodal Hub & Shuttle Container Terminal Tanjung Priok",
-    description: "Preset analisis operasional transit peti kemas dari hinterland industri ke pelabuhan pengekspor.",
+    id: "inlandhub",
+    name: "Hub Koridor Kontainer & Depo Logistik Darat (Inland Container Hub)",
+    title: "Kajian Kelayakan: Inland Container Hub & Shuttle Depot Logistik Darat",
+    description: "Preset analisis operasional transit peti kemas dari hinterland kawasan industri ke depo distribusi logistik darat.",
     sectionsOverride: {
-      1: "### 1. Global / National (NAT) Overview\n\n**Regulasi Penumpukan & Bea Cukai Pelabuhan:**\nKajian regulasi pemenuhan target dwelling-time pelabuhan nasional Bea Cukai Indonesia serta pengurusan Sistem Informasi Manifes Kepelabuhanan (Inaportnet) milik Kementerian Perhubungan.",
-      2: "### 2. Market Opportunity\n\n**Shuttle Peti Kemas Hinterland:**\nArus bongkar muat peti kemas ekspor-impor yang terus tumbuh membutuhkan jaminan transportasi shuttle kontainer terjadwal dari kaasan pabrik Karawang secara efisien tanpa penundaan di depo penumpukan.",
-      3: "### 3. Financial Analysis\n\n**Proyeksi Keuangan Port Intermodal:**\n\n**A. Capital Expenditure (Capex):**\n* Pembelian 10 Unit Skeletal Trailer Chassis Container: **Rp 4.200.000.000**\n* Sistem ERP Depo & Terminal Operating System (TOS): **Rp 350.000.000**\n* *Total Capex:* **Rp 4.550.000.000**\n\n**B. Opex Penanganan Depo Bulanan:**\n* Tarif Bongkar Muat (LOLO) & Stack Depo: **Rp 85.000.000**\n* BBM Truk Penarik Trailer: **Rp 160.000.000**\n* Gaji Driver & Staf Administrasi Bea Cukai: **Rp 52.000.000**\n* *Total Opex:* **Rp 297.000.000 / Bulan**\n\n**C. Analisis Kelayakan:**\n* Payback Period (PBP): **2.1 Tahun**\n* Return on Investment (ROI): **44.5%**\n* IRR: **32.8%**",
-      4: "### 4. Supply & Demand\n\n**Kebutuhan Tinggi Depo Terintegrasi:**\nDepo penumpukan peti kemas yang memiliki integrasi digital langsung dengan jadwal keberangkatan kapal laut sangat dicari oleh perusahaan ekportir raksasa untuk menghindari biaya denda keterlambatan penumpukan (Demurrage).",
-      5: "### 5. Organization (Qualification, Skill, Output/KPI, SOP)\n\n**Staf Kepabeanan & Lapangan:**\n* Ekspedisi Port Specialist: Menguasai manajemen dokumen ekspor-impor (Bill of Lading, PEB, PIB, Bea Cukai SPJM/SPJK).\n* Driver Trailer 40 Feet: Terampil bermanuver di area sempit terminal pelabuhan.",
-      6: "### 6. Transition Model (Pre-On-Post)\n\n**Transition Milestones:**\n* Pre-Onboarding: Pendaftaran nomor registrasi transporter digital di gerbang otomatis JICT.\n* Onboarding: Pembukaan jalur shuttle terjadwal harian Karawang-Tanjung Priok.\n* Post-Onboarding: Analisis otomatis utilisasi kapasitas angkut trailer ekspor.",
-      7: "### 7. Go-To-Market (GTM) Strategy\n\n**Aliansi Bersama Shipping Lines:**\nMenandatangani kontrak pengangkutan satu paket (Through Bill of Lading) bersama operator pelayaran kapal laut global (seperti Maersk / MSC) untuk menyedot kargo langsung dari pemilik barang.",
-      8: "### 8. Ops Model (Flow Process, Workflow Diagram, SLA)\n\n**SOP Dwelling Time & SLA:**\n* SLA Penarikan Kontainer dari Terminal: **Maksimal 3 Jam** sejak dokumen Bea Cukai keluar bebas SPPB.\n* Batas Kecepatan Trailer di Depo: **Maksimal 15 km/jam** keselamatan mutlak.",
-      9: "### 9. Risk Management\n\n**Manajemen Risiko Kemacetan Gerbang Tol Port:**\n* Risiko keterlambatan masuk closing-time kapal: Mitigasi dengan rute alternatif malam hari khusus dan penempatan depo buffer dekat gerbang pelabuhan.",
-      10: "### 10. Digital Coverage (Tools, Method, Impact, Automation)\n\n**Integrasi Sistem Inaportnet:**\nPenerapan sistem scan barcode gerbang otomatis (Gate RFID Automatic Recognition) untuk mempercepat proses truk masuk depo tanpa sentuhan dokumen fisik.",
+      1: "### 1. Global / National (NAT) Overview\n\n**Regulasi Penumpukan & Standar Koridor Logistik Darat:**\nKajian regulasi batas tonase jalan nasional, pemenuhan dwelling time depo peti kemas darat, serta kepatuhan keselamatan angkutan barang Kementerian Perhubungan.",
+      2: "### 2. Market Opportunity\n\n**Shuttle Peti Kemas Hinterland Industri:**\nArus pergerakan peti kemas manufaktur yang terus tumbuh membutuhkan jaminan transportasi shuttle kontainer darat terjadwal dari kawasan pabrik Karawang/Cikarang secara efisien tanpa penundaan di depo penumpukan.",
+      3: "### 3. Financial Analysis\n\n**Proyeksi Keuangan Inland Container Hub:**\n\n**A. Capital Expenditure (Capex):**\n* Pembelian 10 Unit Skeletal Trailer Chassis Container: **Rp 4.200.000.000**\n* Sistem ERP Depo & Terminal Operating System (TOS): **Rp 350.000.000**\n* *Total Capex:* **Rp 4.550.000.000**\n\n**B. Opex Penanganan Depo Bulanan:**\n* Tarif Bongkar Muat (LOLO) & Stack Depo: **Rp 85.000.000**\n* BBM Truk Penarik Trailer: **Rp 160.000.000**\n* Gaji Driver & Staf Administrasi Depo: **Rp 52.000.000**\n* *Total Opex:* **Rp 297.000.000 / Bulan**\n\n**C. Analisis Kelayakan:**\n* Payback Period (PBP): **2.1 Tahun**\n* Return on Investment (ROI): **44.5%**\n* IRR: **32.8%**",
+      4: "### 4. Supply & Demand\n\n**Kebutuhan Tinggi Depo Terintegrasi:**\nDepo penumpukan peti kemas darat yang memiliki sistem booking digital langsung sangat dicari oleh perusahaan manufaktur raksasa untuk menghindari antrean panjang dan denda keterlambatan penumpukan.",
+      5: "### 5. Organization (Qualification, Skill, Output/KPI, SOP)\n\n**Staf Operasional & Lapangan:**\n* Ekspedisi Depo Specialist: Menguasai manajemen dokumen surat jalan (Delivery Order, e-POD, manifes muatan kontainer).\n* Driver Trailer 40 Feet: Terampil bermanuver di jalan raya dan area sempit depo kontainer.",
+      6: "### 6. Transition Model (Pre-On-Post)\n\n**Transition Milestones:**\n* Pre-Onboarding: Pendaftaran nomor registrasi transporter digital di gerbang otomatis depo.\n* Onboarding: Pembukaan jalur shuttle terjadwal harian Karawang-Cikarang-Jakarta.\n* Post-Onboarding: Analisis otomatis utilisasi kapasitas angkut trailer darat.",
+      7: "### 7. Go-To-Market (GTM) Strategy\n\n**Aliansi Bersama Kawasan Industri & Forwarder Darat:**\nMenandatangani kontrak pengangkutan koridor darat jangka panjang bersama pengelola kawasan industri dan distributor besar untuk mengamankan volume kargo muatan kontainer.",
+      8: "### 8. Ops Model (Flow Process, Workflow Diagram, SLA)\n\n**SOP Dwelling Time & SLA:**\n* SLA Penarikan Kontainer dari Depo: **Maksimal 2 Jam** sejak dokumen jalan terbit.\n* Batas Kecepatan Trailer di Depo: **Maksimal 15 km/jam** untuk keselamatan mutlak.",
+      9: "### 9. Risk Management\n\n**Manajemen Risiko Kemacetan Jalur Logistik:**\n* Risiko kemacetan jam sibuk: Mitigasi dengan penjadwalan rute khusus malam hari dan penempatan depo penyangga (buffer depot) di dekat simpul jalan tol.",
+      10: "### 10. Digital Coverage (Tools, Method, Impact, Automation)\n\n**Integrasi Sistem Otomasi Gerbang:**\nPenerapan sistem scan barcode gerbang otomatis (Gate RFID Automatic Recognition) untuk mempercepat proses truk masuk depo tanpa sentuhan dokumen fisik.",
       11: "### 11. Competitor\n\n**Analisis Peta Persaingan:**\nArmada Pancaran Group yang melimpah memberikan kepastian ketersediaan unit trailer 40 feet kapan pun (Instant Truck Availability), mengungguli perusahaan ekspedisi skala kecil.",
-      12: "### 12. TAM, SAM, SOM\n\n• TAM: Rp 6.2 Triliun (volume angkutan peti kemas nasional ekspor-impor)\n• SAM: Rp 1.8 Triliun (koridor pelabuhan Tanjung Priok - Jawa Barat hinterland)\n• SOM: Rp 320 Miliar (target raihan pangsa pasar shuttle kontainer Pancaran Group)",
+      12: "### 12. TAM, SAM, SOM\n\n• TAM: Rp 6.2 Triliun (volume angkutan peti kemas koridor darat industri nasional)\n• SAM: Rp 1.8 Triliun (koridor jalan tol industri Jawa Barat hinterland)\n• SOM: Rp 320 Miliar (target raihan pangsa pasar shuttle kontainer darat Pancaran Group)",
       13: "### 13. Customer Acquisition Cost (CAC) & Lifetime Value (LTV)\n\n• CAC: Rp 35.000.000\n• LTV Kontrak: Rp 3.500.000.000 per key customer pertahun\n• Rasio LTV/CAC: 100x (Sangat Fantastis karena volume pengiriman rutin bulanan berkelanjutan)",
-      14: "### 14. Kesimpulan & Rekomendasi Keputusan\n\n**Kesimpulan Akhir:**\nDengan proyeksi ROI 44.5% dan status kemitraan penarikan JICT otomatis, proyek Port Intermodal Tanjung Priok dinyatakan **SANGAT LAYAK (GO)** untuk segera dioperasikan.\n\n**Rekomendasi Keputusan Utama:**\n1. Selesaikan pendaftaran nomor registrasi digital gantry sebelum pembukaan gerbang rute.\n2. Lobi aliansi shipping lines Maersk / MSC untuk kontrak angkut terusan."
+      14: "### 14. Kesimpulan & Rekomendasi Keputusan\n\n**Kesimpulan Akhir:**\nDengan proyeksi ROI 44.5% dan otomatisasi depo modern, proyek Inland Container Hub dinyatakan **SANGAT LAYAK (GO)** untuk segera dioperasikan.\n\n**Rekomendasi Keputusan Utama:**\n1. Selesaikan integrasi RFID gate otomatis sebelum pembukaan rute komersial.\n2. Kunci kontrak shuttle volume bulanan bersama korporasi manufaktur utama."
     }
   },
   {
@@ -818,7 +861,11 @@ export default function App() {
     let title = "";
     let image = "";
     if (type === "division") {
-      title = "Chat Model AI Agent Prama";
+      if (id === "multifungsi") {
+        title = "Chat Multi Fungsi AI Prama";
+      } else {
+        title = "Chat Model AI Agent Prama";
+      }
       image = "https://lh3.googleusercontent.com/d/1uBbHTvv5mIJCPFI1I09ihFuicDVDcfmo";
     } else {
       title = "Dashboard Chat AI Agent Prama";
@@ -854,6 +901,7 @@ export default function App() {
 
   // State for document and PowerPoint interactive inline live previews
   const [articlePreview, setArticlePreview] = useState<{ title: string; content: string; fileName: string } | null>(null);
+  const [pillarPDFPreview, setPillarPDFPreview] = useState<{ number: number; title: string; content: string; projectTitle: string } | null>(null);
   const [pptPreview, setPptPreview] = useState<{ title: string; slides: Array<{ title: string; bullets: string[]; speakerNotes: string; imageUrl: string }>; fileName: string } | null>(null);
   const [activeSlideIndex, setActiveSlideIndex] = useState<number>(0);
   const [copiedState, setCopiedState] = useState<boolean>(false);
@@ -1014,7 +1062,9 @@ export default function App() {
   const [files, setFiles] = useState<SavedFile[]>([]);
   const [selectedFile, setSelectedFile] = useState<SavedFile | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(() => {
-    const localChats = localStorage.getItem("gemini_mirror_chats");
+    const savedDiv = localStorage.getItem("prama_active_division");
+    const key = getChatStorageKey(savedDiv);
+    const localChats = localStorage.getItem(key);
     if (localChats) {
       try {
         const parsed = JSON.parse(localChats);
@@ -1023,15 +1073,7 @@ export default function App() {
         }
       } catch (e) {}
     }
-    return [
-      {
-        id: "init-msg",
-        role: "model",
-        text: "Halo! Saya PRAMA, konsultan manajemen proyek strategis Anda di Pancaran Group. Sebelum kita melangkah lebih jauh, boleh tahu proyek atau topik bisnis apa yang ingin kita bahas hari ini agar arah diskusi kita menjadi jelas?",
-        timestamp: Date.now(),
-        sender: "PRAMA AI"
-      }
-    ];
+    return getChatInitialMessage(savedDiv);
   });
   const [chatLoading, setChatLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
@@ -1084,6 +1126,7 @@ export default function App() {
   });
   const [showKey, setShowKey] = useState(false);
   const [showConfigLogin, setShowConfigLogin] = useState(false);
+  const [showAISettingsModal, setShowAISettingsModal] = useState(false);
 
   // Navigation tab for mobile layouts
   const [activeTab, setActiveTab] = useState<"chat" | "files">("chat");
@@ -1505,7 +1548,7 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
         const savedTitle = localStorage.getItem("prama_dashboard_project_title") || "Kajian Strategis: Forestry Management Transportation";
         const generatedPillars = generatePillarsForProject(savedTitle);
 
-        for (let num = 1; num <= 14; num++) {
+        for (let num = 1; num <= 17; num++) {
           const content = parsed[num] || "";
           const isBreakdownOrOld = 
             !content.trim() ||
@@ -1572,7 +1615,10 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
     localStorage.setItem("prama_competitors", JSON.stringify(competitors));
   }, [competitors]);
 
+  const lastSyncTitleRef = useRef<string>(dashboardProjectTitle);
+
   useEffect(() => {
+    if (!dashboardProjectTitle || !dashboardProjectTitle.trim()) return;
     localStorage.setItem("prama_dashboard_project_title", dashboardProjectTitle);
     setCompetitors(getDefaultCompetitorsForProject(dashboardProjectTitle));
     setChatBIState(prev => {
@@ -1581,6 +1627,13 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
       }
       return prev;
     });
+
+    if (lastSyncTitleRef.current !== dashboardProjectTitle) {
+      lastSyncTitleRef.current = dashboardProjectTitle;
+      const freshPillars = generatePillarsForProject(dashboardProjectTitle);
+      setDashboardSectionsState(freshPillars);
+      localStorage.setItem("prama_dashboard_sections", JSON.stringify(freshPillars));
+    }
   }, [dashboardProjectTitle]);
 
   useEffect(() => {
@@ -1614,6 +1667,39 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
   const [newDashboardTitleInput, setNewDashboardTitleInput] = useState<string>("");
   const [newDashboardPresetId, setNewDashboardPresetId] = useState<string>("forestry");
   const [isCleanSlate, setIsCleanSlate] = useState<boolean>(true);
+
+  // AI Title Analysis Modal state
+  const [isTitleAnalysisOpen, setIsTitleAnalysisOpen] = useState<boolean>(false);
+  const [titleAnalysisText, setTitleAnalysisText] = useState<string>("");
+  const [isTitleAnalyzing, setIsTitleAnalyzing] = useState<boolean>(false);
+
+  const handleAnalyzeTitle = async () => {
+    if (!dashboardProjectTitle.trim()) return;
+    setIsTitleAnalyzing(true);
+    setIsTitleAnalysisOpen(true);
+    try {
+      const res = await fetch("/api/analyze-title", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          title: dashboardProjectTitle, 
+          division: activeDivision,
+          clientApiKey: localStorage.getItem("workspace_client_api_key") || ""
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTitleAnalysisText(data.analysis);
+      } else {
+        setTitleAnalysisText("Gagal melakukan analisis judul.");
+      }
+    } catch (err) {
+      console.error(err);
+      setTitleAnalysisText("Terjadi kesalahan jaringan saat menganalisis judul.");
+    } finally {
+      setIsTitleAnalyzing(false);
+    }
+  };
 
   // Customized states for Article mode, Web Previews, PowerPoint Presenter Voice and Workflows
   const [workspaceViewState, setWorkspaceViewState] = useState<"editor" | "article" | "workflow">("article");
@@ -2101,9 +2187,10 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
     const activeUser = user || guestUser;
 
     if (activeUser) {
+      const chatStorageKey = getChatStorageKey(activeDivision);
       // Robust initial loading from local storage first to prevent initial empty flicker or offline wipe
       const localFiles = localStorage.getItem("gemini_mirror_files");
-      const localChats = localStorage.getItem("gemini_mirror_chats");
+      const localChats = localStorage.getItem(chatStorageKey);
       if (localFiles) {
         try {
           setFiles(JSON.parse(localFiles));
@@ -2113,6 +2200,8 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
         try {
           setChatMessages(cleanChatMessages(JSON.parse(localChats)));
         } catch (e) {}
+      } else {
+        setChatMessages(getChatInitialMessage(activeDivision));
       }
 
       if (guestUser) {
@@ -2153,9 +2242,10 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
         }
       );
 
-      // Sync Chat History from Firestore onSnapshot
+      // Sync Chat History from Firestore onSnapshot for active room
       const chatsPath = `users/${activeUser.uid}/chats`;
-      const activeChatDoc = doc(db, chatsPath, "active_chat");
+      const chatDocId = getChatDocId(activeDivision);
+      const activeChatDoc = doc(db, chatsPath, chatDocId);
 
       const unsubscribeChat = onSnapshot(
         activeChatDoc,
@@ -2166,39 +2256,23 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
             // Only overwrite local state if Firestore actually contains message data to prevent rollback wipes
             if (firestoreMsgs.length > 0) {
               setChatMessages(firestoreMsgs);
-              localStorage.setItem("gemini_mirror_chats", JSON.stringify(firestoreMsgs));
+              localStorage.setItem(chatStorageKey, JSON.stringify(firestoreMsgs));
             } else {
-              const init = [
-                {
-                  id: "init-msg",
-                  role: "model",
-                  text: "Halo! Saya PRAMA, konsultan manajemen proyek strategis Anda di Pancaran Group. Sebelum kita melangkah lebih jauh, boleh tahu proyek atau topik bisnis apa yang ingin kita bahas hari ini agar arah diskusi kita menjadi jelas?",
-                  timestamp: Date.now(),
-                  sender: "PRAMA AI"
-                }
-              ];
+              const init = getChatInitialMessage(activeDivision);
               setChatMessages(init);
-              localStorage.setItem("gemini_mirror_chats", JSON.stringify(init));
+              localStorage.setItem(chatStorageKey, JSON.stringify(init));
             }
           } else {
-            const init = [
-              {
-                id: "init-msg",
-                role: "model",
-                text: "Halo! Saya PRAMA, konsultan manajemen proyek strategis Anda di Pancaran Group. Sebelum kita melangkah lebih jauh, boleh tahu proyek atau topik bisnis apa yang ingin kita bahas hari ini agar arah diskusi kita menjadi jelas?",
-                timestamp: Date.now(),
-                sender: "PRAMA AI"
-              }
-            ];
+            const init = getChatInitialMessage(activeDivision);
             setChatMessages(init);
-            localStorage.setItem("gemini_mirror_chats", JSON.stringify(init));
+            localStorage.setItem(chatStorageKey, JSON.stringify(init));
             setDoc(activeChatDoc, {
-              id: "active_chat",
+              id: chatDocId,
               userId: activeUser.uid,
-              title: "Sesi Aktif Gemini Workspace",
+              title: activeDivision === "multifungsi" ? "Sesi Chat Multi Fungsi PRAMA" : "Sesi Aktif Gemini Workspace",
               messages: init,
               updatedAt: serverTimestamp(),
-            }).catch(err => console.error("Initial active_chat write failed:", err));
+            }).catch(err => console.error("Initial chat doc write failed:", err));
           }
         },
         (error) => {
@@ -2212,8 +2286,9 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
       };
     } else {
       // Offline mode: Load from localStorage
+      const chatStorageKey = getChatStorageKey(activeDivision);
       const localFiles = localStorage.getItem("gemini_mirror_files");
-      const localChats = localStorage.getItem("gemini_mirror_chats");
+      const localChats = localStorage.getItem(chatStorageKey);
       setFiles(localFiles ? JSON.parse(localFiles) : []);
       if (localChats) {
         try {
@@ -2221,48 +2296,26 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
           if (Array.isArray(parsed) && parsed.length > 0) {
             setChatMessages(cleanChatMessages(parsed));
           } else {
-            setChatMessages([
-              {
-                id: "init-msg",
-                role: "model",
-                text: "Halo! Saya PRAMA, konsultan manajemen proyek strategis Anda di Pancaran Group. Sebelum kita melangkah lebih jauh, boleh tahu proyek atau topik bisnis apa yang ingin kita bahas hari ini agar arah diskusi kita menjadi jelas?",
-                timestamp: Date.now(),
-                sender: "PRAMA AI"
-              }
-            ]);
+            setChatMessages(getChatInitialMessage(activeDivision));
           }
         } catch (e) {
-          setChatMessages([
-            {
-              id: "init-msg",
-              role: "model",
-              text: "Halo! Saya PRAMA, konsultan manajemen proyek strategis Anda di Pancaran Group. Sebelum kita melangkah lebih jauh, boleh tahu proyek atau topik bisnis apa yang ingin kita bahas hari ini agar arah diskusi kita menjadi jelas?",
-              timestamp: Date.now(),
-              sender: "PRAMA AI"
-            }
-          ]);
+          setChatMessages(getChatInitialMessage(activeDivision));
         }
       } else {
-        setChatMessages([
-          {
-            id: "init-msg",
-            role: "model",
-            text: "Halo! Saya PRAMA, konsultan manajemen proyek strategis Anda di Pancaran Group. Sebelum kita melangkah lebih jauh, boleh tahu proyek atau topik bisnis apa yang ingin kita bahas hari ini agar arah diskusi kita menjadi jelas?",
-            timestamp: Date.now(),
-            sender: "PRAMA AI"
-          }
-        ]);
+        setChatMessages(getChatInitialMessage(activeDivision));
       }
     }
-  }, [user, guestUser, authLoading, socketStatus]);
+  }, [user, guestUser, authLoading, socketStatus, activeDivision]);
 
   // Persist local state backup
   const persistLocalFiles = (updatedFiles: SavedFile[]) => {
     localStorage.setItem("gemini_mirror_files", JSON.stringify(updatedFiles));
   };
 
-  const persistLocalChats = (updatedChats: ChatMessage[]) => {
-    localStorage.setItem("gemini_mirror_chats", JSON.stringify(updatedChats));
+  const persistLocalChats = (updatedChats: ChatMessage[], divId?: string | null) => {
+    const targetDiv = divId !== undefined ? divId : activeDivision;
+    const storageKey = getChatStorageKey(targetDiv);
+    localStorage.setItem(storageKey, JSON.stringify(updatedChats));
   };
 
   // Get dynamic instructions based on active division
@@ -2271,6 +2324,9 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
     switch (divId) {
       case "comercial":
         focusText = "Fokus analisis komersial PRAMA: MARKET OPPORTUNITY, COMPETITOR, GO TO MARKET STRATEGY, TAM SAM SOM, serta SUPPLY AND DEMAND.";
+        break;
+      case "multifungsi":
+        focusText = "Fokus PRAMA MULTI-FUNGSI: Asisten Cerdas Multi-Peran & Multidisiplin untuk konsultasi lintas fungsi, analisis operasional taktis, kalkulasi cepat, draf SOP/dokumen, kepatuhan HSSE, dan pemecahan masalah bisnis komprehensif.";
         break;
       case "hca":
         focusText = "Fokus organisasi PRAMA: ORGANIZATION (Qualification, Skill, Output/KPI, SOP) serta kepatuhan STRUCTURE.";
@@ -2291,6 +2347,10 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
 
     return `Anda adalah PRAMA (Project Management Analytics), seorang AI Agent yang bertindak sebagai konsultan manajemen proyek profesional, taktis, dan strategis. Tugas utama Anda adalah membantu pengguna menganalisis, menstrukturkan, dan memberikan strategi manajemen proyek secara lengkap, singkat, detail, dan sangat terorganisir.
 
+BATASAN RUANG LINGKUP & LARANGAN TOPIK MUTLAK (STRICT EXCLUSIONS):
+1. LARANGAN TRANSPORTASI LAUT & UDARA: DILARANG KERAS membahas moda transportasi laut (kapal laut, tongkang/barge, pelayaran samudra, marine logistics, shipping line kapal laut, sea freight) dan transportasi udara (pesawat terbang, kargo udara, air freight, aviasi). Seluruh pembahasan HANYA berfokus pada Logistik & Transportasi Darat (armada truk, trailer, tronton, dump truck/tipper, jalan hauling tambang, logging road kehutanan, pergudangan darat, dan rantai pasok industri darat).
+2. LARANGAN PENGHIJAUAN & GO GREEN: DILARANG KERAS membahas isu penghijauan, inisiatif go green, net zero, dekarbonisasi lingkungan, sertifikasi hijau/emisi lingkungan, atau pelaporan ESG kelestarian lingkungan. Seluruh pembahasan murni difokuskan pada aspek komersial, profitabilitas modal, efisiensi operasional, keandalan armada darat, SLA, dan standar keselamatan kerja (K3).
+
 PROYEK SAAT INI YANG SEDANG DIANALISIS: "${dashboardProjectTitle || 'Kajian Strategis: Forestry Management Transportation'}".
 Catatan Penting: Pengguna dapat meminta Anda untuk mengganti judul proyek aktif dengan mengirim instruksi chat langsung, misalnya: "ganti proyek ke Logistik Minyak Bumi" atau "ubah project ke Ekspansi Bisnis Cargo". Jika Anda mendeteksi permintaan ini, beri tahu pengguna dengan senang hati bahwa Anda telah mendeteksi permintaan ganti proyek dan siap menganalisis pilar proyek baru tersebut!
 Jika menyarankan perubahan judul kajian, letakkan di dalam [UPDATE_JUDUL] judul baru di sini [/UPDATE_JUDUL]. Dan jika menyarankan draf dokumen baru untuk pilar, letakkan di dalam [UPDATE_PILAR] draf tulisan markdown di sini [/UPDATE_PILAR]. Di dalam tag khusus tersebut Anda boleh memakai format Markdown.
@@ -2299,7 +2359,7 @@ KETENTUAN INTERAKSI DAN KOMUNIKASI (WAJIB DIPATUHI):
 1. Anda diperbolehkan dan mampu menerima obrolan santai, sapaan (seperti halo, apa kabar, selamat pagi), atau interaksi kasual dari pengguna agar komunikasi terasa nyaman dan fleksibel. Balas sapaan tersebut dengan ramah, santai, namun tetap profesional.
 2. PENTING: Untuk pertama kali percakapan atau ketika pengguna baru menyapa Anda pertama kali (misalnya dengan "halo", "hai", dsb.), Anda HARUS menyapa balik secara hangat and bertanya terlebih dahulu: "Proyek, industri, atau topik bisnis apa yang ingin kita bahas hari ini agar arah analisis kita menjadi jelas?".
 3. JANGAN langsung menyajikan analisis komprehensif 14 pilar untuk proyek default "Kajian Strategis: Forestry Management Transportation" kecuali jika pengguna secara eksplisit meminta proyek tersebut atau langsung memberikan detail topik proyek baru. Prioritaskan mengajak pengguna berdiskusi terlebih dahulu untuk memperjelas topik yang ingin dibahas.
-4. Begitu pengguna menjawab atau memberikan sebuah topik, judul proyek, atau nama industri baru, barulah Anda LANGSUNG MENJELASKAN SELURUH 14 POIN ruang lingkup di bawah ini dalam satu kali jawaban. Jangan mencicil, jangan melewatkan satu poin pun, dan langsung masuk ke analisis yang kontekstual dengan topik tersebut.
+4. Begitu pengguna menjawab atau memberikan sebuah topik, judul proyek, atau nama industri baru, barulah Anda LANGSUNG MENJELASKAN SELURUH 14 POIN ruang lingkup di bawah ini dalam satu kali jawaban. Jangan mencicil, jangan melewatkan satu poin pun, dan langsung masuk ke analisis yang kontekstual dengan topik tersebut (hanya transportasi darat, tanpa pembahasan transportasi laut, udara, atau go green/penghijauan).
 
 ATURAN FORMAT PENULISAN (SANGAT KETAT):
 - JANGAN PERNAH menggunakan simbol-simbol asing atau karakter Markdown seperti tanda bintang (*) untuk menebalkan teks atau pagar (#) untuk judul karena akan merusak sistem tampilan visual pengguna.
@@ -2360,33 +2420,26 @@ ${focusText}`;
     setSearchQuery("");
     setIsSearching(false);
     
-    const init = [
-      {
-        id: "init-msg",
-        role: "model",
-        text: "Halo! Saya PRAMA, konsultan manajemen proyek strategis Anda di Pancaran Group. Sebelum kita melangkah lebih jauh, boleh tahu proyek atau topik bisnis apa yang ingin kita bahas hari ini agar arah diskusi kita menjadi jelas?",
-        timestamp: Date.now(),
-        sender: "PRAMA AI"
-      }
-    ];
+    const init = getChatInitialMessage(activeDivision);
     setChatMessages(init);
-    localStorage.setItem("gemini_mirror_chats", JSON.stringify(init));
+    persistLocalChats(init, activeDivision);
     
     const activeUser = user || guestUser;
     if (activeUser) {
       const chatsPath = `users/${activeUser.uid}/chats`;
+      const chatDocId = getChatDocId(activeDivision);
       try {
-        const activeChatDoc = doc(db, chatsPath, "active_chat");
+        const activeChatDoc = doc(db, chatsPath, chatDocId);
         await setDoc(activeChatDoc, {
-          id: "active_chat",
+          id: chatDocId,
           userId: activeUser.uid,
-          title: "Sesi Aktif Gemini Workspace",
+          title: activeDivision === "multifungsi" ? "Sesi Chat Multi Fungsi PRAMA" : "Sesi Aktif Gemini Workspace",
           messages: init,
           updatedAt: serverTimestamp(),
         });
       } catch (err) {
         console.error("Gagal memulai percakapan baru:", err);
-        handleFirestoreError(err, OperationType.WRITE, `${chatsPath}/active_chat`);
+        handleFirestoreError(err, OperationType.WRITE, `${chatsPath}/${chatDocId}`);
       }
     }
   };
@@ -2757,10 +2810,11 @@ ${focusText}`;
       // Sync chat message user node to Firestore (Non-blocking background update)
       if (user && activeUser) {
         const chatsPath = `users/${activeUser.uid}/chats`;
-        setDoc(doc(db, chatsPath, "active_chat"), {
-          id: "active_chat",
+        const chatDocId = getChatDocId(activeDivision);
+        setDoc(doc(db, chatsPath, chatDocId), {
+          id: chatDocId,
           userId: activeUser.uid,
-          title: "Sesi Aktif Gemini Workspace",
+          title: activeDivision === "multifungsi" ? "Sesi Chat Multi Fungsi PRAMA" : "Sesi Aktif Gemini Workspace",
           messages: updatedMessages,
           updatedAt: serverTimestamp(),
         }).catch(err => console.error("Sync active_chat user message failed:", err));
@@ -2878,10 +2932,11 @@ ${focusText}`;
 
       if (user && activeUser) {
         const chatsPath = `users/${activeUser.uid}/chats`;
-        setDoc(doc(db, chatsPath, "active_chat"), {
-          id: "active_chat",
+        const chatDocId = getChatDocId(activeDivision);
+        setDoc(doc(db, chatsPath, chatDocId), {
+          id: chatDocId,
           userId: activeUser.uid,
-          title: "Sesi Aktif Gemini Workspace",
+          title: activeDivision === "multifungsi" ? "Sesi Chat Multi Fungsi PRAMA" : "Sesi Aktif Gemini Workspace",
           messages: finalMessagesList,
           updatedAt: serverTimestamp(),
         }).catch(err => console.error("Sync active_chat final messages failed:", err));
@@ -3085,10 +3140,11 @@ Silakan buka tombol **KONEKSI (BROWSER)** di bagian atas halaman chat, lalu masu
 
       if (user && activeUser) {
         const chatsPath = `users/${activeUser.uid}/chats`;
-        setDoc(doc(db, chatsPath, "active_chat"), {
-          id: "active_chat",
+        const chatDocId = getChatDocId(activeDivision);
+        setDoc(doc(db, chatsPath, chatDocId), {
+          id: chatDocId,
           userId: activeUser.uid,
-          title: "Sesi Aktif Gemini Workspace",
+          title: activeDivision === "multifungsi" ? "Sesi Chat Multi Fungsi PRAMA" : "Sesi Aktif Gemini Workspace",
           messages: finalMessagesList,
           updatedAt: serverTimestamp(),
         }).catch(err => console.error("Sync active_chat failed:", err));
@@ -3618,6 +3674,22 @@ ${lastMsgText}`;
     handleSaveFile(filePayload);
     setActiveTab("files");
     alert("Draf hasil analisis berhasil disimpan ke Mirror Storage Anda!");
+  };
+
+  const handleDownloadFullPortalHTML = () => {
+    try {
+      const activeMsgs = (chatMessages && chatMessages.length > 0) ? chatMessages : dashboardChatMessages;
+      exportFullPortalWithChatHTML({
+        projectTitle: dashboardProjectTitle || "Kajian Strategis Proyek",
+        activeDivision: activeDivision || "Logistik & Transportasi Komersial",
+        pillars: currentDashboardSections,
+        pillarContents: dashboardSectionsState,
+        chatMessages: activeMsgs,
+      });
+    } catch (err: any) {
+      console.error("Gagal mengunduh HTML Full Portal:", err);
+      alert("Gagal mengunduh file HTML: " + (err?.message || String(err)));
+    }
   };
 
   const handleTyping = (isTyping: boolean) => {
@@ -4510,7 +4582,7 @@ ${lastMsgText}`;
               </div>
 
               <p className="text-xs text-slate-300 leading-relaxed font-medium">
-                Platform penunjang keputusan komersial, operasional, & akurasi keuangan. Ditenagai asisten AI penasihat khusus untuk pilar divisi komersial logistik darat & laut Pancaran Group.
+                Platform penunjang keputusan komersial, operasional, & akurasi keuangan. Ditenagai asisten AI penasihat khusus untuk pilar divisi komersial logistik darat & armada transportasi Pancaran Group.
               </p>
 
 
@@ -4631,92 +4703,6 @@ ${lastMsgText}`;
                 )}
               </button>
             </form>
-            {/* Connection configuration toggle button */}
-            <div className="mt-5 text-center">
-              <button
-                type="button"
-                onClick={() => setShowConfigLogin(!showConfigLogin)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 text-xs font-bold transition cursor-pointer shadow-sm"
-              >
-                <Settings className={`h-3.5 w-3.5 text-indigo-600 ${showConfigLogin ? "animate-spin" : ""}`} />
-                <span>{showConfigLogin ? "Sembunyikan Setelan AI (Opsional)" : "⚙️ Pengaturan Koneksi API (Opsional)"}</span>
-              </button>
-            </div>
-
-            {/* Collapsible Connection configuration panel displayed at Login / Register */}
-            {showConfigLogin && (
-              <div className="mt-4 pt-4 border-t border-slate-100 space-y-3 text-left">
-                <div className="flex items-center gap-1.5 justify-start">
-                  <Cpu className="h-3.5 w-3.5 text-indigo-600 animate-pulse" />
-                  <h4 className="text-[9px] font-black text-slate-500 uppercase tracking-widest font-mono">
-                    KONFIGURASI HUB KONEKSI AI
-                  </h4>
-                </div>
-
-                {/* API Mode Selector */}
-                <div className="grid grid-cols-1 gap-2.5">
-                  <div className="space-y-1">
-                    <label className="text-[8px] font-extrabold font-mono uppercase tracking-wider text-slate-400 block">
-                      Metode API Koneksi
-                    </label>
-                    <div className="flex rounded-xl bg-slate-100 p-1 border border-slate-200">
-                      <button
-                        type="button"
-                        onClick={() => setApiMode("proxy")}
-                        className={`flex-1 flex items-center justify-center gap-1 py-1 rounded-lg text-[9px] tracking-tight font-extrabold transition cursor-pointer ${
-                          apiMode === "proxy"
-                            ? "bg-white text-slate-800 shadow-sm border border-slate-250"
-                            : "text-slate-400 hover:text-slate-600"
-                        }`}
-                      >
-                        <Globe className="h-3 w-3 text-indigo-500" />
-                        <span>Secure Server</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setApiMode("client")}
-                        className={`flex-1 flex items-center justify-center gap-1 py-1 rounded-lg text-[9px] tracking-tight font-extrabold transition cursor-pointer ${
-                          apiMode === "client"
-                            ? "bg-white text-slate-800 shadow-sm border border-slate-250"
-                            : "text-slate-400 hover:text-slate-600"
-                        }`}
-                      >
-                        <Cpu className="h-3 w-3 text-emerald-500" />
-                        <span>Direct Browser</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Input for API Key */}
-                  <div className="space-y-1">
-                    <label className="text-[8px] font-extrabold font-mono uppercase tracking-wider text-slate-400 block">
-                      Gemini Client API Key (Pribadi)
-                    </label>
-                    <div className="relative flex items-center bg-slate-50 border border-slate-200 rounded-xl overflow-hidden px-2">
-                      <input
-                        type={showKey ? "text" : "password"}
-                        value={clientApiKey || ""}
-                        onChange={(e) => setClientApiKey(e.target.value)}
-                        placeholder="Masukkan Gemini API Key..."
-                        className="w-full bg-transparent border-none text-[10px] text-slate-800 focus:outline-none focus:ring-0 py-1 font-mono font-bold"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowKey(!showKey)}
-                        className="text-slate-400 hover:text-slate-600 px-1 cursor-pointer"
-                      >
-                        {showKey ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Help tip */}
-                <div className="rounded-xl bg-indigo-50/55 text-[9px] text-indigo-950 p-2.5 leading-relaxed border border-indigo-100 shadow-3sm">
-                  <strong>💡 Informasi Hub API:</strong> Jika kuota bawaan habis (<code className="font-mono text-[9px] bg-indigo-100 px-1 py-0.5 rounded text-indigo-950 font-bold">RESOURCE_EXHAUSTED</code>), silakan masukkan <strong>Gemini API Key pribadi</strong> Anda di atas. Ini otomatis tersimpan di browser aman Anda.
-                </div>
-              </div>
-            )}
             
             <p className="mt-8 text-center text-[10px] text-slate-400 font-medium font-mono uppercase tracking-wider">
               Enkripsi Sesi: SSL TLS Secured Link.
@@ -4787,6 +4773,8 @@ ${lastMsgText}`;
           onNavigateToView={(view) => {
             setDashboardView(view);
           }}
+          onDownloadFullHTML={handleDownloadFullPortalHTML}
+          onOpenAISettings={() => setShowAISettingsModal(true)}
         />
 
         {/* Division selector Body */}
@@ -5106,32 +5094,14 @@ ${lastMsgText}`;
               {/* Header */}
               <div className="bg-slate-900 px-6 py-5 flex flex-col md:flex-row md:items-center justify-between gap-4 text-white border-b border-slate-800 shrink-0">
                 <div className="flex items-center gap-3.5">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-950 text-violet-400 font-extrabold border border-violet-800 text-sm shadow-inner shadow-black/80">
-                    📂
-                  </div>
                   <div>
                     <h3 className="font-display font-black text-sm tracking-wider uppercase leading-none text-white flex items-center gap-2">
                       Dashboard Chat AI Agent Prama
-                      <span className="text-[8px] font-bold font-mono tracking-widest px-2 py-0.5 rounded bg-violet-900/80 text-violet-200 border border-violet-700 uppercase leading-none">
-                        14 PILAR JURNAL
-                      </span>
                     </h3>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3 self-end md:self-center">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setNewDashboardTitleInput("");
-                      setNewDashboardPresetId("forestry");
-                      setIsCreateNewDashboardOpen(true);
-                    }}
-                    className="flex items-center gap-1.5 bg-violet-600 hover:bg-violet-550 hover:text-white active:scale-95 text-[11px] text-white border border-violet-500 rounded-xl px-3.5 py-2 font-bold cursor-pointer transition shadow-md"
-                  >
-                    <span>➕ Buat Dashboard Baru</span>
-                  </button>
-
                   <button
                     onClick={() => setDashboardView("divisions")}
                     className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 hover:text-white active:scale-95 text-[11px] text-slate-300 border border-slate-700 rounded-xl px-3.5 py-2 font-bold cursor-pointer transition shadow"
@@ -5145,16 +5115,11 @@ ${lastMsgText}`;
               {/* Main Control Panel Bar (Editable Project Title & Combined Exports) */}
               <div className="bg-slate-50 border-b border-slate-200 p-5 flex flex-col lg:flex-row items-stretch lg:items-center gap-4 justify-between shrink-0">
                 {/* Editable Project Title */}
-                {/* Editable Project Title with Dynamic Auto-Sync */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2 mb-1.5">
                     <label className="block text-[8.5px] font-black text-slate-500 uppercase tracking-wider font-mono">
                       JUDUL KAJIAN PROYEK PM (SINKRON KE 14 PILAR, CHAT & EKSPOR)
                     </label>
-                    <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full select-none">
-                      <Sparkles className="h-2.5 w-2.5 text-emerald-500" />
-                      Auto-Sync 14 Pilar Aktif
-                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="relative flex-1">
@@ -5186,285 +5151,228 @@ ${lastMsgText}`;
                           syncProjectTitleAndPillars(dashboardProjectTitle.trim(), undefined, true);
                         }
                       }}
-                      className="flex items-center gap-1.5 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 active:scale-95 text-white text-[11px] font-bold px-3 py-2 rounded-xl shadow-sm transition cursor-pointer shrink-0 select-none"
-                      title="Klik untuk menyinkronkan dan merumuskan ulang seluruh 14 Pilar sesuai judul ini"
+                      className="flex h-9 w-9 items-center justify-center bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 active:scale-95 text-white rounded-xl shadow-sm transition cursor-pointer shrink-0 select-none"
+                      title="Singkronkan 17 Pilar sesuai judul ini"
+                      aria-label="Singkronkan 17 Pilar"
                     >
-                      <RefreshCw className="h-3.5 w-3.5 text-indigo-100" />
-                      <span className="hidden sm:inline">Singkronkan 14 Pilar</span>
-                      <span className="sm:hidden">Sinkron</span>
+                      <RefreshCw className="h-4 w-4 text-indigo-100" />
                     </button>
                   </div>
                 </div>
 
-                {/* Combined Export Buttons & Web Viewers */}
-                <div className="flex flex-col lg:flex-row lg:items-center gap-3 shrink-0 pt-2 lg:pt-0">
-                  {/* Toggle Button */}
+                {/* Combined Export Buttons & Web Viewers Popup */}
+                <div className="relative shrink-0 self-end lg:self-center">
+                  {/* Icon-Only Trigger Button */}
                   <button
                     type="button"
                     onClick={() => setIsExportMenuCollapsed(!isExportMenuCollapsed)}
-                    className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-black transition cursor-pointer select-none ${
-                      isExportMenuCollapsed 
-                        ? "bg-[#2b579a] hover:bg-[#1f4275] text-white border-[#1c3a66] shadow-md" 
-                        : "bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300 shadow-sm"
+                    className={`flex h-9 w-9 items-center justify-center rounded-xl border transition cursor-pointer select-none shadow-sm active:scale-95 ${
+                      !isExportMenuCollapsed
+                        ? "bg-[#2b579a] text-white border-[#1c3a66] shadow-md ring-2 ring-blue-400/30"
+                        : "bg-white hover:bg-slate-100 text-slate-700 border-slate-300 hover:border-slate-400"
                     }`}
-                    title={isExportMenuCollapsed ? "Tampilkan Alat Ekspor Dokumen" : "Sembunyikan Alat Ekspor Dokumen"}
+                    title="Pilihan Ekspor Dokumen & Simulator"
+                    aria-label="Pilihan Ekspor Dokumen & Simulator"
                   >
-                    <LayoutGrid className={`h-4 w-4 ${isExportMenuCollapsed ? "animate-pulse" : ""}`} />
-                    <span>{isExportMenuCollapsed ? "Tampilkan Alat Ekspor & Simulator" : "Sembunyikan Alat Ekspor"}</span>
-                    {isExportMenuCollapsed ? (
-                      <ChevronDown className="h-3.5 w-3.5 opacity-80" />
-                    ) : (
-                      <ChevronUp className="h-3.5 w-3.5 opacity-80" />
-                    )}
+                    <Download className={`h-4 w-4 ${!isExportMenuCollapsed ? "text-white" : "text-[#2b579a]"}`} />
                   </button>
 
+                  {/* Pop up pilihan */}
                   {!isExportMenuCollapsed && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.97 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.2 }}
-                      className="flex flex-wrap gap-2"
-                    >
-                      {/* WORD Controls block */}
-                      <div className="flex items-center gap-1.5 bg-indigo-50/60 p-1.5 rounded-2xl border border-indigo-100">
-                        <button
-                          type="button"
-                          onClick={() => setWebDocPreview("word")}
-                          className="flex items-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[10px] font-black rounded-xl px-3 py-2.5 transition shadow-sm cursor-pointer border border-indigo-200"
-                          title="Buka Pratinjau WORD Interaktif di Web"
-                        >
-                          <Eye className="h-3.5 w-3.5 text-indigo-500" />
-                          <span>Pratinjau Word</span>
-                        </button>
-                        <button
-                          onClick={() => {
-                            exportAllSectionsToWord(dashboardProjectTitle, dashboardSectionsState);
-                          }}
-                          className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black rounded-xl px-3.5 py-2.5 transition shadow-md cursor-pointer"
-                          title="Unduh file Word hasil kompilasi"
-                        >
-                          <FileText className="h-3.5 w-3.5 text-indigo-100" />
-                          <span>Unduh Word</span>
-                        </button>
-                      </div>
+                    <>
+                      {/* Invisible backdrop to dismiss popup when clicked outside */}
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setIsExportMenuCollapsed(true)}
+                      />
 
-                      {/* PPT Controls block */}
-                      <div className="flex items-center gap-1.5 bg-sky-50/60 p-1.5 rounded-2xl border border-sky-100">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            let extractedConclusions: string[] = [];
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: -6 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: -6 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute right-0 top-full mt-2 w-72 md:w-80 bg-white rounded-2xl shadow-2xl border border-slate-200/90 p-3 z-50 divide-y divide-slate-100"
+                      >
+                        {/* Pop Up Header */}
+                        <div className="flex items-center justify-between pb-2.5 px-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="h-2 w-2 rounded-full bg-blue-600" />
+                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-600 font-mono">
+                              Opsi Ekspor & Simulator
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setIsExportMenuCollapsed(true)}
+                            className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition cursor-pointer"
+                            title="Tutup"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
 
-                            const mappedSlides = currentDashboardSections.map((sec) => {
-                              const rawContent = dashboardSectionsState[sec.number] || sec.defaultContent;
-                              
-                              // Extract conclusion if present
-                              let mainContent = rawContent;
-                              let conclusionText: string | null = null;
-                              
-                              const conclusionMarkers = [
-                                /###\s*kesimpulan/i,
-                                /##\s*kesimpulan/i,
-                                /#\s*kesimpulan/i,
-                                /\*\*\s*kesimpulan\s*\*\*/i,
-                                /\bkesimpulan\s*:/i,
-                                /^\s*kesimpulan\s*$/im
-                              ];
+                        {/* List of choices */}
+                        <div className="pt-2 space-y-1.5">
+                          {/* Option 0: Full Portal HTML with 17 Pillars and Chat */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsExportMenuCollapsed(true);
+                              handleDownloadFullPortalHTML();
+                            }}
+                            className="w-full flex items-center gap-3 p-2.5 rounded-xl bg-cyan-50/70 hover:bg-cyan-100/70 border border-cyan-200 text-left transition cursor-pointer group"
+                          >
+                            <div className="h-9 w-9 rounded-xl bg-gradient-to-r from-cyan-600 to-teal-600 text-white flex items-center justify-center shrink-0 shadow-sm transition">
+                              <Download className="h-4 w-4" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-xs font-bold text-cyan-950 group-hover:text-cyan-900 flex items-center gap-1.5">
+                                <span>Unduh HTML (17 Pilar + Chat)</span>
+                                <span className="text-[8px] bg-cyan-600 text-white font-mono font-bold px-1.5 py-0.2 rounded">FULL</span>
+                              </div>
+                              <div className="text-[10px] text-cyan-700 truncate">
+                                File mandiri 17 pilar, simulasi chat & audio TTS
+                              </div>
+                            </div>
+                          </button>
 
-                              let foundIndex = -1;
-                              let matchedMarkerLength = 0;
+                          {/* Option 1: Word */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsExportMenuCollapsed(true);
+                              exportAllSectionsToWord(dashboardProjectTitle, dashboardSectionsState);
+                            }}
+                            className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-indigo-50/70 border border-transparent hover:border-indigo-100 text-left transition cursor-pointer group"
+                          >
+                            <div className="h-9 w-9 rounded-xl bg-indigo-100/80 text-indigo-700 flex items-center justify-center shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition">
+                              <FileText className="h-4 w-4" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-xs font-bold text-slate-800 group-hover:text-indigo-900">
+                                Unduh Dokumen Word (.docx)
+                              </div>
+                              <div className="text-[10px] text-slate-500 truncate">
+                                Kompilasi lengkap format .docx siap cetak
+                              </div>
+                            </div>
+                          </button>
 
-                              for (const marker of conclusionMarkers) {
-                                const match = rawContent.match(marker);
-                                if (match && match.index !== undefined) {
-                                  if (foundIndex === -1 || match.index < foundIndex) {
-                                    foundIndex = match.index;
-                                    matchedMarkerLength = match[0].length;
-                                  }
-                                }
-                              }
+                          {/* Option 2: PPTX */}
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              setIsExportMenuCollapsed(true);
+                              await exportAllSectionsToPPTX(dashboardProjectTitle, dashboardSectionsState);
+                            }}
+                            className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-sky-50/70 border border-transparent hover:border-sky-100 text-left transition cursor-pointer group"
+                          >
+                            <div className="h-9 w-9 rounded-xl bg-sky-100/80 text-sky-700 flex items-center justify-center shrink-0 group-hover:bg-sky-600 group-hover:text-white transition">
+                              <Presentation className="h-4 w-4" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-xs font-bold text-slate-800 group-hover:text-sky-900">
+                                Unduh Slide Presentasi (.pptx)
+                              </div>
+                              <div className="text-[10px] text-slate-500 truncate">
+                                Slide PowerPoint ringkas & visual
+                              </div>
+                            </div>
+                          </button>
 
-                              if (foundIndex !== -1) {
-                                mainContent = rawContent.substring(0, foundIndex).trim();
-                                conclusionText = rawContent.substring(foundIndex + matchedMarkerLength).trim();
-                              }
+                          {/* Option 3: HTML Interaktif */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsExportMenuCollapsed(true);
+                              const mappedSlides = currentDashboardSections.map((sec) => {
+                                const rawContent = dashboardSectionsState[sec.number] || sec.defaultContent;
+                                const lines = rawContent.split("\n")
+                                  .map(l => l.trim())
+                                  .filter(l => l.length > 0 && !l.startsWith("###") && !l.startsWith("!"))
+                                  .map(l => l.replace(/\*\*/g, "").replace(/^\*\s*/, "").replace(/^-\s*/, ""));
+                                const bullets = lines.slice(0, 5);
+                                const speakerNotes = `Membahas pilar strategi ${sec.number}: ${sec.title}. Analisis operasional merangkum: ${bullets.slice(0, 2).join(", ")}.`;
+                                return {
+                                  title: `Pilar ${sec.number}: ${sec.title}`,
+                                  bullets: bullets.length > 0 ? bullets : ["Materi pilar pembahasan komprehensif."],
+                                  speakerNotes,
+                                  imageUrl: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1200"
+                                };
+                              });
+                              exportToInteractiveHTML(dashboardProjectTitle || "Kajian 13 Pilar", mappedSlides, activeDivision || "UMUM");
+                            }}
+                            className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-emerald-50/70 border border-transparent hover:border-emerald-100 text-left transition cursor-pointer group"
+                          >
+                            <div className="h-9 w-9 rounded-xl bg-emerald-100/80 text-emerald-700 flex items-center justify-center shrink-0 group-hover:bg-emerald-600 group-hover:text-white transition">
+                              <Download className="h-4 w-4" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-xs font-bold text-slate-800 group-hover:text-emerald-900">
+                                Unduh HTML Interaktif (TTS)
+                              </div>
+                              <div className="text-[10px] text-slate-500 truncate">
+                                Presentasi web interaktif bersuara
+                              </div>
+                            </div>
+                          </button>
 
-                              // Clean up [UPDATE_PILAR] and [/UPDATE_PILAR] tags
-                              mainContent = mainContent.replace(/\[\/?UPDATE_PILAR\]/gi, "").trim();
-
-                              if (conclusionText) {
-                                const cleanedConclusion = conclusionText.replace(/\[\/?UPDATE_PILAR\]/gi, "").trim();
-                                if (cleanedConclusion) {
-                                  extractedConclusions.push(cleanedConclusion);
-                                }
-                              }
-
-                              const lines = mainContent.split("\n")
-                                .map(l => l.trim())
-                                .filter(l => l.length > 0 && !l.startsWith("###") && !l.startsWith("!"))
-                                .map(l => l.replace(/\*\*/g, "").replace(/^\*\s*/, "").replace(/^-\s*/, ""));
-                              const bullets = lines.slice(0, 5);
-                              const speakerNotes = `Membahas pilar strategi ${sec.number}: ${sec.title}. Analisis operasional merangkum: ${bullets.slice(0, 2).join(", ")}.`;
-                              const kw = sec.title || "";
-                              const imageUrl = getUnsplashUrl(kw, activeDivision);
-                              return {
-                                title: `Pilar ${sec.number}: ${sec.title}`,
-                                bullets: bullets.length > 0 ? bullets : ["Materi pilar pembahasan komprehensif."],
-                                speakerNotes,
-                                imageUrl: imageUrl || "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1200"
-                              };
-                            });
-
-                            // Add a dedicated slide for Conclusion
-                            let conclusionBullets: string[] = [];
-                            if (extractedConclusions.length > 0) {
-                              conclusionBullets = extractedConclusions.join("\n")
-                                .split("\n")
-                                .map(l => l.trim())
-                                .filter(l => l.length > 0 && !l.startsWith("###") && !l.startsWith("!"))
-                                .map(l => l.replace(/\*\*/g, "").replace(/^\*\s*/, "").replace(/^-\s*/, ""));
-                            }
-
-                            // Use defaults if empty
-                            if (conclusionBullets.length === 0) {
-                              const pTitle = dashboardProjectTitle || "Kajian Proyek";
-                              const div = (activeDivision || "UMUM").toUpperCase();
-                              conclusionBullets = [
-                                `Kelayakan Investasi: Proyek ekspedisi "${pTitle}" di unit ${div} dinilai sangat layak secara komersial dan operasional.`,
-                                "Sinergi Teknologi & Armada: Penggabungan ketangguhan sasis armada Pancaran dengan sistem telemetri pintar PRAMA meminimalkan risiko operasional.",
-                                "Rekomendasi Onboarding: Segera lakukan verifikasi rute (trial run), finalisasi SLA operasional, dan integrasi penuh aplikasi Driver e-POD.",
-                                "Kepatuhan Hukum: Menjamin 100% kepatuhan regulasi ODOL (Over Dimension Over Load) dan standar keselamatan K3 nasional."
-                              ];
-                            }
-
-                            // Keep at most 5 bullet points for the slide
-                            const finalConclusionBullets = conclusionBullets.slice(0, 5);
-
-                            mappedSlides.push({
-                              title: "KESIMPULAN STRATEGIS (CONCLUSION)",
-                              bullets: finalConclusionBullets,
-                              speakerNotes: "Sesi presentasi komprehensif selesai. Kesimpulan akhir merekomendasikan GO-LIVE proyek berdasarkan integrasi armada fisik Pancaran Group dan sensor digital PRAMA.",
-                              imageUrl: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=1200"
-                            });
-
-                            setPptPreview({
-                              title: dashboardProjectTitle || "Kajian 13 Pilar",
-                              slides: mappedSlides,
-                              fileName: (dashboardProjectTitle || "Kajian_13_Pilar").toLowerCase().replace(/[^a-zA-Z0-9]/g, "_")
-                            });
-                            setActiveSlideIndex(0);
-                          }}
-                          className="flex items-center gap-1.5 bg-sky-50 hover:bg-sky-100 text-sky-700 text-[10px] font-black rounded-xl px-3 py-2.5 transition shadow-sm cursor-pointer border border-sky-200"
-                          title="Pratinjau Slide Presentasi PPT & Aktifkan Fitur Suara Narasi"
-                        >
-                          <Eye className="h-3.5 w-3.5 text-sky-500" />
-                          <span>Pratinjau PPT</span>
-                        </button>
-                        <button
-                          onClick={async () => {
-                            await exportAllSectionsToPPTX(dashboardProjectTitle, dashboardSectionsState);
-                          }}
-                          className="flex items-center gap-1.5 bg-sky-600 hover:bg-sky-700 text-white text-[10px] font-black rounded-xl px-3.5 py-2.5 transition shadow-md cursor-pointer"
-                          title="Unduh file PowerPoint"
-                        >
-                          <Presentation className="h-3.5 w-3.5 text-sky-100" />
-                          <span>Unduh PPTX</span>
-                        </button>
-                      </div>
-
-                      {/* HTML Controls block */}
-                      <div className="flex items-center gap-1.5 bg-emerald-50/60 p-1.5 rounded-2xl border border-emerald-100">
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            const mappedSlides = currentDashboardSections.map((sec) => {
-                              const rawContent = dashboardSectionsState[sec.number] || sec.defaultContent;
-                              const lines = rawContent.split("\n")
-                                .map(l => l.trim())
-                                .filter(l => l.length > 0 && !l.startsWith("###") && !l.startsWith("!"))
-                                .map(l => l.replace(/\*\*/g, "").replace(/^\*\s*/, "").replace(/^-\s*/, ""));
-                              const bullets = lines.slice(0, 5);
-                              const speakerNotes = `Membahas pilar strategi ${sec.number}: ${sec.title}. Analisis operasional merangkum: ${bullets.slice(0, 2).join(", ")}.`;
-                              return {
-                                title: `Pilar ${sec.number}: ${sec.title}`,
-                                bullets: bullets.length > 0 ? bullets : ["Materi pilar pembahasan komprehensif."],
-                                speakerNotes,
-                                imageUrl: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1200"
-                              };
-                            });
-                            const htmlString = await exportToInteractiveHTML(
-                              dashboardProjectTitle || "Kajian 13 Pilar",
-                              mappedSlides,
-                              activeDivision || "UMUM",
-                              true
-                            );
-                            if (typeof htmlString === "string") {
-                              setHtmlPreviewContent(htmlString);
-                              setWebDocPreview("html");
-                            }
-                          }}
-                          className="flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[10px] font-black rounded-xl px-3 py-2.5 transition shadow-sm cursor-pointer border border-emerald-200"
-                          title="Buka Pratinjau HTML Interaktif di Web"
-                        >
-                          <Eye className="h-3.5 w-3.5 text-emerald-500" />
-                          <span>Pratinjau HTML</span>
-                        </button>
-                        <button
-                          onClick={() => {
-                            const mappedSlides = currentDashboardSections.map((sec) => {
-                              const rawContent = dashboardSectionsState[sec.number] || sec.defaultContent;
-                              const lines = rawContent.split("\n")
-                                .map(l => l.trim())
-                                .filter(l => l.length > 0 && !l.startsWith("###") && !l.startsWith("!"))
-                                .map(l => l.replace(/\*\*/g, "").replace(/^\*\s*/, "").replace(/^-\s*/, ""));
-                              const bullets = lines.slice(0, 5);
-                              const speakerNotes = `Membahas pilar strategi ${sec.number}: ${sec.title}. Analisis operasional merangkum: ${bullets.slice(0, 2).join(", ")}.`;
-                              return {
-                                title: `Pilar ${sec.number}: ${sec.title}`,
-                                bullets: bullets.length > 0 ? bullets : ["Materi pilar pembahasan komprehensif."],
-                                speakerNotes,
-                                imageUrl: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1200"
-                              };
-                            });
-                            exportToInteractiveHTML(dashboardProjectTitle || "Kajian 13 Pilar", mappedSlides, activeDivision || "UMUM");
-                          }}
-                          className="flex items-center gap-1.5 bg-[#00D285] hover:bg-[#00B472] text-white text-[10px] font-black rounded-xl px-3 py-2.5 transition shadow-md cursor-pointer"
-                          title="Unduh file HTML Presentasi Interaktif dengan Suara TTS dan Auto Next untuk 13 Pilar"
-                        >
-                          <Download className="h-3.5 w-3.5 text-white" />
-                          <span>Unduh HTML Interaktif</span>
-                        </button>
-                      </div>
-
-                      {/* EXCEL Financial Controls block */}
-                      <div className="flex items-center gap-1.5 bg-emerald-50/60 p-1.5 rounded-2xl border border-emerald-100 font-sans">
-                        <button
-                          type="button"
-                          onClick={() => setIsExcelPreviewOpen(true)}
-                          className="flex items-center gap-1.5 bg-[#107c41] hover:bg-[#0d6434] text-white text-[10.5px] font-black rounded-xl px-3.5 py-2.5 transition shadow-md cursor-pointer border border-[#0d6434]"
-                          title="Buka Simulator Excel & Analisis Keuangan Interaktif"
-                        >
-                          <Table className="h-3.5 w-3.5 text-emerald-100" />
-                          <span>Simulator Excel Finansial</span>
-                        </button>
-                      </div>
-                    </motion.div>
+                          {/* Option 4: Excel Simulator */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsExportMenuCollapsed(true);
+                              setIsExcelPreviewOpen(true);
+                            }}
+                            className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-[#107c41]/10 border border-transparent hover:border-[#107c41]/20 text-left transition cursor-pointer group"
+                          >
+                            <div className="h-9 w-9 rounded-xl bg-[#107c41]/15 text-[#107c41] flex items-center justify-center shrink-0 group-hover:bg-[#107c41] group-hover:text-white transition">
+                              <Table className="h-4 w-4" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-xs font-bold text-slate-800 group-hover:text-[#107c41]">
+                                Simulator Excel Finansial
+                              </div>
+                              <div className="text-[10px] text-slate-500 truncate">
+                                Kalkulasi modal, tarif & analisis laba rugi
+                              </div>
+                            </div>
+                          </button>
+                        </div>
+                      </motion.div>
+                    </>
                   )}
                 </div>
               </div>
 
               {/* Split Body Layout */}
               <div className="flex-grow flex flex-col lg:flex-row min-h-0 bg-slate-50/50">
-                {/* LEFT LIST PANEL: 13 PILLARS MENUS (Scrollable) */}
+                {/* LEFT LIST PANEL: 17 PILLARS MENUS (Scrollable) */}
                 {!isWorkspaceExpanded && (
                   <div className="w-full lg:w-80 border-r border-slate-200 shrink-0 bg-white flex flex-col overflow-y-auto max-h-[300px] lg:max-h-[600px]">
                   <div className="bg-slate-50 border-b border-slate-200 p-3 flex items-center justify-between shrink-0">
-                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest font-mono">
-                      Daftar 13 Pilar Strategi
-                    </span>
-                    <span className="text-[8px] font-extrabold bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full font-mono">
-                      Pramis Formulator
-                    </span>
+                    <div>
+                      <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest font-mono block">
+                        Daftar 17 Pilar Strategi
+                      </span>
+                      <span className="text-[8px] text-slate-400 font-semibold">
+                        Kajian Komprehensif
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newPillars = generatePillarsForProject(dashboardProjectTitle);
+                          setDashboardSectionsState(newPillars);
+                          localStorage.setItem("prama_dashboard_sections", JSON.stringify(newPillars));
+                        }}
+                        className="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[8.5px] font-black rounded-lg border border-indigo-200 transition cursor-pointer"
+                        title="Buat ulang semua 17 pilar secara otomatis sesuai judul proyek"
+                      >
+                        Sinkronkan
+                      </button>
+                    </div>
                   </div>
 
                   <div className="divide-y divide-slate-100 flex-grow select-none">
@@ -5497,20 +5405,6 @@ ${lastMsgText}`;
                               {sec.shortDesc}
                             </p>
                           </div>
-
-                          {/* Quick single-button export with layout block propagation preventer */}
-                          <button
-                            type="button"
-                            title={`Ekspor ${sec.title} ke Word`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const currentTxt = dashboardSectionsState[sec.number] || sec.defaultContent;
-                              exportSingleSectionToWord(dashboardProjectTitle, sec, currentTxt);
-                            }}
-                            className="h-7 w-7 shrink-0 flex items-center justify-center rounded-lg bg-slate-100 hover:bg-violet-600 text-slate-500 hover:text-white border border-slate-205 hover:border-violet-600 transition shadow-sm cursor-pointer"
-                          >
-                            <FileText className="h-3.5 w-3.5" />
-                          </button>
                         </div>
                       );
                     })}
@@ -5568,19 +5462,6 @@ ${lastMsgText}`;
                               {activeSec.shortDesc}
                             </p>
                           </div>
-
-                          {/* Individual Export in Selected Workspace */}
-                          <div className="shrink-0 flex flex-wrap gap-2">
-                            <button
-                              onClick={() => {
-                                exportSingleSectionToWord(dashboardProjectTitle, activeSec, val);
-                              }}
-                              className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-[10.5px] text-white rounded-xl px-4 py-2 font-black shadow-sm transition cursor-pointer border-none"
-                            >
-                              <FileText className="h-3.5 w-3.5" />
-                              <span>Unduh Bab Word Ini (.doc)</span>
-                            </button>
-                          </div>
                         </div>
 
                         {/* Tab Switcher for Editor vs Article View vs Workflow Skema */}
@@ -5635,6 +5516,21 @@ ${lastMsgText}`;
                               <div className="flex items-center justify-between px-3.5 py-2 bg-slate-800 rounded-t-xl text-white text-[9.5px] font-bold font-mono tracking-widest shrink-0">
                                 <span>WORKSPACE EDITOR PRAMA ADVISOR (BAHASA INDONESIA)</span>
                                 <div className="flex gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const makalah = generateAcademicMakalah(dashboardProjectTitle, activeSec.number, activeSec.title, activeDivision || "Logistik Darat");
+                                      setDashboardSectionsState(prev => ({
+                                        ...prev,
+                                        [activeSec.number]: makalah.markdownContent
+                                      }));
+                                    }}
+                                    className="px-2 py-1 rounded bg-teal-600 hover:bg-teal-700 text-white font-bold cursor-pointer transition active:scale-95 border-none text-[8.5px] flex items-center gap-1 shadow-sm"
+                                    title="Isi pilar dengan format Makalah Akademik & Strategis (Global vs National) sesuai judul proyek"
+                                  >
+                                    <BookOpen className="h-2.5 w-2.5 text-teal-200" />
+                                    <span>Makalah Akademik</span>
+                                  </button>
                                   <button
                                     type="button"
                                     onClick={() => {
@@ -5698,7 +5594,7 @@ ${lastMsgText}`;
                               {/* Glowing Reading progress top handle */}
                               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-indigo-500 rounded-t-2xl" />
 
-                              <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-5 shrink-0">
+                              <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-5 shrink-0 flex-wrap gap-2">
                                 <div className="flex items-center gap-2 text-[9.5px] font-bold text-slate-400 font-mono">
                                   <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded leading-none">BACAAN KELAYAKAN</span>
                                   <span>•</span>
@@ -5719,6 +5615,21 @@ ${lastMsgText}`;
                                     AI PRAMA Strategic Advisor mendeteksi bahwa bagian ini masih berupa draf kosong. Silakan pilih metode pengisian draf di bawah:
                                   </p>
                                   <div className="flex flex-wrap gap-2 mt-5 justify-center">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const makalah = generateAcademicMakalah(dashboardProjectTitle, activeSec.number, activeSec.title, activeDivision || "Logistik Darat");
+                                        setDashboardSectionsState(prev => ({
+                                          ...prev,
+                                          [activeSec.number]: makalah.markdownContent
+                                        }));
+                                      }}
+                                      className="flex items-center gap-1.5 px-4 py-2.5 bg-gradient-to-r from-teal-700 to-emerald-700 hover:from-teal-600 hover:to-emerald-600 active:scale-95 text-white text-xs font-black rounded-xl shadow-md shadow-teal-100 transition cursor-pointer border-none"
+                                      title="Buat Makalah Akademik & Strategis 5 Bagian sesuai judul proyek (Global vs National)"
+                                    >
+                                      <BookOpen className="h-3.5 w-3.5 text-teal-200" />
+                                      <span>📄 Makalah Akademik Sesuai Judul</span>
+                                    </button>
                                     <button
                                       type="button"
                                       onClick={() => {
@@ -5762,12 +5673,14 @@ ${lastMsgText}`;
                                 </div>
                               ) : (
                                 <div className="flex-grow">
-                                  <div className="mb-5">
-                                    <span className="text-[9px] font-mono font-black tracking-widest text-emerald-600 uppercase block mb-1">PRAMA MITRA EXCLUSIVE DOSSIER</span>
-                                    <h2 className="text-xl md:text-2xl font-black text-slate-800 uppercase tracking-tight font-display">{activeSec.title}</h2>
-                                    <div className="flex items-center gap-2.5 mt-2.5">
-                                      <div className="text-[11px] font-bold text-slate-500">
-                                        Oleh <span className="text-slate-800 font-bold">PRAMA Strategic Advisor Team</span> • Diperbarui {new Date().toLocaleDateString("id-ID", { year: "numeric", month: "long" })}
+                                  <div className="mb-6 flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-slate-100 pb-5">
+                                    <div>
+                                      <span className="text-[9px] font-mono font-black tracking-widest text-emerald-600 uppercase block mb-1">PRAMA MITRA EXCLUSIVE DOSSIER</span>
+                                      <h2 className="text-xl md:text-2xl font-black text-slate-800 uppercase tracking-tight font-display">{activeSec.title}</h2>
+                                      <div className="flex items-center gap-2.5 mt-2.5">
+                                        <div className="text-[11px] font-bold text-slate-500">
+                                          Oleh <span className="text-slate-800 font-bold">PRAMA Strategic Advisor Team</span> • Diperbarui {new Date().toLocaleDateString("id-ID", { year: "numeric", month: "long" })}
+                                        </div>
                                       </div>
                                     </div>
                                   </div>
@@ -5779,8 +5692,8 @@ ${lastMsgText}`;
                                     </div>
                                   )}
 
-                                  {/* INTERACTIVE FINANCIAL SIMULATOR (PILAR 3 & 12) */}
-                                  {(activeDashboardSection === 3 || activeDashboardSection === 12) && (
+                                  {/* INTERACTIVE FINANCIAL SIMULATOR (PILAR 3 ONLY) */}
+                                  {activeDashboardSection === 3 && (
                                     <div className="mb-8 space-y-6">
                                       <InteractiveFinancialSimulator 
                                         projectTitle={dashboardProjectTitle} 
@@ -5788,39 +5701,40 @@ ${lastMsgText}`;
                                         initialCapex={chatBIState.initialCapex || 550}
                                         salesIncrease={chatBIState.salesIncrease || 1200}
                                       />
-                                      
-                                      {activeDashboardSection === 3 && (
-                                        <FinancialFocusCards 
-                                          projectTitle={dashboardProjectTitle}
-                                        />
-                                      )}
+                                      <FinancialFocusCards 
+                                        projectTitle={dashboardProjectTitle}
+                                      />
+                                    </div>
+                                  )}
 
-                                      {activeDashboardSection === 12 && (
-                                        <TamSamSomFocusCards 
-                                          projectTitle={dashboardProjectTitle}
-                                        />
-                                      )}
+                                  {/* PRAMA TAM, SAM, SOM DEEP-DIVE HUB (PILAR 12 ONLY) */}
+                                  {activeDashboardSection === 12 && (
+                                    <div className="mb-8">
+                                      <TamSamSomDeepDive 
+                                        projectTitle={dashboardProjectTitle}
+                                        activeDivision={activeDivision}
+                                      />
                                     </div>
                                   )}
 
                                   {/* PRAMA GLOBAL & NATIONAL OVERVIEW DEEP-DIVE HUB (PILAR 1 ONLY) */}
                                    {activeDashboardSection === 1 && (
                                      <div className="mb-8">
-                                       <GlobalNatOverviewDeepDive projectTitle={dashboardProjectTitle} />
+                                       <GlobalNatOverviewDeepDive projectTitle={dashboardProjectTitle} activeDivision={activeDivision} />
                                      </div>
                                    )}
 
                                    {/* PRAMA MARKET OPPORTUNITY DEEP-DIVE HUB (PILAR 2 ONLY) */}
                                    {activeDashboardSection === 2 && (
                                      <div className="mb-8">
-                                       <MarketOpportunityDeepDive projectTitle={dashboardProjectTitle} />
+                                       <MarketOpportunityDeepDive projectTitle={dashboardProjectTitle} activeDivision={activeDivision} />
                                      </div>
                                    )}
 
                                    {/* PRAMA SUPPLY & DEMAND DEEP-DIVE HUB (PILAR 4 ONLY) */}
                                   {activeDashboardSection === 4 && (
                                     <div className="mb-8">
-                                      <SupplyDemandDeepDive projectTitle={dashboardProjectTitle} />
+                                      <SupplyDemandDeepDive projectTitle={dashboardProjectTitle} activeDivision={activeDivision} />
                                     </div>
                                   )}
 
@@ -5829,28 +5743,28 @@ ${lastMsgText}`;
                                   {/* PRAMA TRANSITION MODEL DEEP-DIVE HUB (PILAR 6 ONLY) */}
                                   {activeDashboardSection === 6 && (
                                     <div className="mb-8">
-                                      <TransitionModelDeepDive projectTitle={dashboardProjectTitle} />
+                                      <TransitionModelDeepDive projectTitle={dashboardProjectTitle} activeDivision={activeDivision} />
                                     </div>
                                   )}
 
                                   {/* PRAMA GO-TO-MARKET STRATEGY DEEP-DIVE HUB (PILAR 7 ONLY) */}
                                   {activeDashboardSection === 7 && (
                                     <div className="mb-8">
-                                      <GoToMarketDeepDive projectTitle={dashboardProjectTitle} />
+                                      <GoToMarketDeepDive projectTitle={dashboardProjectTitle} activeDivision={activeDivision} />
                                     </div>
                                   )}
 
                                   {/* PRAMA RISK MANAGEMENT DEEP-DIVE HUB (PILAR 9 ONLY) */}
                                   {activeDashboardSection === 9 && (
                                     <div className="mb-8">
-                                      <RiskManagementDeepDive projectTitle={dashboardProjectTitle} />
+                                      <RiskManagementDeepDive projectTitle={dashboardProjectTitle} activeDivision={activeDivision} />
                                     </div>
                                   )}
 
                                   {/* PRAMA DIGITAL COVERAGE DEEP-DIVE HUB (PILAR 10 ONLY) */}
                                   {activeDashboardSection === 10 && (
                                     <div className="mb-8">
-                                      <DigitalCoverageDeepDive projectTitle={dashboardProjectTitle} />
+                                      <DigitalCoverageDeepDive projectTitle={dashboardProjectTitle} activeDivision={activeDivision} />
                                     </div>
                                   )}
 
@@ -6220,115 +6134,57 @@ ${lastMsgText}`;
                                   {/* PRAMA OPS MODEL DEEP-DIVE (PILAR 8 ONLY) */}
                                   {activeDashboardSection === 8 && (
                                     <div className="mb-8">
-                                      <OpsModelDeepDive projectTitle={dashboardProjectTitle} />
+                                      <OpsModelDeepDive projectTitle={dashboardProjectTitle} activeDivision={activeDivision} />
                                     </div>
                                   )}
 
-                                  {/* RINGKASAN TEKS DOKUMEN KAJIAN */}
-                                  <div className="mt-8 pt-6 border-t border-slate-200">
-                                    <div className="flex items-center justify-between mb-3">
-                                      <div>
-                                        <span className="text-[9px] font-mono font-black tracking-widest text-slate-500 uppercase block mb-0.5">
-                                          RINGKASAN NARATIF KAJIAN
-                                        </span>
-                                        <h4 className="text-sm font-black text-slate-800 uppercase tracking-tight font-display">
-                                          Uraian Ringkas Dokumen
-                                        </h4>
-                                      </div>
+                                  {/* PRAMA SERVICE DESIGN DEEP-DIVE (PILAR 15 ONLY) */}
+                                  {activeDashboardSection === 15 && (
+                                    <div className="mb-8">
+                                      <ServiceDesignDeepDive projectTitle={dashboardProjectTitle} activeDivision={activeDivision} />
                                     </div>
+                                  )}
 
-                                    <div className="prose prose-sm max-w-none text-slate-700 leading-relaxed font-sans mt-4">
-                                    {(() => {
-                                      const rawLines = val.split("\n");
-                                      const paragraphs = rawLines.map(p => p.trim()).filter(Boolean);
+                                  {/* PRAMA POTENTIAL CONSUMERS DEEP-DIVE (PILAR 16 ONLY) */}
+                                  {activeDashboardSection === 16 && (
+                                    <div className="mb-8">
+                                      <PotentialConsumersDeepDive projectTitle={dashboardProjectTitle} activeDivision={activeDivision} />
+                                    </div>
+                                  )}
 
-                                      const handleDeleteLine = (targetIdx: number) => {
-                                        let count = -1;
-                                        const filteredRaw = rawLines.filter(line => {
-                                          if (line.trim()) {
-                                            count++;
-                                            return count !== targetIdx;
-                                          }
-                                          return true;
-                                        });
-                                        setDashboardSectionsState(prev => ({
+                                  {/* PRAMA VISUAL SUMMARY & STRATEGIC CARD (17 PILAR LENGKAP) */}
+                                  <div className="mt-8 pt-6 border-t border-slate-200">
+                                    <PillarVisualSummaryCard
+                                      pillarNumber={activeSec.number}
+                                      pillarTitle={activeSec.title}
+                                      pillarShortDesc={activeSec.shortDesc}
+                                      projectTitle={dashboardProjectTitle}
+                                      activeDivision={activeDivision}
+                                      content={val}
+                                      onUpdateContent={(newContent) => {
+                                        setDashboardSectionsState((prev) => ({
                                           ...prev,
-                                          [activeDashboardSection]: filteredRaw.join("\n")
+                                          [activeSec.number]: newContent,
                                         }));
-                                      };
-
-                                      return paragraphs.map((textLine, sIdx) => {
-                                        if (activeDashboardSection === 14) {
-                                          const lineLower = textLine.toLowerCase();
-                                          if (
-                                            lineLower.includes("metrik cac") ||
-                                            lineLower.includes("saas atau biaya") ||
-                                            lineLower.includes("dukungan teknis 24/7") ||
-                                            (lineLower.includes("cac") && lineLower.includes("ltv") && lineLower.includes("retensi"))
-                                          ) {
-                                            return null;
-                                          }
-                                        }
-
-                                        if (textLine.startsWith("###")) {
-                                          return (
-                                            <div key={sIdx} className="group relative my-3">
-                                              <h4 className="text-[13px] font-black text-indigo-900 border-b border-indigo-100 pb-1 mt-5 mb-2 uppercase tracking-wide pr-16">
-                                                {textLine.replace(/^###\s*/, "")}
-                                              </h4>
-                                              <button
-                                                type="button"
-                                                onClick={() => handleDeleteLine(sIdx)}
-                                                className="opacity-0 group-hover:opacity-100 transition-opacity absolute right-0 top-1 text-slate-400 hover:text-rose-600 bg-white border border-slate-200 rounded px-1.5 py-0.5 shadow-sm text-[9px] flex items-center gap-1 cursor-pointer font-sans"
-                                                title="Hapus sub-judul ini"
-                                              >
-                                                <Trash2 className="h-3 w-3 text-rose-500" />
-                                                <span>Hapus</span>
-                                              </button>
-                                            </div>
-                                          );
-                                        }
-                                        if (textLine.startsWith("* ") || textLine.startsWith("- ")) {
-                                          return (
-                                            <div key={sIdx} className="group relative flex gap-2 items-start pl-4 py-1.5 border-l-2 border-emerald-500 bg-slate-50 rounded-r-lg my-1.5 font-sans pr-16">
-                                              <span className="text-emerald-500 font-bold text-[10px] select-none">✓</span>
-                                              <p className="text-[11px] font-bold text-slate-600 m-0 animate-none">
-                                                {textLine.replace(/^[\*\-]\s*/, "").replace(/\*\*/g, "")}
-                                              </p>
-                                              <button
-                                                type="button"
-                                                onClick={() => handleDeleteLine(sIdx)}
-                                                className="opacity-0 group-hover:opacity-100 transition-opacity absolute right-2 top-1.5 text-slate-400 hover:text-rose-600 bg-white border border-slate-200 rounded px-1.5 py-0.5 shadow-sm text-[9px] flex items-center gap-1 cursor-pointer font-sans"
-                                                title="Hapus poin ini"
-                                              >
-                                                <Trash2 className="h-3 w-3 text-rose-500" />
-                                                <span>Hapus</span>
-                                              </button>
-                                            </div>
-                                          );
-                                        }
-
-                                        const strippedLine = textLine.replace(/\*\*/g, "");
-
-                                        return (
-                                          <div key={sIdx} className="group relative my-2.5">
-                                            <p className={`text-[11.5px] leading-relaxed text-slate-650 ${textLine.startsWith("**") ? "font-black text-indigo-950 mt-4 border-l-2 border-indigo-200 pl-2 pr-16" : "font-semibold pr-16"} my-0 text-justify font-sans`}>
-                                              {strippedLine}
-                                            </p>
-                                            <button
-                                              type="button"
-                                              onClick={() => handleDeleteLine(sIdx)}
-                                              className="opacity-0 group-hover:opacity-100 transition-opacity absolute right-0 top-0 text-slate-400 hover:text-rose-600 bg-white border border-slate-200 rounded px-1.5 py-0.5 shadow-sm text-[9px] flex items-center gap-1 cursor-pointer font-sans"
-                                              title="Hapus paragraf/bagian ini"
-                                            >
-                                              <Trash2 className="h-3 w-3 text-rose-500" />
-                                              <span>Hapus Bagian</span>
-                                            </button>
-                                          </div>
-                                        );
-                                      });
-                                    })()}
-                                  </div>
+                                      }}
+                                      onClearContent={() => {
+                                        setDashboardSectionsState((prev) => ({
+                                          ...prev,
+                                          [activeSec.number]: `### ${activeSec.number}. ${activeSec.title}`,
+                                        }));
+                                      }}
+                                      onClearAllPillars={() => {
+                                        const emptyAll: Record<number, string> = {};
+                                        currentDashboardSections.forEach((s) => {
+                                          emptyAll[s.number] = `### ${s.number}. ${s.title}`;
+                                        });
+                                        setDashboardSectionsState(emptyAll);
+                                      }}
+                                      onSyncAllPillars={() => {
+                                        const newPillars = generatePillarsForProject(dashboardProjectTitle);
+                                        setDashboardSectionsState(newPillars);
+                                      }}
+                                    />
                                   </div>
                                 </div>
                               )}
@@ -6637,95 +6493,7 @@ ${lastMsgText}`;
                                 </div>
                               </div>
 
-                              {/* Strategic Discussion Action Card for updating Editor */}
-                              {isAI && (
-                                <div className="mt-1.5 mb-3.5 w-[90%] bg-indigo-50/50 rounded-2xl border border-indigo-100 p-2.5 flex flex-col gap-1.5 shadow-sm shrink-0">
-                                  <div className="flex items-center gap-1 text-[8.5px] font-black text-indigo-700 uppercase tracking-widest font-mono">
-                                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                                    STRATEGIC WORKSPACE ACTIONS
-                                  </div>
-                                  
-                                  {extractedPilarDraft && (
-                                    <div className="bg-emerald-50 text-[10px] text-emerald-800 font-bold px-2 py-1 rounded-lg border border-emerald-100 uppercase tracking-wide leading-none py-1 text-center shrink-0">
-                                      ✨ DRAF REKOMENDASI TERDETEKSI
-                                    </div>
-                                  )}
 
-                                  {extractedJudulDraft && (
-                                    <div className="bg-violet-50 text-[10px] text-violet-850 font-bold px-2 py-1 rounded-lg border border-violet-100 tracking-wide text-center shrink-0">
-                                      ✨ USULAN JUDUL: "{extractedJudulDraft}"
-                                    </div>
-                                  )}
-
-                                  <div className="flex flex-col gap-1.5 mt-1">
-                                    <div className="flex items-center justify-between gap-1">
-                                      <span className="text-[8px] font-black text-slate-400 font-mono uppercase tracking-wider">Metode Sinkron:</span>
-                                      <select 
-                                        id={`sel-target-${msg.id}`}
-                                        defaultValue={extractedJudulDraft ? "judul" : activeDashboardSection.toString()}
-                                        className="text-[9px] font-black border border-slate-200 rounded-lg px-1.5 py-0.5 bg-white text-slate-700 outline-none max-w-[130px] shadow-sm tracking-tight"
-                                      >
-                                        <option value="judul">Judul Proyek</option>
-                                        {defaultDashboardSections.map(s => (
-                                          <option key={s.number} value={s.number.toString()}>
-                                            Pilar {s.number}: {s.title.substring(0, 16)}...
-                                          </option>
-                                        ))}
-                                      </select>
-                                    </div>
-
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        const selectEl = document.getElementById(`sel-target-${msg.id}`) as HTMLSelectElement;
-                                        if (!selectEl) return;
-                                        const targetVal = selectEl.value;
-
-                                        if (targetVal === "judul") {
-                                          const finalTitle = extractedJudulDraft || displayText;
-                                          setDashboardProjectTitle(finalTitle);
-                                          setChatBIState(prev => ({
-                                            ...prev,
-                                            projectTitle: finalTitle
-                                          }));
-                                          const newPillars = generatePillarsForProject(finalTitle, msg.text);
-                                          setDashboardSectionsState(newPillars);
-                                          setCompetitors(getDefaultCompetitorsForProject(finalTitle));
-                                          handleSyncChatToBI();
-                                          alert(`Sukses! Judul Proyek berhasil disinkronkan ke seluruh 14 Pilar & Dasbor BI:\n"${finalTitle}"`);
-                                        } else {
-                                          const targetPilarNum = parseInt(targetVal, 10);
-                                          const finalContent = extractedPilarDraft || msg.text;
-                                          
-                                          // Update state
-                                          setDashboardSectionsState(prev => ({
-                                            ...prev,
-                                            [targetPilarNum]: finalContent
-                                          }));
-                                          
-                                          if (extractedJudulDraft) {
-                                            setDashboardProjectTitle(extractedJudulDraft);
-                                            setChatBIState(prev => ({ ...prev, projectTitle: extractedJudulDraft }));
-                                            setCompetitors(getDefaultCompetitorsForProject(extractedJudulDraft));
-                                          }
-
-                                          // Switch active section if needed so user sees the update instantly
-                                          setActiveDashboardSection(targetPilarNum);
-                                          
-                                          // Execute full BI chat sync as well
-                                          handleSyncChatToBI();
-                                          
-                                          const targetSecName = defaultDashboardSections.find(s => s.number === targetPilarNum)?.title || "14 Pilar";
-                                          alert(`Pembahasan Sukses! Draf Pilar Ke-${targetPilarNum} ("${targetSecName}") telah disinkronkan secara langsung ke dasbor BI dan dialihkan ke editor.`);
-                                        }
-                                      }}
-                                      className="w-full py-1.5 bg-indigo-600 hover:bg-indigo-550 active:scale-97 text-white font-black text-[9.5px] rounded-xl cursor-pointer transition shadow-md flex items-center justify-center gap-1 uppercase tracking-wider"
-                                    >
-                                      <span>⚡ Sinkronkan Pembahasan</span>
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
                             </div>
                           );
                         })}
@@ -6838,7 +6606,7 @@ ${lastMsgText}`;
                         <div className="my-auto text-left border-l-4 border-emerald-500 pl-8 py-6">
                           <span className="text-[10px] font-mono tracking-widest font-black uppercase text-indigo-600 block mb-2">INTEGRATED FEASIBILITY STUDY</span>
                           <h1 className="text-3xl md:text-4xl font-black text-slate-900 leading-tight uppercase font-display tracking-tight leading-none mb-2">
-                            14 PILAR UTAMA ANALYSIS PROPOSAL & PM
+                            17 PILAR UTAMA ANALYSIS PROPOSAL & PM
                           </h1>
                           <p className="text-slate-500 font-bold font-mono text-[10px] mt-1.5 uppercase tracking-wide">
                             Sistem Formulasi & Analisis Kompherensif Proposal Strategis
@@ -6875,7 +6643,7 @@ ${lastMsgText}`;
                           <h2 className="text-xl md:text-2xl font-black text-indigo-900 border-b-2 border-slate-100 pb-2 mb-8 uppercase tracking-wide">DAFTAR ISI KAJIAN FORMULASI JURNAL PM</h2>
                           
                           <div className="space-y-4">
-                            {defaultDashboardSections.map((sec, i) => (
+                            {currentDashboardSections.map((sec, i) => (
                               <div key={sec.number} className="flex justify-between items-center text-xs">
                                 <span className="font-bold text-slate-850">{sec.number}. {sec.title}</span>
                                 <div className="flex-grow border-b border-spacing-2 border-dashed border-slate-300 mx-3" />
@@ -6884,11 +6652,11 @@ ${lastMsgText}`;
                             ))}
                           </div>
                         </div>
-                        <div className="text-right text-[10px] font-mono text-slate-450 border-t pt-4">Halaman 2 dari 16</div>
+                        <div className="text-right text-[10px] font-mono text-slate-450 border-t pt-4">Halaman 2 dari {currentDashboardSections.length + 2}</div>
                       </div>
 
-                      {/* PAGES 3-16: Core Sections */}
-                      {defaultDashboardSections.map((sec, index) => {
+                      {/* PAGES 3-19: Core Sections */}
+                      {currentDashboardSections.map((sec, index) => {
                         const docVal = dashboardSectionsState[sec.number] || sec.defaultContent;
                         return (
                           <div key={sec.number} className="bg-white border border-slate-200 rounded-lg shadow-2xl w-full md:w-[210mm] min-h-[297mm] p-16 flex flex-col justify-between text-slate-800 font-sans relative aspect-[1/1.414] text-left">
@@ -6902,10 +6670,18 @@ ${lastMsgText}`;
 
                             {/* Content Section */}
                             <div className="flex-grow text-left">
-                              <span className="text-[9px] font-mono font-extrabold tracking-widest bg-violet-100 text-violet-700 px-2.5 py-0.5 rounded uppercase border border-violet-150">BAGIAN {sec.number} DARI 14 PILAR</span>
-                              <h2 className="text-lg md:text-xl font-extrabold text-indigo-900 uppercase border-b-2 border-slate-100 pb-2 mt-2 mb-4 leading-normal font-sans">
+                              <span className="text-[9px] font-mono font-extrabold tracking-widest bg-violet-100 text-violet-700 px-2.5 py-0.5 rounded uppercase border border-violet-150">BAGIAN {sec.number} DARI {currentDashboardSections.length} PILAR</span>
+                              <h2 className="text-lg md:text-xl font-extrabold text-indigo-900 uppercase border-b-2 border-slate-100 pb-2 mt-2 mb-3 leading-normal font-sans">
                                 {sec.title}
                               </h2>
+
+                              {sec.shortDesc && (
+                                <div className="mb-4 p-3 bg-slate-50 border-l-4 border-indigo-600 rounded-r-lg text-slate-700 text-xs">
+                                  <span className="font-bold text-indigo-950 block text-[9.5px] uppercase tracking-wider mb-0.5">Fokus Analisis Pilar</span>
+                                  <p className="font-medium text-[11px] leading-relaxed text-slate-650">{sec.shortDesc}</p>
+                                </div>
+                              )}
+
                               <div className="prose prose-sm text-slate-650 leading-relaxed font-semibold text-xs space-y-3 font-sans">
                                 {docVal.split("\n").map((line, lidx) => {
                                   const trimLine = line.trim();
@@ -6928,7 +6704,7 @@ ${lastMsgText}`;
                             {/* Running Foot */}
                             <div className="flex justify-between items-center text-[10px] font-mono text-slate-450 border-t border-slate-100 pt-4 mt-8">
                               <span>KERAHASIAAN: SANGAT INTRA-KORPORAT</span>
-                              <span>Halaman {index + 3} dari 16</span>
+                              <span>Halaman {index + 3} dari {currentDashboardSections.length + 2}</span>
                             </div>
                           </div>
                         );
@@ -8670,7 +8446,7 @@ ${lastMsgText}`;
               animate={{ opacity: 1, scale: 1, rotateX: 0, y: 0, filter: "blur(0px)" }}
               transition={{ type: "spring", stiffness: 70, damping: 13, mass: 1.1 }}
               style={{ perspective: "1200px", transformStyle: "preserve-3d" }}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 text-left max-w-[1350px] mx-auto px-6 w-full"
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-left max-w-[1350px] mx-auto px-6 w-full"
             >
               {divisions.map((div) => {
                 const IconComp = div.icon;
@@ -8685,6 +8461,8 @@ ${lastMsgText}`;
                     className={`group relative flex flex-col justify-between rounded-xl border h-[300px] overflow-hidden transition-all duration-300 ${
                       div.locked
                         ? "border-slate-200 bg-slate-50/70 opacity-75 cursor-not-allowed select-none"
+                        : div.id === "multifungsi"
+                        ? "border-slate-200 bg-white cursor-pointer hover:border-emerald-400 shadow-sm hover:shadow-lg hover:-translate-y-0.5"
                         : "border-slate-200 bg-white cursor-pointer hover:border-indigo-400 shadow-sm hover:shadow-lg hover:-translate-y-0.5"
                      }`}
                   >
@@ -8706,6 +8484,11 @@ ${lastMsgText}`;
                           <IconComp className="h-5 w-5" />
                         </div>
                         <div className="flex items-center gap-1.5">
+                          {div.badge && (
+                            <span className="flex items-center gap-0.5 text-[9px] font-black bg-white/90 backdrop-blur-sm text-slate-800 border border-slate-200 px-2 py-0.5 rounded uppercase tracking-wider shadow-sm">
+                              {div.badge}
+                            </span>
+                          )}
                           {div.locked && (
                             <span className="flex items-center gap-0.5 text-[8px] font-black bg-amber-50/90 backdrop-blur-sm text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded uppercase tracking-wider shadow-sm">
                               <Lock className="h-2 w-2" /> Terkunci
@@ -8732,9 +8515,13 @@ ${lastMsgText}`;
                               e.stopPropagation();
                               triggerPortalTransition("division", div.id);
                             }}
-                            className="w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 px-4 text-xs font-black tracking-wide transition shadow-md bg-indigo-600 hover:bg-indigo-700 text-white border border-indigo-500/30 cursor-pointer hover:scale-101"
+                            className={`w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 px-4 text-xs font-black tracking-wide transition shadow-md text-white cursor-pointer hover:scale-101 ${
+                              div.id === "multifungsi"
+                                ? "bg-emerald-600 hover:bg-emerald-700 border border-emerald-500/30"
+                                : "bg-indigo-600 hover:bg-indigo-700 border border-indigo-500/30"
+                            }`}
                           >
-                            <span>Chat Model AI Agent Prama</span>
+                            <span>{div.buttonTitle || "Chat Model AI Agent Prama"}</span>
                             <ArrowRight className="h-3.5 w-3.5 shrink-0" />
                           </button>
                         )}
@@ -8812,6 +8599,22 @@ ${lastMsgText}`;
           renderPreviewMarkdown={renderPreviewMarkdown}
         />
 
+        <AISettingsModal 
+          isOpen={showAISettingsModal}
+          onClose={() => setShowAISettingsModal(false)}
+          apiMode={apiMode}
+          setApiMode={(mode) => {
+            setApiMode(mode);
+            localStorage.setItem("workspace_api_mode", mode);
+          }}
+          clientApiKey={clientApiKey}
+          setClientApiKey={(key) => {
+            let cleaned = (key || "").trim();
+            setClientApiKey(cleaned);
+            localStorage.setItem("workspace_client_api_key", cleaned);
+          }}
+        />
+
         <PPTPreviewModal 
           pptPreview={pptPreview}
           setPptPreview={setPptPreview}
@@ -8843,6 +8646,121 @@ ${lastMsgText}`;
           annualSavings={dashboardView === "chat_intelligence" ? chatBIState.annualSavings : undefined}
           salesIncrease={dashboardView === "chat_intelligence" ? chatBIState.salesIncrease : undefined}
         />
+
+        <PillarPDFModal 
+          isOpen={!!pillarPDFPreview}
+          onClose={() => setPillarPDFPreview(null)}
+          pillarNumber={pillarPDFPreview?.number || 1}
+          pillarTitle={pillarPDFPreview?.title || ""}
+          pillarContent={pillarPDFPreview?.content || ""}
+          projectTitle={pillarPDFPreview?.projectTitle || dashboardProjectTitle || "Kajian Kelayakan"}
+          activeDivision={activeDivision}
+          renderMarkdown={renderPreviewMarkdown}
+          onApplyToDraft={(content) => {
+            if (pillarPDFPreview) {
+              setDashboardSectionsState(prev => ({
+                ...prev,
+                [pillarPDFPreview.number]: content
+              }));
+            }
+          }}
+        />
+
+        {isTitleAnalysisOpen && (
+          <div className="fixed inset-0 z-55 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-md animate-fade-in" style={{ zIndex: 9999 }}>
+            <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[85vh] overflow-hidden shadow-2xl border border-slate-200 flex flex-col transform scale-100">
+              
+              {/* Header */}
+              <div className="bg-slate-900 px-6 py-4 flex items-center justify-between text-white border-b border-slate-800 shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-violet-950 text-violet-400 flex items-center justify-center border border-violet-800 shadow-inner">
+                    <Sparkles className="h-5 w-5 animate-pulse" />
+                  </div>
+                  <div>
+                    <span className="font-mono text-[8.5px] font-black text-violet-400 uppercase tracking-widest block">PRAMA INTELLIGENCE ANALYZER</span>
+                    <h3 className="font-display font-black text-sm uppercase tracking-tight text-white">Analisis AI Judul Proyek & Ketepatan Sasaran</h3>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsTitleAnalysisOpen(false)}
+                  className="h-8 w-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Sub-header title */}
+              <div className="bg-violet-50/70 border-b border-violet-100 px-6 py-3 shrink-0 flex items-center justify-between">
+                <div className="truncate pr-2">
+                  <span className="text-[9px] font-mono font-bold text-violet-700 uppercase tracking-wide block">Judul Proyek Aktif:</span>
+                  <span className="text-xs font-black text-violet-950 uppercase truncate block">{dashboardProjectTitle}</span>
+                </div>
+                <span className="shrink-0 text-[10px] font-mono font-bold bg-white text-violet-700 px-2.5 py-1 rounded-lg border border-violet-200 shadow-3sm">
+                  17 Pilar Sync
+                </span>
+              </div>
+
+              {/* Body Content */}
+              <div className="p-6 overflow-y-auto flex-1 text-left text-xs text-slate-700 leading-relaxed font-sans space-y-4">
+                {isTitleAnalyzing ? (
+                  <div className="py-16 flex flex-col items-center justify-center space-y-4 text-center">
+                    <div className="relative flex items-center justify-center">
+                      <div className="h-12 w-12 rounded-full border-[3px] border-violet-600/20 border-t-violet-600 animate-spin" />
+                      <div className="absolute inset-0 bg-violet-500/10 rounded-full blur-xl" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-black text-slate-800 uppercase tracking-wide">Menganalisis Konteks & Sasaran Proyek...</h4>
+                      <p className="text-[11px] text-slate-500 mt-1">AI sedang mengevaluasi ruang lingkup komoditas, sektor, B2B stakeholder, dan fokus pilar strategis.</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="prose prose-sm max-w-none text-slate-700 space-y-3">
+                    {titleAnalysisText.split("\n").map((line, idx) => {
+                      const trimmed = line.trim();
+                      if (!trimmed) return <div key={idx} className="h-2" />;
+                      if (trimmed.startsWith("###")) {
+                        return <h4 key={idx} className="text-xs md:text-sm font-black text-indigo-950 uppercase tracking-tight border-b border-slate-100 pb-1 mt-4">{trimmed.replace(/^###\s*/, "")}</h4>;
+                      }
+                      if (trimmed.startsWith("- ") || trimmed.startsWith("* ") || trimmed.startsWith("• ")) {
+                        return (
+                          <div key={idx} className="pl-3 border-l-2 border-violet-500 py-0.5 text-slate-700 font-medium">
+                            • {trimmed.replace(/^[\*\-\•]\s*/, "").replace(/\*\*/g, "")}
+                          </div>
+                        );
+                      }
+                      return <p key={idx} className="leading-relaxed font-medium">{trimmed.replace(/\*\*/g, "")}</p>;
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="bg-slate-50 border-t border-slate-200 px-6 py-4 flex items-center justify-between shrink-0">
+                <span className="text-[10px] text-slate-400 font-mono font-bold">Didukung oleh Gemini 2.5 Flash & Prama Intelligence</span>
+                <div className="flex gap-2.5">
+                  <button
+                    onClick={() => {
+                      setIsTitleAnalysisOpen(false);
+                      if (dashboardProjectTitle.trim()) {
+                        syncProjectTitleAndPillars(dashboardProjectTitle.trim(), undefined, true);
+                      }
+                    }}
+                    className="px-4 py-2 text-xs font-extrabold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition cursor-pointer shadow-sm"
+                  >
+                    Sinkronkan Seluruh 17 Pilar
+                  </button>
+                  <button
+                    onClick={() => setIsTitleAnalysisOpen(false)}
+                    className="px-4 py-2 text-xs font-extrabold text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl transition cursor-pointer"
+                  >
+                    Tutup
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        )}
 
         {isConfirmProjectUpdateOpen && (
           <div className="fixed inset-0 z-55 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md animate-fade-in" style={{ zIndex: 9999 }}>
@@ -8983,14 +8901,24 @@ ${lastMsgText}`;
             </div>
 
             {/* Selected active division banner */}
-            <div className="bg-[#5B4DFB] text-white p-3.5 rounded-2xl flex items-center gap-3 shadow-md">
+            <div className={`p-3.5 rounded-2xl flex items-center gap-3 shadow-md text-white ${
+              activeDivision === "multifungsi"
+                ? "bg-emerald-600"
+                : "bg-[#5B4DFB]"
+            }`}>
               <div className="h-8 w-8 bg-white/20 rounded-xl flex items-center justify-center text-white shrink-0 shadow-inner">
-                <TrendingUp className="h-4 w-4" />
+                {activeDivision === "multifungsi" ? (
+                  <Sparkles className="h-4 w-4" />
+                ) : (
+                  <TrendingUp className="h-4 w-4" />
+                )}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-black leading-none uppercase tracking-wide">COMC Unit</p>
-                <span className="text-[9px] block text-indigo-150 text-indigo-100 font-medium leading-none mt-1.5">
-                  comercial unit
+                <p className="text-xs font-black leading-none uppercase tracking-wide">
+                  {activeDivision === "multifungsi" ? "MULTI Unit" : "COMC Unit"}
+                </p>
+                <span className="text-[9px] block text-white/80 font-medium leading-none mt-1.5">
+                  {activeDivision === "multifungsi" ? "Chat Multi Fungsi" : "comercial unit"}
                 </span>
               </div>
             </div>
@@ -9059,6 +8987,17 @@ ${lastMsgText}`;
                   {files.length}
                 </span>
               </button>
+
+              {/* Option 4: Pengaturan AI & API */}
+              <button
+                onClick={() => {
+                  setShowAISettingsModal(true);
+                }}
+                className="w-full h-10 flex items-center gap-3 px-3 rounded-xl text-left text-xs font-bold text-slate-700 hover:bg-indigo-50/60 hover:text-indigo-600 transition cursor-pointer"
+              >
+                <Cpu className="h-4 w-4 text-indigo-600 shrink-0 animate-pulse" />
+                <span>Setelan AI & API</span>
+              </button>
             </nav>
           </div>
 
@@ -9116,11 +9055,28 @@ ${lastMsgText}`;
               onToggleSearchMessages={setIsSearching}
               onOpenRightPillarPanel={() => setIsRightPillarPanelOpen(true)}
               onOpenExcelSimulator={() => setIsExcelPreviewOpen(true)}
+              onDownloadFullHTML={handleDownloadFullPortalHTML}
             />
 
           </div>
         </div>
       </main>
+
+      <AISettingsModal 
+        isOpen={showAISettingsModal}
+        onClose={() => setShowAISettingsModal(false)}
+        apiMode={apiMode}
+        setApiMode={(mode) => {
+          setApiMode(mode);
+          localStorage.setItem("workspace_api_mode", mode);
+        }}
+        clientApiKey={clientApiKey}
+        setClientApiKey={(key) => {
+          let cleaned = (key || "").trim();
+          setClientApiKey(cleaned);
+          localStorage.setItem("workspace_client_api_key", cleaned);
+        }}
+      />
     </motion.div>
   );
 }

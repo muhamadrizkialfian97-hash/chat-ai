@@ -6,6 +6,15 @@ import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import { WebSocketServer, WebSocket } from "ws";
 import http from "http";
+import { generateStrategicOverviewForTitle } from "./src/utils/strategicOverviewGenerator.ts";
+import { generateMarketOpportunityForTitle } from "./src/utils/marketOpportunityGenerator.ts";
+import { generateSupplyDemandForTitle } from "./src/utils/supplyDemandGenerator.ts";
+import { generateTransitionModelForTitle } from "./src/utils/transitionModelGenerator.ts";
+import { generateGoToMarketForTitle } from "./src/utils/goToMarketGenerator.ts";
+import { generateRiskManagementForTitle } from "./src/utils/riskManagementGenerator.ts";
+import { generateOpsModelForTitle } from "./src/utils/opsModelGenerator.ts";
+import { generateDigitalCoverageForTitle } from "./src/utils/digitalCoverageGenerator.ts";
+import { generateTamSamSomForTitle } from "./src/utils/tamSamSomGenerator.ts";
 
 dotenv.config();
 
@@ -182,6 +191,596 @@ app.get("/api/check-video-sync", (req, res) => {
   res.json({ exists });
 });
 
+// AI Project Title Analysis Endpoint
+app.post("/api/analyze-title", async (req, res) => {
+  try {
+    const { title, division, clientApiKey } = req.body;
+    const apiKeyToUse = clientApiKey || process.env.GEMINI_API_KEY || "";
+    
+    let genAIClient = aiClient;
+    if (clientApiKey) {
+      genAIClient = new GoogleGenAI({
+        apiKey: clientApiKey,
+        httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
+      });
+    } else {
+      genAIClient = getGeminiClient();
+    }
+
+    const prompt = `Analisis secara mendalam dan strategis judul proyek berikut untuk memastikan kajian bisnis tepat sasaran dan komprehensif: "${title}" (Divisi: ${division || "Logistik & Transportasi"}).
+
+Berikan analisis terperinci dalam Bahasa Indonesia yang profesional, tajam, dan terstruktur dengan format Markdown berikut:
+### 1. Inti & Ruang Lingkup Proyek (Core & Scope)
+### 2. Kesesuaian Sektor, Koridor & Komoditas (Sector, Corridor & Commodity Fit)
+### 3. Target Sasaran Stakeholder & Klien B2B (Target Audience & B2B Stakeholders)
+### 4. Pilar Strategis Utama yang Paling Kritis (dari 17 Pilar PRAMA)
+### 5. Rekomendasi Taktis & Kalibrasi Judul Agar Semakin Tepat Sasaran (Precision Recommendations)`;
+
+    const response = await genAIClient.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+    const analysis = response.text || "Analisis tidak tersedia.";
+    res.json({ success: true, analysis });
+  } catch (error: any) {
+    console.error("Analyze title error:", error);
+    const { title, division } = req.body;
+    const fallback = `### 1. Inti & Ruang Lingkup Proyek (Core & Scope)
+Proyek "${title}" berfokus pada perancangan operasional, manajemen armada, dan kajian kelayakan komprehensif untuk divisi ${division || "Logistik Darat"}. Judul ini mencerminkan aktivitas logistik hulu-hilir dengan tuntutan efisiensi operasional dan SLA ketat.
+
+### 2. Kesesuaian Sektor, Koridor & Komoditas (Sector, Corridor & Commodity Fit)
+- **Sektor Utama:** Logistik dan Transportasi Korporat B2B.
+- **Komoditas / Muatan:** Disesuaikan dengan karakteristik operasional koridor industri terkait (curah, cair, atau general cargo).
+- **Kepatuhan Sektoral:** Memerlukan standar keselamatan tinggi (HSE) dan perizinan terkait.
+
+### 3. Target Sasaran Stakeholder & Klien B2B (Target Audience & B2B Stakeholders)
+- **Klien Utama:** Perusahaan manufaktur, produsen skala besar, BUMN Karya, atau pemilik konsesi.
+- **Mitra Operasional:** Pengemudi tersertifikasi, pengawas lapangan, dan control tower.
+
+### 4. Pilar Strategis Utama yang Paling Kritis (dari 17 Pilar PRAMA)
+- **Pilar 3 (Financial - Capex, Opex, ROI):** Validasi investasi armada dan margin keuntungan.
+- **Pilar 8 (Ops Model & SLA):** Jaminan ketepatan waktu dan alur operasional 24/7.
+- **Pilar 15 (Service Design):** Desain pengalaman layanan bagi klien B2B.
+- **Pilar 17 (Legal & Regulatory Compliance):** Kepatuhan perizinan dan perundang-undangan.
+
+### 5. Rekomendasi Taktis & Kalibrasi Judul Agar Semakin Tepat Sasaran
+Judul "${title}" sudah cukup spesifik. Untuk hasil kajian proposal yang lebih tajam, pastikan parameter volume ritase harian dan spesifikasi teknis armada telah didefinisikan secara akurat pada Pilar 3 dan Pilar 4.`;
+    res.json({ success: true, analysis: fallback, fallback: true });
+  }
+});
+
+// Dynamic AI Generation Endpoint for Pilar 1 (Global & National Overview)
+app.post("/api/generate-overview", async (req, res) => {
+  try {
+    const { projectTitle, division, clientApiKey } = req.body;
+    const titleClean = (projectTitle || "").trim() || "Kajian Kelayakan Strategis Logistik";
+    const divClean = (division || "Logistik Darat").trim();
+
+    let genAIClient = aiClient;
+    if (clientApiKey) {
+      genAIClient = new GoogleGenAI({
+        apiKey: clientApiKey,
+        httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
+      });
+    } else {
+      genAIClient = getGeminiClient();
+    }
+
+    const prompt = `Anda adalah PRAMA AI Senior Strategic Logistics & Investment Consultant.
+Buatlah kajian mendalam, komprehensif, dan MENYATU (seamless integrated strategic narrative) untuk PILAR 1: "GLOBAL & NATIONAL OVERVIEW".
+
+JUDUL PROYEK: "${titleClean}"
+DIVISI / UNIT OPERASIONAL: "${divClean}"
+
+ATURAN STRUKTUR DAN GAYA PENULISAN:
+1. NARRATIVE MENYATU (SEAMLESS INTEGRATION):
+   - Jangan gunakan format kotak-kotak kartu kaku atau formulir kaku. 
+   - Susun menjadi satu kesatuan dokumen kajian strategis yang mengalir, elegan, dan profesional, menghubungkan aspek makro global, lanskap regulasi domestik, tantangan rute/armada riil, hingga rekomendasi kelayakan proyek.
+2. 100% RELEVAN & SE-ARAH DENGAN JUDUL PROYEK:
+   - Identifikasi secara spesifik komoditas, tipe muatan, model armada, koridor wilayah, dan standar industri yang sesuai dengan "${titleClean}".
+   - Sebutkan regulasi, standar operasional, atau konvensi internasional serta peraturan perundangan Indonesia yang relevan langsung dengan bidang proyek ini.
+3. BAGIAN ANALISIS YANG HARUS DIUBAH MENJADI SATU ALUR MENYATU:
+   - ### 1. Konteks Makro & Dinamika Rantai Pasok Global (Global Macro Dynamics)
+     Jelaskan tren rantai pasok dunia, tuntutan kepatuhan internasional, serta pengaruh geopolitik/ekonomi makro pada komoditas dan logistik proyek ini.
+   - ### 2. Harmonisasi Regulasi & Kebijakan Nasional Indonesia (National Regulatory Framework)
+     Hubungkan dengan kebijakan pemerintah Indonesia (misal Kemenhub, ESDM, KLHK, Kemenperin, atau otoritas terkait), aturan keselamatan jalan, perizinan, dan kepatuhan hukum.
+   - ### 3. Realitas Lapangan, Tantangan Koridor & Kesiapan Operasional (Field Operations & Mitigation)
+     Bedah kondisi jalan/infrastruktur spesifik, risiko keselamatan kerja (K3), spesifikasi armada truk/trailer yang ideal, serta mitigasi operasional yang wajib dipersiapkan.
+   - ### 4. Kesimpulan Strategis & Rekomendasi Eksekutif (Strategic Verdict)
+     Rumuskan keputusan kelayakan (Verdict Go/Conditional Go), faktor penentu keberhasilan, dan langkah prioritas tahap awal.
+4. Gunakan Bahasa Indonesia korporat tingkat eksekutif yang lugas, tajam, dan meyakinkan. Gunakan penekanan huruf tebal (**teks**) pada poin-poin krusial.`;
+
+    const response = await genAIClient.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+
+    const content = response.text || "";
+    res.json({ success: true, content });
+  } catch (error: any) {
+    console.error("Generate overview error:", error);
+    const { projectTitle, division } = req.body;
+    const pTitle = (projectTitle || "Kajian Kelayakan Strategis Logistik").trim();
+    const pDiv = (division || "Logistik Darat").trim();
+
+    // Fallback narrative dynamically synthesized to be 100% specific and se-arah with the project title
+    const tailored = generateStrategicOverviewForTitle(pTitle, pDiv);
+    res.json({ success: true, content: tailored.narrativeMarkdown, fallback: true });
+  }
+});
+
+// Dynamic AI Generation Endpoint for Pilar 2 (Market Opportunity & Demand Dynamics)
+app.post("/api/generate-market-opportunity", async (req, res) => {
+  try {
+    const { projectTitle, division, clientApiKey } = req.body;
+    const titleClean = (projectTitle || "").trim() || "Kajian Peluang Pasar Logistik";
+    const divClean = (division || "Logistik Darat").trim();
+
+    let genAIClient = aiClient;
+    if (clientApiKey) {
+      genAIClient = new GoogleGenAI({
+        apiKey: clientApiKey,
+        httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
+      });
+    } else {
+      genAIClient = getGeminiClient();
+    }
+
+    const prompt = `Anda adalah PRAMA AI Senior Strategic Market & Investment Consultant.
+Buatlah kajian mendalam, komprehensif, dan MENYATU (seamless integrated strategic market analysis) untuk PILAR 2: "MARKET OPPORTUNITY & DEMAND DYNAMICS".
+
+JUDUL PROYEK: "${titleClean}"
+DIVISI / UNIT OPERASIONAL: "${divClean}"
+
+ATURAN STRUKTUR DAN GAYA PENULISAN:
+1. NARRATIVE MENYATU (SEAMLESS INTEGRATION):
+   - Jangan gunakan format kotak-kotak kartu kaku atau mini-simulator acak.
+   - Buat dokumen analisis pasar yang mengalir, tajam, dan elegan dari sisi komersial B2B.
+2. 100% RELEVAN & SE-ARAH DENGAN JUDUL PROYEK:
+   - Identifikasi secara spesifik target pasar (klien B2B / pemilik muatan), dinamika permintaan volume, celah layanan kompetitor, dan model penetapan tarif yang tepat untuk "${titleClean}".
+3. BAGIAN ANALISIS YANG HARUS DIUBAH MENJADI SATU ALUR MENYATU:
+   - ### 1. Dinamika Permintaan & Daya Dorong Pasar Utama (Demand Drivers)
+   - ### 2. Kesenjangan Pasar & Keunggulan Kompetitif (Market Gaps & Opportunity)
+   - ### 3. Struktur Monetisasi & Model Kontrak B2B (Revenue Model)
+   - ### 4. Peluang Efisiensi Digital & Logistik Berkelanjutan (Green Logistics & Tech Advantage)
+   - ### 5. Rekomendasi Eksekusi Penetrasi Pasar (Go-to-Market Strategy)
+4. Gunakan Bahasa Indonesia korporat tingkat eksekutif.`;
+
+    const response = await genAIClient.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+
+    const content = response.text || "";
+    res.json({ success: true, content });
+  } catch (error: any) {
+    console.error("Generate market opportunity error:", error);
+    const { projectTitle, division } = req.body;
+    const pTitle = (projectTitle || "Kajian Peluang Pasar Logistik").trim();
+    const pDiv = (division || "Logistik Darat").trim();
+
+    const tailored = generateMarketOpportunityForTitle(pTitle, pDiv);
+    res.json({ success: true, content: tailored.narrativeMarkdown, fallback: true });
+  }
+});
+
+// Dynamic AI Generation Endpoint for Pilar 4 (Supply & Demand Dynamics & Capacity Equilibrium)
+app.post("/api/generate-supply-demand", async (req, res) => {
+  try {
+    const { projectTitle, division, clientApiKey } = req.body;
+    const titleClean = (projectTitle || "").trim() || "Kajian Keseimbangan Pasokan & Permintaan Logistik";
+    const divClean = (division || "Logistik Darat").trim();
+
+    let genAIClient = aiClient;
+    if (clientApiKey) {
+      genAIClient = new GoogleGenAI({
+        apiKey: clientApiKey,
+        httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
+      });
+    } else {
+      genAIClient = getGeminiClient();
+    }
+
+    const prompt = `Anda adalah PRAMA AI Senior Operational Fleet & Supply-Demand Equilibrium Consultant.
+Buatlah kajian mendalam, komprehensif, dan MENYATU (seamless integrated operational supply & demand analysis) untuk PILAR 4: "SUPPLY & DEMAND EQUILIBRIUM & FLEET CAPACITY DYNAMICS".
+
+JUDUL PROYEK: "${titleClean}"
+DIVISI / UNIT OPERASIONAL: "${divClean}"
+
+ATURAN STRUKTUR DAN GAYA PENULISAN:
+1. NARRATIVE MENYATU (SEAMLESS INTEGRATION):
+   - Jangan gunakan format kotak-kotak kartu kaku, tab terpecah-pecah acak, atau mini-tabel statis dummy.
+   - Buat dokumen analisis operasional armada dan dinamika permintaan yang mengalir, presisi, berbobot, dan actionable dari sisi teknis logistik B2B.
+2. 100% RELEVAN & SE-ARAH DENGAN JUDUL PROYEK:
+   - Identifikasi jenis armada spesifik (spesifikasi teknis, kapasitas payload, physical availability target) yang dibutuhkan untuk mengangkut komoditas pada rute "${titleClean}".
+   - Analisis karakteristik permintaan (volatilitas, siklus jam kerja/bongkar muat, musim) yang relevan untuk "${titleClean}".
+   - Bahas keseimbangan pasokan-permintaan (rasio utilisasi target 80-90%, alur cycle time, eliminasi antrean/waiting time).
+   - Bahas mitigasi disrupsi & kontinjensi (buffer fleet, SOP jalur alternatif, telemetri GPS).
+3. BAGIAN ANALISIS YANG HARUS DIUBAH MENJADI SATU ALUR MENYATU:
+   - ### 1. Profil Pasokan Armada & Kapasitas Angkut (Supply-Side Capacity)
+   - ### 2. Dinamika & Karakteristik Permintaan (Demand-Side Volatility)
+   - ### 3. Keseimbangan Pasokan-Permintaan & Efisiensi Utilisasi (Equilibrium & Optimization)
+   - ### 4. Mitigasi Disrupsi & Rencana Kontinjensi Pasokan (Resilience & Contingency Plan)
+   - ### 5. Rekomendasi Kapasitas Eksekutif (Capacity Sizing Verdict)
+4. Gunakan Bahasa Indonesia korporat tingkat eksekutif.`;
+
+    const response = await genAIClient.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+
+    const content = response.text || "";
+    res.json({ success: true, content });
+  } catch (error: any) {
+    console.error("Generate supply demand error:", error);
+    const { projectTitle, division } = req.body;
+    const pTitle = (projectTitle || "Kajian Keseimbangan Pasokan & Permintaan Logistik").trim();
+    const pDiv = (division || "Logistik Darat").trim();
+
+    const tailored = generateSupplyDemandForTitle(pTitle, pDiv);
+    res.json({ success: true, content: tailored.narrativeMarkdown, fallback: true });
+  }
+});
+
+// Dynamic AI Generation Endpoint for Pilar 6 (Transition Model: Pre-On-Post Implementation Roadmap)
+app.post("/api/generate-transition-model", async (req, res) => {
+  try {
+    const { projectTitle, division, clientApiKey } = req.body;
+    const titleClean = (projectTitle || "").trim() || "Kajian Model Transisi & Deployment Operasional Logistik";
+    const divClean = (division || "Logistik Darat").trim();
+
+    let genAIClient = aiClient;
+    if (clientApiKey) {
+      genAIClient = new GoogleGenAI({
+        apiKey: clientApiKey,
+        httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
+      });
+    } else {
+      genAIClient = getGeminiClient();
+    }
+
+    const prompt = `Anda adalah PRAMA AI Senior Operational Transition & Change Management Consultant.
+Buatlah kajian mendalam, komprehensif, dan MENYATU (seamless integrated transition & deployment roadmap) untuk PILAR 6: "TRANSITION MODEL (PRE-ON-POST IMPLEMENTATION ROADMAP)".
+
+JUDUL PROYEK: "${titleClean}"
+DIVISI / UNIT OPERASIONAL: "${divClean}"
+
+ATURAN STRUKTUR DAN GAYA PENULISAN:
+1. NARRATIVE MENYATU (SEAMLESS INTEGRATION):
+   - Jangan gunakan format kotak-kotak kartu kaku, tab terpecah-pecah acak, checklist task dummy acak, atau persentase statis fiktif.
+   - Buat dokumen rencana transisi operasional yang terstruktur, mengalir, kredibel, dan siap dipresentasikan di hadapan dewan direksi/investor.
+2. 100% RELEVAN & SE-ARAH DENGAN JUDUL PROYEK:
+   - Identifikasi secara spesifik kesiapan pra-operasional (audit unit armada, izin trayek, sertifikasi K3, survei lintasan rute spesifik) untuk "${titleClean}".
+   - Jabarkan tahapan uji coba lapangan (dry run, wet commissioning, kalibrasi cycle time, uji gate-in/antrean) untuk "${titleClean}".
+   - Rinci fase stabilisasi operasional penuh (rotasi ritase 24/7, preventive maintenance, SLA) untuk "${titleClean}".
+   - Tetapkan matriks tata kelola & KPI (OTIF, Fleet Availability, Safety Zero Incident).
+3. BAGIAN ANALISIS YANG HARUS DIUBAH MENJADI SATU ALUR MENYATU:
+   - ### 1. Tahap Persiapan & Kesiapan Teknis (Pre-Transition: Minggu 1 – 4)
+   - ### 2. Tahap Uji Coba & Peluncuran Rute (On-Transition: Minggu 5 – 8)
+   - ### 3. Tahap Operasi Penuh & Keberlanjutan SLA (Post-Transition: Minggu 9+)
+   - ### 4. Matriks Tata Kelola & KPI Kesiapan Transisi (Governance & Performance)
+   - ### 5. Rekomendasi Eksekutif Transisi (Executive Readiness Verdict)
+4. Gunakan Bahasa Indonesia korporat tingkat eksekutif.`;
+
+    const response = await genAIClient.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+
+    const content = response.text || "";
+    res.json({ success: true, content });
+  } catch (error: any) {
+    console.error("Generate transition model error:", error);
+    const { projectTitle, division } = req.body;
+    const pTitle = (projectTitle || "Kajian Model Transisi & Deployment Operasional Logistik").trim();
+    const pDiv = (division || "Logistik Darat").trim();
+
+    const tailored = generateTransitionModelForTitle(pTitle, pDiv);
+    res.json({ success: true, content: tailored.narrativeMarkdown, fallback: true });
+  }
+});
+
+// Dynamic AI Generation Endpoint for Pilar 7 (Go-To-Market Strategy & B2B Commercial Roadmap)
+app.post("/api/generate-gtm", async (req, res) => {
+  try {
+    const { projectTitle, division, clientApiKey } = req.body;
+    const titleClean = (projectTitle || "").trim() || "Kajian Strategi Go-To-Market & Komersialisasi Logistik";
+    const divClean = (division || "Logistik Darat").trim();
+
+    let genAIClient = aiClient;
+    if (clientApiKey) {
+      genAIClient = new GoogleGenAI({
+        apiKey: clientApiKey,
+        httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
+      });
+    } else {
+      genAIClient = getGeminiClient();
+    }
+
+    const prompt = `Anda adalah PRAMA AI Senior B2B Commercial Director & Go-To-Market Strategy Consultant.
+Buatlah kajian komersial mendalam, komprehensif, dan MENYATU (seamless integrated commercial roadmap) untuk PILAR 7: "GO-TO-MARKET STRATEGY & B2B COMMERCIAL PENETRATION ROADMAP".
+
+JUDUL PROYEK: "${titleClean}"
+DIVISI / UNIT OPERASIONAL: "${divClean}"
+
+ATURAN STRUKTUR DAN GAYA PENULISAN:
+1. NARRATIVE MENYATU (SEAMLESS INTEGRATION):
+   - Jangan gunakan format kotak-kotak kartu kaku, tab terpecah-pecah acak, checklist task dummy acak, atau persentase statis fiktif.
+   - Buat dokumen rencana penetrasi pasar dan strategi komersial yang terstruktur, mengalir, kredibel, dan siap dipresentasikan di hadapan dewan direksi/investor.
+2. 100% RELEVAN & SE-ARAH DENGAN JUDUL PROYEK:
+   - Identifikasi target pelanggan B2B secara spesifik (Tier-1 Key Accounts, Tier-2 Sekunder, Tier-3 Taktis) untuk "${titleClean}".
+   - Jabarkan value proposition & keunggulan kompetitif (SLA, efisiensi waktu, kepatuhan regulasi) untuk "${titleClean}".
+   - Rinci struktur kontrak & model penetapan tarif (skema tarif dasar, formula eskalasi solar, klausul take-or-pay volume garansi) untuk "${titleClean}".
+   - Tetapkan kanal penjualan dan tahapan akuisisi akun (Direct Enterprise Pitching, tender vendor list, account management) untuk "${titleClean}".
+   - Rinci matriks tata kelola komersial & KPI (Contract Win Rate, Contracted Volume Ratio, Days Sales Outstanding).
+3. BAGIAN ANALISIS YANG HARUS DIUBAH MENJADI SATU ALUR MENYATU:
+   - ### 1. Profil Target Pelanggan & Segmentasi B2B (Target Accounts & Customer Personas)
+   - ### 2. Strategi Penetrasi Pasar & Value Proposition (Market Penetration & Differentiator)
+   - ### 3. Model Kontrak Komersial & Skema Tarif (Pricing Structure & Revenue Stability)
+   - ### 4. Kanal Penjualan & Rencana Akuisisi Akun (Sales Channels & Account Acquisition Roadmap)
+   - ### 5. Matriks Tata Kelola Komersial & KPI Penjualan (Commercial Governance & KPIs)
+   - ### 6. Rekomendasi Eksekutif Go-To-Market (Executive GTM Verdict)
+4. Gunakan Bahasa Indonesia korporat tingkat eksekutif.`;
+
+    const response = await genAIClient.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+
+    const content = response.text || "";
+    res.json({ success: true, content });
+  } catch (error: any) {
+    console.error("Generate GTM error:", error);
+    const { projectTitle, division } = req.body;
+    const pTitle = (projectTitle || "Kajian Strategi Go-To-Market & Komersialisasi Logistik").trim();
+    const pDiv = (division || "Logistik Darat").trim();
+
+    const tailored = generateGoToMarketForTitle(pTitle, pDiv);
+    res.json({ success: true, content: tailored.narrativeMarkdown, fallback: true });
+  }
+});
+
+// Dynamic AI Generation Endpoint for Pilar 9 (Risk Management & Mitigation Framework)
+app.post("/api/generate-risk", async (req, res) => {
+  try {
+    const { projectTitle, division, clientApiKey } = req.body;
+    const titleClean = (projectTitle || "").trim() || "Kajian Manajemen Risiko & Mitigasi Operasional Logistik";
+    const divClean = (division || "Logistik Darat").trim();
+
+    let genAIClient = aiClient;
+    if (clientApiKey) {
+      genAIClient = new GoogleGenAI({
+        apiKey: clientApiKey,
+        httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
+      });
+    } else {
+      genAIClient = getGeminiClient();
+    }
+
+    const prompt = `Anda adalah PRAMA AI Senior Enterprise Risk Management (ERM) & HSE/K3LL Director.
+Buatlah kajian manajemen risiko terpadu, komprehensif, dan MENYATU (seamless integrated risk management framework) untuk PILAR 9: "RISK MANAGEMENT & MITIGATION FRAMEWORK".
+
+JUDUL PROYEK: "${titleClean}"
+DIVISI / UNIT OPERASIONAL: "${divClean}"
+
+ATURAN STRUKTUR DAN GAYA PENULISAN:
+1. NARRATIVE MENYATU (SEAMLESS INTEGRATION):
+   - Jangan gunakan format kartu kaku terisolasi, slider skor kalkulator terpisah acak, checklist task dummy acak, atau persentase fiktif.
+   - Buat dokumen analisis risiko komprehensif yang mengalir, kredibel, terstruktur, dan siap diaudit oleh komite risiko dewan komisaris/investor.
+2. 100% RELEVAN & SE-ARAH DENGAN JUDUL PROYEK:
+   - Identifikasi register risiko spesifik (Risiko R-01 hingga R-04 dengan tingkat keparahan/dampak) untuk "${titleClean}".
+   - Jabarkan analisis risiko operasional dan keselamatan kerja lapangan untuk "${titleClean}".
+   - Analisis risiko finansial, regulasi, beban jalan (Zero ODOL jika relevan), dan kepatuhan perizinan untuk "${titleClean}".
+   - Rumuskan protokol mitigasi pencegahan dan rencana tanggap darurat (Protokol M-01 hingga M-04) untuk "${titleClean}".
+   - Tetapkan matriks tata kelola risiko & KPI mitigasi.
+3. BAGIAN ANALISIS YANG HARUS DIUBAH MENJADI SATU ALUR MENYATU:
+   - ### 1. Register Risiko Utama & Analisis Probabilitas-Dampak (Risk Matrix & Assessment)
+   - ### 2. Analisis Risiko Operasional & Keselamatan Kerja (Operational & HSE Risks)
+   - ### 3. Analisis Risiko Finansial, Regulasi, & Kepatuhan (Financial & Regulatory Risks)
+   - ### 4. Strategi Mitigasi Terperinci & Rencana Kontinjensi (Mitigation & Contingency Protocols)
+   - ### 5. Matriks Tata Kelola Risiko & KPI Mitigasi (Risk Governance & Performance Index)
+   - ### 6. Rekomendasi Eksekutif Kesiapan Risiko (Executive Risk Readiness Verdict)
+4. Gunakan Bahasa Indonesia korporat tingkat eksekutif.`;
+
+    const response = await genAIClient.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+
+    const content = response.text || "";
+    res.json({ success: true, content });
+  } catch (error: any) {
+    console.error("Generate risk error:", error);
+    const { projectTitle, division } = req.body;
+    const pTitle = (projectTitle || "Kajian Manajemen Risiko & Mitigasi Operasional Logistik").trim();
+    const pDiv = (division || "Logistik Darat").trim();
+
+    const tailored = generateRiskManagementForTitle(pTitle, pDiv);
+    res.json({ success: true, content: tailored.narrativeMarkdown, fallback: true });
+  }
+});
+
+// Dynamic AI Generation Endpoint for Pilar 8 (Operating Model, Flow Process, Workflow, SLA)
+app.post("/api/generate-opsmodel", async (req, res) => {
+  try {
+    const { projectTitle, division, clientApiKey } = req.body;
+    const titleClean = (projectTitle || "").trim() || "Kajian Operating Model & Workflow Operasional Logistik";
+    const divClean = (division || "Logistik Darat").trim();
+
+    let genAIClient = aiClient;
+    if (clientApiKey) {
+      genAIClient = new GoogleGenAI({
+        apiKey: clientApiKey,
+        httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
+      });
+    } else {
+      genAIClient = getGeminiClient();
+    }
+
+    const prompt = `Anda adalah PRAMA AI Senior Chief Operating Officer (COO) & Logistics Operational Architect.
+Buatlah kajian arsitektur operasional mendalam, komprehensif, dan MENYATU (seamless integrated operating model) untuk PILAR 8: "OPERATING MODEL (FLOW PROCESS, WORKFLOW DIAGRAM, & SLA)".
+
+JUDUL PROYEK: "${titleClean}"
+DIVISI / UNIT OPERASIONAL: "${divClean}"
+
+ATURAN STRUKTUR DAN GAYA PENULISAN:
+1. NARRATIVE MENYATU (SEAMLESS INTEGRATION):
+   - Jangan gunakan format kartu kaku acak, simulasi hambatan slider statis yang terpisah, atau checklist dummy terpecah-pecah.
+   - Buat dokumen blueprint operasional terstruktur, mengalir, kredibel, dan siap dieksekusi di lapangan oleh tim operasional maupun diaudit oleh manajemen.
+2. 100% RELEVAN & SE-ARAH DENGAN JUDUL PROYEK:
+   - Rinci tahapan alur proses operasional secara berurutan (Tahap 1 s.d. 6 dari pra-inspeksi, pemuatan, pengangkutan, penimbangan beban, pembongkaran, hingga serah terima) khusus untuk "${titleClean}".
+   - Jabarkan matriks peran kerja (RACI Matrix: Sopir/Driver, Dispatcher, Tim Mekanik, Klien) untuk "${titleClean}".
+   - Tetapkan standar tingkat layanan (SLA), target durasi tiap tahap, dan waktu siklus bolak-balik (Turnaround Time - TAT) untuk "${titleClean}".
+   - Rinci integrasi teknologi nirkabel, sensor IoT, serta otomatisasi serah terima elektronik (e-POD).
+   - Tetapkan matriks tata kelola operasional & KPI kinerja (OTIF, ketersediaan mekanis armada, kepatuhan muatan).
+3. BAGIAN ANALISIS YANG HARUS DIUBAH MENJADI SATU ALUR MENYATU:
+   - ### 1. Arsitektur Alur Proses Operasional (End-to-End Operational Flow Process)
+   - ### 2. Diagram Alur Kerja & Matriks Peran/Tanggung Jawab (Workflow Swimlane & RACI Matrix)
+   - ### 3. Standar Tingkat Layanan & Target Durasi Operasi (Service Level Agreement - SLA & TAT)
+   - ### 4. Integrasi Teknologi, IoT, & Serah Terima Digital (Digital Handover & e-POD Automation)
+   - ### 5. Matriks Tata Kelola Operasional & Indikator Kinerja Utama (Ops Governance & KPIs)
+   - ### 6. Rekomendasi Eksekutif Kesiapan Operasional (Executive Operating Model Verdict)
+4. Gunakan Bahasa Indonesia korporat tingkat eksekutif.`;
+
+    const response = await genAIClient.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+
+    const content = response.text || "";
+    res.json({ success: true, content });
+  } catch (error: any) {
+    console.error("Generate opsmodel error:", error);
+    const { projectTitle, division } = req.body;
+    const pTitle = (projectTitle || "Kajian Operating Model & Workflow Operasional Logistik").trim();
+    const pDiv = (division || "Logistik Darat").trim();
+
+    const tailored = generateOpsModelForTitle(pTitle, pDiv);
+    res.json({ success: true, content: tailored.narrativeMarkdown, fallback: true });
+  }
+});
+
+// Dynamic AI Generation Endpoint for Pilar 10 (Digital Coverage: Tools, Method, Impact, Automation)
+app.post("/api/generate-digitalcoverage", async (req, res) => {
+  try {
+    const { projectTitle, division, clientApiKey } = req.body;
+    const titleClean = (projectTitle || "").trim() || "Kajian Cakupan Digital, Otomasi & Telematika Logistik";
+    const divClean = (division || "Logistik Darat & Telematika").trim();
+
+    let genAIClient = aiClient;
+    if (clientApiKey) {
+      genAIClient = new GoogleGenAI({
+        apiKey: clientApiKey,
+        httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
+      });
+    } else {
+      genAIClient = getGeminiClient();
+    }
+
+    const prompt = `Anda adalah PRAMA AI Senior Chief Technology Officer (CTO) & Logistics IoT Telematics Architect.
+Buatlah kajian arsitektur cakupan digital, otomasi, dan telematika mendalam, komprehensif, dan MENYATU (seamless integrated digital coverage) untuk PILAR 10: "DIGITAL COVERAGE (TOOLS, METHOD, IMPACT, AUTOMATION)".
+
+JUDUL PROYEK: "${titleClean}"
+DIVISI / UNIT OPERASIONAL: "${divClean}"
+
+ATURAN STRUKTUR DAN GAYA PENULISAN:
+1. NARRATIVE MENYATU (SEAMLESS INTEGRATION):
+   - Jangan gunakan format kartu kaku acak, simulasi slider statis terpisah, atau tab-tab yang terpotong.
+   - Buat dokumen blueprint arsitektur digital dan telematika terstruktur, mengalir, kredibel, dan siap dieksekusi di lapangan serta diaudit oleh tim teknologi & klien.
+2. 100% RELEVAN & SE-ARAH DENGAN JUDUL PROYEK:
+   - Rinci ekosistem alat digital & sensor IoT hardware yang spesifik untuk "${titleClean}". (Contoh: jika semen curah, gunakan sensor tekanan kompresor pneumatik, timbangan jembatan otomatis, e-POD khusus semen; jika nikel gunakan FMS tambang, kamera AI DSS/DSM pemantau kantuk, timbangan gandar suspensi, integrasi SIMBARA).
+   - Jabarkan metodologi implementasi & pipeline aliran data dari armada ke Command Center khusus untuk "${titleClean}".
+   - Sebutkan dampak kuantitatif nyata (kecepatan bongkar, penghematan BBM, reduksi waktu invoicing, zero spillage/fatality) untuk "${titleClean}".
+   - Jabarkan arsitektur otomatisasi serah terima elektronik (e-POD, e-Waybill, QR code/RFID verification, webhook ERP) untuk "${titleClean}".
+   - Tetapkan standar tata kelola keamanan siber & kepatuhan data.
+3. BAGIAN ANALISIS YANG HARUS DIUBAH MENJADI SATU ALUR MENYATU:
+   - ### 1. Ekosistem Alat & Perangkat Keras Digital (Digital Tools & IoT Hardware Stack)
+   - ### 2. Metodologi Penerapan & Alur Data Digital (Implementation Method & Data Pipeline)
+   - ### 3. Dampak Kuantitatif & Transformasi Operasional (Measurable Operational & Business Impact)
+   - ### 4. Otomatisasi Sistem & Alur Serah Terima (Automation Architecture & Digital e-POD)
+   - ### 5. Tata Kelola Keamanan Data & Standar Kepatuhan Sistem (Cybersecurity & Compliance Standards)
+   - ### 6. Rekomendasi Eksekutif Kesiapan Digital (Executive Digital Coverage Verdict)
+4. Gunakan Bahasa Indonesia korporat tingkat eksekutif.`;
+
+    const response = await genAIClient.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+
+    const content = response.text || "";
+    res.json({ success: true, content });
+  } catch (error: any) {
+    console.error("Generate digitalcoverage error:", error);
+    const { projectTitle, division } = req.body;
+    const pTitle = (projectTitle || "Kajian Cakupan Digital, Otomasi & Telematika Logistik").trim();
+    const pDiv = (division || "Logistik Darat & Telematika").trim();
+
+    const tailored = generateDigitalCoverageForTitle(pTitle, pDiv);
+    res.json({ success: true, content: tailored.narrativeMarkdown, fallback: true });
+  }
+});
+
+// Dynamic AI Generation Endpoint for Pilar 12 (TAM, SAM, SOM: Market Sizing & Fleet Monetization)
+app.post("/api/generate-tamsamsom", async (req, res) => {
+  try {
+    const { projectTitle, division, clientApiKey } = req.body;
+    const titleClean = (projectTitle || "").trim() || "Kajian Potensi Pasar Logistik TAM SAM SOM";
+    const divClean = (division || "Logistik & Transportasi Komersial").trim();
+
+    let genAIClient = aiClient;
+    if (clientApiKey) {
+      genAIClient = new GoogleGenAI({
+        apiKey: clientApiKey,
+        httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
+      });
+    } else {
+      genAIClient = getGeminiClient();
+    }
+
+    const prompt = `Anda adalah PRAMA AI Senior Chief Commercial Officer (CCO) & Market Sizing Financial Strategist.
+Buatlah kajian analisis potensi pasar komprehensif, mendalam, dan MENYATU (seamless integrated market sizing) untuk PILAR 12: "TAM, SAM, SOM (TOTAL ADDRESSABLE MARKET, SERVICEABLE ADDRESSABLE MARKET, SERVICEABLE OBTAINABLE MARKET)".
+
+JUDUL PROYEK: "${titleClean}"
+DIVISI / UNIT OPERASIONAL: "${divClean}"
+
+ATURAN STRUKTUR DAN GAYA PENULISAN:
+1. NARRATIVE MENYATU (SEAMLESS INTEGRATION):
+   - Jangan gunakan kartu kontrol slider statis acak, angka template kaku, atau tab-tab yang terpotong.
+   - Buat dokumen analisis komersial dan sizing pasar terstruktur, profesional, mengalir, dengan angka estimasi realistis dalam format Rupiah (Triliun/Miliar/Juta) dan volume (Ton/Ritase/m3).
+2. 100% RELEVAN & SE-ARAH DENGAN JUDUL PROYEK:
+   - Sesuaikan komoditas, rute, dan industri secara presisi dengan "${titleClean}".
+   - TAM: Total potensi belanja logistik sektor komoditas tersebut (misal jika semen curah, hitung total kebutuhan logistik semen regional/nasional; jika nikel hitung total hauling tambang nikel smelter).
+   - SAM: Pasar terjangkau berdasarkan koridor rute spesifik "${titleClean}", kapasitas izin rute, dan persyaratan kualifikasi klien target.
+   - SOM: Target penetrasi riil realistis (misal 6% - 15% dari SAM) yang dapat dimenangkan dengan alokasi armada yang masuk akal.
+   - Rincian kebutuhan armada (*fleet sizing*), jumlah truk, target ritase, dan proyeksi nilai kontrak tahunan (Annual Contract Value - ACV).
+   - Strategi memenangkan SOM dari kompetitor.
+3. BAGIAN ANALISIS YANG HARUS DIUBAH MENJADI SATU ALUR MENYATU:
+   - ### 1. Estimasi Total Addressable Market - TAM (Ukuran Potensi Pasar Makro)
+   - ### 2. Serviceable Addressable Market - SAM (Batas Pasar Terjangkau & Koridor Geografis)
+   - ### 3. Serviceable Obtainable Market - SOM (Target Penetrasi & Pangsa Pasar Riil)
+   - ### 4. Rincian Metrik Finansial & Kapasitas Armada (Fleet Sizing & Monetization Breakdown)
+   - ### 5. Strategi Akuisisi Pasar & Konversi Kontrak (SOM Capture & Penetration Strategy)
+   - ### 6. Rekomendasi Eksekutif Kesiapan Komersial (Executive Market Sizing Verdict)
+4. Gunakan Bahasa Indonesia korporat tingkat eksekutif.`;
+
+    const response = await genAIClient.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+
+    const content = response.text || "";
+    res.json({ success: true, content });
+  } catch (error: any) {
+    console.error("Generate tamsamsom error:", error);
+    const { projectTitle, division } = req.body;
+    const pTitle = (projectTitle || "Kajian Potensi Pasar Logistik TAM SAM SOM").trim();
+    const pDiv = (division || "Logistik & Transportasi Komersial").trim();
+
+    const tailored = generateTamSamSomForTitle(pTitle, pDiv);
+    res.json({ success: true, content: tailored.narrativeMarkdown, fallback: true });
+  }
+});
+
 // Sync binary data directly into the public directory of the workspace
 app.post("/api/upload-video-sync", (req, res) => {
   try {
@@ -280,11 +879,15 @@ app.post("/api/chat", async (req, res) => {
 
     const defaultInstruction = `Anda adalah PRAMA (Project Management Analytics), seorang AI Agent yang bertindak sebagai konsultan manajemen proyek profesional, taktis, dan strategis. Tugas utama Anda adalah membantu pengguna menganalisis, menstrukturkan, dan memberikan strategi manajemen proyek secara lengkap, singkat, detail, dan sangat terorganisir.
 
+BATASAN RUANG LINGKUP & LARANGAN TOPIK MUTLAK (STRICT EXCLUSIONS):
+1. LARANGAN TRANSPORTASI LAUT & UDARA: DILARANG KERAS membahas moda transportasi laut (kapal laut, tongkang/barge, pelayaran samudra, marine logistics, shipping line kapal laut, sea freight) dan transportasi udara (pesawat terbang, kargo udara, air freight, aviasi). Seluruh pembahasan HANYA berfokus pada Logistik & Transportasi Darat (armada truk, trailer, tronton, dump truck/tipper, jalan hauling tambang, logging road kehutanan, pergudangan darat, dan rantai pasok industri darat).
+2. LARANGAN PENGHIJAUAN & GO GREEN: DILARANG KERAS membahas isu penghijauan, inisiatif go green, net zero, dekarbonisasi lingkungan, sertifikasi hijau/emisi lingkungan, atau pelaporan ESG kelestarian lingkungan. Seluruh pembahasan murni difokuskan pada aspek komersial, profitabilitas modal, efisiensi operasional, keandalan armada darat, SLA, dan standar keselamatan kerja (K3).
+
 KETENTUAN INTERAKSI DAN KOMUNIKASI (WAJIB DIPATUHI):
 1. Anda diperbolehkan dan mampu menerima obrolan santai, sapaan (seperti halo, apa kabar, selamat pagi), atau interaksi kasual dari pengguna agar komunikasi terasa nyaman dan fleksibel. Balas sapaan tersebut dengan ramah, santai, namun tetap profesional.
 2. PENTING: Untuk pertama kali percakapan atau ketika pengguna baru menyapa Anda pertama kali (misalnya dengan "halo", "hai", dsb.), Anda HARUS menyapa balik secara hangat dan bertanya terlebih dahulu: "Proyek, industri, atau topik bisnis apa yang ingin kita bahas hari ini agar arah analisis kita menjadi jelas?".
 3. JANGAN langsung menyajikan analisis komprehensif 14 pilar untuk proyek default "Kajian Strategis: Forestry Management Transportation" kecuali jika pengguna secara eksplisit meminta proyek tersebut atau langsung memberikan detail topik proyek baru. Prioritaskan mengajak pengguna berdiskusi terlebih dahulu untuk memperjelas topik yang ingin dibahas.
-4. Begitu pengguna menjawab atau memberikan sebuah topik, judul proyek, atau nama industri baru, barulah Anda LANGSUNG MENJELASKAN SELURUH 14 POIN ruang lingkup di bawah ini dalam satu kali jawaban, kemudian wajib ditutup dengan sebuah KESIMPULAN strategis terkait pengambilan keputusan di bagian paling bawah. Jangan mencicil, jangan melewatkan satu poin pun, dan langsung masuk ke analisis yang kontekstual dengan topik tersebut.
+4. Begitu pengguna menjawab atau memberikan sebuah topik, judul proyek, atau nama industri baru, barulah Anda LANGSUNG MENJELASKAN SELURUH 14 POIN ruang lingkup di bawah ini dalam satu kali jawaban, kemudian wajib ditutup dengan sebuah KESIMPULAN strategis terkait pengambilan keputusan di bagian paling bawah. Jangan mencicil, jangan melewatkan satu poin pun, dan langsung masuk ke analisis yang kontekstual dengan topik tersebut (ingat: hanya transportasi darat dan tanpa topik go green/penghijauan).
 
 ATURAN FORMAT PENULISAN (SANGAT KETAT):
 - JANGAN PERNAH menggunakan simbol-simbol asing atau karakter Markdown seperti tanda bintang (*) untuk menebalkan teks atau pagar (#) untuk judul karena akan merusak sistem tampilan visual pengguna.

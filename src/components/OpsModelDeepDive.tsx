@@ -1,752 +1,481 @@
-import React, { useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import React, { useState, useEffect } from "react";
 import {
-  RefreshCw,
-  Clock,
-  CheckCircle,
-  AlertTriangle,
-  FileText,
-  User,
-  Shield,
-  Activity,
-  ArrowRight,
-  TrendingUp,
-  MapPin,
-  ChevronRight,
-  Sliders,
-  Award,
-  Zap,
+  Layers,
+  Workflow,
+  Sparkles,
+  Copy,
   Check,
-  AlertCircle,
-  HelpCircle
+  Edit3,
+  Trash2,
+  Save,
+  X,
+  ShieldCheck,
+  CheckCircle2,
+  FileText,
+  Clock,
+  ArrowRight
 } from "lucide-react";
+import { generateOpsModelForTitle } from "../utils/opsModelGenerator";
+import { exportAllSectionsToWord } from "../utils/projectDashboardHelper";
 
 interface OpsModelProps {
   projectTitle: string;
+  activeDivision?: string;
 }
 
-interface FlowStep {
-  id: string;
-  name: string;
-  pic: string;
-  durationMins: number;
-  iotDevice: string;
-  kpi: string;
-  description: string;
-}
+export function OpsModelDeepDive({ projectTitle, activeDivision }: OpsModelProps) {
+  const currentTitle = (projectTitle || "").trim() || "Kajian Operating Model & Workflow Operasional Logistik";
+  const currentDiv = activeDivision || "Logistik & Operasional Darat";
 
-interface WorkflowNode {
-  id: string;
-  role: "Supir (Driver)" | "Command Center" | "Klien / Pabrik";
-  action: string;
-  status: "Selesai" | "Proses" | "Tertunda";
-  automated: boolean;
-  notes: string;
-}
+  const storageKey = `prama_opsmodel_content_${currentTitle.toLowerCase().replace(/[^a-z0-9]/g, "_")}`;
 
-export function OpsModelDeepDive({ projectTitle }: OpsModelProps) {
-  const [activeTab, setActiveTab] = useState<"flow" | "diagram" | "sla">("flow");
+  // Content starts POLOS (empty) unless explicitly generated or saved
+  const [content, setContent] = useState<string>(() => {
+    return localStorage.getItem(storageKey) || "";
+  });
 
-  // State 1: Flow Process Steps
-  const [flowSteps, setFlowSteps] = useState<FlowStep[]>([
-    {
-      id: "step-1",
-      name: "Persiapan Unit & CSMS Check",
-      pic: "Driver & HSE Inspector",
-      durationMins: 20,
-      iotDevice: "Mobile App (Uji Kelayakan)",
-      kpi: "Kepatuhan checklist K3 100%",
-      description: "Pemeriksaan fisik sasis ban, rem, sabuk pengaman, serta kebugaran supir sebelum keberangkatan."
-    },
-    {
-      id: "step-2",
-      name: "Pemuatan Kayu & Segel Elektronik",
-      pic: "Foreman Loading Hutan",
-      durationMins: 45,
-      iotDevice: "e-POD Mobile App & RFID Tag",
-      kpi: "Kesesuaian volume kayu vs manifest",
-      description: "Kayu dimuat ke dalam sasis, segel dipasang, dan operator hutan melakukan scan RFID untuk mendaftarkan muatan."
-    },
-    {
-      id: "step-3",
-      name: "Perjalanan Hauling & Geofence Monitor",
-      pic: "Driver & Telematics Analyst",
-      durationMins: 180,
-      iotDevice: "PRAMA Smart GPS Node",
-      kpi: "Nol deviasi rute lateral hutan",
-      description: "Perjalanan dari hutan konsesi menuju pabrik bubur kertas/pabrik kelapa sawit dengan pantauan geofence aktif."
-    },
-    {
-      id: "step-4",
-      name: "Penimbangan & Audit Festronik KLHK",
-      pic: "Operator Timbangan & KLHK API",
-      durationMins: 15,
-      iotDevice: "Vessel Weight Scale & API",
-      kpi: "Waktu timbang kurang dari 20 menit",
-      description: "Truk masuk jembatan timbang, tonase dicatat otomatis, dan disinkronkan langsung ke server KLHK Festronik."
-    },
-    {
-      id: "step-5",
-      name: "Pembongkaran & Konfirmasi e-POD",
-      pic: "Warehouse Foreman & Driver",
-      durationMins: 30,
-      iotDevice: "Tanda Tangan Digital & Kamera App",
-      kpi: "Tanda tangan e-POD instan",
-      description: "Kayu diturunkan, serah terima disahkan via foto bukti bongkar serta tanda tangan digital di aplikasi supir."
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [copied, setCopied] = useState<boolean>(false);
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [editText, setEditText] = useState<string>("");
+  const [lastGeneratedForTitle, setLastGeneratedForTitle] = useState<string>(() => {
+    return localStorage.getItem(`${storageKey}_title`) || "";
+  });
+
+  // Cleanup legacy preset keys
+  useEffect(() => {
+    try {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (
+          k &&
+          (k.startsWith("prama_ops_legacy_") ||
+            k.startsWith("ops_flow_") ||
+            k.startsWith("ops_workflow_") ||
+            k.startsWith("ops_sla_") ||
+            k.startsWith("ops_model_custom_") ||
+            k.startsWith("prama_ops_ai_"))
+        ) {
+          keysToRemove.push(k);
+        }
+      }
+      keysToRemove.forEach((k) => localStorage.removeItem(k));
+    } catch (e) {}
+  }, []);
+
+  // When projectTitle changes, load saved content for that title or start polos
+  useEffect(() => {
+    const saved = localStorage.getItem(storageKey) || "";
+    setContent(saved);
+    setEditText(saved);
+    setIsEditing(false);
+  }, [storageKey]);
+
+  // Handler to generate fresh, 100% title-tailored content
+  const handleGenerateContent = async (targetTitle: string = currentTitle) => {
+    setIsLoading(true);
+    setIsEditing(false);
+
+    try {
+      const clientApiKey = localStorage.getItem("workspace_client_api_key") || "";
+      const res = await fetch("/api/generate-opsmodel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectTitle: targetTitle,
+          division: currentDiv,
+          clientApiKey
+        })
+      });
+
+      let generatedMarkdown = "";
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.content && typeof data.content === "string" && data.content.trim().length > 50) {
+          generatedMarkdown = data.content;
+        }
+      }
+
+      // If server returned fallback or couldn't reach API, use precision title generator
+      if (!generatedMarkdown) {
+        const localResult = generateOpsModelForTitle(targetTitle, currentDiv);
+        generatedMarkdown = localResult.narrativeMarkdown;
+      }
+
+      setContent(generatedMarkdown);
+      setEditText(generatedMarkdown);
+      setLastGeneratedForTitle(targetTitle);
+      localStorage.setItem(storageKey, generatedMarkdown);
+      localStorage.setItem(`${storageKey}_title`, targetTitle);
+    } catch (err) {
+      console.warn("Generating local tailored Operating Model for:", targetTitle, err);
+      const localResult = generateOpsModelForTitle(targetTitle, currentDiv);
+      setContent(localResult.narrativeMarkdown);
+      setEditText(localResult.narrativeMarkdown);
+      setLastGeneratedForTitle(targetTitle);
+      localStorage.setItem(storageKey, localResult.narrativeMarkdown);
+      localStorage.setItem(`${storageKey}_title`, targetTitle);
+    } finally {
+      setIsLoading(false);
     }
-  ]);
-
-  // Simulasi Hambatan State
-  const [obstacle, setObstacle] = useState<"none" | "rain" | "puncture" | "queue">("none");
-
-  // Calculate adjusted durations based on selected obstacle
-  const getAdjustedDuration = (step: FlowStep) => {
-    if (obstacle === "rain" && step.id === "step-3") return step.durationMins + 45; // Hujan lebat (+45 mins hauling)
-    if (obstacle === "puncture" && step.id === "step-3") return step.durationMins + 60; // Ban bocor di jalan tanah (+60 mins)
-    if (obstacle === "queue" && step.id === "step-4") return step.durationMins + 30; // Antrean jembatan timbang (+30 mins)
-    return step.durationMins;
   };
 
-  const totalDurationMins = flowSteps.reduce((acc, step) => acc + getAdjustedDuration(step), 0);
-
-  // State 2: Workflow swimlanes / nodes
-  const [workflowNodes, setWorkflowNodes] = useState<WorkflowNode[]>([
-    {
-      id: "node-1",
-      role: "Supir (Driver)",
-      action: "Melakukan pra-inspeksi kelayakan armada & lapor siap jalan",
-      status: "Selesai",
-      automated: false,
-      notes: "Diunggah melalui aplikasi Pancaran Driver"
-    },
-    {
-      id: "node-2",
-      role: "Command Center",
-      action: "Memverifikasi dokumen digital & menyetujui keberangkatan",
-      status: "Selesai",
-      automated: true,
-      notes: "Auto-approved oleh sistem jika CSMS hijau"
-    },
-    {
-      id: "node-3",
-      role: "Supir (Driver)",
-      action: "Melakukan perjalanan hauling di jalur khusus",
-      status: "Proses",
-      automated: false,
-      notes: "GPS mengunci posisi & kecepatan real-time"
-    },
-    {
-      id: "node-4",
-      role: "Command Center",
-      action: "Mendeteksi sinyal peringatan deviasi atau berhenti darurat",
-      status: "Tertunda",
-      automated: true,
-      notes: "AI otomatis mengidentifikasi deviasi rute"
-    },
-    {
-      id: "node-5",
-      role: "Klien / Pabrik",
-      action: "Penerimaan kayu, scan barkode e-POD, bongkar muatan",
-      status: "Tertunda",
-      automated: false,
-      notes: "Tanda tangan digital langsung masuk database ERP"
-    }
-  ]);
-
-  const [activeWorkflowId, setActiveWorkflowId] = useState<string>("node-3");
-
-  const handleToggleWorkflowAutomated = (id: string) => {
-    setWorkflowNodes(prev => prev.map(n => n.id === id ? { ...n, automated: !n.automated } : n));
+  // Handler to completely wipe content and make it POLOS (blank)
+  const handleClearAll = () => {
+    setContent("");
+    setEditText("");
+    setIsEditing(false);
+    localStorage.removeItem(storageKey);
+    localStorage.removeItem(`${storageKey}_title`);
   };
 
-  // State 3: SLA Threshold Sliders
-  const [slaLoadingTarget, setSlaLoadingTarget] = useState<number>(45); // target minutes loading
-  const [slaDeviationResponse, setSlaDeviationResponse] = useState<number>(10); // target deviation alert response in minutes
-  const [slaEpodUpload, setSlaEpodUpload] = useState<number>(15); // target e-POD upload in minutes
+  // Handler to start editing manually
+  const handleStartEdit = () => {
+    setEditText(content);
+    setIsEditing(true);
+  };
 
-  // Calculate SLA compliance rate based on inputs
-  const baseSlaScore = 100 - 
-    (slaLoadingTarget > 40 ? (slaLoadingTarget - 40) * 0.4 : 0) -
-    (slaDeviationResponse > 5 ? (slaDeviationResponse - 5) * 1.5 : 0) -
-    (slaEpodUpload > 10 ? (slaEpodUpload - 10) * 0.8 : 0);
+  // Save manual edits
+  const handleSaveEdit = () => {
+    setContent(editText);
+    localStorage.setItem(storageKey, editText);
+    setIsEditing(false);
+  };
 
-  const finalSlaCompliance = Math.min(100, Math.max(75, Number(baseSlaScore.toFixed(1))));
+  // Copy narrative to clipboard
+  const handleCopy = () => {
+    if (!content) return;
+    navigator.clipboard.writeText(content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
-  let complianceStatus = "Sangat Memuaskan";
-  let complianceColor = "text-emerald-400 border-emerald-500/25 bg-emerald-500/5";
-  let statusDesc = "Standar SLA sangat andal, menjamin hubungan kerja sama jangka panjang dengan pabrik kertas.";
+  // Markdown renderer for clean unified narrative
+  const renderSeamlessNarrative = (rawText: string) => {
+    if (!rawText || !rawText.trim()) return null;
+    const lines = rawText.split("\n");
+    const renderedNodes: React.ReactNode[] = [];
 
-  if (finalSlaCompliance < 90) {
-    complianceStatus = "Perlu Perbaikan (Warning)";
-    complianceColor = "text-amber-400 border-amber-500/20 bg-amber-500/5";
-    statusDesc = "Waktu tanggap deviasi terlalu longgar. Resiko denda keterlambatan pengiriman meningkat.";
-  } else if (finalSlaCompliance < 82) {
-    complianceStatus = "Kritis (Keterlambatan Tinggi)";
-    complianceColor = "text-rose-400 border-rose-500/20 bg-rose-500/5";
-    statusDesc = "SLA di luar ambang batas aman. Klien berpotensi memberikan penalti finansial bulanan.";
-  }
+    lines.forEach((line, index) => {
+      const trimmed = line.trim();
+
+      if (!trimmed) {
+        renderedNodes.push(<div key={`empty-${index}`} className="h-3" />);
+        return;
+      }
+
+      // Heading 3
+      if (trimmed.startsWith("### ")) {
+        const headingText = trimmed.replace(/^###\s+/, "");
+        renderedNodes.push(
+          <div key={`h3-${index}`} className="mt-6 mb-3 pt-3 border-t border-slate-800 first:border-t-0 first:pt-0">
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-blue-400 shrink-0" />
+              <h4 className="text-sm md:text-base font-black text-white uppercase tracking-tight">
+                {headingText}
+              </h4>
+            </div>
+          </div>
+        );
+        return;
+      }
+
+      // Heading 2 or 1
+      if (trimmed.startsWith("## ") || trimmed.startsWith("# ")) {
+        const headingText = trimmed.replace(/^#+\s+/, "");
+        renderedNodes.push(
+          <div key={`h2-${index}`} className="mt-7 mb-3.5 border-b border-blue-500/20 pb-2">
+            <h3 className="text-base md:text-lg font-black text-blue-300 uppercase tracking-tight flex items-center gap-2">
+              <Workflow className="h-4 w-4 text-blue-400" />
+              {headingText}
+            </h3>
+          </div>
+        );
+        return;
+      }
+
+      // Bullet points
+      if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+        const bulletContent = trimmed.replace(/^[\*\-]\s+/, "");
+        const formatted = bulletContent.split(/(\*\*.*?\*\*)/g).map((part, pIdx) => {
+          if (part.startsWith("**") && part.endsWith("**")) {
+            return (
+              <strong key={pIdx} className="text-white font-extrabold">
+                {part.slice(2, -2)}
+              </strong>
+            );
+          }
+          return part;
+        });
+
+        renderedNodes.push(
+          <div key={`bullet-${index}`} className="flex items-start gap-2.5 ml-1 my-1.5 text-slate-300 text-xs md:text-[13px] leading-relaxed">
+            <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-blue-400 shrink-0" />
+            <div className="flex-1">{formatted}</div>
+          </div>
+        );
+        return;
+      }
+
+      // Regular paragraph
+      const parts = trimmed.split(/(\*\*.*?\*\*)/g);
+      const formattedParts = parts.map((part, pIdx) => {
+        if (part.startsWith("**") && part.endsWith("**")) {
+          return (
+            <strong key={pIdx} className="text-white font-extrabold tracking-wide">
+              {part.slice(2, -2)}
+            </strong>
+          );
+        }
+        return part;
+      });
+
+      renderedNodes.push(
+        <p
+          key={`p-${index}`}
+          className="text-xs md:text-[13px] text-slate-300 leading-relaxed font-normal text-justify my-2.5"
+        >
+          {formattedParts}
+        </p>
+      );
+    });
+
+    return renderedNodes;
+  };
+
+  const isBlank = !content || content.trim().length === 0;
+  const isTitleDifferent =
+    content &&
+    lastGeneratedForTitle &&
+    lastGeneratedForTitle.toLowerCase() !== currentTitle.toLowerCase();
 
   return (
-    <div id="ops-model-deepdive-root" className="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-slate-100 shadow-2xl mt-8 overflow-hidden font-sans relative">
-      {/* Background gradients */}
-      <div className="absolute top-0 right-0 w-80 h-80 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-80 h-80 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
+    <div
+      id="ops-model-deepdive-root"
+      className="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-slate-100 shadow-2xl mt-8 font-sans relative overflow-hidden"
+    >
+      <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-5 mb-6 gap-4 relative z-10">
-        <div>
-          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-            <span className="px-2.5 py-0.5 text-[9px] font-black tracking-wider uppercase rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-mono">
-              PRAMA HAULING OPS MODEL
+      {/* Header Bar */}
+      <div className="border-b border-slate-800 pb-5 mb-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="px-2.5 py-0.5 text-[9.5px] font-black tracking-wider uppercase rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/20 font-mono flex items-center gap-1.5">
+              <Layers className="h-3 w-3 text-blue-400" />
+              PILAR 8 • OPERATING MODEL (FLOW PROCESS, WORKFLOW, SLA)
             </span>
-            <span className="px-2.5 py-0.5 text-[9px] font-black tracking-wider uppercase rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-mono flex items-center gap-1">
-              ⚡ SINKRON CHAT: <span className="text-white font-bold">{projectTitle || "Kajian Strategis PRAMA"}</span>
+            <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
+            <span className="px-2.5 py-0.5 text-[9.5px] font-bold uppercase rounded-md bg-slate-800 text-slate-300 border border-slate-700/80 font-mono">
+              JUDUL PROYEK: {currentTitle}
             </span>
-            <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-pulse" />
+            {isBlank && (
+              <span className="px-2 py-0.5 text-[9px] font-bold uppercase rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/20 font-mono">
+                STATUS: POLOS
+              </span>
+            )}
           </div>
-          <h3 className="text-lg md:text-xl font-black uppercase tracking-tight text-white flex items-center gap-2 font-display">
-            <Activity className="h-5 w-5 text-indigo-400" />
-            Operations Model Deep Dive (Flow, Workflow & SLA)
-          </h3>
-          <p className="text-xs text-slate-400 mt-1 font-semibold max-w-2xl leading-relaxed">
-            Menganalisis arsitektur model operasi angkutan logistik dari pemetaan alur muat, diagram kerja kolaborasi antar divisi, hingga kontrol kepatuhan SLA yang ketat.
-          </p>
+
+          {/* Action buttons */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  const saved = localStorage.getItem("prama_dashboard_sections");
+                  const map = saved ? JSON.parse(saved) : {};
+                  map[8] = content;
+                  exportAllSectionsToWord(currentTitle, map);
+                } catch(e) {
+                  exportAllSectionsToWord(currentTitle, { 8: content });
+                }
+              }}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition shadow-md shadow-emerald-600/20 cursor-pointer active:scale-95"
+              title="Unduh seluruh laporan komprehensif ke format Word (.doc)"
+            >
+              <FileText className="h-3.5 w-3.5" />
+              <span>Unduh Word (.doc)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleGenerateContent(currentTitle)}
+              disabled={isLoading}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition shadow-md shadow-blue-600/20 cursor-pointer active:scale-95 disabled:opacity-50"
+              title="Buat isian baru yang sesuai dengan judul proyek"
+            >
+              <Sparkles className={`h-3.5 w-3.5 ${isLoading ? "animate-spin text-blue-200" : ""}`} />
+              <span>{isLoading ? "Menyusun Operating Model..." : isBlank ? "Buat Isian Sesuai Judul" : "Buat Ulang Sesuai Judul"}</span>
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="text-[10px] font-bold text-slate-400 uppercase font-mono">ESTIMATED LEAD TIME:</span>
-          <span className="px-2.5 py-1 text-[9.5px] font-extrabold rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-mono">
-            {Math.floor(totalDurationMins / 60)} Jam {totalDurationMins % 60} Menit
-          </span>
-        </div>
+
+        <h3 className="text-lg md:text-xl font-black uppercase tracking-tight text-white flex items-center gap-2">
+          <Workflow className="h-5 w-5 text-blue-400" />
+          Operating Model: End-to-End Workflow, RACI Architecture, & SLA
+        </h3>
+        <p className="text-xs text-slate-400 mt-1 font-medium leading-relaxed">
+          Blueprint alur proses tahapan operasional lapangan, matriks peran RACI, target durasi dan SLA pengiriman, hingga otomatisasi serah terima digital untuk proyek{" "}
+          <span className="text-blue-300 font-extrabold">"{currentTitle}"</span>.
+        </p>
       </div>
 
-      {/* THREE PILLAR SECTIONS TAB CONTROLLER */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6 relative z-10">
-        {/* TAB 1: FLOW PROCESS */}
-        <button
-          type="button"
-          onClick={() => setActiveTab("flow")}
-          className={`p-3.5 rounded-2xl transition-all cursor-pointer border text-left flex items-start gap-3 relative overflow-hidden ${
-            activeTab === "flow"
-              ? "bg-gradient-to-br from-indigo-950/40 to-slate-900 border-indigo-500 shadow-lg shadow-indigo-600/10"
-              : "bg-slate-950/40 text-slate-400 border-slate-800/80 hover:border-slate-750"
-          }`}
-        >
-          <div className={`p-2 rounded-xl shrink-0 ${
-            activeTab === "flow" ? "bg-indigo-600 text-white" : "bg-slate-900 text-slate-400"
-          }`}>
-            <RefreshCw className="h-4.5 w-4.5" />
+      {/* If current title is different from what was previously generated, show quick sync badge */}
+      {isTitleDifferent && (
+        <div className="mb-4 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-xs text-amber-200">
+            <span className="h-2 w-2 rounded-full bg-amber-400 shrink-0 animate-ping" />
+            <span>
+              Judul proyek telah diperbarui menjadi: <strong className="text-white">"{currentTitle}"</strong>
+            </span>
           </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-[9px] font-black uppercase tracking-wider text-indigo-400 font-mono">Pilar 1</span>
-            </div>
-            <h4 className="text-[12px] font-black text-white uppercase mt-0.5 tracking-tight">1. Pemetaan Alur Proses</h4>
-            <p className="text-[10px] text-slate-400 font-semibold mt-1 leading-normal">
-              Flow Process berurutan: inspeksi, pemuatan kargo, hauling, timbangan, dan bongkar muatan.
-            </p>
-          </div>
-        </button>
-
-        {/* TAB 2: WORKFLOW DIAGRAM */}
-        <button
-          type="button"
-          onClick={() => setActiveTab("diagram")}
-          className={`p-3.5 rounded-2xl transition-all cursor-pointer border text-left flex items-start gap-3 relative overflow-hidden ${
-            activeTab === "diagram"
-              ? "bg-gradient-to-br from-indigo-950/40 to-slate-900 border-indigo-500 shadow-lg shadow-indigo-600/10"
-              : "bg-slate-950/40 text-slate-400 border-slate-800/80 hover:border-slate-750"
-          }`}
-        >
-          <div className={`p-2 rounded-xl shrink-0 ${
-            activeTab === "diagram" ? "bg-indigo-600 text-white" : "bg-slate-900 text-slate-400"
-          }`}>
-            <FileText className="h-4.5 w-4.5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-[9px] font-black uppercase tracking-wider text-indigo-400 font-mono">Pilar 2</span>
-            </div>
-            <h4 className="text-[12px] font-black text-white uppercase mt-0.5 tracking-tight">2. Diagram Kerja (Swimlanes)</h4>
-            <p className="text-[10px] text-slate-400 font-semibold mt-1 leading-normal">
-              Koordinasi pembagian tugas terstruktur antara Supir, tim Command Center, dan operator Pabrik.
-            </p>
-          </div>
-        </button>
-
-        {/* TAB 3: SLA DEFINITION */}
-        <button
-          type="button"
-          onClick={() => setActiveTab("sla")}
-          className={`p-3.5 rounded-2xl transition-all cursor-pointer border text-left flex items-start gap-3 relative overflow-hidden ${
-            activeTab === "sla"
-              ? "bg-gradient-to-br from-indigo-950/40 to-slate-900 border-indigo-500 shadow-lg shadow-indigo-600/10"
-              : "bg-slate-950/40 text-slate-400 border-slate-800/80 hover:border-slate-750"
-          }`}
-        >
-          <div className={`p-2 rounded-xl shrink-0 ${
-            activeTab === "sla" ? "bg-indigo-600 text-white" : "bg-slate-900 text-slate-400"
-          }`}>
-            <Award className="h-4.5 w-4.5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-[9px] font-black uppercase tracking-wider text-indigo-400 font-mono">Pilar 3</span>
-            </div>
-            <h4 className="text-[12px] font-black text-white uppercase mt-0.5 tracking-tight">3. Perjanjian Tingkat Layanan</h4>
-            <p className="text-[10px] text-slate-400 font-semibold mt-1 leading-normal">
-              Service Level Agreement: ketepatan waktu bongkar, respon peringatan AI, serta sinkronisasi manifes.
-            </p>
-          </div>
-        </button>
-      </div>
-
-      {/* TAB VALUE CONTAINER */}
-      <AnimatePresence mode="wait">
-
-        {/* PILAR 1: FLOW PROCESS (ALUR PROSES & HAMBATAN SIMULATOR) */}
-        {activeTab === "flow" && (
-          <motion.div
-            key="flow-tab"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
-            className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left relative z-10"
+          <button
+            type="button"
+            onClick={() => handleGenerateContent(currentTitle)}
+            className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-bold rounded-lg transition cursor-pointer"
           >
-            {/* Interactive Flow Visual Track */}
-            <div className="lg:col-span-8 bg-slate-950/50 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
-              <div>
-                <div className="flex justify-between items-center mb-3">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-200 flex items-center gap-1.5">
-                    <Clock className="h-4 w-4 text-indigo-400" />
-                    Rincian Alur Proses Hauling & Pengangkutan
-                  </h4>
-                  <span className="text-[9px] font-mono font-bold text-slate-500">
-                    SOP HAULING PANCARAN GROUP
-                  </span>
-                </div>
+            <Sparkles className="h-3 w-3" />
+            <span>Buat Isian Baru untuk Judul Ini</span>
+          </button>
+        </div>
+      )}
 
-                <p className="text-[10.5px] text-slate-400 font-semibold mb-4 leading-relaxed">
-                  Urutan alur kerja operasional angkutan dari persiapan awal hingga pembongkaran muatan di pabrik tujuan:
-                </p>
-
-                {/* Clean Text-based List (No Boxed Cards) */}
-                <div className="space-y-3 mb-5 border-l-2 border-indigo-500/30 pl-4 py-1">
-                  {flowSteps.map((step, idx) => {
-                    const adjDuration = getAdjustedDuration(step);
-                    const isDelayed = adjDuration > step.durationMins;
-                    return (
-                      <div key={step.id} className="relative">
-                        {/* Dot indicator */}
-                        <div className={`absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full border-2 ${
-                          isDelayed ? "bg-amber-400 border-amber-500" : "bg-indigo-400 border-indigo-500"
-                        }`} />
-                        
-                        <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                          <span className="text-[10px] font-mono font-black text-indigo-400 uppercase">
-                            Tahap {idx + 1}:
-                          </span>
-                          <h5 className="text-[12px] font-black uppercase text-white tracking-tight">
-                            {step.name}
-                          </h5>
-                          <span className={`text-[10px] font-mono font-bold px-1.5 py-0.2 rounded ${
-                            isDelayed ? "bg-amber-500/10 text-amber-400 border border-amber-500/20" : "bg-indigo-500/10 text-indigo-300"
-                          }`}>
-                            Durasi: {adjDuration} Mins {isDelayed && "(Delay)"}
-                          </span>
-                          <span className="text-[10px] text-slate-400 font-mono">
-                            • PIC: <span className="text-slate-300 font-semibold">{step.pic}</span>
-                          </span>
-                        </div>
-                        <p className="text-[10.5px] text-slate-300 font-semibold leading-relaxed">
-                          {step.description}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Perangkat IoT - Clean Text List */}
-                <div className="pt-3 border-t border-slate-800/80 space-y-2">
-                  <span className="text-[9.5px] font-mono font-black text-indigo-400 uppercase tracking-wider block">
-                    ⚡ PERANGKAT IOT TERINTEGRASI ALUR
-                  </span>
-                  <div className="space-y-1.5 text-[10.5px] text-slate-300 font-semibold">
-                    <p>
-                      <strong className="text-white uppercase font-bold">• Sistem e-POD Mobile:</strong> Mencegah pemalsuan manifes dengan tanda tangan koordinat GPS yang terkunci di depo tujuan.
-                    </p>
-                    <p>
-                      <strong className="text-white uppercase font-bold">• Timbangan Multi-Node API:</strong> Merekam data tonase langsung ke portal cloud Prama dan Festronik dalam 1 detik.
-                    </p>
-                  </div>
-                </div>
+      {/* Main Canvas Area */}
+      <div className="bg-slate-950/70 border border-slate-800/90 rounded-2xl p-5 md:p-6 shadow-inner relative min-h-[220px]">
+        {isLoading ? (
+          <div className="py-14 px-4 text-center flex flex-col items-center justify-center gap-3">
+            <div className="relative">
+              <div className="h-10 w-10 rounded-full border-2 border-blue-500/20 border-t-blue-400 animate-spin" />
+              <Sparkles className="h-4 w-4 text-blue-400 absolute inset-0 m-auto animate-pulse" />
+            </div>
+            <p className="text-sm font-bold text-white tracking-wide">
+              Menyusun Operating Model Sesuai Judul...
+            </p>
+            <p className="text-xs text-slate-400 max-w-md text-center leading-relaxed">
+              Menganalisis tahapan alur proses fisik, matriks RACI antar-peran, target SLA ritase, serta digitalisasi serah terima untuk{" "}
+              <span className="text-blue-300 font-bold">"{currentTitle}"</span>.
+            </p>
+          </div>
+        ) : isEditing ? (
+          /* Manual Edit Mode */
+          <div className="space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-200">
+                <Edit3 className="h-4 w-4 text-blue-400" />
+                <span>Mode Edit Teks Mandiri (Pilar 8)</span>
               </div>
-
-              {/* Obstacle / Incident Simulator */}
-              <div className="mt-5 pt-3.5 border-t border-slate-800/80">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                  <div>
-                    <span className="text-[9.5px] font-mono font-black text-amber-400 tracking-wider block uppercase">
-                      SIMULATOR HAMBATAN HAULING
-                    </span>
-                    <p className="text-[10px] text-slate-400 font-semibold">
-                      Uji dampak skenario kejadian lapangan terhadap total waktu perjalanan:
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setObstacle("none")}
-                      className={`px-2.5 py-1 text-[9.5px] font-black rounded font-mono cursor-pointer transition-all ${
-                        obstacle === "none" ? "bg-indigo-600 text-white" : "bg-slate-900 text-slate-400 border border-slate-800 hover:text-white"
-                      }`}
-                    >
-                      Kondisi Normal
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setObstacle("rain")}
-                      className={`px-2.5 py-1 text-[9.5px] font-black rounded font-mono cursor-pointer transition-all ${
-                        obstacle === "rain" ? "bg-amber-600 text-white" : "bg-slate-900 text-slate-400 border border-slate-800 hover:text-white"
-                      }`}
-                    >
-                      🌧️ Hujan Lebat (+45m)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setObstacle("puncture")}
-                      className={`px-2.5 py-1 text-[9.5px] font-black rounded font-mono cursor-pointer transition-all ${
-                        obstacle === "puncture" ? "bg-rose-600 text-white" : "bg-slate-900 text-slate-400 border border-slate-800 hover:text-white"
-                      }`}
-                    >
-                      🛠️ Pecah Ban (+60m)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setObstacle("queue")}
-                      className={`px-2.5 py-1 text-[9.5px] font-black rounded font-mono cursor-pointer transition-all ${
-                        obstacle === "queue" ? "bg-amber-600 text-white" : "bg-slate-900 text-slate-400 border border-slate-800 hover:text-white"
-                      }`}
-                    >
-                      🚛 Antrean Timbangan (+30m)
-                    </button>
-                  </div>
-                </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(false)}
+                  className="flex items-center gap-1 px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-lg transition"
+                >
+                  <X className="h-3.5 w-3.5" />
+                  <span>Batal</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveEdit}
+                  className="flex items-center gap-1 px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg transition"
+                >
+                  <Save className="h-3.5 w-3.5" />
+                  <span>Simpan Perubahan</span>
+                </button>
               </div>
             </div>
 
-            {/* Total Analysis of selected obstacle */}
-            <div className="lg:col-span-4 bg-slate-950/60 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
-              <div>
-                <span className="text-[9px] font-mono font-black text-indigo-400 uppercase tracking-wider block mb-1">
-                  KPI & EFFICIENCY SUMMARY
-                </span>
-                <h4 className="text-xs font-black text-white uppercase tracking-tight mb-4">
-                  Analisis Efektivitas Waktu
-                </h4>
-
-                <div className="space-y-4">
-                  <div>
-                    <span className="text-[9.5px] font-mono font-black text-slate-400 block uppercase">
-                      AKUMULASI WAKTU PERJALANAN (LEAD TIME)
-                    </span>
-                    <span className="text-2xl font-black text-cyan-400 font-mono tracking-tight block mt-0.5">
-                      {Math.floor(totalDurationMins / 60)} Jam {totalDurationMins % 60} Menit
-                    </span>
-                  </div>
-
-                  <div className="pt-3 border-t border-slate-800/80">
-                    <span className="text-[9.5px] font-mono font-black text-slate-400 block uppercase mb-1">
-                      STATUS SIMULASI HAMBATAN
-                    </span>
-                    <div className="text-[10.5px] font-semibold leading-relaxed">
-                      {obstacle === "none" && (
-                        <p className="text-emerald-400 font-bold">
-                          ✓ SEMUA BERJALAN LANCAR (SLA TERPENUHI)<br />
-                          <span className="text-slate-300 font-normal">Siklus pengangkutan berjalan sesuai target waktu standar.</span>
-                        </p>
-                      )}
-                      {obstacle === "rain" && (
-                        <p className="text-amber-400 font-bold">
-                          ⚠ HUJAN DERAS (+45 MENIT)<br />
-                          <span className="text-slate-300 font-normal">Kecepatan hauling diturunkan max 30 km/jam untuk aspek keselamatan HSE rute licin.</span>
-                        </p>
-                      )}
-                      {obstacle === "puncture" && (
-                        <p className="text-rose-400 font-bold">
-                          ⚠ PECAH BAN (+60 MENIT)<br />
-                          <span className="text-slate-300 font-normal">Memerlukan bantuan tim mekanik depo terdekat untuk bongkar pasang ban di rute lateral.</span>
-                        </p>
-                      )}
-                      {obstacle === "queue" && (
-                        <p className="text-amber-400 font-bold">
-                          ⚠ ANTREAN TIMBANGAN (+30 MENIT)<br />
-                          <span className="text-slate-300 font-normal">Jembatan timbang pabrik padat muatan, butuh koordinasi alokasi ritase supir selanjutnya.</span>
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="text-[9px] font-mono font-bold text-slate-500 pt-3 border-t border-slate-800/80 mt-4">
-                PRAMA OPERATION CENTER • SIMULATOR CORE v1.0
-              </div>
+            <textarea
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              placeholder="Tuliskan arsitektur operating model Anda di sini (mendukung format Markdown: ### Judul, **Tebal**, - Poin)..."
+              rows={14}
+              className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-xs md:text-sm text-slate-100 font-mono focus:outline-hidden focus:border-blue-500 transition leading-relaxed resize-y"
+            />
+          </div>
+        ) : isBlank ? (
+          /* Clean Blank State (POLOS) */
+          <div className="py-12 px-4 text-center flex flex-col items-center justify-center gap-4">
+            <div className="h-14 w-14 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 shadow-inner">
+              <FileText className="h-7 w-7 text-slate-400" />
             </div>
-          </motion.div>
-        )}
 
-        {/* PILAR 2: DIAGRAM KERJA (WORKFLOW DIAGRAM WITH SWIMLANES) */}
-        {activeTab === "diagram" && (
-          <motion.div
-            key="diagram-tab"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
-            className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left relative z-10"
-          >
-            {/* Interactive Swimlane diagrams */}
-            <div className="lg:col-span-8 bg-slate-950/50 border border-slate-800 rounded-2xl p-4.5">
-              <div className="flex justify-between items-center mb-4">
-                <h4 className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-                  <FileText className="h-4.5 w-4.5 text-indigo-400" />
-                  Workflow Diagram & Swimlane Tanggung Jawab
-                </h4>
-                <span className="text-[9.5px] text-slate-500 font-bold font-mono">INTERACTIVE NODES</span>
-              </div>
-
-              <p className="text-[10.5px] text-slate-400 font-semibold mb-4 leading-relaxed">
-                Diagram ini menggambarkan serah terima tanggung jawab pekerjaan antar pihak secara sekuensial. Klik baris tugas untuk menganalisis status operasional:
+            <div className="max-w-md">
+              <h4 className="text-sm font-bold text-white mb-1">
+                Kanvas Operating Model Masih Polos
+              </h4>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Belum ada blueprint operasional untuk proyek <span className="text-blue-300 font-bold">"{currentTitle}"</span>. Klik tombol di bawah untuk menghasilkan rancangan proses operasional, diagram alur kerja RACI, dan standar SLA yang 100% se-arah dengan judul ini, atau tulis sendiri secara manual.
               </p>
-
-              {/* Swimlane visual cards */}
-              <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
-                {workflowNodes.map((node) => {
-                  const isActive = activeWorkflowId === node.id;
-                  return (
-                    <div
-                      key={node.id}
-                      onClick={() => setActiveWorkflowId(node.id)}
-                      className={`p-3 rounded-xl border text-left transition-all cursor-pointer relative ${
-                        isActive
-                          ? "bg-slate-900 border-indigo-500 shadow-md"
-                          : "bg-slate-950/60 border-slate-850 hover:border-slate-800"
-                      }`}
-                    >
-                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
-                        <div className="flex items-center gap-2.5">
-                          <span className={`px-2 py-0.5 rounded text-[8.5px] font-black uppercase tracking-wider ${
-                            node.role === "Supir (Driver)" ? "bg-blue-500/10 text-blue-400 border border-blue-500/20" :
-                            node.role === "Command Center" ? "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20" :
-                            "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                          }`}>
-                            {node.role}
-                          </span>
-                          <span className={`h-1.5 w-1.5 rounded-full ${
-                            node.status === "Selesai" ? "bg-emerald-400" :
-                            node.status === "Proses" ? "bg-blue-400 animate-pulse" : "bg-slate-600"
-                          }`} />
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
-                            {node.status}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-2 shrink-0">
-                          {node.automated ? (
-                            <span className="px-2 py-0.5 text-[8.5px] font-black rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase font-mono">
-                              Otomatis
-                            </span>
-                          ) : (
-                            <span className="px-2 py-0.5 text-[8.5px] font-black rounded-lg bg-slate-900 text-slate-500 border border-slate-800 uppercase font-mono">
-                              Manual
-                            </span>
-                          )}
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleToggleWorkflowAutomated(node.id);
-                            }}
-                            className="text-[8.5px] font-black hover:text-indigo-400 text-slate-500 transition cursor-pointer"
-                            title="Ubah sistem otomasi"
-                          >
-                            [SWITCH]
-                          </button>
-                        </div>
-                      </div>
-
-                      <h5 className="text-[11.5px] font-black uppercase tracking-tight text-white mt-2">
-                        {node.action}
-                      </h5>
-
-                      {isActive && (
-                        <motion.p
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          className="text-[10px] text-indigo-300 font-semibold mt-2 border-t border-slate-800/80 pt-2 leading-relaxed"
-                        >
-                          📌 Catatan Lapangan: {node.notes}
-                        </motion.p>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
             </div>
 
-            {/* Strategic Workflow summary */}
-            <div className="lg:col-span-4 bg-gradient-to-br from-slate-950 to-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
-              <div>
-                <span className="text-[8.5px] font-mono font-black text-indigo-400 uppercase tracking-widest block mb-1">
-                  WORKFLOW INTELLIGENCE
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => handleGenerateContent(currentTitle)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-blue-600/20 cursor-pointer active:scale-95"
+              >
+                <Sparkles className="h-4 w-4" />
+                <span>Buat Isian Baru Sesuai Judul</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleStartEdit}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-xl text-xs font-bold transition cursor-pointer active:scale-95"
+              >
+                <Edit3 className="h-3.5 w-3.5 text-slate-400" />
+                <span>Tulis Manual</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* Populated Unified Content */
+          <div className="space-y-2">
+            {/* Top Insight Bar */}
+            <div className="mb-4 bg-blue-500/10 border border-blue-500/20 rounded-xl p-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <ShieldCheck className="h-4 w-4 text-blue-400 shrink-0" />
+                <span className="text-xs font-bold text-blue-200 truncate">
+                  Fokus Operating Model & Alur Kerja: <span className="text-white font-extrabold">{currentTitle}</span>
                 </span>
-                <h4 className="text-sm font-black text-white uppercase tracking-tight mb-4">
-                  Sistem Koordinasi Terpusat
-                </h4>
-
-                <div className="bg-slate-900 p-4 border border-slate-850 rounded-xl space-y-3">
-                  <span className="text-[9px] text-slate-500 font-black block">KEUNGGULAN WORKFLOW PRAMA</span>
-                  <p className="text-[10px] text-slate-200 leading-relaxed font-semibold">
-                    Workflow digital ini menghilangkan birokrasi komunikasi via telepon/WhatsApp konvensional. Driver menerima instruksi secara real-time langsung pada panel kabin truk.
-                  </p>
-
-                  <div className="border-t border-slate-800/80 pt-3 text-[9px] text-slate-400 font-semibold space-y-2">
-                    <div className="flex items-center gap-1.5">
-                      <span className="h-1.5 w-1.5 rounded-full bg-indigo-400" />
-                      <span>Transparansi audit rute bagi manajemen klien.</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="h-1.5 w-1.5 rounded-full bg-indigo-400" />
-                      <span>Auto-escalation apabila unit berhenti melebihi 15 menit.</span>
-                    </div>
-                  </div>
-                </div>
               </div>
+              <span className="text-[10px] font-mono uppercase bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded shrink-0 font-bold">
+                100% Se-arah Judul
+              </span>
+            </div>
 
-              <div className="text-[9px] text-slate-500 font-bold mt-4 font-mono">
-                PRAMA WORKFLOW AUTOMATION v1.2
+            {/* Seamless Narrative Content */}
+            <div className="prose prose-invert max-w-none">
+              {renderSeamlessNarrative(content)}
+            </div>
+
+            {/* Footer Bar */}
+            <div className="mt-6 pt-4 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
+              <div className="flex items-center gap-1.5 text-blue-400 font-bold">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                <span>Blueprint operasional aktif tersinkronisasi dengan judul proyek</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleStartEdit}
+                  className="hover:text-blue-400 transition cursor-pointer font-medium"
+                >
+                  Edit Teks
+                </button>
+                <span>•</span>
+                <button
+                  type="button"
+                  onClick={handleClearAll}
+                  className="hover:text-rose-400 transition cursor-pointer font-medium"
+                >
+                  Kosongkan
+                </button>
               </div>
             </div>
-          </motion.div>
+          </div>
         )}
-
-        {/* PILAR 3: PENETAPAN SLA (SERVICE LEVEL AGREEMENT CONTROLLER) */}
-        {activeTab === "sla" && (
-          <motion.div
-            key="sla-tab"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
-            className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left relative z-10"
-          >
-            {/* SLA Control Sliders */}
-            <div className="lg:col-span-7 bg-slate-950/50 border border-slate-800 rounded-2xl p-4.5 flex flex-col justify-between">
-              <div>
-                <h4 className="text-xs font-black uppercase tracking-wider text-slate-300 mb-3 flex items-center gap-1.5">
-                  <Award className="h-4.5 w-4.5 text-indigo-400" />
-                  Konfigurasi Ambang Batas Target SLA
-                </h4>
-                <p className="text-[10.5px] text-slate-400 font-semibold mb-4 leading-relaxed">
-                  Gunakan slider kontrol di bawah untuk mengatur komitmen waktu layanan. Aturan SLA yang terlalu longgar akan memicu warning ketidakpatuhan, sedangkan target terlalu ketat memerlukan armada cadangan:
-                </p>
-
-                <div className="space-y-4 text-xs">
-                  {/* Slider 1: Loading Target */}
-                  <div>
-                    <div className="flex justify-between mb-1.5 text-[10px]">
-                      <span className="text-slate-400 font-bold">Target Pengisian Unit (Loading Time)</span>
-                      <span className="text-indigo-400 font-black font-mono">{slaLoadingTarget} Menit</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="15"
-                      max="90"
-                      step="5"
-                      value={slaLoadingTarget}
-                      onChange={(e) => setSlaLoadingTarget(Number(e.target.value))}
-                      className="w-full h-1 bg-slate-850 rounded-lg appearance-none cursor-pointer accent-indigo-500"
-                    />
-                  </div>
-
-                  {/* Slider 2: AI Alerts response */}
-                  <div>
-                    <div className="flex justify-between mb-1.5 text-[10px]">
-                      <span className="text-slate-400 font-bold">Respon Peringatan Deviasi Geofence</span>
-                      <span className="text-indigo-400 font-black font-mono">{slaDeviationResponse} Menit</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="1"
-                      max="30"
-                      step="1"
-                      value={slaDeviationResponse}
-                      onChange={(e) => setSlaDeviationResponse(Number(e.target.value))}
-                      className="w-full h-1 bg-slate-850 rounded-lg appearance-none cursor-pointer accent-indigo-500"
-                    />
-                  </div>
-
-                  {/* Slider 3: e-POD upload */}
-                  <div>
-                    <div className="flex justify-between mb-1.5 text-[10px]">
-                      <span className="text-slate-400 font-bold">Sinkronisasi Manifes digital (e-POD)</span>
-                      <span className="text-indigo-400 font-black font-mono">{slaEpodUpload} Menit</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="2"
-                      max="45"
-                      step="1"
-                      value={slaEpodUpload}
-                      onChange={(e) => setSlaEpodUpload(Number(e.target.value))}
-                      className="w-full h-1 bg-slate-850 rounded-lg appearance-none cursor-pointer accent-indigo-500"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-4 pt-3 border-t border-slate-800/80 text-[10px] text-slate-400 font-semibold flex items-center gap-1.5">
-                <Shield className="h-4 w-4 text-indigo-400 shrink-0" />
-                <span>Setiap pelanggaran SLA memicu notifikasi otomatis ke Command Center Utama Prama.</span>
-              </div>
-            </div>
-
-            {/* SLA Compliance Output */}
-            <div className="lg:col-span-5 bg-gradient-to-br from-slate-950 to-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
-              <div>
-                <span className="text-[8.5px] font-mono font-black text-indigo-400 uppercase tracking-widest block mb-1">
-                  SLA COMPLIANCE CALCULATOR
-                </span>
-                <h4 className="text-sm font-black text-white uppercase tracking-tight mb-4">
-                  Hasil Kepatuhan SLA
-                </h4>
-
-                <div className="bg-slate-900/80 p-4 border border-slate-850 rounded-xl space-y-3.5">
-                  <div className="text-center">
-                    <span className="text-[9px] text-slate-500 font-black block">INDEX COMPLIANCE ESTIMATE</span>
-                    <div className="text-2xl font-black text-white font-mono mt-1">
-                      {finalSlaCompliance}% <span className="text-xs text-slate-400 font-bold">Kepatuhan</span>
-                    </div>
-                  </div>
-
-                  <div className={`p-2.5 rounded border text-[9.5px] font-semibold leading-relaxed text-left ${complianceColor}`}>
-                    <span className="font-black uppercase block mb-0.5 text-[8.5px]">KLASIFIKASI: {complianceStatus}</span>
-                    {statusDesc}
-                  </div>
-
-                  <div className="text-[9.5px] text-slate-300 font-semibold leading-relaxed border-t border-slate-800/80 pt-3 text-left">
-                    💡 <span className="text-white">Saran Mitigasi:</span> Sediakan supir cadangan di pos timbang guna memotong durasi pergantian shift jika target waktu ketat.
-                  </div>
-                </div>
-              </div>
-
-              <div className="text-[9px] text-slate-500 font-bold mt-4 font-mono">
-                PRAMA SLA CALCULATOR ENGINE v1.1
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-      </AnimatePresence>
+      </div>
     </div>
   );
 }

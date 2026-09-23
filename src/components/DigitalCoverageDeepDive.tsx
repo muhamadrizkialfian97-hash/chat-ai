@@ -1,670 +1,480 @@
-import React, { useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import React, { useState, useEffect } from "react";
 import {
   Cpu,
   Database,
-  Smartphone,
-  Eye,
-  Settings,
-  Terminal,
-  Activity,
-  Zap,
-  TrendingUp,
-  Sliders,
-  CheckCircle,
-  FileText,
-  AlertCircle,
-  Play,
-  RotateCcw,
   Sparkles,
-  BarChart3,
-  RefreshCw,
-  Gauge,
-  Wifi,
+  Copy,
+  Check,
+  Edit3,
+  Trash2,
+  Save,
+  X,
+  ShieldCheck,
+  CheckCircle2,
+  FileText,
   Radio,
-  Lock,
-  ChevronRight,
-  Monitor,
-  Info
+  Zap
 } from "lucide-react";
+import { generateDigitalCoverageForTitle } from "../utils/digitalCoverageGenerator";
+import { exportAllSectionsToWord } from "../utils/projectDashboardHelper";
 
 interface DigitalCoverageProps {
   projectTitle: string;
+  activeDivision?: string;
 }
 
-interface DigitalTool {
-  id: string;
-  name: string;
-  type: "Hardware" | "SaaS" | "Platform Integration" | "Mobile App";
-  status: "Aktif" | "Tahap Integrasi" | "Rencana";
-  description: string;
-  reliability: number; // % e.g., 99.8
-}
+export function DigitalCoverageDeepDive({ projectTitle, activeDivision }: DigitalCoverageProps) {
+  const currentTitle = (projectTitle || "").trim() || "Kajian Cakupan Digital, Otomasi & Telematika Logistik";
+  const currentDiv = activeDivision || "Logistik Darat & Telematika";
 
-interface TechImpact {
-  id: string;
-  metric: string;
-  beforeValue: string;
-  afterValue: string;
-  improvement: string;
-  icon: React.ReactNode;
-}
+  const storageKey = `prama_digital_coverage_content_${currentTitle.toLowerCase().replace(/[^a-z0-9]/g, "_")}`;
 
-export function DigitalCoverageDeepDive({ projectTitle }: DigitalCoverageProps) {
-  const [activeTab, setActiveTab] = useState<"tools" | "method" | "impact" | "automation">("tools");
+  // Content starts POLOS (empty) unless explicitly generated or saved
+  const [content, setContent] = useState<string>(() => {
+    return localStorage.getItem(storageKey) || "";
+  });
 
-  // State 1: Alat Digital yang Digunakan (Tools)
-  const [tools, setTools] = useState<DigitalTool[]>([
-    {
-      id: "tool-1",
-      name: "PRAMA Telematics Smart GPS Node",
-      type: "Hardware",
-      status: "Aktif",
-      description: "Sensor GPS heavy-duty terpasang di sasis truk dengan baterai cadangan 72 jam dan ketahanan cuaca IP69K.",
-      reliability: 99.9
-    },
-    {
-      id: "tool-2",
-      name: "Festronik Digital (KLHK Integrated)",
-      type: "Platform Integration",
-      status: "Aktif",
-      description: "Sistem pelaporan manifestasi limbah & kayu elektronik yang langsung sinkron dengan server database KLHK.",
-      reliability: 99.7
-    },
-    {
-      id: "tool-3",
-      name: "Pancaran Mobile Driver App & e-POD",
-      type: "Mobile App",
-      status: "Aktif",
-      description: "Aplikasi mobile pengemudi untuk mengonfirmasi titik koordinat muatan, rute, e-signatures, dan foto bukti bongkar.",
-      reliability: 98.6
-    },
-    {
-      id: "tool-4",
-      name: "ERP Logistik & Arsitektur Cloud Prama",
-      type: "SaaS",
-      status: "Tahap Integrasi",
-      description: "Sistem perencanaan sumber daya terpusat untuk alokasi supir, ban, penjadwalan servis, dan manajemen kas supir.",
-      reliability: 99.5
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [copied, setCopied] = useState<boolean>(false);
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [editText, setEditText] = useState<string>("");
+  const [lastGeneratedForTitle, setLastGeneratedForTitle] = useState<string>(() => {
+    return localStorage.getItem(`${storageKey}_title`) || "";
+  });
+
+  // Clean up legacy preset keys
+  useEffect(() => {
+    try {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (
+          k &&
+          (k.startsWith("prama_digital_legacy_") ||
+            k.startsWith("digital_tools_") ||
+            k.startsWith("digital_method_") ||
+            k.startsWith("digital_coverage_custom_") ||
+            k.startsWith("prama_digital_ai_"))
+        ) {
+          keysToRemove.push(k);
+        }
+      }
+      keysToRemove.forEach((k) => localStorage.removeItem(k));
+    } catch (e) {}
+  }, []);
+
+  // When projectTitle changes, load saved content for that title or start polos
+  useEffect(() => {
+    const saved = localStorage.getItem(storageKey) || "";
+    setContent(saved);
+    setEditText(saved);
+    setIsEditing(false);
+  }, [storageKey]);
+
+  // Handler to generate fresh, 100% title-tailored content
+  const handleGenerateContent = async (targetTitle: string = currentTitle) => {
+    setIsLoading(true);
+    setIsEditing(false);
+
+    try {
+      const clientApiKey = localStorage.getItem("workspace_client_api_key") || "";
+      const res = await fetch("/api/generate-digitalcoverage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectTitle: targetTitle,
+          division: currentDiv,
+          clientApiKey
+        })
+      });
+
+      let generatedMarkdown = "";
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.content && typeof data.content === "string" && data.content.trim().length > 50) {
+          generatedMarkdown = data.content;
+        }
+      }
+
+      // If server returned fallback or couldn't reach API, use precision title generator
+      if (!generatedMarkdown) {
+        const localResult = generateDigitalCoverageForTitle(targetTitle, currentDiv);
+        generatedMarkdown = localResult.narrativeMarkdown;
+      }
+
+      setContent(generatedMarkdown);
+      setEditText(generatedMarkdown);
+      setLastGeneratedForTitle(targetTitle);
+      localStorage.setItem(storageKey, generatedMarkdown);
+      localStorage.setItem(`${storageKey}_title`, targetTitle);
+    } catch (err) {
+      console.warn("Generating local tailored Digital Coverage for:", targetTitle, err);
+      const localResult = generateDigitalCoverageForTitle(targetTitle, currentDiv);
+      setContent(localResult.narrativeMarkdown);
+      setEditText(localResult.narrativeMarkdown);
+      setLastGeneratedForTitle(targetTitle);
+      localStorage.setItem(storageKey, localResult.narrativeMarkdown);
+      localStorage.setItem(`${storageKey}_title`, targetTitle);
+    } finally {
+      setIsLoading(false);
     }
-  ]);
+  };
 
-  // State 2: Fokus Metodologi Digital (Method)
-  const [selectedMethodology, setSelectedMethodology] = useState<string>("meth-1");
-  const methodologies = [
-    {
-      id: "meth-1",
-      title: "Lacak Balak & Geofencing Pintar (Chain of Custody)",
-      objective: "Mendeteksi secara instan deviasi rute hauling dari peta konsesi resmi.",
-      stepByStep: [
-        "1. Penetapan poligon geofence pada koordinat konsesi hutan dan pabrik tujuan.",
-        "2. Ping berkala dari transmiter GPS setiap 15 detik selama perjalanan.",
-        "3. Sistem otomatis mengunci pintu kargo jika truk menyimpang lebih dari 500 meter dari rute hauling resmi."
-      ],
-      difficulty: "Menengah",
-      valueRating: "Sangat Tinggi"
-    },
-    {
-      id: "meth-2",
-      title: "Predictive Fleet Maintenance via CAN-Bus Telemetry",
-      objective: "Memproyeksikan kegagalan mesin sebelum truk mogok di jalan lateral.",
-      stepByStep: [
-        "1. Monitoring temperatur radiator, tekanan oli mesin, dan status kelistrikan via port sasis OBD.",
-        "2. Algoritme analisis membandingkan deviasi suhu mesin dengan data historis perjalanan.",
-        "3. Alert otomatis dikirim ke bengkel terdekat apabila sasis terdeteksi butuh penggantian suku cadang segera."
-      ],
-      difficulty: "Tinggi",
-      valueRating: "Tinggi"
-    },
-    {
-      id: "meth-3",
-      title: "Real-time Backhaul Sharing Logistics Allocation",
-      objective: "Menurunkan persentase 'empty miles' (truk pulang tanpa muatan) pada rute balik.",
-      stepByStep: [
-        "1. Pemetaan silang kebutuhan kirim kargo klien lain di sekitar rute pulang hauling.",
-        "2. Pencocokan kapasitas gandar sasis dan jenis bak truk secara real-time via awan Prama.",
-        "3. Pembaruan manifest digital driver secara otomatis via aplikasi mobile tanpa perlu kembali ke depo utama."
-      ],
-      difficulty: "Tinggi",
-      valueRating: "Sangat Tinggi"
-    }
-  ];
+  // Handler to completely wipe content and make it POLOS (blank)
+  const handleClearAll = () => {
+    setContent("");
+    setEditText("");
+    setIsEditing(false);
+    localStorage.removeItem(storageKey);
+    localStorage.removeItem(`${storageKey}_title`);
+  };
 
-  // State 3: Dampak Penerapan Teknologi (Impact Metrics)
-  const impacts: TechImpact[] = [
-    {
-      id: "imp-1",
-      metric: "Waktu Proses Manifest (e-POD vs Kertas)",
-      beforeValue: "180 Menit",
-      afterValue: "4 Menit",
-      improvement: "97.7% Lebih Cepat",
-      icon: <FileText className="h-4 w-4 text-emerald-400" />
-    },
-    {
-      id: "imp-2",
-      metric: "Deviasi Rute / Pencurian Muatan",
-      beforeValue: "4.8% Ritase",
-      afterValue: "0.05% Ritase",
-      improvement: "98.9% Penurunan Kasus",
-      icon: <AlertCircle className="h-4 w-4 text-rose-400" />
-    },
-    {
-      id: "imp-3",
-      metric: "Rasio Utilisasi Armada (Backhaul Sharing)",
-      beforeValue: "42% Efektivitas",
-      afterValue: "78% Efektivitas",
-      improvement: "+85.7% Kenaikan Efisiensi",
-      icon: <TrendingUp className="h-4 w-4 text-indigo-400" />
-    }
-  ];
+  // Handler to start editing manually
+  const handleStartEdit = () => {
+    setEditText(content);
+    setIsEditing(true);
+  };
 
-  // State 4: Penerapan Otomatisasi Simulator (Automation)
-  const [automationLevel, setAutomationLevel] = useState<number>(3); // Scale 1 to 5
-  const [autoFestronik, setAutoFestronik] = useState<boolean>(true);
-  const [geofenceLock, setGeofenceLock] = useState<boolean>(false);
-  const [alertCommandCenter, setAlertCommandCenter] = useState<boolean>(true);
+  // Save manual edits
+  const handleSaveEdit = () => {
+    setContent(editText);
+    localStorage.setItem(storageKey, editText);
+    setIsEditing(false);
+  };
 
-  // AUTOMATION INDEX CALCULATION
-  const baseAutoScore = (automationLevel * 15) + (autoFestronik ? 10 : 0) + (geofenceLock ? 10 : 0) + (alertCommandCenter ? 5 : 0);
-  const finalAutoPercent = Math.min(100, Math.max(15, baseAutoScore));
+  // Copy narrative to clipboard
+  const handleCopy = () => {
+    if (!content) return;
+    navigator.clipboard.writeText(content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
-  let automationGrade = "Semi-Manual";
-  let gradeColor = "text-amber-400 border-amber-500/20 bg-amber-500/5";
-  let descriptionText = "Sistem logistik Anda masih sangat bergantung pada operator manusia di Command Center untuk memverifikasi alarm geofence secara manual.";
+  // Markdown renderer for clean unified narrative
+  const renderSeamlessNarrative = (rawText: string) => {
+    if (!rawText || !rawText.trim()) return null;
+    const lines = rawText.split("\n");
+    const renderedNodes: React.ReactNode[] = [];
 
-  if (finalAutoPercent >= 85) {
-    automationGrade = "Fully Autonomous System";
-    gradeColor = "text-emerald-400 border-emerald-500/25 bg-emerald-500/5";
-    descriptionText = "Sistem cerdas PRAMA melakukan auto-dispatch, e-locking kargo, integrasi manifest KLHK Festronik secara seamless tanpa intervensi manual.";
-  } else if (finalAutoPercent >= 55) {
-    automationGrade = "Hybrid Automated";
-    gradeColor = "text-blue-400 border-blue-500/20 bg-blue-500/5";
-    descriptionText = "Otomatisasi andal untuk manifestasi dokumen digital dan telemetri, didukung tim dispatchers yang siaga menerima sinyal deviasi rute.";
-  }
+    lines.forEach((line, index) => {
+      const trimmed = line.trim();
 
-  // Cost saving calculations based on Automation
-  const standardCostPerMonth = 420000000; // IDR per year/fleet admin/loss
-  const estimatedSavings = Math.round(standardCostPerMonth * (finalAutoPercent / 100) * 0.18); // Max 18% savings
+      if (!trimmed) {
+        renderedNodes.push(<div key={`empty-${index}`} className="h-3" />);
+        return;
+      }
+
+      // Heading 3
+      if (trimmed.startsWith("### ")) {
+        const headingText = trimmed.replace(/^###\s+/, "");
+        renderedNodes.push(
+          <div key={`h3-${index}`} className="mt-6 mb-3 pt-3 border-t border-slate-800 first:border-t-0 first:pt-0">
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-cyan-400 shrink-0" />
+              <h4 className="text-sm md:text-base font-black text-white uppercase tracking-tight">
+                {headingText}
+              </h4>
+            </div>
+          </div>
+        );
+        return;
+      }
+
+      // Heading 2 or 1
+      if (trimmed.startsWith("## ") || trimmed.startsWith("# ")) {
+        const headingText = trimmed.replace(/^#+\s+/, "");
+        renderedNodes.push(
+          <div key={`h2-${index}`} className="mt-7 mb-3.5 border-b border-cyan-500/20 pb-2">
+            <h3 className="text-base md:text-lg font-black text-cyan-300 uppercase tracking-tight flex items-center gap-2">
+              <Cpu className="h-4 w-4 text-cyan-400" />
+              {headingText}
+            </h3>
+          </div>
+        );
+        return;
+      }
+
+      // Bullet points
+      if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+        const bulletContent = trimmed.replace(/^[\*\-]\s+/, "");
+        const formatted = bulletContent.split(/(\*\*.*?\*\*)/g).map((part, pIdx) => {
+          if (part.startsWith("**") && part.endsWith("**")) {
+            return (
+              <strong key={pIdx} className="text-white font-extrabold">
+                {part.slice(2, -2)}
+              </strong>
+            );
+          }
+          return part;
+        });
+
+        renderedNodes.push(
+          <div key={`bullet-${index}`} className="flex items-start gap-2.5 ml-1 my-1.5 text-slate-300 text-xs md:text-[13px] leading-relaxed">
+            <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-cyan-400 shrink-0" />
+            <div className="flex-1">{formatted}</div>
+          </div>
+        );
+        return;
+      }
+
+      // Regular paragraph
+      const parts = trimmed.split(/(\*\*.*?\*\*)/g);
+      const formattedParts = parts.map((part, pIdx) => {
+        if (part.startsWith("**") && part.endsWith("**")) {
+          return (
+            <strong key={pIdx} className="text-white font-extrabold tracking-wide">
+              {part.slice(2, -2)}
+            </strong>
+          );
+        }
+        return part;
+      });
+
+      renderedNodes.push(
+        <p
+          key={`p-${index}`}
+          className="text-xs md:text-[13px] text-slate-300 leading-relaxed font-normal text-justify my-2.5"
+        >
+          {formattedParts}
+        </p>
+      );
+    });
+
+    return renderedNodes;
+  };
+
+  const isBlank = !content || content.trim().length === 0;
+  const isTitleDifferent =
+    content &&
+    lastGeneratedForTitle &&
+    lastGeneratedForTitle.toLowerCase() !== currentTitle.toLowerCase();
 
   return (
-    <div id="digital-coverage-deepdive-root" className="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-slate-100 shadow-2xl mt-8 overflow-hidden font-sans relative">
-      {/* Decorative gradient overlay */}
-      <div className="absolute top-0 right-0 w-80 h-80 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-80 h-80 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
+    <div
+      id="digital-coverage-deepdive-root"
+      className="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-slate-100 shadow-2xl mt-8 font-sans relative overflow-hidden"
+    >
+      <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Header Info Panel */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-5 mb-6 gap-4 relative z-10">
-        <div>
-          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-            <span className="px-2.5 py-0.5 text-[9px] font-black tracking-wider uppercase rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-mono">
-              PRAMA SMART LOGISTICS HUB
+      {/* Header Bar */}
+      <div className="border-b border-slate-800 pb-5 mb-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="px-2.5 py-0.5 text-[9.5px] font-black tracking-wider uppercase rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-mono flex items-center gap-1.5">
+              <Cpu className="h-3 w-3 text-cyan-400" />
+              PILAR 10 • DIGITAL COVERAGE (TOOLS, METHOD, IMPACT, AUTOMATION)
             </span>
-            <span className="px-2.5 py-0.5 text-[9px] font-black tracking-wider uppercase rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-mono flex items-center gap-1">
-              ⚡ SINKRON CHAT: <span className="text-white font-bold">{projectTitle || "Kajian Strategis PRAMA"}</span>
+            <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
+            <span className="px-2.5 py-0.5 text-[9.5px] font-bold uppercase rounded-md bg-slate-800 text-slate-300 border border-slate-700/80 font-mono">
+              JUDUL PROYEK: {currentTitle}
             </span>
-            <span className="h-1.5 w-1.5 rounded-full bg-cyan-500 animate-pulse" />
+            {isBlank && (
+              <span className="px-2 py-0.5 text-[9px] font-bold uppercase rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/20 font-mono">
+                STATUS: POLOS
+              </span>
+            )}
           </div>
-          <h3 className="text-lg md:text-xl font-black uppercase tracking-tight text-white flex items-center gap-2 font-display">
-            <Cpu className="h-5 w-5 text-cyan-400" />
-            Digital Coverage Core (Tools, Method, Impact, Automation)
-          </h3>
-          <p className="text-xs text-slate-400 mt-1 font-semibold max-w-2xl leading-relaxed">
-            Analisis digitalisasi sistem operasional Pancaran Group: alat digital, metodologi geofencing, dampak real-time terhadap SLA, dan tingkat otomasi sistem.
-          </p>
+
+          {/* Action buttons */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  const saved = localStorage.getItem("prama_dashboard_sections");
+                  const map = saved ? JSON.parse(saved) : {};
+                  map[10] = content;
+                  exportAllSectionsToWord(currentTitle, map);
+                } catch(e) {
+                  exportAllSectionsToWord(currentTitle, { 10: content });
+                }
+              }}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition shadow-md shadow-emerald-600/20 cursor-pointer active:scale-95"
+              title="Unduh seluruh laporan komprehensif ke format Word (.doc)"
+            >
+              <FileText className="h-3.5 w-3.5" />
+              <span>Unduh Word (.doc)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleGenerateContent(currentTitle)}
+              disabled={isLoading}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold transition shadow-md shadow-cyan-600/20 cursor-pointer active:scale-95 disabled:opacity-50"
+              title="Buat isian baru yang sesuai dengan judul proyek"
+            >
+              <Sparkles className={`h-3.5 w-3.5 ${isLoading ? "animate-spin text-cyan-200" : ""}`} />
+              <span>{isLoading ? "Menyusun Cakupan Digital..." : isBlank ? "Buat Isian Sesuai Judul" : "Buat Ulang Sesuai Judul"}</span>
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="text-[10px] font-bold text-slate-400 uppercase font-mono">TELEMETRY LINK:</span>
-          <span className="px-2.5 py-1 text-[9.5px] font-extrabold rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 uppercase flex items-center gap-1">
-            <Wifi className="h-3.5 w-3.5 animate-pulse text-cyan-400" />
-            SECURE ACTIVE
-          </span>
-        </div>
+
+        <h3 className="text-lg md:text-xl font-black uppercase tracking-tight text-white flex items-center gap-2">
+          <Cpu className="h-5 w-5 text-cyan-400" />
+          Digital Coverage: IoT Stack, Data Pipeline, Impact, & Automation
+        </h3>
+        <p className="text-xs text-slate-400 mt-1 font-medium leading-relaxed">
+          Arsitektur ekosistem teknologi telematika, sensor cerdas, metodologi integrasi data, pengukuran dampak kuantitatif, serta otomatisasi serah terima elektronik (e-POD) untuk proyek{" "}
+          <span className="text-cyan-300 font-extrabold">"{currentTitle}"</span>.
+        </p>
       </div>
 
-      {/* TABS (The 4 segments requested by the user) */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-6 relative z-10">
-        <button
-          type="button"
-          onClick={() => setActiveTab("tools")}
-          className={`px-3 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer border ${
-            activeTab === "tools"
-              ? "bg-cyan-600 text-white border-cyan-500 shadow-lg shadow-cyan-600/15"
-              : "bg-slate-950/40 text-slate-400 border-slate-800 hover:text-slate-200"
-          }`}
-        >
-          <Database className="h-4 w-4" />
-          1. Tools (Alat Digital)
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab("method")}
-          className={`px-3 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer border ${
-            activeTab === "method"
-              ? "bg-cyan-600 text-white border-cyan-500 shadow-lg shadow-cyan-600/15"
-              : "bg-slate-950/40 text-slate-400 border-slate-800 hover:text-slate-200"
-          }`}
-        >
-          <Sliders className="h-4 w-4" />
-          2. Method (Metodologi)
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab("impact")}
-          className={`px-3 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer border ${
-            activeTab === "impact"
-              ? "bg-cyan-600 text-white border-cyan-500 shadow-lg shadow-cyan-600/15"
-              : "bg-slate-950/40 text-slate-400 border-slate-800 hover:text-slate-200"
-          }`}
-        >
-          <TrendingUp className="h-4 w-4" />
-          3. Impact (Dampak)
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab("automation")}
-          className={`px-3 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer border ${
-            activeTab === "automation"
-              ? "bg-cyan-600 text-white border-cyan-500 shadow-lg shadow-cyan-600/15"
-              : "bg-slate-950/40 text-slate-400 border-slate-800 hover:text-slate-200"
-          }`}
-        >
-          <Cpu className="h-4 w-4" />
-          4. Automation (Otomatisasi)
-        </button>
-      </div>
-
-      {/* CONTENT SEGMENTS DISPLAY */}
-      <AnimatePresence mode="wait">
-        
-        {/* SEGMENT 1: ALAT DIGITAL YANG DIGUNAKAN (TOOLS) */}
-        {activeTab === "tools" && (
-          <motion.div
-            key="tools-tab"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left relative z-10"
+      {/* If current title is different from what was previously generated, show quick sync badge */}
+      {isTitleDifferent && (
+        <div className="mb-4 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-xs text-amber-200">
+            <span className="h-2 w-2 rounded-full bg-amber-400 shrink-0 animate-ping" />
+            <span>
+              Judul proyek telah diperbarui menjadi: <strong className="text-white">"{currentTitle}"</strong>
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => handleGenerateContent(currentTitle)}
+            className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-bold rounded-lg transition cursor-pointer"
           >
-            <div className="lg:col-span-8 bg-slate-950/50 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-                    <Database className="h-4 w-4 text-cyan-400" />
-                    Katalog Perangkat Lunak & Sensor IoT Aktif
-                  </h4>
-                  <span className="text-[10px] text-slate-500 font-bold font-mono">
-                    Standardisasi Industri 4.0 Logistik
-                  </span>
-                </div>
-                <p className="text-[10.5px] text-slate-400 font-semibold mb-4 leading-relaxed">
-                  Breakdown rincian perangkat keras sensorik, integrasi platform, dan aplikasi pengemudi yang aktif mendukung operasional armada.
-                </p>
+            <Sparkles className="h-3 w-3" />
+            <span>Buat Isian Baru untuk Judul Ini</span>
+          </button>
+        </div>
+      )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                  {tools.map((t) => (
-                    <div key={t.id} className="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800 flex flex-col justify-between relative overflow-hidden">
-                      <div className="absolute top-0 left-0 w-1 h-full bg-cyan-500" />
-                      <div>
-                        <div className="flex justify-between items-start gap-2 mb-1.5">
-                          <span className="px-1.5 py-0.5 text-[8px] font-mono font-black rounded uppercase bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-                            {t.type}
-                          </span>
-                          <span className={`px-1.5 py-0.5 text-[8px] font-mono font-black rounded uppercase ${
-                            t.status === "Aktif" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                          }`}>
-                            {t.status}
-                          </span>
-                        </div>
-                        <h5 className="text-[11.5px] font-black uppercase tracking-tight text-white mb-1.5">
-                          {t.name}
-                        </h5>
-                        <p className="text-[10px] text-slate-400 font-semibold leading-relaxed">
-                          {t.description}
-                        </p>
-                      </div>
-
-                      <div className="border-t border-slate-800/80 mt-3 pt-2 flex justify-between items-center text-[9px] text-slate-500 font-bold">
-                        <span>KEANDALAN SISTEM</span>
-                        <span className="font-mono text-cyan-400 font-black">{t.reliability}% Uptime</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+      {/* Main Canvas Area */}
+      <div className="bg-slate-950/70 border border-slate-800/90 rounded-2xl p-5 md:p-6 shadow-inner relative min-h-[220px]">
+        {isLoading ? (
+          <div className="py-14 px-4 text-center flex flex-col items-center justify-center gap-3">
+            <div className="relative">
+              <div className="h-10 w-10 rounded-full border-2 border-cyan-500/20 border-t-cyan-400 animate-spin" />
+              <Sparkles className="h-4 w-4 text-cyan-400 absolute inset-0 m-auto animate-pulse" />
+            </div>
+            <p className="text-sm font-bold text-white tracking-wide">
+              Menyusun Arsitektur Digital Sesuai Judul...
+            </p>
+            <p className="text-xs text-slate-400 max-w-md text-center leading-relaxed">
+              Menganalisis tumpukan alat sensor IoT, pipeline telematika real-time, dampak efisiensi bisnis, dan otomasi e-POD untuk{" "}
+              <span className="text-cyan-300 font-bold">"{currentTitle}"</span>.
+            </p>
+          </div>
+        ) : isEditing ? (
+          /* Manual Edit Mode */
+          <div className="space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-200">
+                <Edit3 className="h-4 w-4 text-cyan-400" />
+                <span>Mode Edit Teks Mandiri (Pilar 10)</span>
               </div>
-
-              <div className="mt-4 pt-3.5 border-t border-slate-800/80 text-[10px] text-slate-400 font-semibold flex items-center gap-2">
-                <Info className="h-4 w-4 text-cyan-400 shrink-0" />
-                <span>
-                  💡 Seluruh modul perangkat keras terhubung langsung ke server telematika terpusat untuk pemantauan rute 24/7.
-                </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(false)}
+                  className="flex items-center gap-1 px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-lg transition"
+                >
+                  <X className="h-3.5 w-3.5" />
+                  <span>Batal</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveEdit}
+                  className="flex items-center gap-1 px-3 py-1 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold rounded-lg transition"
+                >
+                  <Save className="h-3.5 w-3.5" />
+                  <span>Simpan Perubahan</span>
+                </button>
               </div>
             </div>
 
-            <div className="lg:col-span-4 bg-gradient-to-br from-slate-950 to-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
-              <div>
-                <span className="text-[8.5px] font-mono font-black text-cyan-400 block mb-1">
-                  SECURITY & STABILITY STATUS
-                </span>
-                <h4 className="text-sm font-black text-white uppercase tracking-tight mb-4">
-                  Sertifikasi Data Logistik
-                </h4>
-
-                <div className="space-y-3.5 text-xs">
-                  <div className="p-3.5 bg-slate-900/80 border border-slate-850 rounded-xl space-y-1.5">
-                    <span className="text-[9px] text-cyan-400 font-mono font-black block uppercase">AES-256 ENCRYPTION</span>
-                    <p className="text-[10px] text-slate-300 font-semibold leading-relaxed">
-                      Seluruh transmisi data sensor lokasi GPS dan dokumen e-POD dienkripsi menggunakan standar keamanan militer guna mencegah pembajakan sinyal rute.
-                    </p>
-                  </div>
-
-                  <div className="p-3.5 bg-slate-900/80 border border-slate-850 rounded-xl space-y-1.5">
-                    <span className="text-[9px] text-cyan-400 font-mono font-black block uppercase">DASHBOARD INTEGRASI API</span>
-                    <p className="text-[10px] text-slate-300 font-semibold leading-relaxed">
-                      Klien dapat mengintegrasikan dashboard internal mereka dengan server Prama API secara instan via JSON Web Tokens.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="text-[9.5px] text-slate-500 font-bold mt-4 font-mono">
-                PRAMA SECURITY CORE v1.4
-              </div>
+            <textarea
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              placeholder="Tuliskan arsitektur cakupan digital Anda di sini (mendukung format Markdown: ### Judul, **Tebal**, - Poin)..."
+              rows={14}
+              className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-xs md:text-sm text-slate-100 font-mono focus:outline-hidden focus:border-cyan-500 transition leading-relaxed resize-y"
+            />
+          </div>
+        ) : isBlank ? (
+          /* Clean Blank State (POLOS) */
+          <div className="py-12 px-4 text-center flex flex-col items-center justify-center gap-4">
+            <div className="h-14 w-14 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 shadow-inner">
+              <FileText className="h-7 w-7 text-slate-400" />
             </div>
-          </motion.div>
-        )}
 
-        {/* SEGMENT 2: FOKUS METODOLOGI DIGITAL (METHOD) */}
-        {activeTab === "method" && (
-          <motion.div
-            key="method-tab"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="flex flex-col gap-4 text-left relative z-10"
-          >
-            <div className="bg-slate-950/50 border border-slate-800 rounded-2xl p-5">
-              <div className="flex justify-between items-center mb-2">
-                <h4 className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-                  <Sliders className="h-4 w-4 text-cyan-400" />
-                  Metodologi Smart Logistics & Alur Kerja Standardisasi
-                </h4>
-                <span className="text-[10px] text-slate-500 font-bold font-mono">
-                  Standard Operating Procedure (SOP) Digital
-                </span>
-              </div>
-              <p className="text-[10.5px] text-slate-400 font-semibold mb-5 leading-relaxed">
-                Breakdown rinci penerapan metodologi logistik pintar beserta sasaran utama dan tahapan langkah alur kerja teknis di lapangan.
-              </p>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {methodologies.map((m) => (
-                  <div key={m.id} className="bg-slate-900/90 border border-slate-800 rounded-xl p-4 flex flex-col justify-between relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-1 h-full bg-cyan-500" />
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-[8px] font-mono font-black text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20 uppercase">
-                          KESULITAN: {m.difficulty}
-                        </span>
-                        <span className="text-[8px] font-mono font-black text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 uppercase">
-                          NILAI: {m.valueRating}
-                        </span>
-                      </div>
-
-                      <h5 className="text-[12px] font-black uppercase text-white tracking-tight mb-2">
-                        {m.title}
-                      </h5>
-
-                      <div className="bg-slate-950/70 p-2.5 rounded-lg border border-slate-800/80 mb-3">
-                        <span className="text-[8.5px] font-mono font-black text-cyan-400 uppercase block mb-0.5">
-                          🎯 SASARAN UTAMA
-                        </span>
-                        <p className="text-[10px] text-slate-300 font-semibold leading-relaxed">
-                          {m.objective}
-                        </p>
-                      </div>
-
-                      <div>
-                        <span className="text-[8.5px] font-mono font-black text-slate-400 uppercase block mb-1.5">
-                          LANGKAH ALUR KERJA (STEP-BY-STEP)
-                        </span>
-                        <div className="space-y-1.5">
-                          {m.stepByStep.map((step, idx) => (
-                            <div key={idx} className="bg-slate-950/40 p-2 rounded border border-slate-850 flex items-start gap-2">
-                              <span className="h-4 w-4 bg-cyan-500/10 text-cyan-400 rounded-full flex items-center justify-center text-[9px] font-black shrink-0 font-mono border border-cyan-500/20">
-                                {idx + 1}
-                              </span>
-                              <p className="text-[9.5px] text-slate-300 font-semibold leading-relaxed">
-                                {step.substring(step.indexOf(".") + 2)}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {/* SEGMENT 3: DAMPAK PENERAPAN TEKNOLOGI (IMPACT) */}
-        {activeTab === "impact" && (
-          <motion.div
-            key="impact-tab"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left relative z-10"
-          >
-            <div className="lg:col-span-8 bg-slate-950/50 border border-slate-800 rounded-2xl p-4.5">
-              <h4 className="text-xs font-black uppercase tracking-wider text-slate-300 mb-3 flex items-center gap-1.5">
-                <TrendingUp className="h-4 w-4 text-cyan-400" />
-                Matriks Efisiensi (Sebelum vs Sesudah Teknologi)
+            <div className="max-w-md">
+              <h4 className="text-sm font-bold text-white mb-1">
+                Kanvas Cakupan Digital Masih Polos
               </h4>
-              <p className="text-[10px] text-slate-400 font-semibold mb-4 leading-relaxed">
-                Pemangkasan birokrasi fisik kertas dan pelacakan rute hauling memangkas kerugian material, pungutan liar, serta waktu pengiriman di seluruh armada.
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Belum ada kajian cakupan digital dan telematika untuk proyek <span className="text-cyan-300 font-bold">"{currentTitle}"</span>. Klik tombol di bawah untuk menghasilkan arsitektur perangkat IoT, alur data real-time, dampak efisiensi kuantitatif, dan otomasi e-POD yang 100% se-arah dengan judul ini, atau tulis sendiri secara manual.
               </p>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-                {impacts.map((imp) => (
-                  <div key={imp.id} className="bg-slate-900 p-4 rounded-xl border border-slate-850 flex flex-col justify-between">
-                    <div>
-                      <div className="flex justify-between items-center mb-3">
-                        <span className="text-[10px] text-white font-black uppercase leading-tight max-w-[80%]">
-                          {imp.metric}
-                        </span>
-                        <div className="p-1.5 rounded bg-slate-950 border border-slate-800 text-cyan-400">
-                          {imp.icon}
-                        </div>
-                      </div>
-
-                      <div className="space-y-1.5 my-2">
-                        <div className="flex justify-between text-[10px] font-semibold text-slate-500">
-                          <span>Sebelum Digitalisasi:</span>
-                          <span className="text-slate-400 line-through">{imp.beforeValue}</span>
-                        </div>
-                        <div className="flex justify-between text-[10.5px] font-black text-slate-200">
-                          <span>Sesudah Integrasi:</span>
-                          <span className="text-cyan-400 font-mono">{imp.afterValue}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-emerald-950/15 border border-emerald-900/50 p-1.5 rounded text-center mt-3">
-                      <span className="text-[10px] font-black text-emerald-400 uppercase font-mono">
-                        📈 {imp.improvement}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
             </div>
 
-            {/* Operational safety SLA badge card */}
-            <div className="lg:col-span-4 bg-gradient-to-br from-slate-950 to-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
-              <div>
-                <span className="text-[8.5px] font-mono font-black text-cyan-400 block mb-1">
-                  SLA GUARANTEE
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => handleGenerateContent(currentTitle)}
+                className="flex items-center gap-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-cyan-600/20 cursor-pointer active:scale-95"
+              >
+                <Sparkles className="h-4 w-4" />
+                <span>Buat Isian Baru Sesuai Judul</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleStartEdit}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-xl text-xs font-bold transition cursor-pointer active:scale-95"
+              >
+                <Edit3 className="h-3.5 w-3.5 text-slate-400" />
+                <span>Tulis Manual</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* Populated Unified Content */
+          <div className="space-y-2">
+            {/* Top Insight Bar */}
+            <div className="mb-4 bg-cyan-500/10 border border-cyan-500/20 rounded-xl p-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <ShieldCheck className="h-4 w-4 text-cyan-400 shrink-0" />
+                <span className="text-xs font-bold text-cyan-200 truncate">
+                  Fokus Cakupan Digital & Telematika: <span className="text-white font-extrabold">{currentTitle}</span>
                 </span>
-                <h4 className="text-sm font-black text-white uppercase tracking-tight mb-4">
-                  Ketepatan Waktu (On-Time Delivery)
-                </h4>
-
-                <div className="space-y-4">
-                  <div className="bg-slate-900 p-3 rounded-lg border border-slate-850 text-center">
-                    <span className="text-[9px] text-slate-500 font-black block">KONSISTENSI SLA HARIAN</span>
-                    <span className="text-3xl font-black text-white font-display font-mono">
-                      98.8%
-                    </span>
-                    <p className="text-[9.5px] text-slate-400 mt-1 font-semibold">
-                      SLA terjamin berkat navigasi pintar pengelak rute banjir di Swarnadwipa.
-                    </p>
-                  </div>
-                </div>
               </div>
+              <span className="text-[10px] font-mono uppercase bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded shrink-0 font-bold">
+                100% Se-arah Judul
+              </span>
+            </div>
 
-              <div className="text-[9px] text-slate-500 font-bold mt-4">
-                PRAMA SLA INTEGRITY ASSURANCE v1.0
+            {/* Seamless Narrative Content */}
+            <div className="prose prose-invert max-w-none">
+              {renderSeamlessNarrative(content)}
+            </div>
+
+            {/* Footer Bar */}
+            <div className="mt-6 pt-4 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
+              <div className="flex items-center gap-1.5 text-cyan-400 font-bold">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                <span>Arsitektur digital aktif tersinkronisasi dengan judul proyek</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleStartEdit}
+                  className="hover:text-cyan-400 transition cursor-pointer font-medium"
+                >
+                  Edit Teks
+                </button>
+                <span>•</span>
+                <button
+                  type="button"
+                  onClick={handleClearAll}
+                  className="hover:text-rose-400 transition cursor-pointer font-medium"
+                >
+                  Kosongkan
+                </button>
               </div>
             </div>
-          </motion.div>
+          </div>
         )}
-
-        {/* SEGMENT 4: PENERAPAN OTOMATISASI (AUTOMATION) */}
-        {activeTab === "automation" && (
-          <motion.div
-            key="automation-tab"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left relative z-10"
-          >
-            {/* Automation Level Controller Simulator */}
-            <div className="lg:col-span-7 bg-slate-950/50 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
-              <div>
-                <h4 className="text-xs font-black uppercase tracking-wider text-slate-300 mb-3 flex items-center gap-1.5">
-                  <Cpu className="h-4 w-4 text-cyan-400" />
-                  Konfigurasi Tingkat Otomatisasi (Automation Simulator)
-                </h4>
-                <p className="text-[10px] text-slate-400 font-semibold mb-4 leading-relaxed">
-                  Gunakan simulator di bawah ini untuk menyesuaikan level otomatisasi sensor IoT & integrasi server, guna melihat taksiran penghematan biaya administrasi logistik:
-                </p>
-
-                <div className="space-y-4 text-xs">
-                  {/* Slider: Otomasi level */}
-                  <div>
-                    <div className="flex justify-between mb-1 text-[10px]">
-                      <span className="text-slate-400 font-bold">Skala Otomatisasi Logistik</span>
-                      <span className="text-cyan-400 font-black">Level {automationLevel} / 5</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="1"
-                      max="5"
-                      value={automationLevel}
-                      onChange={(e) => setAutomationLevel(Number(e.target.value))}
-                      className="w-full h-1.5 bg-slate-850 rounded-lg appearance-none cursor-pointer accent-cyan-500"
-                    />
-                    <div className="flex justify-between text-[8px] text-slate-500 font-bold mt-1 uppercase">
-                      <span>1. Manual</span>
-                      <span>3. Terbantu AI</span>
-                      <span>5. Otonom Penuh</span>
-                    </div>
-                  </div>
-
-                  {/* Toggle switches */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                    <div className="flex justify-between items-center bg-slate-900/60 p-2 rounded border border-slate-850">
-                      <span className="text-[9.5px] text-slate-300 font-bold">Auto-Festronik</span>
-                      <button
-                        type="button"
-                        onClick={() => setAutoFestronik(!autoFestronik)}
-                        className={`px-2 py-0.5 rounded text-[8px] font-black cursor-pointer border ${
-                          autoFestronik ? "bg-cyan-600 border-cyan-500 text-white" : "bg-slate-950 text-slate-500 border-slate-800"
-                        }`}
-                      >
-                        {autoFestronik ? "AKTIF" : "OFF"}
-                      </button>
-                    </div>
-
-                    <div className="flex justify-between items-center bg-slate-900/60 p-2 rounded border border-slate-850">
-                      <span className="text-[9.5px] text-slate-300 font-bold">Geofence Locking</span>
-                      <button
-                        type="button"
-                        onClick={() => setGeofenceLock(!geofenceLock)}
-                        className={`px-2 py-0.5 rounded text-[8px] font-black cursor-pointer border ${
-                          geofenceLock ? "bg-cyan-600 border-cyan-500 text-white" : "bg-slate-950 text-slate-500 border-slate-800"
-                        }`}
-                      >
-                        {geofenceLock ? "AKTIF" : "OFF"}
-                      </button>
-                    </div>
-
-                    <div className="flex justify-between items-center bg-slate-900/60 p-2 rounded border border-slate-850">
-                      <span className="text-[9.5px] text-slate-300 font-bold">Command Alert</span>
-                      <button
-                        type="button"
-                        onClick={() => setAlertCommandCenter(!alertCommandCenter)}
-                        className={`px-2 py-0.5 rounded text-[8px] font-black cursor-pointer border ${
-                          alertCommandCenter ? "bg-cyan-600 border-cyan-500 text-white" : "bg-slate-950 text-slate-500 border-slate-800"
-                        }`}
-                      >
-                        {alertCommandCenter ? "AKTIF" : "OFF"}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-4 pt-3 border-t border-slate-800/80 text-[10px] text-slate-400 font-semibold">
-                * Otomatisasi tinggi meminimalkan salah ketik supir dan kesalahan penempatan koordinat rute lateral.
-              </div>
-            </div>
-
-            {/* Output results of Automation Simulator */}
-            <div className="lg:col-span-5 bg-gradient-to-br from-slate-950 to-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
-              <div>
-                <span className="text-[8.5px] font-mono font-black text-cyan-400 uppercase tracking-widest block mb-1">
-                  AUTOMATION FINANCIAL OUTCOMES
-                </span>
-                <h4 className="text-sm font-black text-white uppercase tracking-tight mb-4">
-                  Efisiensi Anggaran Administrasi
-                </h4>
-
-                <div className="bg-slate-900 p-4 border border-slate-850 rounded-xl space-y-3.5 text-left">
-                  <div>
-                    <span className="text-[9px] text-slate-500 font-black block">INDEKS OTOMATISASI</span>
-                    <div className="text-lg font-black text-cyan-400 font-mono">
-                      {finalAutoPercent}% <span className="text-xs text-slate-400 font-bold">Terintegrasi</span>
-                    </div>
-                  </div>
-
-                  <div className={`p-2 rounded border text-[9.5px] font-semibold leading-relaxed ${gradeColor}`}>
-                    <span className="font-black uppercase block mb-0.5 text-[8.5px]">GRADE: {automationGrade}</span>
-                    {descriptionText}
-                  </div>
-
-                  <div>
-                    <span className="text-[9px] text-slate-500 font-black block">POTENSI HEMAT BIAYA (EFISIENSI)</span>
-                    <div className="text-xl font-black text-emerald-400 font-mono">
-                      +Rp {estimatedSavings.toLocaleString("id-ID")} <span className="text-xs text-slate-400 font-bold">/ Armada / Thn</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="text-[9px] text-slate-500 font-bold mt-4 font-mono">
-                PRAMA DIGITAL AUTOMATION COST CALCULATOR v1.2
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-      </AnimatePresence>
+      </div>
     </div>
   );
 }

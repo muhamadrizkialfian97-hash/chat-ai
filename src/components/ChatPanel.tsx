@@ -31,6 +31,7 @@ interface ChatPanelProps {
   onSearchQueryChange?: (query: string) => void;
   onOpenRightPillarPanel?: () => void;
   onOpenExcelSimulator?: () => void;
+  onDownloadFullHTML?: () => void;
 }
 
 export default function ChatPanel({
@@ -59,6 +60,7 @@ export default function ChatPanel({
   onSearchQueryChange: onSearchQueryChangeProps,
   onOpenRightPillarPanel,
   onOpenExcelSimulator,
+  onDownloadFullHTML,
 }: ChatPanelProps) {
   const [input, setInput] = useState("");
   const [enableSearch, setEnableSearch] = useState(false);
@@ -147,14 +149,20 @@ export default function ChatPanel({
     switch (id) {
       case "comercial":
         return [
-          { text: "Bandingkan efisiensi tarif logistik kontainer darat vs tongkang laut.", label: "Komparasi Tarif" },
+          { text: "Bandingkan efisiensi tarif logistik trailer 40ft vs truk tronton koridor darat.", label: "Komparasi Tarif" },
           { text: "Tulis draf ringkas Executive Summary untuk proposal tender fleet-bidding logs.", label: "Draf Tender" },
           { text: "Hitung simulasi margin bersih armada trailer dengan solar Rp 15.000/liter.", label: "Simulasi Solar" }
+        ];
+      case "multifungsi":
+        return [
+          { text: "Bantu analisis efisiensi operasional dan rute armada logistik terintegrasi.", label: "Analisis Operasional" },
+          { text: "Susun draf SOP standar keselamatan kerja HSSE dan tanggap darurat.", label: "SOP & HSSE" },
+          { text: "Buat kalkulasi cepat proyeksi biaya & perbandingan vendor logistik.", label: "Kalkulasi Biaya" }
         ];
       case "hca":
         return [
           { text: "Rumuskan Key Performance Indicators (KPI) berdasar keterlambatan & kepatuhan sopir.", label: "KPI Sopir" },
-          { text: "Rancang silabus training keselamatan muatan berat di pelabuhan.", label: "Safety Syllabus" },
+          { text: "Rancang silabus training keselamatan muatan berat armada truk darat.", label: "Safety Syllabus" },
           { text: "Draf skema shift kerja gilir untuk kru lapangan 24 jam.", label: "Shift Kru" }
         ];
       case "fina":
@@ -165,7 +173,7 @@ export default function ChatPanel({
         ];
       case "lga":
         return [
-          { text: "Draf klausul alternatif ganti kerugian akibat force majeure keterlambatan kapal.", label: "Klausul Ganti Rugi" },
+          { text: "Draf klausul alternatif ganti kerugian akibat force majeure kendala rute darat.", label: "Klausul Ganti Rugi" },
           { text: "Panduan pemenuhan dokumen izin trayek dan ODOL logistik.", label: "Regulasi ODOL" },
           { text: "Buat draf MoU kemitraan depo darat dengan pihak ketiga.", label: "Draf MoU" }
         ];
@@ -177,7 +185,7 @@ export default function ChatPanel({
         ];
       default:
         return [
-          { text: "Buat simulasi rekap komparasi tarif logistik darat & laut.", label: "Simulasi Umum" },
+          { text: "Buat simulasi rekap komparasi tarif logistik rute darat & antarkota.", label: "Simulasi Umum" },
           { text: "Evaluasi risiko operasional logistik nasional saat cuaca ekstrem.", label: "Risiko Cuaca" },
           { text: "Tulis panduan efektivitas pengawasan anggaran korporat.", label: "Panduan Anggaran" }
         ];
@@ -189,6 +197,7 @@ export default function ChatPanel({
   const getDivisionTitle = (id: string | null) => {
     switch (id) {
       case "comercial": return "Comercial & Business Development";
+      case "multifungsi": return "Chat Multi Fungsi AI Agent";
       case "hca": return "Human Capital & Affairs";
       case "fina": return "Finance & Accounting";
       case "lga": return "Legal & Governance";

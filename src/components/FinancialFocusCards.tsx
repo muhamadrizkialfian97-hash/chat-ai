@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   DollarSign,
@@ -18,73 +18,127 @@ import {
   ArrowUpRight,
   PieChart,
   Coins,
-  RefreshCw
+  RefreshCw,
+  Sparkles,
+  Layers,
+  ShoppingBag,
+  Factory
 } from "lucide-react";
+import { getFinancialRecommendations, FinancialRecommendation } from "../utils/financialRecommendations";
 
 interface FinancialFocusProps {
   projectTitle: string;
 }
 
 export function FinancialFocusCards({ projectTitle }: FinancialFocusProps) {
+  // Retrieve standardized financial recommendation based on project title & archetype
+  const rec = useMemo(() => getFinancialRecommendations(projectTitle), [projectTitle]);
+
   // Tab control for deep-dives
   const [activeSegment, setActiveSegment] = useState<"capex" | "opex" | "pl" | "cashflow">("capex");
 
   // State 1: CAPEX Configurations
-  const [capexTruckCount, setCapexTruckCount] = useState<number>(5); // 5 trucks
-  const [capexPricePerTruck, setCapexPricePerTruck] = useState<number>(450000000); // Rp 450 Juta
-  const [capexItInfrastructure, setCapexItInfrastructure] = useState<number>(120000000); // Rp 120 Juta
-  const [capexDepoSetup, setCapexDepoSetup] = useState<number>(80000000); // Rp 80 Juta
-  const [capexLicenses, setCapexLicenses] = useState<number>(45000000); // Rp 45 Juta
+  const [capexAssetCount, setCapexAssetCount] = useState<number>(rec.capexAssetCount);
+  const [capexAssetPrice, setCapexAssetPrice] = useState<number>(rec.capexAssetPrice);
+  const [capexSecondary1, setCapexSecondary1] = useState<number>(rec.capexSecondary1Amount);
+  const [capexSecondary2, setCapexSecondary2] = useState<number>(rec.capexSecondary2Amount);
+  const [capexSecondary3, setCapexSecondary3] = useState<number>(rec.capexSecondary3Amount);
 
   // State 2: OPEX Configurations & Scenario Toggles
   const [isAiEfficiencyEnabled, setIsAiEfficiencyEnabled] = useState<boolean>(true);
-  const [monthlyFuelCostPerTruck, setMonthlyFuelCostPerTruck] = useState<number>(12000000); // Rp 12 Juta
-  const [monthlyDriverSalary, setMonthlyDriverSalary] = useState<number>(6500000); // Rp 6.5 Juta
-  const [monthlyMaintPerTruck, setMonthlyMaintPerTruck] = useState<number>(2500000); // Rp 2.5 Juta
-  const [overheadAdmin, setOverheadAdmin] = useState<number>(15000000); // Rp 15 Juta
+  const [monthlyOpex1, setMonthlyOpex1] = useState<number>(rec.opex1Amount);
+  const [monthlyOpex2, setMonthlyOpex2] = useState<number>(rec.opex2Amount);
+  const [monthlyOpex3, setMonthlyOpex3] = useState<number>(rec.opex3Amount);
+  const [monthlyOpex4, setMonthlyOpex4] = useState<number>(rec.opex4Amount);
 
   // State 3: P&L Custom revenue multiplier
-  const [annualRevenuePerTruck, setAnnualRevenuePerTruck] = useState<number>(360000000); // Rp 360 Juta/tahun per truk
-  const [taxRate, setTaxRate] = useState<number>(11); // 11% corporate tax/VAT
+  const [annualRevenuePerAsset, setAnnualRevenuePerAsset] = useState<number>(rec.annualRevenuePerAsset);
+  const [taxRate, setTaxRate] = useState<number>(rec.taxRate);
 
   // State 4: Cash Flow Scenario Selection
   const [scenario, setScenario] = useState<"pes" | "real" | "opt">("real");
 
-  // Calculations for CAPEX
-  const totalCapexTrucks = capexTruckCount * capexPricePerTruck;
-  const grandTotalCapex = totalCapexTrucks + capexItInfrastructure + capexDepoSetup + capexLicenses;
+  // Synchronize state whenever projectTitle changes to guarantee uniform data
+  useEffect(() => {
+    const r = getFinancialRecommendations(projectTitle);
+    setCapexAssetCount(r.capexAssetCount);
+    setCapexAssetPrice(r.capexAssetPrice);
+    setCapexSecondary1(r.capexSecondary1Amount);
+    setCapexSecondary2(r.capexSecondary2Amount);
+    setCapexSecondary3(r.capexSecondary3Amount);
 
-  // Depreciation: Straight-line method over 5 years (80% salvage value assumed or fully depreciated)
-  const annualDepreciation = (totalCapexTrucks * 0.85) / 5 + (capexItInfrastructure / 3) + (capexDepoSetup / 5);
+    setMonthlyOpex1(r.opex1Amount);
+    setMonthlyOpex2(r.opex2Amount);
+    setMonthlyOpex3(r.opex3Amount);
+    setMonthlyOpex4(r.opex4Amount);
+
+    setAnnualRevenuePerAsset(r.annualRevenuePerAsset);
+    setTaxRate(r.taxRate);
+    setScenario("real");
+  }, [projectTitle]);
+
+  // Handler to manually restore exact project recommendation numbers
+  const handleResetToRecommendations = () => {
+    setCapexAssetCount(rec.capexAssetCount);
+    setCapexAssetPrice(rec.capexAssetPrice);
+    setCapexSecondary1(rec.capexSecondary1Amount);
+    setCapexSecondary2(rec.capexSecondary2Amount);
+    setCapexSecondary3(rec.capexSecondary3Amount);
+
+    setMonthlyOpex1(rec.opex1Amount);
+    setMonthlyOpex2(rec.opex2Amount);
+    setMonthlyOpex3(rec.opex3Amount);
+    setMonthlyOpex4(rec.opex4Amount);
+
+    setAnnualRevenuePerAsset(rec.annualRevenuePerAsset);
+    setTaxRate(rec.taxRate);
+    setScenario("real");
+    setIsAiEfficiencyEnabled(true);
+  };
+
+  // Calculations for CAPEX
+  const totalCapexPrimary = capexAssetCount * capexAssetPrice;
+  const grandTotalCapex = totalCapexPrimary + capexSecondary1 + capexSecondary2 + capexSecondary3;
+
+  // Depreciation: Straight-line method matching recommendation
+  const annualDepreciation = rec.annualDepreciation;
 
   // Calculations for OPEX (Annualized)
-  const fuelMultiplier = isAiEfficiencyEnabled ? 0.85 : 1.0; // 15% fuel saving with smart route optimizations
-  const maintMultiplier = isAiEfficiencyEnabled ? 0.90 : 1.0; // 10% maintenance saving with predictive IoT
+  const opex1Multiplier = isAiEfficiencyEnabled ? (1 - rec.techSavingsPercentOpex1 / 100) : 1.0;
+  const opex3Multiplier = isAiEfficiencyEnabled ? (1 - rec.techSavingsPercentOpex3 / 100) : 1.0;
 
-  const annualOpexFuel = capexTruckCount * (monthlyFuelCostPerTruck * fuelMultiplier) * 12;
-  const annualOpexSalary = capexTruckCount * (monthlyDriverSalary + 1500000) * 12; // Driver salary + benefits/BPJS
-  const annualOpexMaint = capexTruckCount * (monthlyMaintPerTruck * maintMultiplier) * 12;
-  const annualOpexOverhead = overheadAdmin * 12;
+  const annualOpex1 = (monthlyOpex1 * opex1Multiplier) * 12;
+  const annualOpex2 = monthlyOpex2 * 12;
+  const annualOpex3 = (monthlyOpex3 * opex3Multiplier) * 12;
+  const annualOpex4 = monthlyOpex4 * 12;
 
-  const grandTotalAnnualOpex = annualOpexFuel + annualOpexSalary + annualOpexMaint + annualOpexOverhead;
+  const grandTotalAnnualOpex = annualOpex1 + annualOpex2 + annualOpex3 + annualOpex4;
+  const currentTotalMonthlyOpex = grandTotalAnnualOpex / 12;
 
   // Calculations for P&L (Projection Year 1, 2, and 3)
   const growthFactor = useMemo(() => {
     switch (scenario) {
-      case "pes": return { yr2: 1.05, yr3: 1.10 };
-      case "opt": return { yr2: 1.35, yr3: 1.70 };
+      case "pes": return { yr2: 1.08, yr3: 1.15 };
+      case "opt": return { yr2: 1.30, yr3: 1.65 };
       default: return { yr2: 1.20, yr3: 1.45 };
     }
   }, [scenario]);
 
   const pAndLData = useMemo(() => {
-    const yr1Revenue = capexTruckCount * annualRevenuePerTruck;
+    // For personal SME, annualRevenuePerAsset is already the total outlet revenue
+    // For transport/manufacturing with multiple units/lines, scale by asset count if needed
+    const yr1Revenue = rec.archetype === "personal_sme"
+      ? annualRevenuePerAsset * capexAssetCount
+      : (rec.archetype === "manufacturing"
+          ? (annualRevenuePerAsset / rec.capexAssetCount) * capexAssetCount
+          : (annualRevenuePerAsset / rec.capexAssetCount) * capexAssetCount);
+
     const yr2Revenue = yr1Revenue * growthFactor.yr2;
     const yr3Revenue = yr1Revenue * growthFactor.yr3;
 
     // Years 2 and 3 OPEX adjustments for scale
     const yr1Opex = grandTotalAnnualOpex;
-    const yr2Opex = grandTotalAnnualOpex * (1 + (growthFactor.yr2 - 1) * 0.4); // some variables scale with revenue
+    const yr2Opex = grandTotalAnnualOpex * (1 + (growthFactor.yr2 - 1) * 0.40);
     const yr3Opex = grandTotalAnnualOpex * (1 + (growthFactor.yr3 - 1) * 0.45);
 
     const yr1Ebitda = yr1Revenue - yr1Opex;
@@ -108,7 +162,7 @@ export function FinancialFocusCards({ projectTitle }: FinancialFocusProps) {
       yr2: { revenue: yr2Revenue, opex: yr2Opex, ebitda: yr2Ebitda, ebit: yr2Ebit, tax: yr2Tax, netProfit: yr2Net },
       yr3: { revenue: yr3Revenue, opex: yr3Opex, ebitda: yr3Ebitda, ebit: yr3Ebit, tax: yr3Tax, netProfit: yr3Net }
     };
-  }, [capexTruckCount, annualRevenuePerTruck, grandTotalAnnualOpex, annualDepreciation, growthFactor, taxRate]);
+  }, [rec.archetype, rec.capexAssetCount, capexAssetCount, annualRevenuePerAsset, grandTotalAnnualOpex, annualDepreciation, growthFactor, taxRate]);
 
   // Calculations for CASH FLOW & ROI
   const averageAnnualCashInflow = (pAndLData.yr1.netProfit + pAndLData.yr2.netProfit + pAndLData.yr3.netProfit) / 3 + annualDepreciation;
@@ -123,8 +177,15 @@ export function FinancialFocusCards({ projectTitle }: FinancialFocusProps) {
     if (num >= 1000000) {
       return `Rp ${(num / 1000000).toFixed(1)} Juta`;
     }
-    return `Rp ${num.toLocaleString("id-ID")}`;
+    return `Rp ${Math.round(num).toLocaleString("id-ID")}`;
   };
+
+  // Select appropriate icon for primary asset
+  const AssetIcon = useMemo(() => {
+    if (rec.archetype === "manufacturing") return Factory;
+    if (rec.archetype === "personal_sme") return ShoppingBag;
+    return Truck;
+  }, [rec.archetype]);
 
   return (
     <div id="financial-focus-dashboard" className="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-slate-100 shadow-2xl mt-6 relative overflow-hidden font-sans">
@@ -140,28 +201,43 @@ export function FinancialFocusCards({ projectTitle }: FinancialFocusProps) {
               FINANCIAL CORE FEASIBILITY
             </span>
             <span className="px-2.5 py-0.5 text-[9px] font-black tracking-wider uppercase rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-mono flex items-center gap-1">
-              ⚡ SINKRON CHAT: <span className="text-white font-bold">{projectTitle || "Kajian Strategis PRAMA"}</span>
+              ⚡ SEKTOR: <span className="text-white font-bold">{rec.sectorTag}</span>
+            </span>
+            <span className="px-2.5 py-0.5 text-[9px] font-black tracking-wider uppercase rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 font-mono">
+              ARKETIPE: {rec.archetypeLabel.toUpperCase()}
             </span>
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
           </div>
           <h3 className="text-lg md:text-xl font-black uppercase tracking-tight text-white flex items-center gap-2">
             <Coins className="h-5.5 w-5.5 text-emerald-400" />
-            Fokus Analisis Finansial Terintegrasi
+            Fokus Analisis Finansial Terintegrasi: {projectTitle || "Kajian Kelayakan Bisnis"}
           </h3>
           <p className="text-xs text-slate-400 mt-1 font-semibold max-w-2xl leading-relaxed">
-            Eksplorasi mendalam skenario kelayakan finansial proyek "{projectTitle}" dari sisi Pengeluaran Modal, Biaya Operasional, Estimasi Laba/Rugi, dan Proyeksi Pengembalian Investasi (ROI).
+            Data output finansial telah disinkronkan seragam dengan rekomendasi pilar kajian kelayakan untuk proyek <strong>"{projectTitle}"</strong>.
           </p>
         </div>
 
-        {/* Highlight Stats */}
-        <div className="flex gap-3 shrink-0">
-          <div className="bg-slate-950/60 px-3 py-2 rounded-xl border border-slate-800">
-            <span className="text-[8px] text-slate-500 font-extrabold uppercase block font-mono">GRAND TOTAL CAPEX</span>
+        {/* Action button & Highlight Stats */}
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <button
+            type="button"
+            onClick={handleResetToRecommendations}
+            className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-[10.5px] font-black flex items-center gap-1.5 transition active:scale-95 cursor-pointer shadow-md shadow-emerald-950"
+            title="Kembalikan semua nilai ke angka rekomendasi resmi proyek"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            <span>Terapkan Rekomendasi Standar</span>
+          </button>
+
+          <div className="bg-slate-950/60 px-3 py-2 rounded-xl border border-slate-800 text-left">
+            <span className="text-[8px] text-slate-500 font-extrabold uppercase block font-mono">TOTAL CAPEX</span>
             <span className="text-xs font-black text-white font-mono">{formatIDR(grandTotalCapex)}</span>
           </div>
-          <div className="bg-slate-950/60 px-3 py-2 rounded-xl border border-slate-800">
+          <div className="bg-slate-950/60 px-3 py-2 rounded-xl border border-slate-800 text-left">
             <span className="text-[8px] text-slate-500 font-extrabold uppercase block font-mono">ESTIMASI PAYBACK</span>
-            <span className="text-xs font-black text-emerald-400 font-mono">{simplePaybackYears.toFixed(1)} Tahun</span>
+            <span className="text-xs font-black text-emerald-400 font-mono">
+              {rec.archetype === "personal_sme" ? rec.paybackText : `${simplePaybackYears.toFixed(1)} Tahun`}
+            </span>
           </div>
         </div>
       </div>
@@ -173,7 +249,7 @@ export function FinancialFocusCards({ projectTitle }: FinancialFocusProps) {
           onClick={() => setActiveSegment("capex")}
           className={`p-3 rounded-xl border cursor-pointer transition-all text-left flex items-center gap-2.5 ${
             activeSegment === "capex"
-              ? "bg-gradient-to-r from-emerald-950/40 to-slate-900 border-emerald-500 text-white"
+              ? "bg-gradient-to-r from-emerald-950/40 to-slate-900 border-emerald-500 text-white shadow-lg shadow-emerald-950/30"
               : "bg-slate-950/30 border-slate-800 text-slate-400 hover:border-slate-700"
           }`}
         >
@@ -182,7 +258,7 @@ export function FinancialFocusCards({ projectTitle }: FinancialFocusProps) {
           </div>
           <div>
             <span className="text-[8px] font-mono font-black text-slate-500 block uppercase">BAGIAN 1</span>
-            <span className="text-[11px] font-black uppercase text-white">💰 CAPEX Assets</span>
+            <span className="text-[11px] font-black uppercase text-white">💰 Alokasi Modal (CAPEX)</span>
           </div>
         </button>
 
@@ -191,7 +267,7 @@ export function FinancialFocusCards({ projectTitle }: FinancialFocusProps) {
           onClick={() => setActiveSegment("opex")}
           className={`p-3 rounded-xl border cursor-pointer transition-all text-left flex items-center gap-2.5 ${
             activeSegment === "opex"
-              ? "bg-gradient-to-r from-emerald-950/40 to-slate-900 border-emerald-500 text-white"
+              ? "bg-gradient-to-r from-emerald-950/40 to-slate-900 border-emerald-500 text-white shadow-lg shadow-emerald-950/30"
               : "bg-slate-950/30 border-slate-800 text-slate-400 hover:border-slate-700"
           }`}
         >
@@ -200,7 +276,7 @@ export function FinancialFocusCards({ projectTitle }: FinancialFocusProps) {
           </div>
           <div>
             <span className="text-[8px] font-mono font-black text-slate-500 block uppercase">BAGIAN 2</span>
-            <span className="text-[11px] font-black uppercase text-white">🛠️ OPEX Operational</span>
+            <span className="text-[11px] font-black uppercase text-white">🛠️ Biaya Rutin (OPEX)</span>
           </div>
         </button>
 
@@ -209,7 +285,7 @@ export function FinancialFocusCards({ projectTitle }: FinancialFocusProps) {
           onClick={() => setActiveSegment("pl")}
           className={`p-3 rounded-xl border cursor-pointer transition-all text-left flex items-center gap-2.5 ${
             activeSegment === "pl"
-              ? "bg-gradient-to-r from-emerald-950/40 to-slate-900 border-emerald-500 text-white"
+              ? "bg-gradient-to-r from-emerald-950/40 to-slate-900 border-emerald-500 text-white shadow-lg shadow-emerald-950/30"
               : "bg-slate-950/30 border-slate-800 text-slate-400 hover:border-slate-700"
           }`}
         >
@@ -218,7 +294,7 @@ export function FinancialFocusCards({ projectTitle }: FinancialFocusProps) {
           </div>
           <div>
             <span className="text-[8px] font-mono font-black text-slate-500 block uppercase">BAGIAN 3</span>
-            <span className="text-[11px] font-black uppercase text-white">📊 Proyeksi P&L</span>
+            <span className="text-[11px] font-black uppercase text-white">📊 Proyeksi Laba Rugi</span>
           </div>
         </button>
 
@@ -227,7 +303,7 @@ export function FinancialFocusCards({ projectTitle }: FinancialFocusProps) {
           onClick={() => setActiveSegment("cashflow")}
           className={`p-3 rounded-xl border cursor-pointer transition-all text-left flex items-center gap-2.5 ${
             activeSegment === "cashflow"
-              ? "bg-gradient-to-r from-emerald-950/40 to-slate-900 border-emerald-500 text-white"
+              ? "bg-gradient-to-r from-emerald-950/40 to-slate-900 border-emerald-500 text-white shadow-lg shadow-emerald-950/30"
               : "bg-slate-950/30 border-slate-800 text-slate-400 hover:border-slate-700"
           }`}
         >
@@ -236,7 +312,7 @@ export function FinancialFocusCards({ projectTitle }: FinancialFocusProps) {
           </div>
           <div>
             <span className="text-[8px] font-mono font-black text-slate-500 block uppercase">BAGIAN 4</span>
-            <span className="text-[11px] font-black uppercase text-white">🔄 Cash Flow & ROI</span>
+            <span className="text-[11px] font-black uppercase text-white">🔄 Cash Flow &amp; ROI</span>
           </div>
         </button>
       </div>
@@ -255,75 +331,88 @@ export function FinancialFocusCards({ projectTitle }: FinancialFocusProps) {
             {/* Left Column: Input Sliders */}
             <div className="lg:col-span-7 bg-slate-950/50 border border-slate-800 rounded-2xl p-5 space-y-5">
               <div className="flex justify-between items-center pb-2 border-b border-slate-850">
-                <h4 className="text-xs font-black uppercase tracking-wider text-slate-350 flex items-center gap-1.5">
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
                   <Sliders className="h-4 w-4 text-emerald-400" />
                   Konfigurasi Pembelian Aset Modal (CAPEX)
                 </h4>
-                <span className="text-[8px] text-slate-500 font-bold font-mono">SLIDER CONTROLLER</span>
+                <span className="text-[8px] text-emerald-400 font-bold font-mono bg-emerald-500/10 px-2 py-0.5 rounded">
+                  {rec.archetypeLabel.toUpperCase()}
+                </span>
               </div>
 
-              {/* Slider 1: Truck Fleet count */}
+              {/* Slider 1: Asset count */}
               <div className="space-y-1.5">
                 <div className="flex justify-between text-xs">
-                  <span className="text-slate-400 font-bold">1. Jumlah Pembelian Armada Truk</span>
-                  <span className="text-emerald-400 font-black font-mono">{capexTruckCount} Unit</span>
+                  <span className="text-slate-400 font-bold">1. Jumlah {rec.assetUnitLabel}</span>
+                  <span className="text-emerald-400 font-black font-mono">{capexAssetCount} {rec.assetUnitLabel}</span>
                 </div>
                 <input
                   type="range"
-                  min="2"
-                  max="12"
+                  min={rec.capexAssetCountMin}
+                  max={rec.capexAssetCountMax}
                   step="1"
-                  value={capexTruckCount}
-                  onChange={(e) => setCapexTruckCount(Number(e.target.value))}
+                  value={capexAssetCount}
+                  onChange={(e) => setCapexAssetCount(Number(e.target.value))}
                   className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
                 />
               </div>
 
-              {/* Slider 2: Price per Truck */}
+              {/* Slider 2: Price per Asset */}
               <div className="space-y-1.5">
                 <div className="flex justify-between text-xs">
-                  <span className="text-slate-400 font-bold">2. Harga Beli per Unit Truk</span>
-                  <span className="text-emerald-400 font-black font-mono">{formatIDR(capexPricePerTruck)}</span>
+                  <span className="text-slate-400 font-bold">2. Alokasi Investasi per {rec.assetUnitLabel}</span>
+                  <span className="text-emerald-400 font-black font-mono">{formatIDR(capexAssetPrice)}</span>
                 </div>
                 <input
                   type="range"
-                  min="350000000"
-                  max="650000000"
-                  step="10000000"
-                  value={capexPricePerTruck}
-                  onChange={(e) => setCapexPricePerTruck(Number(e.target.value))}
+                  min={rec.capexAssetPriceMin}
+                  max={rec.capexAssetPriceMax}
+                  step={rec.capexAssetPriceStep}
+                  value={capexAssetPrice}
+                  onChange={(e) => setCapexAssetPrice(Number(e.target.value))}
                   className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
                 />
               </div>
 
-              {/* Grid for minor costs */}
+              {/* Grid for secondary costs */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
                 <div className="space-y-1.5">
-                  <label className="text-[9.5px] font-black text-slate-400 block uppercase">Infrastruktur IT & IoT</label>
+                  <label className="text-[9.5px] font-black text-slate-400 block uppercase truncate" title={rec.capexSecondary1Name}>
+                    {rec.capexSecondary1Name}
+                  </label>
                   <input
                     type="number"
-                    value={capexItInfrastructure}
-                    onChange={(e) => setCapexItInfrastructure(Number(e.target.value))}
+                    value={capexSecondary1}
+                    onChange={(e) => setCapexSecondary1(Number(e.target.value))}
                     className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono font-bold focus:outline-none focus:border-emerald-500"
                   />
+                  <span className="text-[9px] text-slate-500 font-mono block text-right">{formatIDR(capexSecondary1)}</span>
                 </div>
+
                 <div className="space-y-1.5">
-                  <label className="text-[9.5px] font-black text-slate-400 block uppercase">Setup Depo & Kantor</label>
+                  <label className="text-[9.5px] font-black text-slate-400 block uppercase truncate" title={rec.capexSecondary2Name}>
+                    {rec.capexSecondary2Name}
+                  </label>
                   <input
                     type="number"
-                    value={capexDepoSetup}
-                    onChange={(e) => setCapexDepoSetup(Number(e.target.value))}
+                    value={capexSecondary2}
+                    onChange={(e) => setCapexSecondary2(Number(e.target.value))}
                     className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono font-bold focus:outline-none focus:border-emerald-500"
                   />
+                  <span className="text-[9px] text-slate-500 font-mono block text-right">{formatIDR(capexSecondary2)}</span>
                 </div>
+
                 <div className="space-y-1.5">
-                  <label className="text-[9.5px] font-black text-slate-400 block uppercase">Lisensi & Legalitas</label>
+                  <label className="text-[9.5px] font-black text-slate-400 block uppercase truncate" title={rec.capexSecondary3Name}>
+                    {rec.capexSecondary3Name}
+                  </label>
                   <input
                     type="number"
-                    value={capexLicenses}
-                    onChange={(e) => setCapexLicenses(Number(e.target.value))}
+                    value={capexSecondary3}
+                    onChange={(e) => setCapexSecondary3(Number(e.target.value))}
                     className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono font-bold focus:outline-none focus:border-emerald-500"
                   />
+                  <span className="text-[9px] text-slate-500 font-mono block text-right">{formatIDR(capexSecondary3)}</span>
                 </div>
               </div>
             </div>
@@ -335,51 +424,85 @@ export function FinancialFocusCards({ projectTitle }: FinancialFocusProps) {
                   CAPEX ASSET DISTRIBUTION
                 </span>
                 <h4 className="text-sm font-black text-white uppercase tracking-tight mb-4">
-                  Distribusi Alokasi Modal
+                  Distribusi Alokasi Modal Awal
                 </h4>
 
                 <div className="space-y-3.5 text-xs">
-                  {/* Item 1: Trucks */}
+                  {/* Item 1: Primary Asset */}
                   <div>
                     <div className="flex justify-between text-[10.5px] mb-1 font-semibold text-slate-300">
-                      <span className="flex items-center gap-1"><Truck className="h-3.5 w-3.5 text-blue-400" /> Armada Truk Sasis</span>
-                      <span className="font-mono text-white">{formatIDR(totalCapexTrucks)} ({((totalCapexTrucks / grandTotalCapex) * 100).toFixed(0)}%)</span>
+                      <span className="flex items-center gap-1 truncate max-w-[210px]" title={rec.assetName}>
+                        <AssetIcon className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                        <span className="truncate">{rec.assetName}</span>
+                      </span>
+                      <span className="font-mono text-white shrink-0">
+                        {formatIDR(totalCapexPrimary)} ({grandTotalCapex > 0 ? ((totalCapexPrimary / grandTotalCapex) * 100).toFixed(0) : 0}%)
+                      </span>
                     </div>
                     <div className="w-full h-1.5 bg-slate-850 rounded-full overflow-hidden">
-                      <div className="bg-blue-400 h-full rounded-full" style={{ width: `${(totalCapexTrucks / grandTotalCapex) * 100}%` }} />
+                      <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${grandTotalCapex > 0 ? (totalCapexPrimary / grandTotalCapex) * 100 : 0}%` }} />
                     </div>
                   </div>
 
-                  {/* Item 2: IT */}
+                  {/* Item 2: Secondary 1 */}
                   <div>
                     <div className="flex justify-between text-[10.5px] mb-1 font-semibold text-slate-300">
-                      <span className="flex items-center gap-1"><Zap className="h-3.5 w-3.5 text-indigo-400" /> Perangkat IT & Sensor IoT</span>
-                      <span className="font-mono text-white">{formatIDR(capexItInfrastructure)} ({((capexItInfrastructure / grandTotalCapex) * 100).toFixed(0)}%)</span>
+                      <span className="flex items-center gap-1 truncate max-w-[210px]" title={rec.capexSecondary1Name}>
+                        <Zap className="h-3.5 w-3.5 text-indigo-400 shrink-0" />
+                        <span className="truncate">{rec.capexSecondary1Name}</span>
+                      </span>
+                      <span className="font-mono text-white shrink-0">
+                        {formatIDR(capexSecondary1)} ({grandTotalCapex > 0 ? ((capexSecondary1 / grandTotalCapex) * 100).toFixed(0) : 0}%)
+                      </span>
                     </div>
                     <div className="w-full h-1.5 bg-slate-850 rounded-full overflow-hidden">
-                      <div className="bg-indigo-400 h-full rounded-full" style={{ width: `${(capexItInfrastructure / grandTotalCapex) * 100}%` }} />
+                      <div className="bg-indigo-400 h-full rounded-full" style={{ width: `${grandTotalCapex > 0 ? (capexSecondary1 / grandTotalCapex) * 100 : 0}%` }} />
                     </div>
                   </div>
 
-                  {/* Item 3: Depo */}
+                  {/* Item 3: Secondary 2 */}
                   <div>
                     <div className="flex justify-between text-[10.5px] mb-1 font-semibold text-slate-300">
-                      <span className="flex items-center gap-1"><Building className="h-3.5 w-3.5 text-amber-400" /> Depo & Kantor Cabang</span>
-                      <span className="font-mono text-white">{formatIDR(capexDepoSetup)} ({((capexDepoSetup / grandTotalCapex) * 100).toFixed(0)}%)</span>
+                      <span className="flex items-center gap-1 truncate max-w-[210px]" title={rec.capexSecondary2Name}>
+                        <Building className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                        <span className="truncate">{rec.capexSecondary2Name}</span>
+                      </span>
+                      <span className="font-mono text-white shrink-0">
+                        {formatIDR(capexSecondary2)} ({grandTotalCapex > 0 ? ((capexSecondary2 / grandTotalCapex) * 100).toFixed(0) : 0}%)
+                      </span>
                     </div>
                     <div className="w-full h-1.5 bg-slate-850 rounded-full overflow-hidden">
-                      <div className="bg-amber-400 h-full rounded-full" style={{ width: `${(capexDepoSetup / grandTotalCapex) * 100}%` }} />
+                      <div className="bg-amber-400 h-full rounded-full" style={{ width: `${grandTotalCapex > 0 ? (capexSecondary2 / grandTotalCapex) * 100 : 0}%` }} />
                     </div>
                   </div>
+
+                  {/* Item 4: Secondary 3 (if exists) */}
+                  {capexSecondary3 > 0 && (
+                    <div>
+                      <div className="flex justify-between text-[10.5px] mb-1 font-semibold text-slate-300">
+                        <span className="flex items-center gap-1 truncate max-w-[210px]" title={rec.capexSecondary3Name}>
+                          <ShieldAlert className="h-3.5 w-3.5 text-cyan-400 shrink-0" />
+                          <span className="truncate">{rec.capexSecondary3Name}</span>
+                        </span>
+                        <span className="font-mono text-white shrink-0">
+                          {formatIDR(capexSecondary3)} ({grandTotalCapex > 0 ? ((capexSecondary3 / grandTotalCapex) * 100).toFixed(0) : 0}%)
+                        </span>
+                      </div>
+                      <div className="w-full h-1.5 bg-slate-850 rounded-full overflow-hidden">
+                        <div className="bg-cyan-400 h-full rounded-full" style={{ width: `${grandTotalCapex > 0 ? (capexSecondary3 / grandTotalCapex) * 100 : 0}%` }} />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="mt-5 p-3 rounded bg-emerald-500/5 border border-emerald-500/10 text-[10px] text-slate-300 leading-relaxed font-semibold">
-                  💡 <strong className="text-white">Informasi Pajak & Penyusutan:</strong> Depresiasi tahunan aset ini sebesar <span className="text-emerald-400 font-mono">{formatIDR(annualDepreciation)}</span> dihitung dengan metode garis lurus untuk mereduksi beban pajak bersih korporasi secara berkala.
+                  💡 <strong className="text-white">Informasi Depresiasi:</strong> Penyusutan aset tahunan diproyeksikan sebesar <span className="text-emerald-400 font-mono font-bold">{formatIDR(annualDepreciation)}</span> dengan metode garis lurus untuk efisiensi beban pajak bersih usaha.
                 </div>
               </div>
 
-              <div className="text-[9px] text-slate-500 font-bold mt-4 font-mono">
-                PRAMA CAPEX CONTROLLING v1.4
+              <div className="text-[9px] text-slate-500 font-bold mt-4 font-mono flex justify-between items-center">
+                <span>PRAMA CAPEX CONTROLLING v2.0</span>
+                <span className="text-emerald-400 font-bold">TOTAL: {formatIDR(grandTotalCapex)}</span>
               </div>
             </div>
           </motion.div>
@@ -397,26 +520,28 @@ export function FinancialFocusCards({ projectTitle }: FinancialFocusProps) {
             {/* Left Column: OPEX sliders */}
             <div className="lg:col-span-7 bg-slate-950/50 border border-slate-800 rounded-2xl p-5 space-y-4">
               <div className="flex justify-between items-center pb-2 border-b border-slate-850">
-                <h4 className="text-xs font-black uppercase tracking-wider text-slate-350 flex items-center gap-1.5">
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
                   <Sliders className="h-4 w-4 text-emerald-400" />
-                  Konfigurasi Biaya Operasional (OPEX) bulanan
+                  Konfigurasi Biaya Operasional (OPEX) Bulanan
                 </h4>
                 <span className="text-[8px] text-slate-500 font-bold font-mono">MONTHLY VARIABLES</span>
               </div>
 
-              {/* Switch for AI efficiency optimization */}
+              {/* Switch for AI / Tech efficiency optimization */}
               <div className="p-3 rounded-xl bg-indigo-950/20 border border-indigo-500/20 flex justify-between items-center gap-4">
                 <div>
-                  <span className="text-[10px] font-black uppercase tracking-wider text-indigo-400 block font-mono">SISTEM OPTIMALISASI AI</span>
-                  <h5 className="text-[11.5px] font-black text-white">Aktifkan Route Planning & Predictive IoT</h5>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-indigo-400 block font-mono">
+                    {rec.techOptimizationTitle}
+                  </span>
+                  <h5 className="text-[11.5px] font-black text-white">Optimalisasi Efisiensi Digital &amp; IoT</h5>
                   <p className="text-[9.5px] text-slate-400 font-semibold mt-0.5 leading-normal">
-                    Menghemat BBM sebesar 15% dan biaya pemeliharaan armada truk sebesar 10%.
+                    {rec.techOptimizationDesc}
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setIsAiEfficiencyEnabled(!isAiEfficiencyEnabled)}
-                  className={`px-3 py-1.5 text-[9.5px] font-black rounded-lg transition-all cursor-pointer border ${
+                  className={`px-3 py-1.5 text-[9.5px] font-black rounded-lg transition-all cursor-pointer border shrink-0 ${
                     isAiEfficiencyEnabled
                       ? "bg-emerald-600 border-emerald-500 text-white"
                       : "bg-slate-900 border-slate-800 text-slate-500 hover:text-slate-300"
@@ -426,53 +551,53 @@ export function FinancialFocusCards({ projectTitle }: FinancialFocusProps) {
                 </button>
               </div>
 
-              {/* Slider 1: Fuel cost */}
+              {/* Slider 1: OPEX 1 */}
               <div className="space-y-1.5">
                 <div className="flex justify-between text-xs">
-                  <span className="text-slate-400 font-bold">1. Anggaran BBM per Truk (Bulanan)</span>
-                  <span className="text-emerald-400 font-black font-mono">{formatIDR(monthlyFuelCostPerTruck)}</span>
+                  <span className="text-slate-400 font-bold">1. {rec.opex1Name} (Bulanan)</span>
+                  <span className="text-emerald-400 font-black font-mono">{formatIDR(monthlyOpex1)}</span>
                 </div>
                 <input
                   type="range"
-                  min="8000000"
-                  max="20000000"
-                  step="50000"
-                  value={monthlyFuelCostPerTruck}
-                  onChange={(e) => setMonthlyFuelCostPerTruck(Number(e.target.value))}
+                  min={rec.opex1Min}
+                  max={rec.opex1Max}
+                  step={rec.opex1Step}
+                  value={monthlyOpex1}
+                  onChange={(e) => setMonthlyOpex1(Number(e.target.value))}
                   className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
                 />
               </div>
 
-              {/* Slider 2: Driver Salary */}
+              {/* Slider 2: OPEX 2 */}
               <div className="space-y-1.5">
                 <div className="flex justify-between text-xs">
-                  <span className="text-slate-400 font-bold">2. Upah All-in Supir (Gaji + Uang Makan)</span>
-                  <span className="text-emerald-400 font-black font-mono">{formatIDR(monthlyDriverSalary)}</span>
+                  <span className="text-slate-400 font-bold">2. {rec.opex2Name} (Bulanan)</span>
+                  <span className="text-emerald-400 font-black font-mono">{formatIDR(monthlyOpex2)}</span>
                 </div>
                 <input
                   type="range"
-                  min="4500000"
-                  max="9500000"
-                  step="100000"
-                  value={monthlyDriverSalary}
-                  onChange={(e) => setMonthlyDriverSalary(Number(e.target.value))}
+                  min={rec.opex2Min}
+                  max={rec.opex2Max}
+                  step={rec.opex2Step}
+                  value={monthlyOpex2}
+                  onChange={(e) => setMonthlyOpex2(Number(e.target.value))}
                   className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
                 />
               </div>
 
-              {/* Slider 3: Maintenance */}
+              {/* Slider 3: OPEX 3 */}
               <div className="space-y-1.5">
                 <div className="flex justify-between text-xs">
-                  <span className="text-slate-400 font-bold">3. Biaya Perawatan Rutin per Truk</span>
-                  <span className="text-emerald-400 font-black font-mono">{formatIDR(monthlyMaintPerTruck)}</span>
+                  <span className="text-slate-400 font-bold">3. {rec.opex3Name} (Bulanan)</span>
+                  <span className="text-emerald-400 font-black font-mono">{formatIDR(monthlyOpex3)}</span>
                 </div>
                 <input
                   type="range"
-                  min="1500000"
-                  max="5000000"
-                  step="100000"
-                  value={monthlyMaintPerTruck}
-                  onChange={(e) => setMonthlyMaintPerTruck(Number(e.target.value))}
+                  min={rec.opex3Min}
+                  max={rec.opex3Max}
+                  step={rec.opex3Step}
+                  value={monthlyOpex3}
+                  onChange={(e) => setMonthlyOpex3(Number(e.target.value))}
                   className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
                 />
               </div>
@@ -485,39 +610,55 @@ export function FinancialFocusCards({ projectTitle }: FinancialFocusProps) {
                   ANNUAL OPEX ESTIMATION
                 </span>
                 <h4 className="text-sm font-black text-white uppercase tracking-tight mb-4">
-                  Akumulasi Beban Kerja Tahunan
+                  Akumulasi Beban Operasional Usaha
                 </h4>
 
                 <div className="space-y-3 font-semibold text-xs text-slate-300">
                   <div className="flex justify-between py-1.5 border-b border-slate-900">
-                    <span className="flex items-center gap-1"><Flame className="h-3.5 w-3.5 text-amber-500" /> Biaya Bahan Bakar (BBM)</span>
-                    <span className="font-mono text-white font-bold">{formatIDR(annualOpexFuel)}</span>
+                    <span className="flex items-center gap-1 truncate max-w-[200px]" title={rec.opex1Name}>
+                      <Flame className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                      <span className="truncate">{rec.opex1Name}</span>
+                    </span>
+                    <span className="font-mono text-white font-bold">{formatIDR(annualOpex1)}</span>
                   </div>
 
                   <div className="flex justify-between py-1.5 border-b border-slate-900">
-                    <span className="flex items-center gap-1">👥 Gaji Driver & Crew Cab</span>
-                    <span className="font-mono text-white font-bold">{formatIDR(annualOpexSalary)}</span>
+                    <span className="flex items-center gap-1 truncate max-w-[200px]" title={rec.opex2Name}>
+                      <span className="text-emerald-400">👥</span>
+                      <span className="truncate">{rec.opex2Name}</span>
+                    </span>
+                    <span className="font-mono text-white font-bold">{formatIDR(annualOpex2)}</span>
                   </div>
 
                   <div className="flex justify-between py-1.5 border-b border-slate-900">
-                    <span className="flex items-center gap-1"><Wrench className="h-3.5 w-3.5 text-blue-400" /> Pemeliharaan & Ban Sasis</span>
-                    <span className="font-mono text-white font-bold">{formatIDR(annualOpexMaint)}</span>
+                    <span className="flex items-center gap-1 truncate max-w-[200px]" title={rec.opex3Name}>
+                      <Wrench className="h-3.5 w-3.5 text-blue-400 shrink-0" />
+                      <span className="truncate">{rec.opex3Name}</span>
+                    </span>
+                    <span className="font-mono text-white font-bold">{formatIDR(annualOpex3)}</span>
                   </div>
 
                   <div className="flex justify-between py-1.5 border-b border-slate-900">
-                    <span className="flex items-center gap-1">🏢 Overhead Kantor & Operasional</span>
-                    <span className="font-mono text-white font-bold">{formatIDR(annualOpexOverhead)}</span>
+                    <span className="flex items-center gap-1 truncate max-w-[200px]" title={rec.opex4Name}>
+                      <Building className="h-3.5 w-3.5 text-indigo-400 shrink-0" />
+                      <span className="truncate">{rec.opex4Name}</span>
+                    </span>
+                    <span className="font-mono text-white font-bold">{formatIDR(annualOpex4)}</span>
                   </div>
 
                   <div className="flex justify-between pt-3 text-[13px] font-black text-white">
-                    <span>Total OPEX Setahun ({capexTruckCount} Truk)</span>
+                    <span>Total OPEX Setahun</span>
                     <span className="font-mono text-emerald-400">{formatIDR(grandTotalAnnualOpex)}</span>
+                  </div>
+                  <div className="flex justify-between text-[11px] font-bold text-slate-400">
+                    <span>Rata-rata Bulanan</span>
+                    <span className="font-mono text-white">{formatIDR(currentTotalMonthlyOpex)} / bln</span>
                   </div>
                 </div>
               </div>
 
               <div className="text-[9px] text-slate-500 font-bold mt-4 font-mono">
-                PRAMA OPEX MODELING ENGINE v1.2
+                PRAMA OPEX MODELING ENGINE v2.0
               </div>
             </div>
           </motion.div>
@@ -571,19 +712,19 @@ export function FinancialFocusCards({ projectTitle }: FinancialFocusProps) {
                   </button>
                 </div>
 
-                {/* Revenue per truck slider */}
+                {/* Revenue driver slider */}
                 <div className="space-y-1.5">
                   <div className="flex justify-between text-[11px] font-semibold">
-                    <span className="text-slate-400">Target Pendapatan / Truk / Tahun</span>
-                    <span className="text-white font-mono font-bold">{formatIDR(annualRevenuePerTruck)}</span>
+                    <span className="text-slate-400">Target Omset / Revenue Thn 1</span>
+                    <span className="text-white font-mono font-bold">{formatIDR(annualRevenuePerAsset)}</span>
                   </div>
                   <input
                     type="range"
-                    min="250000000"
-                    max="600000000"
-                    step="10000000"
-                    value={annualRevenuePerTruck}
-                    onChange={(e) => setAnnualRevenuePerTruck(Number(e.target.value))}
+                    min={rec.annualRevenuePerAssetMin}
+                    max={rec.annualRevenuePerAssetMax}
+                    step={rec.annualRevenuePerAssetStep}
+                    value={annualRevenuePerAsset}
+                    onChange={(e) => setAnnualRevenuePerAsset(Number(e.target.value))}
                     className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
                   />
                 </div>
@@ -591,14 +732,14 @@ export function FinancialFocusCards({ projectTitle }: FinancialFocusProps) {
                 {/* Tax Rate slider */}
                 <div className="space-y-1.5">
                   <div className="flex justify-between text-[11px] font-semibold">
-                    <span className="text-slate-400">Estimasi Beban Pajak Efektif</span>
+                    <span className="text-slate-400">Estimasi Tarif Pajak ({rec.archetype === "personal_sme" ? "PPh Final UMKM" : "PPh Badan"})</span>
                     <span className="text-white font-mono font-bold">{taxRate}%</span>
                   </div>
                   <input
                     type="range"
-                    min="5"
-                    max="22"
-                    step="1"
+                    min={rec.archetype === "personal_sme" ? "0.5" : "5"}
+                    max={rec.archetype === "personal_sme" ? "2" : "22"}
+                    step={rec.archetype === "personal_sme" ? "0.5" : "1"}
                     value={taxRate}
                     onChange={(e) => setTaxRate(Number(e.target.value))}
                     className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
@@ -607,7 +748,7 @@ export function FinancialFocusCards({ projectTitle }: FinancialFocusProps) {
               </div>
 
               <div className="text-[9px] text-slate-500 font-bold mt-4 font-mono">
-                PRAMA SCENARIOS ENGINE v1.1
+                PRAMA SCENARIOS ENGINE v2.0
               </div>
             </div>
 
@@ -616,7 +757,7 @@ export function FinancialFocusCards({ projectTitle }: FinancialFocusProps) {
               <div className="flex justify-between items-center pb-2 border-b border-slate-850 mb-3">
                 <h4 className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
                   <TrendingUp className="h-4.5 w-4.5 text-emerald-400" />
-                  Proyeksi Laba & Rugi (P&L Pro-Forma) 3 Tahun
+                  Proyeksi Laba &amp; Rugi (P&amp;L Pro-Forma) 3 Tahun
                 </h4>
                 <span className="text-[8px] text-slate-500 font-mono font-bold uppercase">Rp IDR DENOMINATED</span>
               </div>
@@ -633,7 +774,7 @@ export function FinancialFocusCards({ projectTitle }: FinancialFocusProps) {
                   </thead>
                   <tbody className="font-semibold text-slate-300">
                     <tr className="border-b border-slate-900/40">
-                      <td className="py-2 text-white">Pendapatan Jasa Hauling (Revenue)</td>
+                      <td className="py-2 text-white">Pendapatan Usaha (Revenue)</td>
                       <td className="py-2 text-right font-mono">{formatIDR(pAndLData.yr1.revenue)}</td>
                       <td className="py-2 text-right font-mono">{formatIDR(pAndLData.yr2.revenue)}</td>
                       <td className="py-2 text-right font-mono text-emerald-400">{formatIDR(pAndLData.yr3.revenue)}</td>
@@ -651,13 +792,13 @@ export function FinancialFocusCards({ projectTitle }: FinancialFocusProps) {
                       <td className="py-2.5 text-right font-mono text-emerald-500">{formatIDR(pAndLData.yr3.ebitda)}</td>
                     </tr>
                     <tr className="border-b border-slate-900/40 text-slate-500">
-                      <td className="py-2">Depresiasi Sasis & Peralatan</td>
+                      <td className="py-2">Depresiasi Aset &amp; Fasilitas</td>
                       <td className="py-2 text-right font-mono">({formatIDR(annualDepreciation)})</td>
                       <td className="py-2 text-right font-mono">({formatIDR(annualDepreciation)})</td>
                       <td className="py-2 text-right font-mono">({formatIDR(annualDepreciation)})</td>
                     </tr>
                     <tr className="border-b border-slate-900/40 text-red-400/90">
-                      <td className="py-2">Estimasi Pajak Badan/PPh ({taxRate}%)</td>
+                      <td className="py-2">Estimasi Beban Pajak ({taxRate}%)</td>
                       <td className="py-2 text-right font-mono">({formatIDR(pAndLData.yr1.tax)})</td>
                       <td className="py-2 text-right font-mono">({formatIDR(pAndLData.yr2.tax)})</td>
                       <td className="py-2 text-right font-mono">({formatIDR(pAndLData.yr3.tax)})</td>
@@ -689,7 +830,7 @@ export function FinancialFocusCards({ projectTitle }: FinancialFocusProps) {
               <div>
                 <h4 className="text-xs font-black uppercase tracking-wider text-slate-350 mb-4 flex items-center gap-1.5">
                   <Percent className="h-4.5 w-4.5 text-emerald-400" />
-                  Arus Kas & Analisis Imbal Hasil Investasi (ROI)
+                  Arus Kas &amp; Analisis Imbal Hasil Investasi (ROI)
                 </h4>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -700,7 +841,7 @@ export function FinancialFocusCards({ projectTitle }: FinancialFocusProps) {
                       {roiPercentage.toFixed(1)}% <span className="text-xs text-slate-400 font-bold">/ Tahun</span>
                     </span>
                     <p className="text-[10px] text-slate-400 font-semibold mt-2 leading-normal">
-                      Rata-rata arus kas bersih tahunan dibandingkan dengan investasi awal (CAPEX).
+                      Rata-rata arus kas bersih tahunan dibandingkan dengan investasi modal awal (CAPEX).
                     </p>
                   </div>
 
@@ -708,10 +849,10 @@ export function FinancialFocusCards({ projectTitle }: FinancialFocusProps) {
                   <div className="bg-slate-900 p-4 rounded-xl border border-slate-850 text-center">
                     <span className="text-[9px] text-slate-500 font-black block uppercase tracking-wider font-mono">PAYBACK PERIOD (PBP)</span>
                     <span className="text-2xl font-black text-emerald-400 font-mono block mt-1">
-                      {simplePaybackYears.toFixed(1)} <span className="text-xs text-slate-400 font-bold">Tahun</span>
+                      {rec.archetype === "personal_sme" ? rec.paybackText : `${simplePaybackYears.toFixed(1)} Tahun`}
                     </span>
                     <p className="text-[10px] text-slate-400 font-semibold mt-2 leading-normal">
-                      Kecepatan pengembalian seluruh modal investasi awal melalui laba bersih usaha.
+                      Kecepatan pengembalian modal investasi awal melalui akumulasi laba bersih usaha.
                     </p>
                   </div>
                 </div>
@@ -722,10 +863,12 @@ export function FinancialFocusCards({ projectTitle }: FinancialFocusProps) {
                   <div className="w-full h-3 bg-slate-850 rounded-full overflow-hidden relative">
                     <div
                       className="bg-emerald-500 h-full rounded-full transition-all"
-                      style={{ width: `${Math.min(100, Math.max(0, (3 / simplePaybackYears) * 100))}%` }}
+                      style={{
+                        width: `${Math.min(100, Math.max(0, (3 / (simplePaybackYears > 0 ? simplePaybackYears : 1)) * 100))}%`
+                      }}
                     />
                     <span className="absolute inset-0 flex items-center justify-center text-[8.5px] text-white font-mono font-black">
-                      Progress s/d Tahun Ke-3: {Math.min(100, Math.round((3 / simplePaybackYears) * 100))}% Terlunasi
+                      Progress s/d Tahun Ke-3: {Math.min(100, Math.round((3 / (simplePaybackYears > 0 ? simplePaybackYears : 1)) * 100))}% Terlunasi
                     </span>
                   </div>
                 </div>
@@ -733,7 +876,11 @@ export function FinancialFocusCards({ projectTitle }: FinancialFocusProps) {
 
               <div className="text-[9.5px] text-slate-500 font-semibold flex items-center gap-1 mt-4">
                 <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
-                <span>Analisis payback period di atas mengasumsikan pembayaran retensi tepat waktu oleh pemberi kerja.</span>
+                <span>
+                  {rec.archetype === "personal_sme"
+                    ? "Analisis kelayakan UMKM ini didukung margin sehat dan perputaran kas harian yang stabil."
+                    : "Analisis payback period di atas mengasumsikan pembayaran termin & penyerapan kuota sesuai kontrak."}
+                </span>
               </div>
             </div>
 
@@ -782,7 +929,7 @@ export function FinancialFocusCards({ projectTitle }: FinancialFocusProps) {
                   {/* Year 3 Cash position */}
                   <div className="flex justify-between items-center border-t border-slate-850/60 pt-2 font-semibold">
                     <div>
-                      <span className="text-slate-550 font-bold text-[9px] block font-mono">AKHIR TAHUN KE-3</span>
+                      <span className="text-slate-500 font-bold text-[9px] block font-mono">AKHIR TAHUN KE-3</span>
                       <span className="text-[11.5px] font-black text-white">Akumulasi Arus Kas</span>
                     </div>
                     <span className={`font-mono ${pAndLData.yr1.netProfit + pAndLData.yr2.netProfit + pAndLData.yr3.netProfit + (annualDepreciation * 3) - grandTotalCapex > 0 ? "text-emerald-400 text-[13px] font-black" : "text-amber-400"}`}>
@@ -793,7 +940,7 @@ export function FinancialFocusCards({ projectTitle }: FinancialFocusProps) {
               </div>
 
               <div className="text-[9px] text-slate-500 font-bold mt-4 font-mono">
-                PRAMA NPV & CASH-FLOW MODEL v1.3
+                PRAMA NPV &amp; CASH-FLOW MODEL v2.0
               </div>
             </div>
           </motion.div>

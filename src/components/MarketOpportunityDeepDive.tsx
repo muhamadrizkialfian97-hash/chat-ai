@@ -1,373 +1,469 @@
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "motion/react";
 import {
   TrendingUp,
-  AlertTriangle,
-  Cpu,
-  CheckCircle,
-  Activity,
-  Compass,
-  Plus,
-  Trash2,
-  RefreshCw,
-  Sliders,
-  DollarSign,
-  Truck,
-  Leaf,
-  ShieldAlert,
-  MapPin,
-  Maximize2,
-  Minimize2,
   Sparkles,
-  Info
+  RefreshCw,
+  Copy,
+  Check,
+  Edit3,
+  Trash2,
+  Save,
+  X,
+  Building2,
+  ShieldCheck,
+  CheckCircle2,
+  FileText,
+  Target
 } from "lucide-react";
-import { getSectorOpportunityProfile } from "../utils/sectorOpportunityHelper";
+import { generateMarketOpportunityForTitle } from "../utils/marketOpportunityGenerator";
+import { exportAllSectionsToWord } from "../utils/projectDashboardHelper";
 
 interface MarketOpportunityProps {
   projectTitle: string;
+  activeDivision?: string;
 }
 
-interface CustomOpportunity {
-  id: string;
-  category: "driver" | "gap" | "tech" | "green";
-  title: string;
-  impact: "Tinggi" | "Sedang" | "Rendah";
-  description: string;
-}
+export function MarketOpportunityDeepDive({ projectTitle, activeDivision }: MarketOpportunityProps) {
+  const currentTitle = (projectTitle || "").trim() || "Kajian Peluang Pasar Logistik";
+  const currentDiv = activeDivision || "Logistik & Transportasi Komersial";
 
-export function MarketOpportunityDeepDive({ projectTitle }: MarketOpportunityProps) {
-  const profile = getSectorOpportunityProfile(projectTitle);
+  const storageKey = `prama_market_opp_content_${currentTitle.toLowerCase().replace(/[^a-z0-9]/g, "_")}`;
 
-  // 1. Interactive States for Estimator
-  const [volume, setVolume] = useState<number>(15000); // Unit/month
-  const [premiumRate, setPremiumRate] = useState<number>(8); // % increase
-  const [efficiency, setEfficiency] = useState<number>(15); // % tech efficiency boost
-  const [baseTariff, setBaseTariff] = useState<number>(350000); // IDR per unit base
-
-  // 2. Active Tab State for Pillars
-  const [activeTab, setActiveTab] = useState<"drivers" | "gap" | "tech" | "green">("drivers");
-
-  // 3. Mini-simulators states
-  const [cargoWeight, setCargoWeight] = useState<number>(32);
-  const [axles, setAxles] = useState<number>(3);
-  const [axleFeedback, setAxleFeedback] = useState<string>("");
-
-  // Satellite Tracking Ping Simulator
-  const [pingStatus, setPingStatus] = useState<"idle" | "pinging" | "connected">("idle");
-  const [activeTrucks, setActiveTrucks] = useState(profile.pingTrucks);
-
-  useEffect(() => {
-    setActiveTrucks(profile.pingTrucks);
-    setAxleFeedback("");
-  }, [projectTitle]);
-
-  // 4. Custom User Added Opportunities
-  const [customOps, setCustomOps] = useState<CustomOpportunity[]>([
-    {
-      id: "op-1",
-      category: "gap",
-      title: "Jalur Hauling Khusus Musim Hujan",
-      impact: "Tinggi",
-      description: "Mitra yang memiliki keahlian pemeliharaan jalan lateral dengan material gravel agar hauling tidak terhenti saat hujan lebat."
-    }
-  ]);
-  const [newOpTitle, setNewOpTitle] = useState("");
-  const [newOpCat, setNewOpCat] = useState<"driver" | "gap" | "tech" | "green">("gap");
-  const [newOpImpact, setNewOpImpact] = useState<"Tinggi" | "Sedang" | "Rendah">("Tinggi");
-  const [newOpDesc, setNewOpDesc] = useState("");
-
-  // 5. Readiness self-evaluation
-  const [readinessScores, setReadinessScores] = useState({
-    drivers: "Ready",
-    gap: "Progress",
-    tech: "Progress",
-    green: "Planned"
+  // Content starts POLOS (empty) unless explicitly generated or saved
+  const [content, setContent] = useState<string>(() => {
+    return localStorage.getItem(storageKey) || "";
   });
 
-  // Live Math Calculations
-  const baseMonthlyRevenue = volume * baseTariff;
-  const greenPremiumBenefit = baseMonthlyRevenue * (premiumRate / 100);
-  const techSavings = (baseMonthlyRevenue * 0.45) * (efficiency / 100); // assume 45% is fuel/operational cost
-  const totalFinancialBenefit = greenPremiumBenefit + techSavings;
-  const estimatedCarbonSaved = (volume * 0.012) * (efficiency / 100); // 12kg CO2 per ton-km base estimate
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [copied, setCopied] = useState<boolean>(false);
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [editText, setEditText] = useState<string>("");
+  const [lastGeneratedForTitle, setLastGeneratedForTitle] = useState<string>(() => {
+    return localStorage.getItem(`${storageKey}_title`) || "";
+  });
 
-  const handleRunAxleCheck = () => {
-    const maxCapacity = axles * 10; // Simple logging rule: 10 tons per axle allowance in logging road
-    if (cargoWeight > maxCapacity + 3) {
-      setAxleFeedback(`❌ OVERLOAD DETECTED! Muatan ${cargoWeight} Ton melebihi kapasitas aman armada ${axles}-As (${maxCapacity} Ton). Direkomendasikan kurangi muatan sebesar ${Math.ceil(cargoWeight - maxCapacity)} Ton atau gunakan armada 4-As / Tronton.`);
-    } else if (cargoWeight < maxCapacity - 5) {
-      setAxleFeedback(`⚠️ UNDERLOAD WARNING: Efisiensi muatan rendah (${Math.round((cargoWeight/maxCapacity)*100)}%). Armada ${axles}-As memiliki kapasitas tersisa. Anda dapat menambah muatan hingga ${maxCapacity} Ton untuk mengoptimalkan ritase.`);
-    } else {
-      setAxleFeedback(`✅ MUATAN OPTIMAL! Beban ${cargoWeight} Ton pada armada ${axles}-As terdistribusi merata dengan indeks tekanan permukaan ban sangat aman untuk melintasi logging road.`);
+  // Cleanup any old legacy preset keys
+  useEffect(() => {
+    try {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && (k.startsWith("prama_market_opp_ai_") || k.startsWith("market_opp_custom_"))) {
+          keysToRemove.push(k);
+        }
+      }
+      keysToRemove.forEach((k) => localStorage.removeItem(k));
+    } catch (e) {}
+  }, []);
+
+  // When projectTitle changes, load the saved content for that title or start polos
+  useEffect(() => {
+    const saved = localStorage.getItem(storageKey) || "";
+    setContent(saved);
+    setEditText(saved);
+    setIsEditing(false);
+  }, [storageKey]);
+
+  // Handler to generate fresh, 100% title-tailored content
+  const handleGenerateContent = async (targetTitle: string = currentTitle) => {
+    setIsLoading(true);
+    setIsEditing(false);
+
+    try {
+      const clientApiKey = localStorage.getItem("workspace_client_api_key") || "";
+      const res = await fetch("/api/generate-market-opportunity", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectTitle: targetTitle,
+          division: currentDiv,
+          clientApiKey
+        })
+      });
+
+      let generatedMarkdown = "";
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.content && typeof data.content === "string" && data.content.trim().length > 50) {
+          generatedMarkdown = data.content;
+        }
+      }
+
+      // If server returned fallback or couldn't reach API, use precision title generator
+      if (!generatedMarkdown) {
+        const localResult = generateMarketOpportunityForTitle(targetTitle, currentDiv);
+        generatedMarkdown = localResult.narrativeMarkdown;
+      }
+
+      setContent(generatedMarkdown);
+      setEditText(generatedMarkdown);
+      setLastGeneratedForTitle(targetTitle);
+      localStorage.setItem(storageKey, generatedMarkdown);
+      localStorage.setItem(`${storageKey}_title`, targetTitle);
+    } catch (err) {
+      console.warn("Generating local tailored market opportunity for:", targetTitle, err);
+      const localResult = generateMarketOpportunityForTitle(targetTitle, currentDiv);
+      setContent(localResult.narrativeMarkdown);
+      setEditText(localResult.narrativeMarkdown);
+      setLastGeneratedForTitle(targetTitle);
+      localStorage.setItem(storageKey, localResult.narrativeMarkdown);
+      localStorage.setItem(`${storageKey}_title`, targetTitle);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const simulatePing = () => {
-    setPingStatus("pinging");
-    setTimeout(() => {
-      setPingStatus("connected");
-      // randomize speed a bit
-      setActiveTrucks(prev => prev.map(t => ({
-        ...t,
-        speed: Math.floor(Math.random() * 30) + 15
-      })));
-    }, 1200);
+  // Handler to completely wipe content and make it POLOS (blank)
+  const handleClearAll = () => {
+    setContent("");
+    setEditText("");
+    setIsEditing(false);
+    localStorage.removeItem(storageKey);
+    localStorage.removeItem(`${storageKey}_title`);
   };
 
-  const handleAddOpportunity = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newOpTitle.trim()) return;
-    const item: CustomOpportunity = {
-      id: `op-${Date.now()}`,
-      category: newOpCat,
-      title: newOpTitle,
-      impact: newOpImpact,
-      description: newOpDesc || "Tidak ada rincian tambahan."
-    };
-    setCustomOps(prev => [item, ...prev]);
-    setNewOpTitle("");
-    setNewOpDesc("");
+  // Handler to start editing manually
+  const handleStartEdit = () => {
+    setEditText(content);
+    setIsEditing(true);
   };
 
-  const handleDeleteOp = (id: string) => {
-    setCustomOps(prev => prev.filter(x => x.id !== id));
+  // Save manual edits
+  const handleSaveEdit = () => {
+    setContent(editText);
+    localStorage.setItem(storageKey, editText);
+    setIsEditing(false);
   };
+
+  // Copy narrative to clipboard
+  const handleCopy = () => {
+    if (!content) return;
+    navigator.clipboard.writeText(content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  // Markdown renderer for clean unified narrative
+  const renderSeamlessNarrative = (rawText: string) => {
+    if (!rawText || !rawText.trim()) return null;
+    const lines = rawText.split("\n");
+    const renderedNodes: React.ReactNode[] = [];
+
+    lines.forEach((line, index) => {
+      const trimmed = line.trim();
+
+      if (!trimmed) {
+        renderedNodes.push(<div key={`empty-${index}`} className="h-3" />);
+        return;
+      }
+
+      // Heading 3
+      if (trimmed.startsWith("### ")) {
+        const headingText = trimmed.replace(/^###\s+/, "");
+        renderedNodes.push(
+          <div key={`h3-${index}`} className="mt-6 mb-3 pt-3 border-t border-slate-800 first:border-t-0 first:pt-0">
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
+              <h4 className="text-sm md:text-base font-black text-white uppercase tracking-tight">
+                {headingText}
+              </h4>
+            </div>
+          </div>
+        );
+        return;
+      }
+
+      // Heading 2 or 1
+      if (trimmed.startsWith("## ") || trimmed.startsWith("# ")) {
+        const headingText = trimmed.replace(/^#+\s+/, "");
+        renderedNodes.push(
+          <div key={`h2-${index}`} className="mt-7 mb-3.5 border-b border-emerald-500/20 pb-2">
+            <h3 className="text-base md:text-lg font-black text-emerald-300 uppercase tracking-tight flex items-center gap-2">
+              <Target className="h-4 w-4 text-emerald-400" />
+              {headingText}
+            </h3>
+          </div>
+        );
+        return;
+      }
+
+      // Bullet points
+      if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+        const bulletContent = trimmed.replace(/^[\*\-]\s+/, "");
+        const formatted = bulletContent.split(/(\*\*.*?\*\*)/g).map((part, pIdx) => {
+          if (part.startsWith("**") && part.endsWith("**")) {
+            return (
+              <strong key={pIdx} className="text-white font-extrabold">
+                {part.slice(2, -2)}
+              </strong>
+            );
+          }
+          return part;
+        });
+
+        renderedNodes.push(
+          <div key={`bullet-${index}`} className="flex items-start gap-2.5 ml-1 my-1.5 text-slate-300 text-xs md:text-[13px] leading-relaxed">
+            <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-emerald-400 shrink-0" />
+            <div className="flex-1">{formatted}</div>
+          </div>
+        );
+        return;
+      }
+
+      // Regular paragraph
+      const parts = trimmed.split(/(\*\*.*?\*\*)/g);
+      const formattedParts = parts.map((part, pIdx) => {
+        if (part.startsWith("**") && part.endsWith("**")) {
+          return (
+            <strong key={pIdx} className="text-white font-extrabold tracking-wide">
+              {part.slice(2, -2)}
+            </strong>
+          );
+        }
+        return part;
+      });
+
+      renderedNodes.push(
+        <p
+          key={`p-${index}`}
+          className="text-xs md:text-[13px] text-slate-300 leading-relaxed font-normal text-justify my-2.5"
+        >
+          {formattedParts}
+        </p>
+      );
+    });
+
+    return renderedNodes;
+  };
+
+  const isBlank = !content || content.trim().length === 0;
+  const isTitleDifferent = content && lastGeneratedForTitle && lastGeneratedForTitle.toLowerCase() !== currentTitle.toLowerCase();
 
   return (
-    <div id="market-opportunity-deepdive-root" className="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-slate-100 shadow-2xl mt-8 overflow-hidden font-sans">
-      {/* Decorative background grids */}
-      <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
+    <div
+      id="market-opportunity-deepdive-root"
+      className="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-slate-100 shadow-2xl mt-8 font-sans relative overflow-hidden"
+    >
+      <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Header Panel */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-5 mb-6 gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-            <span className="px-2.5 py-0.5 text-[9px] font-black tracking-wider uppercase rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              {profile.sectorBadge}
+      {/* Header Bar */}
+      <div className="border-b border-slate-800 pb-5 mb-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="px-2.5 py-0.5 text-[9.5px] font-black tracking-wider uppercase rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono flex items-center gap-1.5">
+              <TrendingUp className="h-3 w-3 text-emerald-400" />
+              PILAR 2 • MARKET OPPORTUNITY & DEMAND DYNAMICS
             </span>
-            <span className="px-2.5 py-0.5 text-[9px] font-black tracking-wider uppercase rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-mono flex items-center gap-1">
-              ⚡ SINKRON CHAT: <span className="text-white font-bold">{projectTitle || "Kajian Strategis PRAMA"}</span>
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            <span className="px-2.5 py-0.5 text-[9.5px] font-bold uppercase rounded-md bg-slate-800 text-slate-300 border border-slate-700/80 font-mono">
+              JUDUL PROYEK: {currentTitle}
             </span>
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            {isBlank && (
+              <span className="px-2 py-0.5 text-[9px] font-bold uppercase rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/20 font-mono">
+                STATUS: POLOS
+              </span>
+            )}
           </div>
-          <h3 className="text-lg md:text-xl font-black uppercase tracking-tight text-white flex items-center gap-2 font-display">
-            <TrendingUp className="h-5 w-5 text-emerald-400" />
-            Interactive Market Opportunity Deep-Dive Hub
-          </h3>
-          <p className="text-xs text-slate-400 mt-1 font-semibold max-w-2xl leading-relaxed">
-            Simulasikan nilai ekonomi, efisiensi operasional, serta analisis kesenjangan logistik pengangkutan proyek <span className="text-emerald-300 font-extrabold">"{projectTitle || "Kajian Strategis PRAMA"}"</span> secara real-time.
-          </p>
+
+          {/* Action buttons */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  const saved = localStorage.getItem("prama_dashboard_sections");
+                  const map = saved ? JSON.parse(saved) : {};
+                  map[2] = content;
+                  exportAllSectionsToWord(currentTitle, map);
+                } catch(e) {
+                  exportAllSectionsToWord(currentTitle, { 2: content });
+                }
+              }}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition shadow-md shadow-emerald-600/20 cursor-pointer active:scale-95"
+              title="Unduh seluruh laporan komprehensif ke format Word (.doc)"
+            >
+              <FileText className="h-3.5 w-3.5" />
+              <span>Unduh Word (.doc)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleGenerateContent(currentTitle)}
+              disabled={isLoading}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition shadow-md shadow-blue-600/20 cursor-pointer active:scale-95 disabled:opacity-50"
+              title="Buat isian baru yang sesuai dengan judul proyek"
+            >
+              <Sparkles className={`h-3.5 w-3.5 ${isLoading ? "animate-spin text-blue-200" : ""}`} />
+              <span>{isLoading ? "Menyusun Peluang Pasar..." : isBlank ? "Buat Isian Sesuai Judul" : "Buat Ulang Sesuai Judul"}</span>
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-bold text-slate-400 uppercase font-mono">Status Kesiapan:</span>
-          <span className="px-2.5 py-1 text-[9.5px] font-extrabold rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-            STRATEGIC ADVANCED
-          </span>
-        </div>
+
+        <h3 className="text-lg md:text-xl font-black uppercase tracking-tight text-white flex items-center gap-2">
+          <TrendingUp className="h-5 w-5 text-emerald-400" />
+          Market Opportunity & Demand Dynamics
+        </h3>
+        <p className="text-xs text-slate-400 mt-1 font-medium leading-relaxed">
+          Kajian peluang pasar, kesenjangan kompetitor, dan model pendapatan B2B khusus untuk proyek{" "}
+          <span className="text-emerald-300 font-extrabold">"{currentTitle}"</span>.
+        </p>
       </div>
 
-
-
-      {/* SECTION 2: INTERACTIVE DEEP DIVE ACCORDION FOR THE 3 REQUESTED PILLARS */}
-      <div className="mb-8">
-        <div className="flex flex-wrap border-b border-slate-800 mb-5">
+      {/* If current title is different from what was previously generated, show quick sync badge */}
+      {isTitleDifferent && (
+        <div className="mb-4 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-xs text-amber-200">
+            <span className="h-2 w-2 rounded-full bg-amber-400 shrink-0 animate-ping" />
+            <span>
+              Judul proyek telah diperbarui menjadi: <strong className="text-white">"{currentTitle}"</strong>
+            </span>
+          </div>
           <button
             type="button"
-            onClick={() => setActiveTab("drivers")}
-            className={`px-4 py-3 text-xs font-black uppercase tracking-wider border-b-2 transition flex items-center gap-2 cursor-pointer ${
-              activeTab === "drivers"
-                ? "border-emerald-500 text-emerald-400"
-                : "border-transparent text-slate-400 hover:text-slate-200"
-            }`}
+            onClick={() => handleGenerateContent(currentTitle)}
+            className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-bold rounded-lg transition cursor-pointer"
           >
-            <TrendingUp className="h-3.5 w-3.5" />
-            1. Pendorong Pasar (Drivers)
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("gap")}
-            className={`px-4 py-3 text-xs font-black uppercase tracking-wider border-b-2 transition flex items-center gap-2 cursor-pointer ${
-              activeTab === "gap"
-                ? "border-indigo-500 text-indigo-400"
-                : "border-transparent text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            <Compass className="h-3.5 w-3.5" />
-            2. Celah Pasar (Gap)
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("tech")}
-            className={`px-4 py-3 text-xs font-black uppercase tracking-wider border-b-2 transition flex items-center gap-2 cursor-pointer ${
-              activeTab === "tech"
-                ? "border-sky-500 text-sky-400"
-                : "border-transparent text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            <Cpu className="h-3.5 w-3.5" />
-            3. Inovasi Teknologi (Tech)
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("green")}
-            className={`px-4 py-3 text-xs font-black uppercase tracking-wider border-b-2 transition flex items-center gap-2 cursor-pointer ${
-              activeTab === "green"
-                ? "border-teal-500 text-teal-400"
-                : "border-transparent text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            <Leaf className="h-3.5 w-3.5" />
-            4. Nilai Tambah Hijau (Green)
+            <Sparkles className="h-3 w-3" />
+            <span>Buat Isian Baru untuk Judul Ini</span>
           </button>
         </div>
+      )}
 
-        {/* Tab content wrapper */}
-        <div className="bg-slate-950/40 border border-slate-800 rounded-2xl p-5 text-left">
-          {activeTab === "drivers" && (
-            <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-              <div className="flex justify-between items-start gap-4">
-                <div>
-                  <h5 className="text-sm font-black text-white uppercase tracking-tight">🚀 {profile.driversTitle}</h5>
-                  <p className="text-[11px] text-slate-400 font-semibold mt-1">{profile.driversSubtitle}</p>
-                </div>
-                <div className="shrink-0 flex items-center gap-2">
-                  <span className="text-[10px] font-bold text-slate-500">Evaluasi Internal:</span>
-                  <select
-                    value={readinessScores.drivers}
-                    onChange={(e) => setReadinessScores(prev => ({ ...prev, drivers: e.target.value }))}
-                    className="bg-slate-900 border border-slate-800 rounded px-2 py-1 text-[10px] font-bold text-emerald-400 focus:outline-none"
-                  >
-                    <option value="Ready">Sangat Siap (Ready)</option>
-                    <option value="Progress">Menyiapkan (Progress)</option>
-                    <option value="Planned">Rencana Kemitraan (Planned)</option>
-                  </select>
-                </div>
+      {/* Main Canvas Area */}
+      <div className="bg-slate-950/70 border border-slate-800/90 rounded-2xl p-5 md:p-6 shadow-inner relative min-h-[220px]">
+        {isLoading ? (
+          <div className="py-14 px-4 text-center flex flex-col items-center justify-center gap-3">
+            <div className="relative">
+              <div className="h-10 w-10 rounded-full border-2 border-emerald-500/20 border-t-emerald-400 animate-spin" />
+              <Sparkles className="h-4 w-4 text-emerald-400 absolute inset-0 m-auto animate-pulse" />
+            </div>
+            <p className="text-sm font-bold text-white tracking-wide">
+              Menyusun Analisis Pasar Sesuai Judul...
+            </p>
+            <p className="text-xs text-slate-400 max-w-md text-center leading-relaxed">
+              Menganalisis profil target pasar B2B, volume permintaan, celah kompetitor, dan struktur tarif komersial untuk{" "}
+              <span className="text-emerald-300 font-bold">"{currentTitle}"</span>.
+            </p>
+          </div>
+        ) : isEditing ? (
+          /* Manual Edit Mode */
+          <div className="space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-200">
+                <Edit3 className="h-4 w-4 text-emerald-400" />
+                <span>Mode Edit Teks Mandiri (Pilar 2)</span>
               </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(false)}
+                  className="flex items-center gap-1 px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-lg transition"
+                >
+                  <X className="h-3.5 w-3.5" />
+                  <span>Batal</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveEdit}
+                  className="flex items-center gap-1 px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition"
+                >
+                  <Save className="h-3.5 w-3.5" />
+                  <span>Simpan Perubahan</span>
+                </button>
+              </div>
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
-                {profile.driversList.map((item, idx) => (
-                  <div key={idx} className="bg-slate-900/60 p-4 border border-slate-800 rounded-xl relative overflow-hidden">
-                    <div className={`absolute top-0 left-0 w-1 h-full ${idx === 0 ? "bg-emerald-500" : idx === 1 ? "bg-indigo-500" : "bg-teal-500"}`} />
-                    <span className="text-[10px] font-mono text-slate-500 font-black block uppercase mb-1">DRV-0{idx + 1} • {item.tag}</span>
-                    <h6 className="text-[11px] font-black text-slate-200 uppercase tracking-tight">{item.title}</h6>
-                    <p className="text-[10px] text-slate-400 font-semibold mt-1.5 leading-relaxed">
-                      {item.description}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          )}
+            <textarea
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              placeholder="Tuliskan kajian peluang pasar Anda di sini (mendukung format Markdown: ### Judul, **Tebal**, - Poin)..."
+              rows={14}
+              className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-xs md:text-sm text-slate-100 font-mono focus:outline-hidden focus:border-emerald-500 transition leading-relaxed resize-y"
+            />
+          </div>
+        ) : isBlank ? (
+          /* Clean Blank State (POLOS) */
+          <div className="py-12 px-4 text-center flex flex-col items-center justify-center gap-4">
+            <div className="h-14 w-14 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 shadow-inner">
+              <FileText className="h-7 w-7 text-slate-400" />
+            </div>
 
-          {activeTab === "gap" && (
-            <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-              <div className="flex justify-between items-start gap-4">
-                <div>
-                  <h5 className="text-sm font-black text-white uppercase tracking-tight">🎯 {profile.gapsTitle}</h5>
-                  <p className="text-[11px] text-slate-400 font-semibold mt-1">{profile.gapsSubtitle}</p>
-                </div>
-                <div className="shrink-0 flex items-center gap-2">
-                  <span className="text-[10px] font-bold text-slate-500">Evaluasi Internal:</span>
-                  <select
-                    value={readinessScores.gap}
-                    onChange={(e) => setReadinessScores(prev => ({ ...prev, gap: e.target.value }))}
-                    className="bg-slate-900 border border-slate-800 rounded px-2 py-1 text-[10px] font-bold text-indigo-400 focus:outline-none"
-                  >
-                    <option value="Ready">Sangat Siap (Ready)</option>
-                    <option value="Progress">Menyiapkan (Progress)</option>
-                    <option value="Planned">Rencana Kemitraan (Planned)</option>
-                  </select>
-                </div>
-              </div>
+            <div className="max-w-md">
+              <h4 className="text-sm font-bold text-white mb-1">
+                Kanvas Peluang Pasar Masih Polos
+              </h4>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Belum ada isian untuk proyek <span className="text-emerald-300 font-bold">"{currentTitle}"</span>. Klik tombol di bawah untuk menghasilkan analisis pasar yang 100% se-arah dengan judul ini, atau tulis sendiri secara manual.
+              </p>
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
-                {profile.gapsList.map((item, idx) => (
-                  <div key={idx} className="bg-slate-900/60 p-4 border border-slate-800 rounded-xl relative overflow-hidden">
-                    <div className={`absolute top-0 left-0 w-1 h-full ${idx === 0 ? "bg-rose-500" : idx === 1 ? "bg-amber-500" : "bg-purple-500"}`} />
-                    <span className="text-[10px] font-mono text-slate-500 font-black block uppercase mb-1">GAP-0{idx + 1} • {item.tag}</span>
-                    <h6 className="text-[11px] font-black text-slate-200 uppercase tracking-tight">{item.title}</h6>
-                    <p className="text-[10px] text-slate-400 font-semibold mt-1.5 leading-relaxed">
-                      {item.description}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          )}
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => handleGenerateContent(currentTitle)}
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-emerald-600/20 cursor-pointer active:scale-95"
+              >
+                <Sparkles className="h-4 w-4" />
+                <span>Buat Isian Baru Sesuai Judul</span>
+              </button>
 
-          {activeTab === "tech" && (
-            <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-              <div className="flex justify-between items-start gap-4">
-                <div>
-                  <h5 className="text-sm font-black text-white uppercase tracking-tight">💻 {profile.techTitle}</h5>
-                  <p className="text-[11px] text-slate-400 font-semibold mt-1">{profile.techSubtitle}</p>
-                </div>
-                <div className="shrink-0 flex items-center gap-2">
-                  <span className="text-[10px] font-bold text-slate-500">Evaluasi Internal:</span>
-                  <select
-                    value={readinessScores.tech}
-                    onChange={(e) => setReadinessScores(prev => ({ ...prev, tech: e.target.value }))}
-                    className="bg-slate-900 border border-slate-800 rounded px-2 py-1 text-[10px] font-bold text-sky-400 focus:outline-none"
-                  >
-                    <option value="Ready">Sangat Siap (Ready)</option>
-                    <option value="Progress">Menyiapkan (Progress)</option>
-                    <option value="Planned">Rencana Kemitraan (Planned)</option>
-                  </select>
-                </div>
+              <button
+                type="button"
+                onClick={handleStartEdit}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-xl text-xs font-bold transition cursor-pointer active:scale-95"
+              >
+                <Edit3 className="h-3.5 w-3.5 text-slate-400" />
+                <span>Tulis Manual</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* Populated Unified Content */
+          <div className="space-y-2">
+            {/* Top Insight Bar */}
+            <div className="mb-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <ShieldCheck className="h-4 w-4 text-emerald-400 shrink-0" />
+                <span className="text-xs font-bold text-emerald-200 truncate">
+                  Fokus Analisis Pasar: <span className="text-white font-extrabold">{currentTitle}</span>
+                </span>
               </div>
+              <span className="text-[10px] font-mono uppercase bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded shrink-0 font-bold">
+                100% Se-arah Judul
+              </span>
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
-                {profile.techList.map((item, idx) => (
-                  <div key={idx} className="bg-slate-900/60 p-4 border border-slate-800 rounded-xl relative overflow-hidden">
-                    <div className={`absolute top-0 left-0 w-1 h-full ${idx === 0 ? "bg-sky-500" : idx === 1 ? "bg-blue-500" : "bg-cyan-500"}`} />
-                    <span className="text-[10px] font-mono text-slate-500 font-black block uppercase mb-1">{item.code} • {item.tag}</span>
-                    <h6 className="text-[11px] font-black text-slate-200 uppercase tracking-tight">{item.title}</h6>
-                    <p className="text-[10px] text-slate-400 font-semibold mt-1.5 leading-relaxed">
-                      {item.description}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          )}
+            {/* Seamless Narrative Content */}
+            <div className="prose prose-invert max-w-none">
+              {renderSeamlessNarrative(content)}
+            </div>
 
-          {activeTab === "green" && (
-            <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-              <div className="flex justify-between items-start gap-4">
-                <div>
-                  <h5 className="text-sm font-black text-white uppercase tracking-tight">🌿 {profile.greenTitle}</h5>
-                  <p className="text-[11px] text-slate-400 font-semibold mt-1">{profile.greenSubtitle}</p>
-                </div>
-                <div className="shrink-0 flex items-center gap-2">
-                  <span className="text-[10px] font-bold text-slate-500">Evaluasi Internal:</span>
-                  <select
-                    value={readinessScores.green}
-                    onChange={(e) => setReadinessScores(prev => ({ ...prev, green: e.target.value }))}
-                    className="bg-slate-900 border border-slate-800 rounded px-2 py-1 text-[10px] font-bold text-teal-400 focus:outline-none"
-                  >
-                    <option value="Ready">Sangat Siap (Ready)</option>
-                    <option value="Progress">Menyiapkan (Progress)</option>
-                    <option value="Planned">Rencana Kemitraan (Planned)</option>
-                  </select>
-                </div>
+            {/* Footer Bar */}
+            <div className="mt-6 pt-4 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
+              <div className="flex items-center gap-1.5 text-emerald-400 font-bold">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                <span>Kajian pasar aktif tersinkronisasi dengan judul proyek</span>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
-                {profile.greenList.map((item, idx) => (
-                  <div key={idx} className="bg-slate-900/60 p-4 border border-slate-800 rounded-xl relative overflow-hidden">
-                    <div className={`absolute top-0 left-0 w-1 h-full ${idx === 0 ? "bg-teal-500" : idx === 1 ? "bg-emerald-500" : "bg-indigo-500"}`} />
-                    <span className="text-[10px] font-mono text-slate-500 font-black block uppercase mb-1">GRN-0{idx + 1} • {item.tag}</span>
-                    <h6 className="text-[11px] font-black text-slate-200 uppercase tracking-tight">{item.title}</h6>
-                    <p className="text-[10px] text-slate-400 font-semibold mt-1.5 leading-relaxed">
-                      {item.description}
-                    </p>
-                  </div>
-                ))}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleStartEdit}
+                  className="hover:text-emerald-400 transition cursor-pointer font-medium"
+                >
+                  Edit Teks
+                </button>
+                <span>•</span>
+                <button
+                  type="button"
+                  onClick={handleClearAll}
+                  className="hover:text-rose-400 transition cursor-pointer font-medium"
+                >
+                  Kosongkan
+                </button>
               </div>
-            </motion.div>
-          )}
-        </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,472 +1,478 @@
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "motion/react";
 import {
   ShieldAlert,
-  AlertOctagon,
-  CheckCircle,
-  TrendingDown,
-  Plus,
+  Sparkles,
+  Copy,
+  Check,
+  Edit3,
   Trash2,
-  Info,
-  Sliders,
+  Save,
+  X,
   ShieldCheck,
-  Zap,
-  HelpCircle,
-  Activity,
+  CheckCircle2,
   FileText,
   AlertTriangle,
-  RotateCcw
+  Activity
 } from "lucide-react";
-import { getSectorRiskProfile } from "../utils/sectorOpportunityHelper";
+import { generateRiskManagementForTitle } from "../utils/riskManagementGenerator";
+import { exportAllSectionsToWord } from "../utils/projectDashboardHelper";
 
 interface RiskManagementProps {
   projectTitle: string;
+  activeDivision?: string;
 }
 
-interface RiskItem {
-  id: string;
-  code: string;
-  category: "Operasional" | "Finansial" | "Regulasi/Kepatuhan" | "Sosial/Lingkungan";
-  title: string;
-  likelihood: number; // 1 to 5
-  impact: number; // 1 to 5
-  description: string;
-  negativeImpactAnalysis: string;
-  mitigationStrategy: string;
-}
+export function RiskManagementDeepDive({ projectTitle, activeDivision }: RiskManagementProps) {
+  const currentTitle = (projectTitle || "").trim() || "Kajian Manajemen Risiko & Mitigasi Operasional Logistik";
+  const currentDiv = activeDivision || "Logistik & Transportasi Komersial";
 
-export function RiskManagementDeepDive({ projectTitle }: RiskManagementProps) {
-  const riskProfile = getSectorRiskProfile(projectTitle);
+  const storageKey = `prama_risk_content_${currentTitle.toLowerCase().replace(/[^a-z0-9]/g, "_")}`;
 
-  // Pre-loaded high-fidelity risk register
-  const [risks, setRisks] = useState<RiskItem[]>(riskProfile.risks);
+  // Content starts POLOS (empty) unless explicitly generated or saved
+  const [content, setContent] = useState<string>(() => {
+    return localStorage.getItem(storageKey) || "";
+  });
 
-  // Selected risk for displaying detailed analysis
-  const [selectedRiskId, setSelectedRiskId] = useState<string>("risk-1");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [copied, setCopied] = useState<boolean>(false);
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [editText, setEditText] = useState<string>("");
+  const [lastGeneratedForTitle, setLastGeneratedForTitle] = useState<string>(() => {
+    return localStorage.getItem(`${storageKey}_title`) || "";
+  });
 
+  // Cleanup legacy preset keys
   useEffect(() => {
-    setRisks(riskProfile.risks);
-    if (riskProfile.risks.length > 0) {
-      setSelectedRiskId(riskProfile.risks[0].id);
-    }
-  }, [projectTitle]);
+    try {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (
+          k &&
+          (k.startsWith("prama_risk_legacy_") ||
+            k.startsWith("risk_custom_") ||
+            k.startsWith("risk_profile_") ||
+            k.startsWith("risk_calc_") ||
+            k.startsWith("prama_risk_ai_"))
+        ) {
+          keysToRemove.push(k);
+        }
+      }
+      keysToRemove.forEach((k) => localStorage.removeItem(k));
+    } catch (e) {}
+  }, []);
 
-  // Custom risk creator states
-  const [newTitle, setNewTitle] = useState("");
-  const [newCat, setNewCat] = useState<RiskItem["category"]>("Operasional");
-  const [newLikelihood, setNewLikelihood] = useState<number>(3);
-  const [newImpact, setNewImpact] = useState<number>(3);
-  const [newDesc, setNewDesc] = useState("");
-  const [newNegImpact, setNewNegImpact] = useState("");
-  const [newMitigation, setNewMitigation] = useState("");
+  // When projectTitle changes, load saved content for that title or start polos
+  useEffect(() => {
+    const saved = localStorage.getItem(storageKey) || "";
+    setContent(saved);
+    setEditText(saved);
+    setIsEditing(false);
+  }, [storageKey]);
 
-  // Risk Score Calculator (Sandbox)
-  const [calcLikelihood, setCalcLikelihood] = useState<number>(3);
-  const [calcImpact, setCalcImpact] = useState<number>(4);
-  const calcScore = calcLikelihood * calcImpact;
+  // Handler to generate fresh, 100% title-tailored content
+  const handleGenerateContent = async (targetTitle: string = currentTitle) => {
+    setIsLoading(true);
+    setIsEditing(false);
 
-  // Mitigation Readiness checklist
-  const [readinessChecklist, setReadinessChecklist] = useState([
-    { id: "rc-1", text: "Seluruh supir memiliki sertifikasi K3 & Defensive Driving", completed: true },
-    { id: "rc-2", text: "Manifes lacak balak (SVLK) terintegrasi sistem digital", completed: true },
-    { id: "rc-3", text: "Pemasangan telemetry GPS satelit di 100% armada aktif", completed: false },
-    { id: "rc-4", text: "Asuransi kecelakaan kerja dan asuransi muatan (all-risk)", completed: true },
-    { id: "rc-5", text: "Kontrak kerja sama memiliki klausul penyesuaian tarif solar", completed: false },
-    { id: "rc-6", text: "Forum koordinasi keamanan desa penyangga berjalan rutin", completed: false },
-  ]);
+    try {
+      const clientApiKey = localStorage.getItem("workspace_client_api_key") || "";
+      const res = await fetch("/api/generate-risk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectTitle: targetTitle,
+          division: currentDiv,
+          clientApiKey
+        })
+      });
 
-  const toggleChecklist = (id: string) => {
-    setReadinessChecklist(prev => prev.map(item => item.id === id ? { ...item, completed: !item.completed } : item));
-  };
+      let generatedMarkdown = "";
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.content && typeof data.content === "string" && data.content.trim().length > 50) {
+          generatedMarkdown = data.content;
+        }
+      }
 
-  const getCompletedCount = () => readinessChecklist.filter(item => item.completed).length;
-  const getReadinessPercentage = () => Math.round((getCompletedCount() / readinessChecklist.length) * 100);
+      // If server returned fallback or couldn't reach API, use precision title generator
+      if (!generatedMarkdown) {
+        const localResult = generateRiskManagementForTitle(targetTitle, currentDiv);
+        generatedMarkdown = localResult.narrativeMarkdown;
+      }
 
-  const getRiskLevel = (score: number) => {
-    if (score >= 15) return { label: "EKSTREM", color: "bg-rose-500/10 text-rose-400 border-rose-500/30 hover:bg-rose-500/20", dot: "bg-rose-500" };
-    if (score >= 10) return { label: "TINGGI", color: "bg-orange-500/10 text-orange-400 border-orange-500/30 hover:bg-orange-500/20", dot: "bg-orange-500" };
-    if (score >= 5) return { label: "SEDANG", color: "bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20", dot: "bg-amber-500" };
-    return { label: "RENDAH", color: "bg-teal-500/10 text-teal-400 border-teal-500/30 hover:bg-teal-500/20", dot: "bg-teal-500" };
-  };
-
-  const getMatrixCellColor = (l: number, i: number) => {
-    const score = l * i;
-    if (score >= 15) return "bg-rose-950/40 border-rose-900/50 hover:bg-rose-900/50 text-rose-300";
-    if (score >= 10) return "bg-orange-950/40 border-orange-900/50 hover:bg-orange-900/50 text-orange-300";
-    if (score >= 5) return "bg-amber-950/40 border-amber-900/50 hover:bg-amber-900/50 text-amber-300";
-    return "bg-teal-950/40 border-teal-900/50 hover:bg-teal-900/50 text-teal-300";
-  };
-
-  const selectedRisk = risks.find(r => r.id === selectedRiskId) || risks[0];
-
-  const handleAddRisk = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTitle.trim()) return;
-
-    const rItem: RiskItem = {
-      id: `custom-${Date.now()}`,
-      code: `RSK-CU${risks.length + 1}`,
-      category: newCat,
-      title: newTitle,
-      likelihood: newLikelihood,
-      impact: newImpact,
-      description: newDesc || "Tidak ada deskripsi rinci.",
-      negativeImpactAnalysis: newNegImpact || "Tidak ada analisis dampak.",
-      mitigationStrategy: newMitigation || "Tidak ada mitigasi pencegahan terperinci."
-    };
-
-    setRisks(prev => [...prev, rItem]);
-    setSelectedRiskId(rItem.id);
-    setNewTitle("");
-    setNewDesc("");
-    setNewNegImpact("");
-    setNewMitigation("");
-  };
-
-  const handleDeleteRisk = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setRisks(prev => prev.filter(r => r.id !== id));
-    if (selectedRiskId === id) {
-      setSelectedRiskId(risks[0]?.id || "");
+      setContent(generatedMarkdown);
+      setEditText(generatedMarkdown);
+      setLastGeneratedForTitle(targetTitle);
+      localStorage.setItem(storageKey, generatedMarkdown);
+      localStorage.setItem(`${storageKey}_title`, targetTitle);
+    } catch (err) {
+      console.warn("Generating local tailored Risk Management for:", targetTitle, err);
+      const localResult = generateRiskManagementForTitle(targetTitle, currentDiv);
+      setContent(localResult.narrativeMarkdown);
+      setEditText(localResult.narrativeMarkdown);
+      setLastGeneratedForTitle(targetTitle);
+      localStorage.setItem(storageKey, localResult.narrativeMarkdown);
+      localStorage.setItem(`${storageKey}_title`, targetTitle);
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  // Handler to completely wipe content and make it POLOS (blank)
+  const handleClearAll = () => {
+    setContent("");
+    setEditText("");
+    setIsEditing(false);
+    localStorage.removeItem(storageKey);
+    localStorage.removeItem(`${storageKey}_title`);
+  };
+
+  // Handler to start editing manually
+  const handleStartEdit = () => {
+    setEditText(content);
+    setIsEditing(true);
+  };
+
+  // Save manual edits
+  const handleSaveEdit = () => {
+    setContent(editText);
+    localStorage.setItem(storageKey, editText);
+    setIsEditing(false);
+  };
+
+  // Copy narrative to clipboard
+  const handleCopy = () => {
+    if (!content) return;
+    navigator.clipboard.writeText(content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  // Markdown renderer for clean unified narrative
+  const renderSeamlessNarrative = (rawText: string) => {
+    if (!rawText || !rawText.trim()) return null;
+    const lines = rawText.split("\n");
+    const renderedNodes: React.ReactNode[] = [];
+
+    lines.forEach((line, index) => {
+      const trimmed = line.trim();
+
+      if (!trimmed) {
+        renderedNodes.push(<div key={`empty-${index}`} className="h-3" />);
+        return;
+      }
+
+      // Heading 3
+      if (trimmed.startsWith("### ")) {
+        const headingText = trimmed.replace(/^###\s+/, "");
+        renderedNodes.push(
+          <div key={`h3-${index}`} className="mt-6 mb-3 pt-3 border-t border-slate-800 first:border-t-0 first:pt-0">
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-rose-400 shrink-0" />
+              <h4 className="text-sm md:text-base font-black text-white uppercase tracking-tight">
+                {headingText}
+              </h4>
+            </div>
+          </div>
+        );
+        return;
+      }
+
+      // Heading 2 or 1
+      if (trimmed.startsWith("## ") || trimmed.startsWith("# ")) {
+        const headingText = trimmed.replace(/^#+\s+/, "");
+        renderedNodes.push(
+          <div key={`h2-${index}`} className="mt-7 mb-3.5 border-b border-rose-500/20 pb-2">
+            <h3 className="text-base md:text-lg font-black text-rose-300 uppercase tracking-tight flex items-center gap-2">
+              <ShieldAlert className="h-4 w-4 text-rose-400" />
+              {headingText}
+            </h3>
+          </div>
+        );
+        return;
+      }
+
+      // Bullet points
+      if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+        const bulletContent = trimmed.replace(/^[\*\-]\s+/, "");
+        const formatted = bulletContent.split(/(\*\*.*?\*\*)/g).map((part, pIdx) => {
+          if (part.startsWith("**") && part.endsWith("**")) {
+            return (
+              <strong key={pIdx} className="text-white font-extrabold">
+                {part.slice(2, -2)}
+              </strong>
+            );
+          }
+          return part;
+        });
+
+        renderedNodes.push(
+          <div key={`bullet-${index}`} className="flex items-start gap-2.5 ml-1 my-1.5 text-slate-300 text-xs md:text-[13px] leading-relaxed">
+            <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" />
+            <div className="flex-1">{formatted}</div>
+          </div>
+        );
+        return;
+      }
+
+      // Regular paragraph
+      const parts = trimmed.split(/(\*\*.*?\*\*)/g);
+      const formattedParts = parts.map((part, pIdx) => {
+        if (part.startsWith("**") && part.endsWith("**")) {
+          return (
+            <strong key={pIdx} className="text-white font-extrabold tracking-wide">
+              {part.slice(2, -2)}
+            </strong>
+          );
+        }
+        return part;
+      });
+
+      renderedNodes.push(
+        <p
+          key={`p-${index}`}
+          className="text-xs md:text-[13px] text-slate-300 leading-relaxed font-normal text-justify my-2.5"
+        >
+          {formattedParts}
+        </p>
+      );
+    });
+
+    return renderedNodes;
+  };
+
+  const isBlank = !content || content.trim().length === 0;
+  const isTitleDifferent =
+    content &&
+    lastGeneratedForTitle &&
+    lastGeneratedForTitle.toLowerCase() !== currentTitle.toLowerCase();
 
   return (
-    <div id="risk-management-deepdive-root" className="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-slate-100 shadow-2xl mt-8 overflow-hidden font-sans">
-      {/* Decorative ambient blurred backgrounds */}
-      <div className="absolute top-0 right-0 w-72 h-72 bg-rose-500/5 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-72 h-72 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
+    <div
+      id="risk-management-deepdive-root"
+      className="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-slate-100 shadow-2xl mt-8 font-sans relative overflow-hidden"
+    >
+      <div className="absolute top-0 right-0 w-96 h-96 bg-rose-500/5 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Title Header Panel */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-5 mb-6 gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-            <span className="px-2.5 py-0.5 text-[9px] font-black tracking-wider uppercase rounded bg-rose-500/10 text-rose-400 border border-rose-500/20">
-              PRAMA PREVENTIVE FRAMEWORK v2.0
+      {/* Header Bar */}
+      <div className="border-b border-slate-800 pb-5 mb-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="px-2.5 py-0.5 text-[9.5px] font-black tracking-wider uppercase rounded-md bg-rose-500/10 text-rose-400 border border-rose-500/20 font-mono flex items-center gap-1.5">
+              <ShieldAlert className="h-3 w-3 text-rose-400" />
+              PILAR 9 • RISK MANAGEMENT & MITIGATION FRAMEWORK
             </span>
-            <span className="px-2.5 py-0.5 text-[9px] font-black tracking-wider uppercase rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-mono flex items-center gap-1">
-              ⚡ SINKRON CHAT: <span className="text-white font-bold">{projectTitle || "Kajian Strategis PRAMA"}</span>
+            <span className="h-1.5 w-1.5 rounded-full bg-rose-400" />
+            <span className="px-2.5 py-0.5 text-[9.5px] font-bold uppercase rounded-md bg-slate-800 text-slate-300 border border-slate-700/80 font-mono">
+              JUDUL PROYEK: {currentTitle}
             </span>
-            <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse" />
-          </div>
-          <h3 className="text-lg md:text-xl font-black uppercase tracking-tight text-white flex items-center gap-2 font-display">
-            <ShieldAlert className="h-5 w-5 text-rose-400" />
-            Interactive Risk & Control Dashboard
-          </h3>
-          <p className="text-xs text-slate-400 mt-1 font-semibold max-w-2xl leading-relaxed">
-            Identifikasi bahaya, analisis dampak negatif finansial/sosial, serta kelola tindakan mitigasi pencegahan secara dinamis.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-bold text-slate-400 uppercase font-mono">Index Ketahanan:</span>
-          <span className="px-2.5 py-1 text-[9.5px] font-extrabold rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-            ESG ALIGNED
-          </span>
-        </div>
-      </div>
-
-      {/* ROW 1: 5x5 RISK HEATMAP MATRIX & THE REGISTER LIST */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8 text-left">
-        
-        {/* Left Grid: 5x5 Matrix Grid */}
-        <div className="lg:col-span-5 bg-slate-950/50 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between">
-          <div>
-            <h4 className="text-xs font-black uppercase tracking-wider text-slate-300 mb-3 flex items-center gap-1.5">
-              <Activity className="h-4 w-4 text-rose-400" />
-              Matriks Tingkat Risiko (Likelihood x Impact)
-            </h4>
-            <p className="text-[10px] text-slate-400 font-semibold mb-4">
-              Posisikan risiko proyek Anda di dalam matriks standardisasi ISO 31000 untuk menentukan tingkat penanganan wajib.
-            </p>
-
-            {/* The Matrix Canvas */}
-            <div className="relative mt-2">
-              {/* Likelihood Label Side */}
-              <div className="absolute -left-3 top-1/2 -translate-y-1/2 -rotate-90 text-[8.5px] font-black text-slate-500 tracking-widest origin-center">
-                LIKELIHOOD (KEMUNGKINAN) →
-              </div>
-
-              <div className="pl-6 pb-6">
-                <div className="grid grid-cols-5 gap-1.5">
-                  {/* Generate cells from 5 (Sangat Sering) down to 1 (Sangat Jarang) */}
-                  {[5, 4, 3, 2, 1].map((l) => (
-                    <React.Fragment key={l}>
-                      {[1, 2, 3, 4, 5].map((i) => {
-                        const cellScore = l * i;
-                        // find if any active risk maps to this cell
-                        const risksInCell = risks.filter(r => r.likelihood === l && r.impact === i);
-                        const isCellSelected = selectedRisk && selectedRisk.likelihood === l && selectedRisk.impact === i;
-
-                        return (
-                          <div
-                            key={`${l}-${i}`}
-                            title={`Likelihood ${l}, Impact ${i} (Score: ${cellScore})`}
-                            className={`aspect-square border rounded-lg p-1 flex flex-col items-center justify-center relative cursor-pointer transition-all ${getMatrixCellColor(l, i)} ${
-                              isCellSelected ? "ring-2 ring-white border-white scale-[1.03]" : ""
-                            }`}
-                            onClick={() => {
-                              if (risksInCell.length > 0) {
-                                setSelectedRiskId(risksInCell[0].id);
-                              }
-                            }}
-                          >
-                            {/* Score Text */}
-                            <span className="text-[8px] font-black opacity-30 absolute bottom-1 right-1">{cellScore}</span>
-                            
-                            {/* Plot Risks inside cell */}
-                            {risksInCell.length > 0 && (
-                              <div className="flex flex-wrap gap-0.5 justify-center">
-                                {risksInCell.map((risk) => (
-                                  <span
-                                    key={risk.id}
-                                    className={`h-2.5 w-2.5 rounded-full border border-black/50 ${getRiskLevel(cellScore).dot} ${
-                                      selectedRiskId === risk.id ? "ring-2 ring-white animate-pulse" : ""
-                                    }`}
-                                    title={`${risk.code}: ${risk.title}`}
-                                  />
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </React.Fragment>
-                  ))}
-                </div>
-
-                {/* Impact Axis Labels bottom */}
-                <div className="grid grid-cols-5 gap-1.5 mt-2 text-center text-[9px] font-black text-slate-500 tracking-wider">
-                  <span>1</span>
-                  <span>2</span>
-                  <span>3</span>
-                  <span>4</span>
-                  <span>5</span>
-                </div>
-                <div className="text-center text-[8.5px] font-black text-slate-500 tracking-widest mt-1">
-                  ← IMPACT (DAMPAK NEGATIF) →
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Color Guides Legend */}
-          <div className="border-t border-slate-900 pt-3 mt-2 grid grid-cols-4 gap-1 text-[8.5px] font-black text-center">
-            <span className="bg-teal-500/10 text-teal-400 border border-teal-500/20 py-0.5 rounded">RENDAH (1-4)</span>
-            <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 py-0.5 rounded">SEDANG (5-9)</span>
-            <span className="bg-orange-500/10 text-orange-400 border border-orange-500/20 py-0.5 rounded">TINGGI (10-14)</span>
-            <span className="bg-rose-500/10 text-rose-400 border border-rose-500/20 py-0.5 rounded">EKSTREM (15-25)</span>
-          </div>
-        </div>
-
-        {/* Right Grid: Live Risk Register List */}
-        <div className="lg:col-span-7 bg-slate-950/50 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between">
-          <div>
-            <div className="flex justify-between items-center mb-3">
-              <h4 className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-                <FileText className="h-4 w-4 text-rose-400" />
-                Daftar Risiko Terdaftar (Risk Register)
-              </h4>
-              <span className="text-[9px] font-mono font-bold bg-slate-900 text-slate-400 border border-slate-800 px-2 py-0.5 rounded">
-                {risks.length} Risiko Total
+            {isBlank && (
+              <span className="px-2 py-0.5 text-[9px] font-bold uppercase rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/20 font-mono">
+                STATUS: POLOS
               </span>
-            </div>
-            
-            <div className="space-y-2 max-h-[260px] overflow-y-auto pr-1">
-              {risks.map((risk) => {
-                const score = risk.likelihood * risk.impact;
-                const level = getRiskLevel(score);
-                const isSelected = selectedRiskId === risk.id;
-
-                return (
-                  <div
-                    key={risk.id}
-                    onClick={() => setSelectedRiskId(risk.id)}
-                    className={`p-3 rounded-xl border transition-all cursor-pointer text-left relative flex items-start gap-3 ${
-                      isSelected
-                        ? "bg-slate-900 border-rose-500/50 shadow-md scale-[1.01]"
-                        : "bg-slate-900/40 border-slate-800 hover:border-slate-700 hover:bg-slate-900/70"
-                    }`}
-                  >
-                    <div className="shrink-0 pt-0.5">
-                      <span className={`h-3 w-3 rounded-full block ${level.dot} ${isSelected ? "animate-pulse" : ""}`} />
-                    </div>
-
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center flex-wrap gap-1.5 mb-1">
-                        <span className="text-[9px] font-mono font-black text-slate-400">{risk.code}</span>
-                        <span className="text-[8.5px] font-black text-slate-500">•</span>
-                        <span className="text-[9px] font-black text-slate-300 uppercase tracking-tight">{risk.category}</span>
-                      </div>
-                      
-                      <h5 className="text-[11.5px] font-black text-slate-100 uppercase tracking-tight truncate">
-                        {risk.title}
-                      </h5>
-                      <p className="text-[10px] text-slate-400 font-semibold mt-1 truncate">
-                        {risk.description}
-                      </p>
-                    </div>
-
-                    <div className="text-right shrink-0 flex flex-col items-end gap-1.5">
-                      <span className={`px-1.5 py-0.5 text-[8.5px] font-black rounded-md border ${level.color}`}>
-                        {level.label} ({score})
-                      </span>
-                      {risks.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={(e) => handleDeleteRisk(risk.id, e)}
-                          className="p-1 text-slate-600 hover:text-rose-400 hover:bg-slate-800/50 rounded transition border-none cursor-pointer"
-                          title="Hapus Risiko"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            )}
           </div>
 
-          <p className="text-[9.5px] text-slate-500 font-semibold mt-4 text-center">
-            💡 Tips: Klik kartu risiko di atas untuk memuat bedah terperinci dan playbooks mitigasi pencegahan di bagian bawah.
-          </p>
+          {/* Action buttons */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  const saved = localStorage.getItem("prama_dashboard_sections");
+                  const map = saved ? JSON.parse(saved) : {};
+                  map[9] = content;
+                  exportAllSectionsToWord(currentTitle, map);
+                } catch(e) {
+                  exportAllSectionsToWord(currentTitle, { 9: content });
+                }
+              }}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition shadow-md shadow-emerald-600/20 cursor-pointer active:scale-95"
+              title="Unduh seluruh laporan komprehensif ke format Word (.doc)"
+            >
+              <FileText className="h-3.5 w-3.5" />
+              <span>Unduh Word (.doc)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleGenerateContent(currentTitle)}
+              disabled={isLoading}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition shadow-md shadow-rose-600/20 cursor-pointer active:scale-95 disabled:opacity-50"
+              title="Buat isian baru yang sesuai dengan judul proyek"
+            >
+              <Sparkles className={`h-3.5 w-3.5 ${isLoading ? "animate-spin text-rose-200" : ""}`} />
+              <span>{isLoading ? "Menyusun Mitigasi Risiko..." : isBlank ? "Buat Isian Sesuai Judul" : "Buat Ulang Sesuai Judul"}</span>
+            </button>
+          </div>
         </div>
+
+        <h3 className="text-lg md:text-xl font-black uppercase tracking-tight text-white flex items-center gap-2">
+          <Activity className="h-5 w-5 text-rose-400" />
+          Risk Management: Enterprise Risk Assessment & HSE Mitigation
+        </h3>
+        <p className="text-xs text-slate-400 mt-1 font-medium leading-relaxed">
+          Pemetaan register risiko operasional, beban jalan & Zero ODOL, kepatuhan hukum lingkungan, serta protokol kontinjensi untuk proyek{" "}
+          <span className="text-rose-300 font-extrabold">"{currentTitle}"</span>.
+        </p>
       </div>
 
-      {/* ROW 2: DETAILED ANALYSIS PANEL (IDENTIFICATION, IMPACT, MITIGATION) */}
-      <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-5 mb-8 text-left">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-3 mb-4 gap-3">
-          <div>
-            <span className="text-[9px] font-mono font-black text-rose-400 uppercase tracking-widest">ANALISIS FOKUS SEGMEN</span>
-            <h4 className="text-sm font-black text-white uppercase tracking-tight mt-0.5">
-              Bedah Detail Kasus Risiko: {selectedRisk?.code} • {selectedRisk?.title}
-            </h4>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-[10px] font-bold text-slate-400">Tingkat Bahaya:</span>
-            <span className={`px-2 py-0.5 text-[9px] font-black rounded uppercase border ${getRiskLevel(selectedRisk?.likelihood * selectedRisk?.impact).color}`}>
-              {getRiskLevel(selectedRisk?.likelihood * selectedRisk?.impact).label} (Score {selectedRisk?.likelihood * selectedRisk?.impact})
+      {/* If current title is different from what was previously generated, show quick sync badge */}
+      {isTitleDifferent && (
+        <div className="mb-4 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-xs text-amber-200">
+            <span className="h-2 w-2 rounded-full bg-amber-400 shrink-0 animate-ping" />
+            <span>
+              Judul proyek telah diperbarui menjadi: <strong className="text-white">"{currentTitle}"</strong>
             </span>
           </div>
+          <button
+            type="button"
+            onClick={() => handleGenerateContent(currentTitle)}
+            className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-bold rounded-lg transition cursor-pointer"
+          >
+            <Sparkles className="h-3 w-3" />
+            <span>Buat Isian Baru untuk Judul Ini</span>
+          </button>
         </div>
+      )}
 
-        {/* The 3 Pillars of Risk requested by the user */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {/* Pillar 1: Identifikasi Risiko */}
-          <div className="bg-slate-900/50 border border-slate-800/80 p-4 rounded-xl relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-amber-500" />
-            <h5 className="text-[11.5px] font-black text-amber-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <AlertTriangle className="h-4 w-4 shrink-0" />
-              1. Identifikasi Potensi Risiko
-            </h5>
-            <p className="text-[10px] text-slate-400 font-bold mb-2">
-              Deskripsi Kejadian Bahaya:
-            </p>
-            <p className="text-[10.5px] text-slate-200 font-semibold leading-relaxed">
-              {selectedRisk?.description}
-            </p>
-            <div className="mt-4 pt-3 border-t border-slate-800/50 flex justify-between text-[9px] text-slate-500 font-black">
-              <span>Likelihood: {selectedRisk?.likelihood} / 5</span>
-              <span>Kategori: {selectedRisk?.category}</span>
+      {/* Main Canvas Area */}
+      <div className="bg-slate-950/70 border border-slate-800/90 rounded-2xl p-5 md:p-6 shadow-inner relative min-h-[220px]">
+        {isLoading ? (
+          <div className="py-14 px-4 text-center flex flex-col items-center justify-center gap-3">
+            <div className="relative">
+              <div className="h-10 w-10 rounded-full border-2 border-rose-500/20 border-t-rose-400 animate-spin" />
+              <Sparkles className="h-4 w-4 text-rose-400 absolute inset-0 m-auto animate-pulse" />
             </div>
+            <p className="text-sm font-bold text-white tracking-wide">
+              Menyusun Kajian Risiko Sesuai Judul...
+            </p>
+            <p className="text-xs text-slate-400 max-w-md text-center leading-relaxed">
+              Menganalisis matriks probabilitas-dampak, bahaya operasional & keselamatan K3LL, serta protokol mitigasi terukur untuk{" "}
+              <span className="text-rose-300 font-bold">"{currentTitle}"</span>.
+            </p>
           </div>
-
-          {/* Pillar 2: Analisis Dampak Negatif */}
-          <div className="bg-slate-900/50 border border-slate-800/80 p-4 rounded-xl relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-rose-500" />
-            <h5 className="text-[11.5px] font-black text-rose-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <TrendingDown className="h-4 w-4 shrink-0" />
-              2. Analisis Dampak Negatif
-            </h5>
-            <p className="text-[10px] text-slate-400 font-bold mb-2">
-              Dampak Kerugian Proyek:
-            </p>
-            <p className="text-[10.5px] text-slate-200 font-semibold leading-relaxed">
-              {selectedRisk?.negativeImpactAnalysis}
-            </p>
-            <div className="mt-4 pt-3 border-t border-slate-800/50 flex justify-between text-[9px] text-slate-500 font-black">
-              <span>Impact Score: {selectedRisk?.impact} / 5</span>
-              <span>Dampak Keuangan: Tinggi</span>
-            </div>
-          </div>
-
-          {/* Pillar 3: Langkah Mitigasi Pencegahan */}
-          <div className="bg-slate-900/50 border border-slate-800/80 p-4 rounded-xl relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-emerald-500" />
-            <h5 className="text-[11.5px] font-black text-emerald-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <ShieldCheck className="h-4 w-4 shrink-0" />
-              3. Langkah Mitigasi Pencegahan
-            </h5>
-            <p className="text-[10px] text-slate-400 font-bold mb-2">
-              Tindakan Preventif & Solusi:
-            </p>
-            <p className="text-[10.5px] text-slate-200 font-semibold leading-relaxed">
-              {selectedRisk?.mitigationStrategy}
-            </p>
-            <div className="mt-4 pt-3 border-t border-slate-800/50 flex justify-between text-[9px] text-slate-500 font-black">
-              <span>Resiliensi Pasca Mitigasi: Tinggi</span>
-              <span>Control Level: Aktif</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ROW 3: AUDIT CHECKLISTS */}
-      <div className="text-left">
-        {/* Readiness Checklist Audit */}
-        <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
-          <div>
-            <div className="flex justify-between items-center mb-1.5">
-              <h4 className="text-xs font-black uppercase tracking-wider text-slate-200 flex items-center gap-1.5">
-                <ShieldCheck className="h-4 w-4 text-emerald-400" />
-                Audit Kesiapan Pencegahan (Operational Resilience Score)
-              </h4>
-              <span className="text-xs font-mono font-black text-emerald-400">
-                {getReadinessPercentage()}% RESILIENT
-              </span>
-            </div>
-            <p className="text-[10px] text-slate-400 font-semibold mb-4 leading-relaxed">
-              Centang tindakan pencegahan yang sudah aktif di lapangan untuk melihat persentase kekebalan operasional armada Anda dari ancaman eksternal.
-            </p>
-
-            {/* Resilience Progress Bar */}
-            <div className="w-full bg-slate-900 h-2.5 rounded-full mb-5 overflow-hidden border border-slate-800">
-              <div
-                className="bg-gradient-to-r from-amber-500 to-emerald-500 h-full transition-all duration-500"
-                style={{ width: `${getReadinessPercentage()}%` }}
-              />
-            </div>
-
-            {/* Checklist Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {readinessChecklist.map((item) => (
-                <div
-                  key={item.id}
-                  onClick={() => toggleChecklist(item.id)}
-                  className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center gap-2.5 text-left ${
-                    item.completed
-                      ? "bg-emerald-950/30 border-emerald-900/50 text-emerald-300"
-                      : "bg-slate-900/60 border-slate-800/80 text-slate-400"
-                  }`}
+        ) : isEditing ? (
+          /* Manual Edit Mode */
+          <div className="space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-200">
+                <Edit3 className="h-4 w-4 text-rose-400" />
+                <span>Mode Edit Teks Mandiri (Pilar 9)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(false)}
+                  className="flex items-center gap-1 px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-lg transition"
                 >
-                  <div className={`h-4 w-4 rounded-md border flex items-center justify-center shrink-0 ${
-                    item.completed ? "bg-emerald-500 border-emerald-400 text-slate-900" : "border-slate-700"
-                  }`}>
-                    {item.completed && <CheckCircle className="h-3 w-3 stroke-[3]" />}
-                  </div>
-                  <span className="text-[10.5px] font-semibold leading-snug">
-                    {item.text}
-                  </span>
-                </div>
-              ))}
+                  <X className="h-3.5 w-3.5" />
+                  <span>Batal</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveEdit}
+                  className="flex items-center gap-1 px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-lg transition"
+                >
+                  <Save className="h-3.5 w-3.5" />
+                  <span>Simpan Perubahan</span>
+                </button>
+              </div>
+            </div>
+
+            <textarea
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              placeholder="Tuliskan kajian manajemen risiko Anda di sini (mendukung format Markdown: ### Judul, **Tebal**, - Poin)..."
+              rows={14}
+              className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-xs md:text-sm text-slate-100 font-mono focus:outline-hidden focus:border-rose-500 transition leading-relaxed resize-y"
+            />
+          </div>
+        ) : isBlank ? (
+          /* Clean Blank State (POLOS) */
+          <div className="py-12 px-4 text-center flex flex-col items-center justify-center gap-4">
+            <div className="h-14 w-14 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 shadow-inner">
+              <FileText className="h-7 w-7 text-slate-400" />
+            </div>
+
+            <div className="max-w-md">
+              <h4 className="text-sm font-bold text-white mb-1">
+                Kanvas Risk Management Masih Polos
+              </h4>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Belum ada kajian risiko untuk proyek <span className="text-rose-300 font-bold">"{currentTitle}"</span>. Klik tombol di bawah untuk menghasilkan analisis risiko komprehensif, evaluasi probabilitas-dampak, dan protokol mitigasi yang 100% se-arah dengan judul ini, atau tulis sendiri secara manual.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => handleGenerateContent(currentTitle)}
+                className="flex items-center gap-2 px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-rose-600/20 cursor-pointer active:scale-95"
+              >
+                <Sparkles className="h-4 w-4" />
+                <span>Buat Isian Baru Sesuai Judul</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleStartEdit}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-xl text-xs font-bold transition cursor-pointer active:scale-95"
+              >
+                <Edit3 className="h-3.5 w-3.5 text-slate-400" />
+                <span>Tulis Manual</span>
+              </button>
             </div>
           </div>
+        ) : (
+          /* Populated Unified Content */
+          <div className="space-y-2">
+            {/* Top Insight Bar */}
+            <div className="mb-4 bg-rose-500/10 border border-rose-500/20 rounded-xl p-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <ShieldCheck className="h-4 w-4 text-rose-400 shrink-0" />
+                <span className="text-xs font-bold text-rose-200 truncate">
+                  Fokus Manajemen Risiko & Mitigasi: <span className="text-white font-extrabold">{currentTitle}</span>
+                </span>
+              </div>
+              <span className="text-[10px] font-mono uppercase bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded shrink-0 font-bold">
+                100% Se-arah Judul
+              </span>
+            </div>
 
-          <div className="mt-6 pt-3 border-t border-slate-800 flex justify-between items-center text-[10px] text-slate-500 font-semibold">
-            <span>Sistem Audit Ketahanan Pancaran BI v4.5</span>
-            <span className="text-emerald-400 font-black">Sertifikat Aktif</span>
+            {/* Seamless Narrative Content */}
+            <div className="prose prose-invert max-w-none">
+              {renderSeamlessNarrative(content)}
+            </div>
+
+            {/* Footer Bar */}
+            <div className="mt-6 pt-4 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
+              <div className="flex items-center gap-1.5 text-rose-400 font-bold">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                <span>Kerangka manajemen risiko aktif tersinkronisasi dengan judul proyek</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleStartEdit}
+                  className="hover:text-rose-400 transition cursor-pointer font-medium"
+                >
+                  Edit Teks
+                </button>
+                <span>•</span>
+                <button
+                  type="button"
+                  onClick={handleClearAll}
+                  className="hover:text-rose-400 transition cursor-pointer font-medium"
+                >
+                  Kosongkan
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

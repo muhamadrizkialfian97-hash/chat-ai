@@ -1564,7 +1564,7 @@ export function exportToPDF(title: string, text: string, divisionName: string) {
   }, 1000);
 }
 
-export function downloadPDFDirect(title: string, text: string, divisionName: string) {
+export function buildPDFDoc(title: string, text: string, divisionName: string, categoryLabel?: string): jsPDF {
   const doc = new jsPDF({
     orientation: "p",
     unit: "mm",
@@ -1593,11 +1593,11 @@ export function downloadPDFDirect(title: string, text: string, divisionName: str
   // --- 1. TITLE BLOCK ---
   checkPageBreak(15);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(18);
+  doc.setFontSize(16);
   doc.setTextColor(15, 23, 42);
   const splitTitle = doc.splitTextToSize(title.toUpperCase(), usableWidth);
   doc.text(splitTitle, margin, y);
-  y += (splitTitle.length * 7) + 5;
+  y += (splitTitle.length * 6.5) + 5;
 
   // --- 2. METADATA DECORATOR CARD ---
   checkPageBreak(35);
@@ -1611,7 +1611,7 @@ export function downloadPDFDirect(title: string, text: string, divisionName: str
   doc.setFontSize(7);
   doc.setTextColor(100, 116, 139); // slate-500
   doc.text("SISTEM KONSULTAN", margin + 6, y + 6);
-  doc.text("DIREKTORAT DIVISI", margin + 86, y + 6);
+  doc.text("DIREKTORAT / PILAR", margin + 86, y + 6);
   doc.text("ID DOKUMEN", margin + 6, y + 16);
   doc.text("TANGGAL RILIS", margin + 86, y + 16);
 
@@ -1619,8 +1619,8 @@ export function downloadPDFDirect(title: string, text: string, divisionName: str
   doc.setFontSize(8.5);
   doc.setTextColor(15, 23, 42); // slate-900
   doc.text("PRAMA Strategic AI Advisor", margin + 6, y + 11);
-  doc.text(`${divisionName.toUpperCase()} Unit`, margin + 86, y + 11);
-  doc.text(`PRM-${divisionName.toUpperCase()}-${Date.now().toString().slice(-6)}`, margin + 6, y + 21);
+  doc.text(categoryLabel || `${divisionName.toUpperCase()} Unit`, margin + 86, y + 11);
+  doc.text(`PRM-${divisionName.toUpperCase().replace(/\s+/g, "_")}-${Date.now().toString().slice(-6)}`, margin + 6, y + 21);
   doc.text(dateStr, margin + 86, y + 21);
 
   y += 32;
@@ -1826,16 +1826,16 @@ export function downloadPDFDirect(title: string, text: string, divisionName: str
 
     // Division verified badge on top right
     doc.setFillColor(30, 41, 59); // slate-800
-    doc.roundedRect(150, 8, 40, 10, 1.5, 1.5, "F");
+    doc.roundedRect(145, 8, 45, 10, 1.5, 1.5, "F");
     doc.setFont("helvetica", "bold");
     doc.setFontSize(6);
     doc.setTextColor(241, 245, 249);
-    doc.text("PRAMA VERIFIED", 170, 11.5, { align: "center" });
+    doc.text("PRAMA VERIFIED", 167.5, 11.5, { align: "center" });
     
     doc.setFont("helvetica", "bold");
     doc.setFontSize(5);
     doc.setTextColor(96, 165, 250); // sky-400
-    doc.text(divisionName.toUpperCase(), 170, 15.5, { align: "center" });
+    doc.text((categoryLabel || divisionName).toUpperCase().slice(0, 26), 167.5, 15.5, { align: "center" });
 
     // Decorative line below header
     doc.setDrawColor(241, 245, 249); // super soft divider
@@ -1854,8 +1854,401 @@ export function downloadPDFDirect(title: string, text: string, divisionName: str
     doc.text(`HALAMAN ${i} DARI ${totalPages}`, 190, pageHeight - 11, { align: "right" });
   }
 
-  // Save the generated document directly
+  return doc;
+}
+
+export function generatePDFBlobUrl(title: string, text: string, divisionName: string, categoryLabel?: string): { blobUrl: string; fileName: string; totalPages: number } {
+  const doc = buildPDFDoc(title, text, divisionName, categoryLabel);
+  const totalPages = (doc as any).internal.getNumberOfPages();
+  const blob = doc.output("blob");
+  const blobUrl = URL.createObjectURL(blob);
   const sanitizedFilename = title.trim().replace(/[/\\?%*:|"<>\s]+/g, "_") + ".pdf";
+  return { blobUrl, fileName: sanitizedFilename, totalPages };
+}
+
+export function downloadPDFDirect(title: string, text: string, divisionName: string, categoryLabel?: string) {
+  const doc = buildPDFDoc(title, text, divisionName, categoryLabel);
+  const sanitizedFilename = title.trim().replace(/[/\\?%*:|"<>\s]+/g, "_") + ".pdf";
+  doc.save(sanitizedFilename);
+}
+
+export interface AcademicPDFOptions {
+  bannerTitle: string;
+  subtitle?: string;
+  topic?: string;
+  reviewType?: string;
+  formatLabel?: string;
+  shortTitle?: string;
+  markdownContent: string;
+  divisionName?: string;
+}
+
+export function buildAcademicMakalahPDF(opts: AcademicPDFOptions): jsPDF {
+  const doc = new jsPDF({
+    orientation: "p",
+    unit: "mm",
+    format: "a4"
+  });
+
+  const pageHeight = 297;
+  const margin = 18;
+  const usableWidth = 174;
+  let y = 16;
+
+  const checkPageBreak = (neededHeight: number) => {
+    if (y + neededHeight > pageHeight - 20) {
+      doc.addPage();
+      y = 18; // reset y on next page
+    }
+  };
+
+  // --- 1. HERO BANNER (TOP OF FIRST PAGE) ---
+  const bannerPadding = 5;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
+  const titleLines = doc.splitTextToSize((opts.bannerTitle || "MAKALAH STRATEGIS").toUpperCase(), usableWidth - 14);
+  
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+  const subtitleLines = opts.subtitle ? doc.splitTextToSize(opts.subtitle, usableWidth - 14) : [];
+
+  const bannerHeight = 12 + (titleLines.length * 6) + (subtitleLines.length > 0 ? (subtitleLines.length * 4.5) + 3 : 0);
+
+  // Deep forest teal background
+  doc.setFillColor(10, 77, 70); // #0a4d46
+  doc.roundedRect(margin, y, usableWidth, bannerHeight, 3, 3, "F");
+
+  // Print Banner Title
+  let textY = y + 8;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
+  doc.setTextColor(255, 255, 255);
+  doc.text(titleLines, margin + 7, textY);
+  textY += (titleLines.length * 6) + 1.5;
+
+  // Print Banner Subtitle
+  if (subtitleLines.length > 0) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(204, 251, 241); // soft mint #ccfbf1
+    doc.text(subtitleLines, margin + 7, textY);
+  }
+
+  y += bannerHeight + 5;
+
+  // --- 2. METADATA ROW BELOW BANNER ---
+  doc.setFontSize(7.5);
+  const topicLabel = opts.topic || "Transport Logistics";
+  const reviewLabel = opts.reviewType || "Global vs National (NAT)";
+  const formatText = opts.formatLabel || "Laporan Akademik";
+
+  // Topik
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(15, 23, 42);
+  doc.text("Topik: ", margin + 1, y);
+  const topicLabelWidth = doc.getTextWidth("Topik: ");
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(71, 85, 105);
+  doc.text(topicLabel, margin + 1 + topicLabelWidth, y);
+
+  // Tinjauan
+  const midX = margin + 65;
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(15, 23, 42);
+  doc.text("Tinjauan: ", midX, y);
+  const revLabelWidth = doc.getTextWidth("Tinjauan: ");
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(71, 85, 105);
+  doc.text(reviewLabel, midX + revLabelWidth, y);
+
+  // Format
+  const rightX = margin + 124;
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(15, 23, 42);
+  doc.text("Format: ", rightX, y);
+  const formatLabelWidth = doc.getTextWidth("Format: ");
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(71, 85, 105);
+  doc.text(formatText, rightX + formatLabelWidth, y);
+
+  // Horizontal divider
+  y += 4;
+  doc.setDrawColor(226, 232, 240); // slate-200
+  doc.setLineWidth(0.3);
+  doc.line(margin, y, margin + usableWidth, y);
+  y += 6;
+
+  // --- 3. PARSE & RENDER DOCUMENT CONTENT ---
+  const lines = opts.markdownContent.split("\n");
+  let inTable = false;
+  let tableRows: string[][] = [];
+
+  const flushAcademicTable = () => {
+    if (tableRows.length === 0) return;
+    const cleanRows = tableRows.filter(row => !row.some(cell => /^:?-+:?$/.test(cell.trim())));
+    if (cleanRows.length === 0) {
+      tableRows = [];
+      inTable = false;
+      return;
+    }
+
+    const colWidths = [42, 60, 72]; // Custom proportion for 3 columns: Dimensi, Standar Global, Solusi Nasional
+    
+    // Check height
+    let totalNeeded = 0;
+    const rowData: Array<{ heights: number; cells: string[][] }> = [];
+
+    cleanRows.forEach((row, rIdx) => {
+      const isHeader = rIdx === 0;
+      doc.setFont("helvetica", isHeader ? "bold" : "normal");
+      doc.setFontSize(isHeader ? 8 : 7.5);
+
+      const splitCells = row.map((cell, cIdx) => {
+        const cWidth = colWidths[cIdx] || (usableWidth / row.length);
+        return doc.splitTextToSize(cleanPDFMarkdown(cell.trim()), cWidth - 4);
+      });
+
+      const maxLines = Math.max(...splitCells.map(c => c.length), 1);
+      const rowH = Math.max(isHeader ? 8 : 7, maxLines * 3.8 + 3.5);
+      totalNeeded += rowH;
+      rowData.push({ heights: rowH, cells: splitCells });
+    });
+
+    checkPageBreak(Math.min(totalNeeded, 30));
+
+    // Render table
+    cleanRows.forEach((row, rIdx) => {
+      const isHeader = rIdx === 0;
+      const { heights: rowH, cells: splitCells } = rowData[rIdx];
+
+      checkPageBreak(rowH + 1);
+
+      if (isHeader) {
+        doc.setFillColor(10, 77, 70); // Deep teal header
+        doc.rect(margin, y, usableWidth, rowH, "F");
+      } else {
+        const isAlternate = rIdx % 2 === 0;
+        doc.setFillColor(isAlternate ? 248 : 255, isAlternate ? 250 : 255, isAlternate ? 252 : 255);
+        doc.rect(margin, y, usableWidth, rowH, "F");
+        doc.setDrawColor(226, 232, 240);
+        doc.setLineWidth(0.2);
+        doc.rect(margin, y, usableWidth, rowH, "S");
+      }
+
+      let currentX = margin;
+      row.forEach((cell, cIdx) => {
+        const cWidth = colWidths[cIdx] || (usableWidth / row.length);
+        
+        // Draw column divider for body rows
+        if (!isHeader && cIdx > 0) {
+          doc.setDrawColor(226, 232, 240);
+          doc.setLineWidth(0.2);
+          doc.line(currentX, y, currentX, y + rowH);
+        }
+
+        doc.setFont("helvetica", isHeader ? "bold" : (cIdx === 0 ? "bold" : "normal"));
+        doc.setFontSize(isHeader ? 8 : 7.5);
+        doc.setTextColor(isHeader ? 255 : (cIdx === 0 ? 15 : 51), isHeader ? 255 : (cIdx === 0 ? 23 : 65), isHeader ? 255 : (cIdx === 0 ? 42 : 85));
+
+        const cellLines = splitCells[cIdx];
+        doc.text(cellLines, currentX + 2.5, y + (isHeader ? 4.8 : 4));
+
+        currentX += cWidth;
+      });
+
+      y += rowH;
+    });
+
+    y += 5;
+    tableRows = [];
+    inTable = false;
+  };
+
+  let inCallout = false;
+  let calloutLines: string[] = [];
+
+  const flushCallout = () => {
+    if (calloutLines.length === 0) return;
+    const fullText = calloutLines.join(" ");
+    const cleanText = cleanPDFMarkdown(fullText);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.2);
+    const splitBox = doc.splitTextToSize(cleanText, usableWidth - 10);
+    const boxHeight = (splitBox.length * 4.2) + 7;
+
+    checkPageBreak(boxHeight + 4);
+
+    // Box fill & border
+    doc.setFillColor(240, 253, 244); // #f0fdf4
+    doc.setDrawColor(167, 243, 208); // #a7f3d0
+    doc.setLineWidth(0.3);
+    doc.roundedRect(margin, y, usableWidth, boxHeight, 2, 2, "FD");
+
+    // Text inside box
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.2);
+    doc.setTextColor(30, 41, 59); // slate-800
+    doc.text(splitBox, margin + 5, y + 5);
+
+    y += boxHeight + 4;
+    calloutLines = [];
+    inCallout = false;
+  };
+
+  for (let idx = 0; idx < lines.length; idx++) {
+    const line = lines[idx];
+    const trimmed = line.trim();
+
+    // Table row detection
+    if (trimmed.startsWith("|") && trimmed.endsWith("|")) {
+      inTable = true;
+      const cells = trimmed.split("|").slice(1, -1);
+      tableRows.push(cells);
+      continue;
+    } else {
+      if (inTable) flushAcademicTable();
+    }
+
+    // Callout / Blockquote detection
+    if (trimmed.startsWith("> ") || trimmed.startsWith(">")) {
+      inCallout = true;
+      calloutLines.push(trimmed.replace(/^>\s*/, ""));
+      continue;
+    } else {
+      if (inCallout) flushCallout();
+    }
+
+    if (!trimmed || trimmed.startsWith("---") || trimmed.startsWith("**Topik:**") || trimmed.startsWith("**Tinjauan:**") || trimmed.startsWith("**Format:**") || trimmed.startsWith("**SUBTITLE:**")) {
+      continue;
+    }
+
+    // A. Major Section Headings (e.g. ## 1. PENDAHULUAN or # 1. ...)
+    if (trimmed.startsWith("# ") || trimmed.startsWith("## ")) {
+      const rawText = trimmed.replace(/^#+\s*/, "");
+      const cleanText = cleanPDFMarkdown(rawText).toUpperCase();
+
+      checkPageBreak(12);
+      y += 3;
+
+      // Vertical Accent Bar (Teal)
+      doc.setFillColor(13, 148, 136); // teal-600 #0d9488
+      doc.rect(margin, y, 2.2, 5.5, "F");
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10.5);
+      doc.setTextColor(10, 77, 70); // deep teal
+      doc.text(cleanText, margin + 4.5, y + 4.2);
+      y += 8;
+    }
+    // B. Sub-sections (e.g. ### 1.1 Latar Belakang or 1.1 ...)
+    else if (trimmed.startsWith("### ") || /^\d+\.\d+\s+/.test(trimmed)) {
+      const rawText = trimmed.replace(/^###\s*/, "");
+      const cleanText = cleanPDFMarkdown(rawText);
+
+      checkPageBreak(9);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9.5);
+      doc.setTextColor(15, 118, 110); // teal-700 #0f766e
+      doc.text(cleanText, margin, y + 3.5);
+      y += 6.5;
+    }
+    // C. Bullet points
+    else if (trimmed.startsWith("• ") || trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+      const rawText = trimmed.replace(/^[•\-*]\s+/, "");
+      const cleanText = cleanPDFMarkdown(rawText);
+
+      checkPageBreak(7);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(51, 65, 85); // slate-700
+
+      // Custom bullet circle
+      doc.setFillColor(51, 65, 85);
+      doc.circle(margin + 2.5, y + 2.2, 0.6, "F");
+
+      const splitBullet = doc.splitTextToSize(cleanText, usableWidth - 6);
+      doc.text(splitBullet, margin + 5.5, y + 3);
+      y += (splitBullet.length * 4.3) + 2;
+    }
+    // D. Numbered lists
+    else if (/^\d+\.\s+(.*)/.test(trimmed)) {
+      const match = trimmed.match(/^(\d+\.)\s+(.*)/);
+      const numPrefix = match ? match[1] : "";
+      const rawText = match ? match[2] : trimmed;
+      const cleanText = cleanPDFMarkdown(rawText);
+
+      checkPageBreak(8);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8.5);
+      doc.setTextColor(15, 23, 42);
+      doc.text(numPrefix, margin + 1, y + 3);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(51, 65, 85);
+      const splitNumText = doc.splitTextToSize(cleanText, usableWidth - 7);
+      doc.text(splitNumText, margin + 7, y + 3);
+      y += (splitNumText.length * 4.3) + 2.5;
+    }
+    // E. Footer note or Italic remark
+    else if (trimmed.startsWith("*") && trimmed.endsWith("*")) {
+      const rawText = trimmed.slice(1, -1);
+      const cleanText = cleanPDFMarkdown(rawText);
+
+      checkPageBreak(8);
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(7.5);
+      doc.setTextColor(100, 116, 139); // slate-500
+      doc.text(cleanText, margin + usableWidth / 2, y + 3, { align: "center" });
+      y += 7;
+    }
+    // F. Standard Paragraph
+    else {
+      const cleanText = cleanPDFMarkdown(trimmed);
+
+      checkPageBreak(7);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(51, 65, 85);
+
+      const splitP = doc.splitTextToSize(cleanText, usableWidth);
+      doc.text(splitP, margin, y + 3);
+      y += (splitP.length * 4.3) + 2.5;
+    }
+  }
+
+  if (inTable) flushAcademicTable();
+  if (inCallout) flushCallout();
+
+  // --- 4. RUNNING FOOTER ON ALL PAGES ---
+  const totalPages = (doc as any).internal.getNumberOfPages();
+  const shortDocTitle = opts.shortTitle || `Makalah ${(opts.bannerTitle || "Kajian").slice(0, 35)}`;
+
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.setTextColor(148, 163, 184); // slate-400
+    doc.text(shortDocTitle, margin, pageHeight - 10);
+    doc.text(`${i}`, margin + usableWidth, pageHeight - 10, { align: "right" });
+  }
+
+  return doc;
+}
+
+export function generateAcademicPDFBlobUrl(opts: AcademicPDFOptions): { blobUrl: string; fileName: string; totalPages: number } {
+  const doc = buildAcademicMakalahPDF(opts);
+  const totalPages = (doc as any).internal.getNumberOfPages();
+  const blob = doc.output("blob");
+  const blobUrl = URL.createObjectURL(blob);
+  const sanitizedFilename = (opts.bannerTitle || "Makalah_Akademik").trim().replace(/[/\\?%*:|"<>\s]+/g, "_") + ".pdf";
+  return { blobUrl, fileName: sanitizedFilename, totalPages };
+}
+
+export function downloadAcademicMakalahPDFDirect(opts: AcademicPDFOptions) {
+  const doc = buildAcademicMakalahPDF(opts);
+  const sanitizedFilename = (opts.bannerTitle || "Makalah_Akademik").trim().replace(/[/\\?%*:|"<>\s]+/g, "_") + ".pdf";
   doc.save(sanitizedFilename);
 }
 

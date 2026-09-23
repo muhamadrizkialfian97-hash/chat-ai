@@ -1464,6 +1464,82 @@ export function getSectorCacLtvProfile(projectTitle: string): SectorCacLtvProfil
   const title = projectTitle || "Logistik Strategis";
   const titleLower = title.toLowerCase();
 
+  // 1. SUSU / DAIRY / LEMBANG / MILK / PETERNAKAN / KPSBU
+  if (
+    titleLower.includes("susu") ||
+    titleLower.includes("dairy") ||
+    titleLower.includes("milk") ||
+    titleLower.includes("lembang") ||
+    titleLower.includes("kpsbu") ||
+    titleLower.includes("sapi") ||
+    titleLower.includes("peternakan")
+  ) {
+    return {
+      sectorNote: "Rantai pasok logistik susu segar (dairy cold chain) memiliki kontrak tahunan multi-drop berulang antara koperasi peternak (KPSBU/KPBS) dan Industri Pengolahan Susu (IPS) seperti Frisian Flag, Ultra Jaya, dan Indolakto.",
+      ltvNote: "Jadwal pengambilan susu segar harian dua kali sehari (pagi & sore) menjamin volume stabil tanpa fluktuasi musiman ekstrem dengan retensi kontrak di atas 95%.",
+      defaultAvgRevenuePerMonth: 68000000,
+      defaultMargin: 16,
+      defaultDuration: 36,
+      cacCosts: [
+        { id: "cac-1", name: "Sertifikasi Food-Grade Tangki SUS 304/316 & Kalibrasi Chiller", category: "Legalitas & K3", costIDR: 16000000 },
+        { id: "cac-2", name: "Survey Jalur Cooling Center (Lembang/Pangalengan) ke Pabrik IPS", category: "Teknis Operasional", costIDR: 9000000 },
+        { id: "cac-3", name: "Trial Run Tangki Susu Berinsulasi & Validasi Waktu Tempuh Maks 3 Jam", category: "Teknis Operasional", costIDR: 13000000 },
+        { id: "cac-4", name: "Penyusunan Proposal Komersial & Verifikasi Kepatuhan SNI 3141.1:2011", category: "Komersial", costIDR: 6000000 },
+        { id: "cac-5", name: "Audit Higienitas K3, Uji Swab Tangki CIP & Sertifikasi Halal BPOM", category: "Legalitas & K3", costIDR: 5000000 }
+      ]
+    };
+  }
+
+  // 2. KONTAINER / CONTAINER / INLAND / DEPO / HUB / SHUTTLE / INTERMODAL
+  if (
+    titleLower.includes("kontainer") ||
+    titleLower.includes("container") ||
+    titleLower.includes("inland") ||
+    titleLower.includes("depo") ||
+    titleLower.includes("hub") ||
+    titleLower.includes("shuttle") ||
+    titleLower.includes("intermodal")
+  ) {
+    return {
+      sectorNote: "Layanan shuttle kontainer darat dan depo inland terikat kontrak jangka panjang dengan perusahaan pelayaran (shipping lines), forwarder internasional, dan manufaktur koridor Cikarang/Karawang.",
+      ltvNote: "Throughput peti kemas harian yang terjadwal dengan sistem booking slot gate digital (VBS) menjamin pendapatan berulang per box kontainer yang terprediksi tinggi.",
+      defaultAvgRevenuePerMonth: 85000000,
+      defaultMargin: 15,
+      defaultDuration: 36,
+      cacCosts: [
+        { id: "cac-1", name: "Jaminan Kemitraan Pelayaran (Shipping Line Deposit & TID Gate)", category: "Legalitas & K3", costIDR: 20000000 },
+        { id: "cac-2", name: "Survey Koridor Bebas Hambatan & Simulasi Buffer Depo Tol Cikampek", category: "Teknis Operasional", costIDR: 10000000 },
+        { id: "cac-3", name: "Trial Run Prime Mover Chasis 20/40ft & Uji Turnaround Time Gate Depo", category: "Teknis Operasional", costIDR: 16000000 },
+        { id: "cac-4", name: "Penyusunan Kontrak Volume Bulanan & Integrasi API TOS Depo", category: "Komersial", costIDR: 7000000 },
+        { id: "cac-5", name: "Audit Keselamatan Armada Trailer Kemenhub & Asuransi Tanggung Jawab Kargo", category: "Legalitas & K3", costIDR: 6000000 }
+      ]
+    };
+  }
+
+  // 3. PUPUK / FERTILIZER / UREA
+  if (
+    titleLower.includes("pupuk") ||
+    titleLower.includes("fertilizer") ||
+    titleLower.includes("urea") ||
+    titleLower.includes("amoniak") ||
+    titleLower.includes("agro")
+  ) {
+    return {
+      sectorNote: "Distribusi pupuk bersubsidi dan non-subsidi di bawah naungan holding Pupuk Indonesia berjangka waktu kontrak tahunan dengan penugasan lintas wilayah kabupaten.",
+      ltvNote: "Distribusi pupuk menuju gudang lini III secara serentak pada musim tanam menghasilkan lonjakan ritase volume masif dengan margin terproteksi.",
+      defaultAvgRevenuePerMonth: 62000000,
+      defaultMargin: 14,
+      defaultDuration: 36,
+      cacCosts: [
+        { id: "cac-1", name: "Jaminan Lelang Tender Angkutan Pupuk Indonesia (Tender Bond)", category: "Legalitas & K3", costIDR: 15000000 },
+        { id: "cac-2", name: "Survey Akses Gudang Lini II & Lini III Distribusi Pupuk", category: "Teknis Operasional", costIDR: 8000000 },
+        { id: "cac-3", name: "Trial Run Armada Wingbox/Terpal Kedap Air & Anti-Bocor Kelembaban", category: "Teknis Operasional", costIDR: 12000000 },
+        { id: "cac-4", name: "Penyusunan Dokumen Komersial & Verifikasi SLA Pengiriman Tepat Waktu", category: "Komersial", costIDR: 5000000 },
+        { id: "cac-5", name: "Audit K3 Penanganan Bahan Kimia Agroindustri & Sertifikasi Armada", category: "Legalitas & K3", costIDR: 5000000 }
+      ]
+    };
+  }
+
   if (
     titleLower.includes("limbah") ||
     titleLower.includes("waste") ||
@@ -1575,6 +1651,100 @@ export function getSectorCacLtvProfile(projectTitle: string): SectorCacLtvProfil
         { id: "cac-3", name: "Trial Run Multi-Axle Trailer & Mobil Pengawal", category: "Teknis Operasional", costIDR: 22000000 },
         { id: "cac-4", name: "Penyusunan Studi Kelayakan Teknik & Proposal", category: "Komersial", costIDR: 7000000 },
         { id: "cac-5", name: "Sertifikasi Rigging & Audit Keselamatan K3", category: "Legalitas & K3", costIDR: 6000000 }
+      ]
+    };
+  }
+
+  if (
+    titleLower.includes("listrik") ||
+    titleLower.includes("electric") ||
+    titleLower.includes("ev") ||
+    titleLower.includes("baterai") ||
+    titleLower.includes("charging") ||
+    titleLower.includes("spklu") ||
+    titleLower.includes("kblbb")
+  ) {
+    return {
+      sectorNote: "Kontrak adopsi armada kendaraan listrik (EV) komersial korporasi umumnya berdurasi 3 hingga 5 tahun berkat skema Fleet-as-a-Service terpadu.",
+      ltvNote: "Efisiensi biaya energi listrik per kilometer dan subsidi tarif curah PLN menghasilkan margin laba bersih 18-22% yang sangat stabil.",
+      defaultAvgRevenuePerMonth: 85000000,
+      defaultMargin: 18,
+      defaultDuration: 36,
+      cacCosts: [
+        { id: "cac-1", name: "Kajian Kelayakan Daya Listrik & Izin SPKLU Depo (ESDM)", category: "Legalitas & K3", costIDR: 18000000 },
+        { id: "cac-2", name: "Survey Profil Kontur Rute & Efisiensi Konsumsi kWh/KM", category: "Teknis Operasional", costIDR: 12000000 },
+        { id: "cac-3", name: "Trial Run Armada Truk Listrik & Tes Jarak Baterai (SoC)", category: "Teknis Operasional", costIDR: 16000000 },
+        { id: "cac-4", name: "Penyusunan Proposal Dekarbonisasi ESG & Scope 3 Audit", category: "Komersial", costIDR: 8000000 },
+        { id: "cac-5", name: "Sertifikasi Teknisi High-Voltage & Protokol Safety Baterai", category: "Legalitas & K3", costIDR: 6000000 }
+      ]
+    };
+  }
+
+  if (
+    titleLower.includes("cold") ||
+    titleLower.includes("dingin") ||
+    titleLower.includes("frost") ||
+    titleLower.includes("farmasi") ||
+    titleLower.includes("vaksin") ||
+    titleLower.includes("reefer")
+  ) {
+    return {
+      sectorNote: "Kontrak rantai dingin (cold chain) farmasi & makanan beku umumnya berdurasi 2 hingga 4 tahun dengan kepatuhan temperatur ketat.",
+      ltvNote: "Kebutuhan armada reefer berstandar BPOM/GDP memberikan tarif premium dan retensi klien jangka panjang yang tinggi.",
+      defaultAvgRevenuePerMonth: 70000000,
+      defaultMargin: 17,
+      defaultDuration: 36,
+      cacCosts: [
+        { id: "cac-1", name: "Sertifikasi CDOB (BPOM) & Kalibrasi Data Logger Suhu", category: "Legalitas & K3", costIDR: 14000000 },
+        { id: "cac-2", name: "Thermal Mapping & Validasi Suhu Kompartemen Reefer", category: "Teknis Operasional", costIDR: 11000000 },
+        { id: "cac-3", name: "Trial Run Reefer Multi-Drop & Uji Ketahanan Genset", category: "Teknis Operasional", costIDR: 15000000 },
+        { id: "cac-4", name: "Penyusunan Proposal SLA Rantai Dingin & Asuransi Kargo", category: "Komersial", costIDR: 6000000 },
+        { id: "cac-5", name: "Audit Higienitas HACCP & Pemantauan IoT Real-Time", category: "Legalitas & K3", costIDR: 5000000 }
+      ]
+    };
+  }
+
+  if (
+    titleLower.includes("semen") ||
+    titleLower.includes("cement") ||
+    titleLower.includes("clinker") ||
+    titleLower.includes("curah")
+  ) {
+    return {
+      sectorNote: "Kontrak pengangkutan semen curah & clinker ke batching plant dan proyek infrastruktur berdurasi rata-rata 3 tahun.",
+      ltvNote: "Volume ritase semen curah yang stabil menjamin kepastian okupansi armada kapsul semen dan perputaran arus kas yang lancar.",
+      defaultAvgRevenuePerMonth: 80000000,
+      defaultMargin: 15,
+      defaultDuration: 36,
+      cacCosts: [
+        { id: "cac-1", name: "Jaminan Tender & Kualifikasi Pabrik Semen / BUMN", category: "Legalitas & K3", costIDR: 20000000 },
+        { id: "cac-2", name: "Survey Akses Jalan Batching Plant & Silo Pneumatik", category: "Teknis Operasional", costIDR: 10000000 },
+        { id: "cac-3", name: "Trial Run Truk Kapsul Semen & Uji Kecepatan Kompresor", category: "Teknis Operasional", costIDR: 14000000 },
+        { id: "cac-4", name: "Penyusunan Proposal Kontrak Volume Curah & SLAs", category: "Komersial", costIDR: 6000000 },
+        { id: "cac-5", name: "Sertifikasi K3 Pengangkutan Material Berdebu & CSMS", category: "Legalitas & K3", costIDR: 5000000 }
+      ]
+    };
+  }
+
+  if (
+    titleLower.includes("maritim") ||
+    titleLower.includes("tongkang") ||
+    titleLower.includes("tugboat") ||
+    titleLower.includes("barge") ||
+    titleLower.includes("pelabuhan")
+  ) {
+    return {
+      sectorNote: "Kontrak sewa kapal tunda & tongkang (Tug & Barge) berdurasi 12 hingga 36 bulan dengan skema Time Charter atau Freight Charter.",
+      ltvNote: "Kapasitas angkut ribuan ton per voyage menghasilkan pendapatan per bulan yang sangat besar dan margin yang terukur.",
+      defaultAvgRevenuePerMonth: 140000000,
+      defaultMargin: 19,
+      defaultDuration: 36,
+      cacCosts: [
+        { id: "cac-1", name: "Jaminan Pelaksanaan Kontrak Charter & BKI Survey", category: "Legalitas & K3", costIDR: 30000000 },
+        { id: "cac-2", name: "Survey Alur Pelayaran, Batimetri & Draft Dermaga Jetty", category: "Teknis Operasional", costIDR: 18000000 },
+        { id: "cac-3", name: "Sea Trial Uji Bollard Pull & Navigasi Cuaca Buruk", category: "Teknis Operasional", costIDR: 25000000 },
+        { id: "cac-4", name: "Penyusunan Perjanjian Charter Party BIMCO / Kontrak Laut", category: "Komersial", costIDR: 9000000 },
+        { id: "cac-5", name: "Sertifikasi ISM Code & Dokumen Kelaiklautan Hubla", category: "Legalitas & K3", costIDR: 8000000 }
       ]
     };
   }

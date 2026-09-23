@@ -109,12 +109,16 @@ export default function Navbar({
         {/* Right Navigation & Status Indicators */}
         <div className="flex items-center gap-3 sm:gap-4">
 
-          {/* Database Synchronization Status Node */}
-          <div className="hidden items-center gap-2 rounded-xl bg-slate-50 border border-slate-200/80 px-2.5 py-1.5 text-xs font-bold text-slate-600 sm:flex shadow-2sm">
-            <span className={`h-2 w-2 rounded-full ${user ? "bg-emerald-500 animate-pulse" : "bg-amber-500 animate-pulse"}`} />
-            <Database className="h-3.5 w-3.5 text-sky-600" />
-            <span className="font-mono text-[10px] tracking-wide">
-              {user ? "KONEKSI PORTAL: ONLINE" : "MODE LOCAL OFFLINE"}
+          {/* Database Synchronization Status Node (Icon-only indicator) */}
+          <div 
+            className="relative flex h-8.5 w-8.5 items-center justify-center rounded-xl bg-slate-50 border border-slate-200/80 text-sky-600 shadow-2sm"
+            title={user ? "Koneksi Portal: Online (Tersinkronisasi Cloud)" : "Mode Local Offline"}
+            aria-label={user ? "Koneksi Portal Online" : "Mode Offline"}
+          >
+            <Database className="h-4 w-4 text-sky-600" />
+            <span className="absolute -top-1 -right-1 flex h-2 w-2">
+              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${user ? "bg-emerald-400" : "bg-amber-400"} opacity-75`}></span>
+              <span className={`relative inline-flex rounded-full h-2 w-2 ${user ? "bg-emerald-500" : "bg-amber-500"}`}></span>
             </span>
           </div>
 

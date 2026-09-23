@@ -124,10 +124,14 @@ export default function Navbar({
               type="button"
               onClick={onOpenAISettings}
               className="flex items-center gap-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/80 px-3 py-1.5 text-xs font-bold text-indigo-700 transition cursor-pointer shadow-sm active:scale-95"
-              title="Konfigurasi Hub Koneksi AI & API Key"
+              title="Konfigurasi Hub Koneksi AI & API Key Otomatis"
             >
               <Cpu className="h-3.5 w-3.5 text-indigo-600 animate-pulse" />
               <span className="hidden sm:inline">Setelan AI</span>
+              <span className="relative flex h-2 w-2 ml-0.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
             </button>
           )}
 

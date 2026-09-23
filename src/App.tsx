@@ -678,6 +678,28 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
+  // Synchronize AI Configuration (API Key & Mode) automatically from Firestore for anyone who logs in
+  useEffect(() => {
+    const aiConfigDocRef = doc(db, "settings", "ai_config");
+    const unsubscribe = onSnapshot(aiConfigDocRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        if (data.apiKey && typeof data.apiKey === "string" && data.apiKey.trim()) {
+          const remoteKey = data.apiKey.trim();
+          setClientApiKey(remoteKey);
+          localStorage.setItem("workspace_client_api_key", remoteKey);
+        }
+        if (data.apiMode && (data.apiMode === "proxy" || data.apiMode === "client")) {
+          setApiMode(data.apiMode);
+          localStorage.setItem("workspace_api_mode", data.apiMode);
+        }
+      }
+    }, (error) => {
+      console.warn("AI Config Firestore listener error (non-fatal):", error);
+    });
+    return () => unsubscribe();
+  }, [user, guestUser]);
+
   const changeBgTypeInFirestore = async (type: "video" | "image" | "illustration") => {
     try {
       const settingsDocRef = doc(db, "settings", "lobby_background");
@@ -8613,6 +8635,7 @@ ${lastMsgText}`;
             setClientApiKey(cleaned);
             localStorage.setItem("workspace_client_api_key", cleaned);
           }}
+          currentUserEmail={user?.email || collabUsername}
         />
 
         <PPTPreviewModal 
@@ -9076,6 +9099,7 @@ ${lastMsgText}`;
           setClientApiKey(cleaned);
           localStorage.setItem("workspace_client_api_key", cleaned);
         }}
+        currentUserEmail={user?.email || collabUsername}
       />
     </motion.div>
   );

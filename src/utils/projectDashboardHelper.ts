@@ -5,6 +5,7 @@
 
 import pptxgen from "pptxgenjs";
 import { CompetitorIntel } from "../types";
+import { downloadPDFDirect } from "./documentExporter";
 import { generateStrategicOverviewForTitle } from "./strategicOverviewGenerator";
 import { generateTamSamSomForTitle } from "./tamSamSomGenerator";
 import { generateServiceDesignForTitle } from "./serviceDesignGenerator";
@@ -2510,6 +2511,62 @@ export function exportAllSectionsToWord(projectTitle: string, sectionsMap: Recor
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   }, 1000);
+}
+
+/**
+ * Export all 17 sections as one unified Executive Feasibility Study PDF
+ */
+export function exportAllSectionsToPDF(projectTitle: string, sectionsMap: Record<number, string>) {
+  const displayTitle = projectTitle.trim() || "Kajian Strategis: Forestry Management Transportation";
+  const dateStr = new Date().toLocaleDateString("id-ID", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+  const allSections = getDashboardSectionsForProject(displayTitle);
+  
+  let fullMarkdown = `# PANCARAN GROUP • STRATEGIC FEASIBILITY STUDY
+## FEASIBILITY STUDY
+### ${displayTitle.toUpperCase()}
+
+**Analisis Pasar, Finansial (IRR/NPV/Payback), Kesiapan Kapabilitas, Risiko, Model Bisnis, dan Rekomendasi Go / No-Go**
+
+**PENELITI / KONSULTAN:** Rezha Mayhendra • PRAMA Strategic AI Advisor  
+**LOKASI & TANGGAL:** Jakarta, ${dateStr}  
+**KLASIFIKASI:** Versi 1.0 — Rahasia, untuk internal
+
+---
+
+## DAFTAR ISI KAJIAN STRATEGIS (17 PILAR)
+${allSections.map(s => `* **Pilar ${s.number}: ${s.title}** — ${s.shortDesc}`).join("\n")}
+
+---
+
+## 00. RINGKASAN EKSEKUTIF & SCORECARD STRATEGIS
+Dokumen ini menyajikan kajian kelayakan terpadu untuk proyek **${displayTitle}** berdasarkan 17 Pilar Strategi Manajemen Proyek & Logistik Korporasi. Seluruh analisis memadukan evaluasi regulasi, peluang pasar komersial, model finansial kuantitatif (Capex, Opex, P&L, Cash Flow, IRR, NPV, Payback), arsitektur operasional, dan kepatuhan hukum.
+
+---
+`;
+
+  allSections.forEach((sec) => {
+    let rawContent = sec.defaultContent;
+    if (sectionsMap && sectionsMap[sec.number] && sectionsMap[sec.number].trim().length > 30) {
+      rawContent = sectionsMap[sec.number];
+    }
+
+    fullMarkdown += `\n\n## PILAR ${sec.number}: ${sec.title.toUpperCase()}\n`;
+    fullMarkdown += `*Fokus Analisis:* ${sec.shortDesc}\n\n`;
+    fullMarkdown += `${rawContent}\n\n---\n`;
+  });
+
+  fullMarkdown += `\n\n## KESIMPULAN REKOMENDASI KEPUTUSAN FINAL
+Berdasarkan evaluasi menyeluruh 17 pilar terhadap proyek **${displayTitle}**, keputusan investasi direkomendasikan dengan status **CONDITIONAL GO** dengan pemenuhan kriteria gerbang investasi (*stage-gate requirements*).
+
+*PRAMA Strategic In-Site Management System • PT Pancaran Group*`;
+
+  downloadPDFDirect(`FEASIBILITY_STUDY_17_PILAR_${displayTitle}`, fullMarkdown, "PANCARAN GROUP", "STRATEGIC FEASIBILITY STUDY");
 }
 
 /**

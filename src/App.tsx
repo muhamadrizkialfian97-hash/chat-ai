@@ -23,7 +23,8 @@ import {
   defaultDashboardSections, 
   getDashboardSectionsForProject,
   exportSingleSectionToWord, 
-  exportAllSectionsToWord, 
+  exportAllSectionsToWord,
+  exportAllSectionsToPDF, 
   exportAllSectionsToPPTX,
   generatePillarsForProject,
   parseResponseToPillars,
@@ -5279,6 +5280,29 @@ ${lastMsgText}`;
                             </div>
                           </button>
 
+                          {/* Option 1.5: PDF (Executive Feasibility Study Format) */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsExportMenuCollapsed(true);
+                              exportAllSectionsToPDF(dashboardProjectTitle, dashboardSectionsState);
+                            }}
+                            className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-red-50/70 border border-transparent hover:border-red-100 text-left transition cursor-pointer group"
+                          >
+                            <div className="h-9 w-9 rounded-xl bg-red-100/80 text-red-650 flex items-center justify-center shrink-0 group-hover:bg-red-600 group-hover:text-white transition">
+                              <Download className="h-4 w-4" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-xs font-bold text-slate-800 group-hover:text-red-900 flex items-center gap-1.5">
+                                <span>Unduh Dokumen PDF (.pdf)</span>
+                                <span className="text-[8px] bg-red-600 text-white font-mono font-bold px-1.5 py-0.2 rounded">PDF</span>
+                              </div>
+                              <div className="text-[10px] text-slate-500 truncate">
+                                Feasibility Study 17 Pilar standar eksekutif
+                              </div>
+                            </div>
+                          </button>
+
                           {/* Option 2: PPTX */}
                           <button
                             type="button"
@@ -6600,6 +6624,14 @@ ${lastMsgText}`;
                         >
                           <Download className="h-3.5 w-3.5" />
                           <span>Unduh File Word (.doc)</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => exportAllSectionsToPDF(dashboardProjectTitle, dashboardSectionsState)}
+                          className="bg-red-600 hover:bg-red-550 text-white text-[10.5px] font-black px-4 py-2.5 rounded-xl flex items-center gap-1.5 shadow-md transition cursor-pointer"
+                        >
+                          <Download className="h-3.5 w-3.5" />
+                          <span>Unduh PDF (.pdf)</span>
                         </button>
                         <button
                           type="button"

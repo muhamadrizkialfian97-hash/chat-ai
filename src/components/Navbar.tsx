@@ -118,17 +118,17 @@ export default function Navbar({
             </span>
           </div>
 
-          {/* AI Settings Button (Available for authenticated / logged-in users) */}
-          {user && onOpenAISettings && (
+          {/* AI Settings Button (Restricted exclusively to muhamadrizkialfian97@gmail.com) */}
+          {user && onOpenAISettings && (user.email?.trim().toLowerCase() === "muhamadrizkialfian97@gmail.com") && (
             <button
               type="button"
               onClick={onOpenAISettings}
-              className="flex items-center gap-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/80 px-3 py-1.5 text-xs font-bold text-indigo-700 transition cursor-pointer shadow-sm active:scale-95"
+              className="relative flex h-8.5 w-8.5 items-center justify-center rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/80 text-indigo-700 transition cursor-pointer shadow-sm active:scale-95"
               title="Konfigurasi Hub Koneksi AI & API Key Otomatis"
+              aria-label="Setelan AI"
             >
-              <Cpu className="h-3.5 w-3.5 text-indigo-600 animate-pulse" />
-              <span className="hidden sm:inline">Setelan AI</span>
-              <span className="relative flex h-2 w-2 ml-0.5">
+              <Cpu className="h-4 w-4 text-indigo-600 animate-pulse" />
+              <span className="absolute -top-1 -right-1 flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               </span>

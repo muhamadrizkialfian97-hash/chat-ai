@@ -28,7 +28,10 @@ export function AISettingsModal({
   const [syncToAllUsers, setSyncToAllUsers] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  if (!isOpen) return null;
+  // Strict email restriction: only muhamadrizkialfian97@gmail.com is authorized
+  const isAuthorized = currentUserEmail?.trim().toLowerCase() === "muhamadrizkialfian97@gmail.com";
+
+  if (!isOpen || !isAuthorized) return null;
 
   const handleSave = async () => {
     setIsSaving(true);

@@ -262,7 +262,6 @@ const divisions = [
     indicatorColor: "bg-sky-500",
     icon: TrendingUp,
     buttonTitle: "Chat Model AI Agent Prama",
-    badge: "KAMAR 1",
     locked: false
   }
 ];
@@ -8506,11 +8505,6 @@ ${lastMsgText}`;
                           <IconComp className="h-5 w-5" />
                         </div>
                         <div className="flex items-center gap-1.5">
-                          {div.badge && (
-                            <span className="flex items-center gap-0.5 text-[9px] font-black bg-white/90 backdrop-blur-sm text-slate-800 border border-slate-200 px-2 py-0.5 rounded uppercase tracking-wider shadow-sm">
-                              {div.badge}
-                            </span>
-                          )}
                           {div.locked && (
                             <span className="flex items-center gap-0.5 text-[8px] font-black bg-amber-50/90 backdrop-blur-sm text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded uppercase tracking-wider shadow-sm">
                               <Lock className="h-2 w-2" /> Terkunci
@@ -9011,16 +9005,18 @@ ${lastMsgText}`;
                 </span>
               </button>
 
-              {/* Option 4: Pengaturan AI & API */}
-              <button
-                onClick={() => {
-                  setShowAISettingsModal(true);
-                }}
-                className="w-full h-10 flex items-center gap-3 px-3 rounded-xl text-left text-xs font-bold text-slate-700 hover:bg-indigo-50/60 hover:text-indigo-600 transition cursor-pointer"
-              >
-                <Cpu className="h-4 w-4 text-indigo-600 shrink-0 animate-pulse" />
-                <span>Setelan AI & API</span>
-              </button>
+              {/* Option 4: Pengaturan AI & API (Restricted exclusively to muhamadrizkialfian97@gmail.com) */}
+              {(user?.email?.trim().toLowerCase() === "muhamadrizkialfian97@gmail.com") && (
+                <button
+                  onClick={() => {
+                    setShowAISettingsModal(true);
+                  }}
+                  className="w-full h-10 flex items-center gap-3 px-3 rounded-xl text-left text-xs font-bold text-slate-700 hover:bg-indigo-50/60 hover:text-indigo-600 transition cursor-pointer"
+                >
+                  <Cpu className="h-4 w-4 text-indigo-600 shrink-0 animate-pulse" />
+                  <span>Setelan AI & API</span>
+                </button>
+              )}
             </nav>
           </div>
 

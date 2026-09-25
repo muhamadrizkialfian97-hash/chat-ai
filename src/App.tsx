@@ -77,6 +77,9 @@ export interface User {
 }
 import ChatPanel from "./components/ChatPanel";
 import FilePanel from "./components/FilePanel";
+import FloatingChatIcon from "./components/FloatingChatIcon";
+import ProjectParametersModal from "./components/ProjectParametersModal";
+import { loadSavedProjectParameters } from "./types/projectParameters";
 import { 
   TrendingUp, 
   Users, 
@@ -133,6 +136,7 @@ import {
   Mic,
   MicOff,
   Sliders,
+  SlidersHorizontal,
   Sun,
   Sunset,
   MessageSquareCode,
@@ -1690,6 +1694,9 @@ Masukkan Kunci API Gemini pribadi Anda di panel setelan di bawah jendela Robot 3
   const [newDashboardPresetId, setNewDashboardPresetId] = useState<string>("forestry");
   const [isCleanSlate, setIsCleanSlate] = useState<boolean>(true);
 
+  // Project Parameters Grounding Modal state (Anti-Hallucination)
+  const [isProjectParamsModalOpen, setIsProjectParamsModalOpen] = useState<boolean>(false);
+
   // AI Title Analysis Modal state
   const [isTitleAnalysisOpen, setIsTitleAnalysisOpen] = useState<boolean>(false);
   const [titleAnalysisText, setTitleAnalysisText] = useState<string>("");
@@ -2551,8 +2558,25 @@ ${focusText}`;
     const secObj = defaultDashboardSections.find(s => s.number === activeDashboardSection);
     const secTitle = secObj ? secObj.title : "14 Pilar";
     const secContent = dashboardSectionsState[activeDashboardSection] || "";
+    const groundingParams = loadSavedProjectParameters(updatedProjectTitle);
 
-    let finalQuery = trimmedText + `\n\n[INFO SISTEM AKTIF: Pengajar proyek sedang melihat Pilar Ke-${activeDashboardSection}: "${secTitle}". Konten draf pilar ini adalah:\n"""\n${secContent}\n"""\nProyek ini berjudul: "${updatedProjectTitle}"]`;
+    const groundingInfo = `
+[DATA GROUNDING FORM PROYEK (ANTI-HALUSINASI)]:
+- Judul Proyek: "${updatedProjectTitle}"
+- Sektor/Industri: ${groundingParams.sector}
+- Komoditas & Muatan: ${groundingParams.commodity}
+- Koridor Rute & Jarak: ${groundingParams.routeCorridor}
+- Klien Utama: ${groundingParams.targetClient}
+- Target Kapasitas/Volume: ${groundingParams.targetCapacity}
+- Kebutuhan Armada (${groundingParams.fleetCount} Unit): ${groundingParams.fleetRequirement}
+- Estimasi CAPEX: ${groundingParams.capexEstimate}
+- Model Tarif & Revenue: ${groundingParams.pricingModel}
+- Durasi Kontrak: ${groundingParams.contractTerm}
+- Batasan Lapangan & Regulasi: ${groundingParams.operationalConstraints}
+- Kompetitor: ${groundingParams.keyCompetitors}
+`;
+
+    let finalQuery = trimmedText + `\n\n[INFO SISTEM AKTIF: Pengajar proyek sedang melihat Pilar Ke-${activeDashboardSection}: "${secTitle}". Konten draf pilar ini adalah:\n"""\n${secContent}\n"""\n${groundingInfo}\nPastikan seluruh strategi, rute, angka volume, dan kalkulasi mematuhi data grounding parameter di atas.]`;
     
     if (isProjectChangeTriggered) {
       finalQuery = `[NOTIFIKASI SISTEM: PENGGUNA MEMINTA MENGUBAH JUDUL PROYEK AKTIF MENJADI "${updatedProjectTitle}" DAN MEMINTA MEMPERBARUI SEMUA PILAR STRATEGIS YANG ADA DENGAN STRATEGI JURNAL BARU. DAN SISTEM TELAH BERHASIL MEREKONSTRUKSI SEMUA 14 PILAR SECARA PENUH DI FRONTEND. SAMBUT DAN KONFIRMASIKAN PENGGANTIAN INI DENGAN PENULISAN DRAF STRATEGIS UNTUK PROYEK BARU TERSEBUT!]\n\n` + finalQuery;
@@ -5135,14 +5159,15 @@ ${lastMsgText}`;
               </div>
 
               {/* Main Control Panel Bar (Editable Project Title & Combined Exports) */}
-              <div className="bg-slate-50 border-b border-slate-200 p-5 flex flex-col lg:flex-row items-stretch lg:items-center gap-4 justify-between shrink-0">
+              <div className="bg-white border-b border-slate-200 p-4 sm:p-5 flex flex-col lg:flex-row items-stretch lg:items-center gap-4 justify-between shrink-0">
                 {/* Editable Project Title */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2 mb-1.5">
-                    <label className="block text-[8.5px] font-black text-slate-500 uppercase tracking-wider font-mono">
+                    <label className="block text-[9px] font-black text-slate-500 uppercase tracking-wider font-mono">
                       JUDUL KAJIAN PROYEK PM (SINKRON KE 14 PILAR, CHAT & EKSPOR)
                     </label>
                   </div>
+
                   <div className="flex items-center gap-2">
                     <div className="relative flex-1">
                       <input
@@ -5160,12 +5185,21 @@ ${lastMsgText}`;
                           }
                         }}
                         placeholder="Masukkan nama proyek / judul kajian..."
-                        className="w-full pl-3 pr-12 py-2 text-xs font-extrabold border border-slate-300 bg-white text-slate-800 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition outline-none shadow-sm font-sans"
+                        className="w-full pl-3.5 pr-28 py-2 text-xs font-bold border border-slate-300 bg-white text-slate-800 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition outline-none shadow-xs font-sans"
                       />
-                      <div className="absolute right-2.5 top-2 text-[8.5px] text-slate-400 font-extrabold uppercase font-mono tracking-wider select-none bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5 leading-none">
-                        Edit
+                      <div className="absolute right-1.5 top-1.5 flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setIsProjectParamsModalOpen(true)}
+                          className="flex items-center gap-1 text-[9px] text-blue-600 hover:text-blue-800 font-bold uppercase font-mono tracking-wider select-none bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg px-2 py-1 leading-none transition cursor-pointer"
+                          title="Buka Formulir Parameter Detail Proyek"
+                        >
+                          <SlidersHorizontal className="h-2.5 w-2.5" />
+                          <span>Form Detail</span>
+                        </button>
                       </div>
                     </div>
+
                     <button
                       type="button"
                       onClick={() => {
@@ -5173,11 +5207,11 @@ ${lastMsgText}`;
                           syncProjectTitleAndPillars(dashboardProjectTitle.trim(), undefined, true);
                         }
                       }}
-                      className="flex h-9 w-9 items-center justify-center bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 active:scale-95 text-white rounded-xl shadow-sm transition cursor-pointer shrink-0 select-none"
-                      title="Singkronkan 17 Pilar sesuai judul ini"
-                      aria-label="Singkronkan 17 Pilar"
+                      className="flex h-9 w-9 items-center justify-center bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl shadow-xs transition cursor-pointer shrink-0 select-none"
+                      title="Sinkronkan 14 Pilar sesuai judul & parameter proyek"
+                      aria-label="Sinkronkan 14 Pilar"
                     >
-                      <RefreshCw className="h-4 w-4 text-indigo-100" />
+                      <RefreshCw className="h-4 w-4 text-white" />
                     </button>
                   </div>
                 </div>
@@ -6467,89 +6501,232 @@ ${lastMsgText}`;
                 )}
                 </div>
 
-                {/* RIGHT COLLAPSIBLE CHAT PANEL (Advising AI) */}
+                {/* RIGHT COLLAPSIBLE CHAT PANEL (Project Consultant & Discussion Hub) */}
                 <div className={`border-l border-slate-200 shrink-0 bg-white flex flex-col transition-all duration-300 ${
-                  isDashboardChatOpen ? "w-full lg:w-80" : "w-full lg:w-14"
-                } relative overflow-hidden`} style={{ maxHeight: "600px" }}>
+                  isDashboardChatOpen ? "w-full lg:w-88" : "w-full lg:w-14"
+                } relative overflow-hidden`} style={{ maxHeight: "640px" }}>
                   {isDashboardChatOpen ? (
                     <div className="flex flex-col h-full w-full min-w-[280px]">
-                      {/* Header */}
-                      <div className="bg-slate-900 border-b border-slate-800 p-3.5 flex items-center justify-between text-white shrink-0">
-                        <div className="flex items-center gap-2">
-                          <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                          <span className="text-[10.5px] font-black uppercase tracking-wider font-mono">
-                            PRAMA AI Advisor
-                          </span>
+                      {/* Header with Senior Consultant Identity */}
+                      <div className="bg-slate-900 border-b border-slate-800 p-3.5 flex items-center justify-between text-white shrink-0 shadow-sm">
+                        <div className="flex items-center gap-2.5">
+                          <div className="h-8 w-8 rounded-full overflow-hidden border border-emerald-400 bg-slate-800 shrink-0 flex items-center justify-center shadow-xs">
+                            <img 
+                              src={pramaLogo} 
+                              alt="PRAMA" 
+                              className="h-full w-full object-cover" 
+                              referrerPolicy="no-referrer"
+                            />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[11px] font-black uppercase tracking-wider font-display text-white">
+                                Konsultan Proyek
+                              </span>
+                              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                            </div>
+                            <span className="text-[8.5px] font-mono font-bold text-emerald-400 block -mt-0.5">
+                              Diskusi & Solusi Pilar #{activeDashboardSection}
+                            </span>
+                          </div>
                         </div>
                         <button
                           type="button"
                           onClick={() => setIsDashboardChatOpen(false)}
                           title="Sembunyikan Panel Chat"
-                          className="text-slate-400 hover:text-white transition duration-200 cursor-pointer"
+                          className="text-slate-400 hover:text-white transition duration-200 cursor-pointer p-1 rounded-lg hover:bg-slate-800"
                         >
                           <ChevronRight className="h-4 w-4" />
                         </button>
                       </div>
 
-                      {/* Messages with customized styled layout */}
-                      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/50">
-                        {dashboardChatMessages.map((msg) => {
-                          const isAI = msg.role === "model";
-                          
-                          // Dynamic parsing for strategic discussion updates
-                          let displayText = msg.text;
-                          let extractedPilarDraft: string | null = null;
-                          let extractedJudulDraft: string | null = null;
-                          
-                          if (isAI) {
-                            // Extract [UPDATE_PILAR]...[/UPDATE_PILAR]
-                            const pilarRegex = /\[UPDATE_PILAR\]([\s\S]*?)\[\/UPDATE_PILAR\]/i;
-                            const pilarMatch = msg.text.match(pilarRegex);
-                            if (pilarMatch) {
-                              extractedPilarDraft = pilarMatch[1].trim();
-                              displayText = displayText.replace(pilarRegex, "").trim();
-                            }
+                      {/* Active Pillar Grounding Context Strip */}
+                      <div className="bg-indigo-50/80 border-b border-indigo-100 px-3 py-1.5 flex items-center justify-between gap-2 text-[9.5px] shrink-0">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <Sparkles className="h-3 w-3 text-indigo-600 shrink-0 animate-pulse" />
+                          <span className="font-bold text-indigo-900 truncate">
+                            Pilar {activeDashboardSection}: {currentDashboardSections.find(s => s.number === activeDashboardSection)?.title || "Strategi"}
+                          </span>
+                        </div>
+                        <span className="text-[8px] font-mono font-extrabold bg-indigo-200 text-indigo-800 px-1.5 py-0.5 rounded shrink-0">
+                          AKTIF
+                        </span>
+                      </div>
+
+                      {/* Messages with customized consultant layout */}
+                      <div className="flex-1 overflow-y-auto p-3.5 space-y-3 bg-slate-50/60">
+                        {dashboardChatMessages.length === 0 ? (
+                          <div className="text-center py-6 px-2">
+                            <div className="h-10 w-10 mx-auto rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center mb-2 shadow-xs">
+                              <MessageSquare className="h-5 w-5" />
+                            </div>
+                            <h4 className="text-xs font-bold text-slate-800">Ruang Konsultasi Terbuka</h4>
+                            <p className="text-[10px] text-slate-500 mt-1 leading-relaxed">
+                              Diskusikan kendala, tanyakan formula kalkulasi, atau minta rekomendasi solusi taktis untuk pilar proyek <strong>"{dashboardProjectTitle}"</strong>.
+                            </p>
+                          </div>
+                        ) : (
+                          dashboardChatMessages.map((msg) => {
+                            const isAI = msg.role === "model";
+                            let displayText = msg.text;
+                            let extractedPilarDraft: string | null = null;
+                            let extractedJudulDraft: string | null = null;
                             
-                            // Extract [UPDATE_JUDUL]...[/UPDATE_JUDUL] or [/JUDUL_PROYEK]
-                            const judulRegex = /\[UPDATE_JUDUL\]([\s\S]*?)\[\/(?:UPDATE_JUDUL|JUDUL_PROYEK)\]/i;
-                            const judulMatch = msg.text.match(judulRegex);
-                            if (judulMatch) {
-                              extractedJudulDraft = judulMatch[1].trim();
-                              displayText = displayText.replace(judulRegex, "").trim();
+                            if (isAI) {
+                              const pilarRegex = /\[UPDATE_PILAR\]([\s\S]*?)\[\/UPDATE_PILAR\]/i;
+                              const pilarMatch = msg.text.match(pilarRegex);
+                              if (pilarMatch) {
+                                extractedPilarDraft = pilarMatch[1].trim();
+                                displayText = displayText.replace(pilarRegex, "").trim();
+                              }
+                              
+                              const judulRegex = /\[UPDATE_JUDUL\]([\s\S]*?)\[\/(?:UPDATE_JUDUL|JUDUL_PROYEK)\]/i;
+                              const judulMatch = msg.text.match(judulRegex);
+                              if (judulMatch) {
+                                extractedJudulDraft = judulMatch[1].trim();
+                                displayText = displayText.replace(judulRegex, "").trim();
+                              }
                             }
 
-                            // Gentle formatting cleanup outside tags
-                            displayText = displayText.replace(/[*#]/g, "").trim();
-                          }
+                            return (
+                              <div key={msg.id} className={`flex flex-col ${isAI ? "items-start" : "items-end"} w-full`}>
+                                <div className="flex items-center gap-1 mb-1 px-1">
+                                  <span className="text-[8px] font-black font-mono text-slate-400 tracking-wider uppercase">
+                                    {isAI ? "👨‍💼 KONSULTAN PROYEK" : (msg.sender || "ANDA")}
+                                  </span>
+                                  <span className="text-[8px] text-slate-300">&bull;</span>
+                                  <span className="text-[8px] font-mono text-slate-400">
+                                    {new Date(msg.timestamp).toLocaleTimeString("id-ID", { hour: "numeric", minute: "numeric" })}
+                                  </span>
+                                </div>
+                                
+                                <div className={`max-w-[94%] px-3.5 py-2.5 rounded-2xl text-[11px] text-left leading-relaxed font-sans shadow-2xs ${
+                                  isAI 
+                                    ? "bg-white border border-slate-200 text-slate-800 rounded-tl-none font-medium" 
+                                    : "bg-indigo-600 text-white rounded-tr-none font-medium"
+                                }`}>
+                                  {isAI ? (
+                                    <div className="space-y-2">
+                                      {displayText.split("\n\n").map((paragraph, pIdx) => {
+                                        const trimmedP = paragraph.trim();
+                                        if (trimmedP.startsWith("### ")) {
+                                          return (
+                                            <h5 key={pIdx} className="font-display font-extrabold text-[11.5px] text-indigo-950 border-b border-indigo-100 pb-1 mt-2">
+                                              {trimmedP.replace(/^###\s+/, "")}
+                                            </h5>
+                                          );
+                                        }
+                                        if (trimmedP.startsWith("#### ")) {
+                                          return (
+                                            <h6 key={pIdx} className="font-display font-bold text-[10.5px] text-slate-900 mt-1.5">
+                                              {trimmedP.replace(/^####\s+/, "")}
+                                            </h6>
+                                          );
+                                        }
+                                        if (trimmedP.startsWith("> ")) {
+                                          return (
+                                            <blockquote key={pIdx} className="border-l-2 border-indigo-500 pl-2 text-[10.5px] text-indigo-950 bg-indigo-50/50 py-1 rounded-r italic">
+                                              {trimmedP.replace(/^>\s+/, "")}
+                                            </blockquote>
+                                          );
+                                        }
+                                        return (
+                                          <p key={pIdx} className="leading-relaxed text-slate-700">
+                                            {trimmedP.split("\n").map((line, lIdx) => {
+                                              const trimmedL = line.trim();
+                                              if (trimmedL.startsWith("* ") || trimmedL.startsWith("- ")) {
+                                                return (
+                                                  <span key={lIdx} className="block pl-2 relative before:content-['•'] before:absolute before:left-0 before:text-indigo-600 before:font-bold">
+                                                    {trimmedL.replace(/^[\*\-]\s+/, "")}
+                                                  </span>
+                                                );
+                                              }
+                                              return <span key={lIdx} className="block">{line}</span>;
+                                            })}
+                                          </p>
+                                        );
+                                      })}
 
-                          return (
-                            <div key={msg.id} className={`flex flex-col ${isAI ? "items-start" : "items-end"} w-full`}>
-                              <span className="text-[8px] font-black font-mono text-slate-400 mb-0.5 tracking-wider uppercase">
-                                {msg.sender || (isAI ? "PRAMA AI" : "PENGGUNA")} &bull; {new Date(msg.timestamp).toLocaleTimeString("id-ID", { hour: "numeric", minute: "numeric" })}
-                              </span>
-                              
-                              <div className={`max-w-[90%] px-3 py-2 rounded-2xl text-[11px] text-left leading-relaxed font-sans ${
-                                isAI 
-                                  ? "bg-slate-100 border border-slate-200 text-slate-850 rounded-tl-none font-semibold text-justify animate-fade-in" 
-                                  : "bg-indigo-600 text-white rounded-tr-none font-bold select-all text-left"
-                              }`}>
-                                <div className="space-y-1.5 whitespace-pre-wrap">
-                                  {displayText}
+                                      {/* Action buttons inside AI response */}
+                                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-1.5 flex-wrap">
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            navigator.clipboard.writeText(displayText);
+                                            alert("Jawaban konsultan berhasil disalin!");
+                                          }}
+                                          className="text-[9px] font-bold text-slate-500 hover:text-indigo-600 bg-slate-50 hover:bg-indigo-50 px-2 py-1 rounded-md border border-slate-200 transition cursor-pointer flex items-center gap-1"
+                                          title="Salin isi solusi"
+                                        >
+                                          <Copy className="h-3 w-3" />
+                                          <span>Salin Solusi</span>
+                                        </button>
+
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            const contentToApply = extractedPilarDraft || displayText;
+                                            setDashboardSectionsState((prev) => ({
+                                              ...prev,
+                                              [activeDashboardSection]: contentToApply,
+                                            }));
+                                            alert(`Solusi konsultan berhasil diterapkan ke Pilar #${activeDashboardSection}!`);
+                                          }}
+                                          className="text-[9px] font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 rounded-md border border-emerald-200 transition cursor-pointer flex items-center gap-1"
+                                          title="Terapkan hasil konsultasi ke editor draf pilar aktif"
+                                        >
+                                          <Check className="h-3 w-3 text-emerald-600" />
+                                          <span>Terapkan ke Pilar</span>
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="whitespace-pre-wrap leading-relaxed">
+                                      {displayText}
+                                    </div>
+                                  )}
                                 </div>
                               </div>
-
-
-                            </div>
-                          );
-                        })}
+                            );
+                          })
+                        )}
                         {isDashboardChatLoading && (
-                          <div className="flex items-center gap-2 text-slate-400 text-[10px] font-bold font-mono pl-1 animate-pulse">
-                            <span className="flex h-1.5 w-1.5 rounded-full bg-indigo-600 animate-bounce" style={{ animationDelay: "0ms" }} />
-                            <span className="flex h-1.5 w-1.5 rounded-full bg-indigo-600 animate-bounce" style={{ animationDelay: "150ms" }} />
-                            <span className="flex h-1.5 w-1.5 rounded-full bg-indigo-600 animate-bounce" style={{ animationDelay: "300ms" }} />
-                            <span>PRAMA sedang menyusun skema...</span>
+                          <div className="flex items-center gap-2 text-indigo-600 text-[10px] font-bold font-mono pl-1 py-2 bg-indigo-50/60 rounded-xl px-3 border border-indigo-100">
+                            <span className="flex h-2 w-2 rounded-full bg-indigo-600 animate-bounce" style={{ animationDelay: "0ms" }} />
+                            <span className="flex h-2 w-2 rounded-full bg-indigo-600 animate-bounce" style={{ animationDelay: "150ms" }} />
+                            <span className="flex h-2 w-2 rounded-full bg-indigo-600 animate-bounce" style={{ animationDelay: "300ms" }} />
+                            <span>Konsultan sedang menganalisis solusi pilar...</span>
                           </div>
                         )}
+                      </div>
+
+                      {/* Quick Discussion Prompt Chips */}
+                      <div className="px-3 pt-2 pb-1 bg-slate-50 border-t border-slate-200">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[8.5px] font-bold text-slate-500 uppercase tracking-wider font-mono">
+                            Diskusi Cepat Pilar:
+                          </span>
+                        </div>
+                        <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-none">
+                          {[
+                            { label: "💡 Solusi Taktis", prompt: `Beri saya rekomendasi solusi taktis dan langkah penanganan operasional terbaik untuk Pilar ke-${activeDashboardSection} (${currentDashboardSections.find(s => s.number === activeDashboardSection)?.title || ""}) pada proyek "${dashboardProjectTitle}".` },
+                            { label: "📊 Bedah Angka", prompt: `Berapa estimasi perhitungan finansial, alokasi biaya, dan metrik kuantitatif yang realistis untuk Pilar ${currentDashboardSections.find(s => s.number === activeDashboardSection)?.title || ""} ini?` },
+                            { label: "🛡️ Mitigasi Risiko", prompt: `Apa saja potensi risiko kegagalan pada pilar ini dan bagaimana langkah mitigasi pencegahan serta protokol kepatuhannya?` },
+                            { label: "📋 SOP & Alur", prompt: `Rancang alur proses kerja, standar operasional prosedur (SOP), dan target waktu SLA untuk pilar ini agar terstruktur rapi.` }
+                          ].map((chip, cIdx) => (
+                            <button
+                              key={cIdx}
+                              type="button"
+                              onClick={() => {
+                                setDashboardChatInput(chip.prompt);
+                                handleSendDashboardChatMessage(chip.prompt);
+                              }}
+                              className="px-2 py-1 rounded-full text-[9px] font-bold bg-white hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 border border-slate-200 hover:border-indigo-300 shrink-0 transition cursor-pointer shadow-3sm"
+                            >
+                              {chip.label}
+                            </button>
+                          ))}
+                        </div>
                       </div>
 
                       {/* Input controls form */}
@@ -6564,14 +6741,15 @@ ${lastMsgText}`;
                           type="text"
                           value={dashboardChatInput}
                           onChange={(e) => setDashboardChatInput(e.target.value)}
-                          placeholder="Diskusikan pilar aktif..."
+                          placeholder="Tanyakan kendala, pilar, atau minta solusi proyek..."
                           disabled={isDashboardChatLoading}
                           className="flex-grow text-[11.5px] font-sans px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 bg-white text-slate-800 disabled:opacity-50"
                         />
                         <button
                           type="submit"
                           disabled={isDashboardChatLoading || !dashboardChatInput.trim()}
-                          className="h-8.5 w-8.5 shrink-0 flex items-center justify-center rounded-xl bg-indigo-600 hover:bg-indigo-550 disabled:bg-slate-100 text-white disabled:text-slate-400 transition cursor-pointer"
+                          className="h-8.5 w-8.5 shrink-0 flex items-center justify-center rounded-xl bg-indigo-600 hover:bg-indigo-550 disabled:bg-slate-100 text-white disabled:text-slate-400 transition cursor-pointer shadow-xs"
+                          title="Kirim pertanyaan ke konsultan"
                         >
                           <Send className="h-3.5 w-3.5" />
                         </button>
@@ -6582,13 +6760,14 @@ ${lastMsgText}`;
                       <button
                         type="button"
                         onClick={() => setIsDashboardChatOpen(true)}
-                        title="Buka Chat AI Advisor"
-                        className="h-9 w-9 flex items-center justify-center rounded-xl bg-violet-950 text-violet-400 hover:text-white hover:bg-violet-900 border border-violet-850 transition cursor-pointer animate-pulse"
+                        title="Buka Diskusi Konsultan Proyek (PRAMA Consultant)"
+                        className="h-10 w-10 flex items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 text-white shadow-lg shadow-blue-500/30 transition-transform duration-200 hover:scale-110 cursor-pointer animate-pulse shrink-0"
                       >
-                        <MessageSquare className="h-4.5 w-4.5 shrink-0" />
+                        {/* Consultant Discussion Icon */}
+                        <MessageSquare className="h-5 w-5 text-white" />
                       </button>
                       <span className="hidden lg:block text-[8.5px] font-black font-mono uppercase tracking-widest text-slate-400 select-none" style={{ writingMode: "vertical-lr", textOrientation: "mixed" }}>
-                        ASISTEN AI STRATEGIS
+                        KONSULTAN PROYEK
                       </span>
                     </div>
                   )}
@@ -8895,6 +9074,23 @@ ${lastMsgText}`;
             </motion.div>
           </motion.div>
         )}
+
+        {/* Grounding Project Parameters Modal (Anti-Hallucination Form) */}
+        <ProjectParametersModal
+          isOpen={isProjectParamsModalOpen}
+          onClose={() => setIsProjectParamsModalOpen(false)}
+          currentTitle={dashboardProjectTitle}
+          onSaveAndSync={(params, forceRegen) => {
+            setDashboardProjectTitle(params.projectTitle);
+            syncProjectTitleAndPillars(params.projectTitle, undefined, forceRegen !== undefined ? forceRegen : true);
+          }}
+        />
+
+        {/* Floating Minimized Chat Icon Button (Bottom Right) matching requested design */}
+        <FloatingChatIcon
+          onClick={() => triggerPortalTransition("division", "multifungsi")}
+          unreadCount={0}
+        />
 
       </div>
     );

@@ -5,7 +5,7 @@
  * and Corporate Value Propositions.
  */
 
-import { detectProjectArchetype } from "./archetypeDetector";
+import { detectProjectArchetype } from "./archetypeDetector.ts";
 
 export interface TargetAccount {
   companyName: string;

@@ -5,14 +5,15 @@
 
 import pptxgen from "pptxgenjs";
 import { CompetitorIntel } from "../types";
-import { downloadPDFDirect } from "./documentExporter";
-import { generateStrategicOverviewForTitle } from "./strategicOverviewGenerator";
-import { generateTamSamSomForTitle } from "./tamSamSomGenerator";
-import { generateServiceDesignForTitle } from "./serviceDesignGenerator";
-import { generatePotentialConsumersForTitle } from "./potentialConsumersGenerator";
-import { detectProjectArchetype } from "./archetypeDetector";
-import { generateManufacturingDefaultContent, getManufacturingVisualHtml } from "./manufacturingPillarsContent";
-import { generatePersonalSmeDefaultContent, getPersonalSmeVisualHtml } from "./personalSmePillarsContent";
+import { downloadPDFDirect } from "./documentExporter.ts";
+import { generateStrategicOverviewForTitle } from "./strategicOverviewGenerator.ts";
+import { generateTamSamSomForTitle } from "./tamSamSomGenerator.ts";
+import { generateServiceDesignForTitle } from "./serviceDesignGenerator.ts";
+import { generatePotentialConsumersForTitle } from "./potentialConsumersGenerator.ts";
+import { detectProjectArchetype } from "./archetypeDetector.ts";
+import { generateManufacturingDefaultContent, getManufacturingVisualHtml } from "./manufacturingPillarsContent.ts";
+import { generatePersonalSmeDefaultContent, getPersonalSmeVisualHtml } from "./personalSmePillarsContent.ts";
+import { loadSavedProjectParameters } from "../types/projectParameters.ts";
 
 export interface DashboardSection {
   number: number;
@@ -428,8 +429,8 @@ export function getProjectMetrics(projectName: string): ProjectMetrics {
   }
   seed = Math.abs(seed);
 
-  const unitsCount = 8 + (seed % 14); // 8 to 21 units
-  const capexAmount = (seed % 24 + 8) * 450000000; // Rp 3.6M - Rp 14.4M
+  let unitsCount = 8 + (seed % 14); // 8 to 21 units
+  let capexAmount = (seed % 24 + 8) * 450000000; // Rp 3.6M - Rp 14.4M
   const fleetCapex = Math.round(capexAmount * 0.81);
   const itCapex = Math.round(capexAmount * 0.09);
   const depoCapex = capexAmount - fleetCapex - itCapex;
@@ -626,6 +627,38 @@ export function getProjectMetrics(projectName: string): ProjectMetrics {
     competitorType = "Transporter CPO Tangki Baja Hitam Tanpa Segel Digital";
     competitorTakeoverRate = "18% - 28%";
     valueProposition = "Tangki SUS Food-Grade, e-Seal Anti-Susut, & SLA Delivery 99%";
+  }
+
+  // Apply user-configured parameters from the Project Parameter Form (Anti-Hallucination Grounding)
+  const savedParams = loadSavedProjectParameters(projectName);
+  if (savedParams) {
+    if (savedParams.commodity && savedParams.commodity.trim()) {
+      materialName = savedParams.commodity;
+      materialNameShort = savedParams.commodity.split("(")[0].trim();
+    }
+    if (savedParams.sector && savedParams.sector.trim()) {
+      industry = savedParams.sector;
+      industryCategory = savedParams.sector;
+    }
+    if (savedParams.fleetRequirement && savedParams.fleetRequirement.trim()) {
+      unitsText = savedParams.fleetRequirement;
+      assetCategory = savedParams.fleetRequirement;
+    }
+    if (savedParams.fleetCount && savedParams.fleetCount > 0) {
+      unitsCount = savedParams.fleetCount;
+    }
+    if (savedParams.routeCorridor && savedParams.routeCorridor.trim()) {
+      extraDetail1 = `koridor rute ${savedParams.routeCorridor}`;
+    }
+    if (savedParams.operationalConstraints && savedParams.operationalConstraints.trim()) {
+      extraDetail2 = savedParams.operationalConstraints;
+    }
+    if (savedParams.keyCompetitors && savedParams.keyCompetitors.trim()) {
+      competitorType = savedParams.keyCompetitors;
+    }
+    if (savedParams.capexNumeric && savedParams.capexNumeric > 0) {
+      capexAmount = savedParams.capexNumeric;
+    }
   }
 
   return {
@@ -2533,7 +2566,7 @@ export function exportAllSectionsToPDF(projectTitle: string, sectionsMap: Record
 
 **Analisis Pasar, Finansial (IRR/NPV/Payback), Kesiapan Kapabilitas, Risiko, Model Bisnis, dan Rekomendasi Go / No-Go**
 
-**PENELITI / KONSULTAN:** Rezha Mayhendra • PRAMA Strategic AI Advisor  
+**KONSULTAN / ADVISOR:** PRAMA Strategic AI Advisory • PT Pancaran Group  
 **LOKASI & TANGGAL:** Jakarta, ${dateStr}  
 **KLASIFIKASI:** Versi 1.0 — Rahasia, untuk internal
 

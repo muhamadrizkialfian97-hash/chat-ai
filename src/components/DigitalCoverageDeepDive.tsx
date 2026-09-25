@@ -6,16 +6,25 @@ import {
   Copy,
   Check,
   Edit3,
-  Trash2,
   Save,
   X,
-  ShieldCheck,
-  CheckCircle2,
   FileText,
   Radio,
-  Zap
+  Zap,
+  RefreshCw,
+  SlidersHorizontal,
+  ArrowRight,
+  ArrowLeft,
+  Layers,
+  Activity,
+  Server
 } from "lucide-react";
-import { generateDigitalCoverageForTitle } from "../utils/digitalCoverageGenerator";
+import {
+  generateDigitalCoverageForTitle,
+  DigitalCoverageResult,
+  ControlTowerNode,
+  DigitalBudgetStage
+} from "../utils/digitalCoverageGenerator";
 import { exportAllSectionsToWord } from "../utils/projectDashboardHelper";
 
 interface DigitalCoverageProps {
@@ -24,457 +33,427 @@ interface DigitalCoverageProps {
 }
 
 export function DigitalCoverageDeepDive({ projectTitle, activeDivision }: DigitalCoverageProps) {
-  const currentTitle = (projectTitle || "").trim() || "Kajian Cakupan Digital, Otomasi & Telematika Logistik";
+  const currentTitle = (projectTitle || "").trim() || "Kajian Kelayakan Strategis Logistik";
   const currentDiv = activeDivision || "Logistik Darat & Telematika";
 
   const storageKey = `prama_digital_coverage_content_${currentTitle.toLowerCase().replace(/[^a-z0-9]/g, "_")}`;
 
-  // Content starts POLOS (empty) unless explicitly generated or saved
-  const [content, setContent] = useState<string>(() => {
-    return localStorage.getItem(storageKey) || "";
+  const [data, setData] = useState<DigitalCoverageResult>(() => {
+    return generateDigitalCoverageForTitle(currentTitle, currentDiv);
   });
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editText, setEditText] = useState<string>("");
-  const [lastGeneratedForTitle, setLastGeneratedForTitle] = useState<string>(() => {
-    return localStorage.getItem(`${storageKey}_title`) || "";
-  });
+  const [displayMode, setDisplayMode] = useState<"publication" | "document">("publication");
 
-  // Clean up legacy preset keys
+  // Re-generate or load when projectTitle or division changes
   useEffect(() => {
-    try {
-      const keysToRemove: string[] = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (
-          k &&
-          (k.startsWith("prama_digital_legacy_") ||
-            k.startsWith("digital_tools_") ||
-            k.startsWith("digital_method_") ||
-            k.startsWith("digital_coverage_custom_") ||
-            k.startsWith("prama_digital_ai_"))
-        ) {
-          keysToRemove.push(k);
-        }
-      }
-      keysToRemove.forEach((k) => localStorage.removeItem(k));
-    } catch (e) {}
-  }, []);
-
-  // When projectTitle changes, load saved content for that title or start polos
-  useEffect(() => {
-    const saved = localStorage.getItem(storageKey) || "";
-    setContent(saved);
-    setEditText(saved);
+    const generated = generateDigitalCoverageForTitle(currentTitle, currentDiv);
+    setData(generated);
+    setEditText(generated.narrativeMarkdown);
     setIsEditing(false);
-  }, [storageKey]);
+  }, [currentTitle, currentDiv]);
 
-  // Handler to generate fresh, 100% title-tailored content
-  const handleGenerateContent = async (targetTitle: string = currentTitle) => {
+  // Handler to generate fresh content
+  const handleRefresh = async () => {
     setIsLoading(true);
     setIsEditing(false);
-
     try {
-      const clientApiKey = localStorage.getItem("workspace_client_api_key") || "";
-      const res = await fetch("/api/generate-digitalcoverage", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          projectTitle: targetTitle,
-          division: currentDiv,
-          clientApiKey
-        })
-      });
-
-      let generatedMarkdown = "";
-      if (res.ok) {
-        const data = await res.json();
-        if (data && data.content && typeof data.content === "string" && data.content.trim().length > 50) {
-          generatedMarkdown = data.content;
-        }
-      }
-
-      // If server returned fallback or couldn't reach API, use precision title generator
-      if (!generatedMarkdown) {
-        const localResult = generateDigitalCoverageForTitle(targetTitle, currentDiv);
-        generatedMarkdown = localResult.narrativeMarkdown;
-      }
-
-      setContent(generatedMarkdown);
-      setEditText(generatedMarkdown);
-      setLastGeneratedForTitle(targetTitle);
-      localStorage.setItem(storageKey, generatedMarkdown);
-      localStorage.setItem(`${storageKey}_title`, targetTitle);
+      const generated = generateDigitalCoverageForTitle(currentTitle, currentDiv);
+      setData(generated);
+      setEditText(generated.narrativeMarkdown);
+      localStorage.setItem(storageKey, generated.narrativeMarkdown);
     } catch (err) {
-      console.warn("Generating local tailored Digital Coverage for:", targetTitle, err);
-      const localResult = generateDigitalCoverageForTitle(targetTitle, currentDiv);
-      setContent(localResult.narrativeMarkdown);
-      setEditText(localResult.narrativeMarkdown);
-      setLastGeneratedForTitle(targetTitle);
-      localStorage.setItem(storageKey, localResult.narrativeMarkdown);
-      localStorage.setItem(`${storageKey}_title`, targetTitle);
+      console.error("Error generating Digital Coverage:", err);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Handler to completely wipe content and make it POLOS (blank)
-  const handleClearAll = () => {
-    setContent("");
-    setEditText("");
-    setIsEditing(false);
-    localStorage.removeItem(storageKey);
-    localStorage.removeItem(`${storageKey}_title`);
+  const handleCopy = () => {
+    if (data.narrativeMarkdown) {
+      navigator.clipboard.writeText(data.narrativeMarkdown);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
-  // Handler to start editing manually
-  const handleStartEdit = () => {
-    setEditText(content);
-    setIsEditing(true);
-  };
-
-  // Save manual edits
   const handleSaveEdit = () => {
-    setContent(editText);
+    setData((prev) => ({
+      ...prev,
+      narrativeMarkdown: editText
+    }));
     localStorage.setItem(storageKey, editText);
     setIsEditing(false);
   };
 
-  // Copy narrative to clipboard
-  const handleCopy = () => {
-    if (!content) return;
-    navigator.clipboard.writeText(content);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  // Markdown renderer for clean unified narrative
-  const renderSeamlessNarrative = (rawText: string) => {
-    if (!rawText || !rawText.trim()) return null;
-    const lines = rawText.split("\n");
-    const renderedNodes: React.ReactNode[] = [];
-
-    lines.forEach((line, index) => {
-      const trimmed = line.trim();
-
-      if (!trimmed) {
-        renderedNodes.push(<div key={`empty-${index}`} className="h-3" />);
-        return;
-      }
-
-      // Heading 3
-      if (trimmed.startsWith("### ")) {
-        const headingText = trimmed.replace(/^###\s+/, "");
-        renderedNodes.push(
-          <div key={`h3-${index}`} className="mt-6 mb-3 pt-3 border-t border-slate-800 first:border-t-0 first:pt-0">
-            <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-cyan-400 shrink-0" />
-              <h4 className="text-sm md:text-base font-black text-white uppercase tracking-tight">
-                {headingText}
-              </h4>
-            </div>
-          </div>
-        );
-        return;
-      }
-
-      // Heading 2 or 1
-      if (trimmed.startsWith("## ") || trimmed.startsWith("# ")) {
-        const headingText = trimmed.replace(/^#+\s+/, "");
-        renderedNodes.push(
-          <div key={`h2-${index}`} className="mt-7 mb-3.5 border-b border-cyan-500/20 pb-2">
-            <h3 className="text-base md:text-lg font-black text-cyan-300 uppercase tracking-tight flex items-center gap-2">
-              <Cpu className="h-4 w-4 text-cyan-400" />
-              {headingText}
-            </h3>
-          </div>
-        );
-        return;
-      }
-
-      // Bullet points
-      if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
-        const bulletContent = trimmed.replace(/^[\*\-]\s+/, "");
-        const formatted = bulletContent.split(/(\*\*.*?\*\*)/g).map((part, pIdx) => {
-          if (part.startsWith("**") && part.endsWith("**")) {
-            return (
-              <strong key={pIdx} className="text-white font-extrabold">
-                {part.slice(2, -2)}
-              </strong>
-            );
-          }
-          return part;
-        });
-
-        renderedNodes.push(
-          <div key={`bullet-${index}`} className="flex items-start gap-2.5 ml-1 my-1.5 text-slate-300 text-xs md:text-[13px] leading-relaxed">
-            <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-cyan-400 shrink-0" />
-            <div className="flex-1">{formatted}</div>
-          </div>
-        );
-        return;
-      }
-
-      // Regular paragraph
-      const parts = trimmed.split(/(\*\*.*?\*\*)/g);
-      const formattedParts = parts.map((part, pIdx) => {
-        if (part.startsWith("**") && part.endsWith("**")) {
-          return (
-            <strong key={pIdx} className="text-white font-extrabold tracking-wide">
-              {part.slice(2, -2)}
-            </strong>
-          );
-        }
-        return part;
-      });
-
-      renderedNodes.push(
-        <p
-          key={`p-${index}`}
-          className="text-xs md:text-[13px] text-slate-300 leading-relaxed font-normal text-justify my-2.5"
-        >
-          {formattedParts}
-        </p>
-      );
-    });
-
-    return renderedNodes;
-  };
-
-  const isBlank = !content || content.trim().length === 0;
-  const isTitleDifferent =
-    content &&
-    lastGeneratedForTitle &&
-    lastGeneratedForTitle.toLowerCase() !== currentTitle.toLowerCase();
-
   return (
     <div
       id="digital-coverage-deepdive-root"
-      className="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-slate-100 shadow-2xl mt-8 font-sans relative overflow-hidden"
+      className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-8 text-slate-800 shadow-sm mt-8 font-sans relative overflow-hidden"
     >
-      <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
-
-      {/* Header Bar */}
-      <div className="border-b border-slate-800 pb-5 mb-5">
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="px-2.5 py-0.5 text-[9.5px] font-black tracking-wider uppercase rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-mono flex items-center gap-1.5">
-              <Cpu className="h-3 w-3 text-cyan-400" />
-              PILAR 10 • DIGITAL COVERAGE (TOOLS, METHOD, IMPACT, AUTOMATION)
-            </span>
-            <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
-            <span className="px-2.5 py-0.5 text-[9.5px] font-bold uppercase rounded-md bg-slate-800 text-slate-300 border border-slate-700/80 font-mono">
-              JUDUL PROYEK: {currentTitle}
-            </span>
-            {isBlank && (
-              <span className="px-2 py-0.5 text-[9px] font-bold uppercase rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/20 font-mono">
-                STATUS: POLOS
-              </span>
-            )}
+      {/* Top Header & Actions Toolbar */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 mb-6 border-b border-slate-200">
+        <div className="flex items-center gap-3">
+          <div className="h-11 w-11 rounded-xl bg-cyan-50 border border-cyan-200 flex items-center justify-center text-cyan-700 shrink-0">
+            <Radio className="h-5 w-5" />
           </div>
-
-          {/* Action buttons */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <button
-              type="button"
-              onClick={() => {
-                try {
-                  const saved = localStorage.getItem("prama_dashboard_sections");
-                  const map = saved ? JSON.parse(saved) : {};
-                  map[10] = content;
-                  exportAllSectionsToWord(currentTitle, map);
-                } catch(e) {
-                  exportAllSectionsToWord(currentTitle, { 10: content });
-                }
-              }}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition shadow-md shadow-emerald-600/20 cursor-pointer active:scale-95"
-              title="Unduh seluruh laporan komprehensif ke format Word (.doc)"
-            >
-              <FileText className="h-3.5 w-3.5" />
-              <span>Unduh Word (.doc)</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleGenerateContent(currentTitle)}
-              disabled={isLoading}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold transition shadow-md shadow-cyan-600/20 cursor-pointer active:scale-95 disabled:opacity-50"
-              title="Buat isian baru yang sesuai dengan judul proyek"
-            >
-              <Sparkles className={`h-3.5 w-3.5 ${isLoading ? "animate-spin text-cyan-200" : ""}`} />
-              <span>{isLoading ? "Menyusun Cakupan Digital..." : isBlank ? "Buat Isian Sesuai Judul" : "Buat Ulang Sesuai Judul"}</span>
-            </button>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-cyan-100 text-cyan-800 font-mono">
+                PILAR 14 • DIGITAL COVERAGE & CONTROL TOWER
+              </span>
+              <span className="text-xs text-slate-400">•</span>
+              <span className="text-xs font-bold text-slate-600 truncate max-w-xs sm:max-w-md">
+                {currentTitle}
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Arsitektur digital control tower terpusat, telematika konvoi, sensor integritas kargo, dan roadmap biaya implementasi.
+            </p>
           </div>
         </div>
 
-        <h3 className="text-lg md:text-xl font-black uppercase tracking-tight text-white flex items-center gap-2">
-          <Cpu className="h-5 w-5 text-cyan-400" />
-          Digital Coverage: IoT Stack, Data Pipeline, Impact, & Automation
-        </h3>
-        <p className="text-xs text-slate-400 mt-1 font-medium leading-relaxed">
-          Arsitektur ekosistem teknologi telematika, sensor cerdas, metodologi integrasi data, pengukuran dampak kuantitatif, serta otomatisasi serah terima elektronik (e-POD) untuk proyek{" "}
-          <span className="text-cyan-300 font-extrabold">"{currentTitle}"</span>.
-        </p>
-      </div>
-
-      {/* If current title is different from what was previously generated, show quick sync badge */}
-      {isTitleDifferent && (
-        <div className="mb-4 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2 text-xs text-amber-200">
-            <span className="h-2 w-2 rounded-full bg-amber-400 shrink-0 animate-ping" />
-            <span>
-              Judul proyek telah diperbarui menjadi: <strong className="text-white">"{currentTitle}"</strong>
-            </span>
+        {/* Action Toolbar */}
+        <div className="flex items-center gap-2 flex-wrap self-end md:self-center">
+          {/* View Mode Toggle */}
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 shrink-0">
+            <button
+              type="button"
+              onClick={() => setDisplayMode("publication")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                displayMode === "publication"
+                  ? "bg-white text-cyan-800 shadow-xs border border-slate-200"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5 text-cyan-600" />
+              <span>Desain Publikasi</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setDisplayMode("document")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                displayMode === "document"
+                  ? "bg-white text-cyan-800 shadow-xs border border-slate-200"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <FileText className="h-3.5 w-3.5 text-slate-500" />
+              <span>Naskah Narasi</span>
+            </button>
           </div>
+
           <button
             type="button"
-            onClick={() => handleGenerateContent(currentTitle)}
-            className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-bold rounded-lg transition cursor-pointer"
+            onClick={() => {
+              try {
+                const saved = localStorage.getItem("prama_dashboard_sections");
+                const map = saved ? JSON.parse(saved) : {};
+                map[14] = data.narrativeMarkdown;
+                exportAllSectionsToWord(currentTitle, map);
+              } catch (e) {
+                exportAllSectionsToWord(currentTitle, { 14: data.narrativeMarkdown });
+              }
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer active:scale-95"
+            title="Unduh laporan Digital Coverage ke format Word (.doc)"
           >
-            <Sparkles className="h-3 w-3" />
-            <span>Buat Isian Baru untuk Judul Ini</span>
+            <FileText className="h-3.5 w-3.5" />
+            <span>Unduh Word</span>
           </button>
+
+          <button
+            type="button"
+            onClick={handleRefresh}
+            disabled={isLoading}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-cyan-700 hover:bg-cyan-800 text-white shadow-xs transition disabled:opacity-50 cursor-pointer"
+            title="Perbarui Digital Coverage sesuai judul dan data proyek"
+          >
+            {isLoading ? (
+              <RefreshCw className="h-3.5 w-3.5 animate-spin text-white" />
+            ) : (
+              <Sparkles className="h-3.5 w-3.5 text-cyan-200" />
+            )}
+            <span>Sinkronkan Ulang</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition cursor-pointer"
+            title="Salin naskah ke clipboard"
+          >
+            {copied ? (
+              <>
+                <Check className="h-3.5 w-3.5 text-emerald-600" />
+                <span className="text-emerald-600 font-bold">Tersalin!</span>
+              </>
+            ) : (
+              <>
+                <Copy className="h-3.5 w-3.5 text-slate-500" />
+                <span>Salin</span>
+              </>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsEditing(!isEditing)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition cursor-pointer"
+            title="Edit naskah secara langsung"
+          >
+            <Edit3 className="h-3.5 w-3.5 text-slate-500" />
+            <span>{isEditing ? "Tutup Editor" : "Edit Teks"}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Direct Editor View */}
+      {isEditing && (
+        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 mb-6">
+          <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-200">
+            <span className="text-xs font-bold text-cyan-800 flex items-center gap-1.5">
+              <Edit3 className="h-3.5 w-3.5" />
+              Editor Teks Digital Coverage (Markdown)
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsEditing(false)}
+                className="px-3 py-1 rounded-lg text-xs font-semibold bg-slate-200 hover:bg-slate-300 text-slate-700 transition cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveEdit}
+                className="px-3.5 py-1 rounded-lg text-xs font-bold bg-cyan-700 hover:bg-cyan-800 text-white shadow transition cursor-pointer"
+              >
+                Simpan Perubahan
+              </button>
+            </div>
+          </div>
+          <textarea
+            value={editText}
+            onChange={(e) => setEditText(e.target.value)}
+            className="w-full h-80 bg-white border border-slate-300 rounded-xl p-3 text-xs text-slate-800 font-mono focus:outline-none focus:border-cyan-600 leading-relaxed resize-y"
+          />
         </div>
       )}
 
-      {/* Main Canvas Area */}
-      <div className="bg-slate-950/70 border border-slate-800/90 rounded-2xl p-5 md:p-6 shadow-inner relative min-h-[220px]">
-        {isLoading ? (
-          <div className="py-14 px-4 text-center flex flex-col items-center justify-center gap-3">
-            <div className="relative">
-              <div className="h-10 w-10 rounded-full border-2 border-cyan-500/20 border-t-cyan-400 animate-spin" />
-              <Sparkles className="h-4 w-4 text-cyan-400 absolute inset-0 m-auto animate-pulse" />
-            </div>
-            <p className="text-sm font-bold text-white tracking-wide">
-              Menyusun Arsitektur Digital Sesuai Judul...
-            </p>
-            <p className="text-xs text-slate-400 max-w-md text-center leading-relaxed">
-              Menganalisis tumpukan alat sensor IoT, pipeline telematika real-time, dampak efisiensi bisnis, dan otomasi e-POD untuk{" "}
-              <span className="text-cyan-300 font-bold">"{currentTitle}"</span>.
-            </p>
+      {/* MAIN PUBLICATION VIEW: Matching the exact uploaded screenshot layout */}
+      {displayMode === "publication" ? (
+        <div className="space-y-6 max-w-5xl mx-auto">
+          {/* Section Heading with Clean Cyan Number & Teal Underline */}
+          <div className="space-y-1">
+            <h2 className="text-xl sm:text-2xl font-black text-cyan-900 tracking-tight flex items-baseline gap-2">
+              <span className="text-cyan-700 font-mono text-2xl sm:text-3xl">14</span>
+              <span>Digital Coverage & Control Tower</span>
+            </h2>
+            <div className="h-0.5 w-full bg-cyan-600/40 mt-1" />
           </div>
-        ) : isEditing ? (
-          /* Manual Edit Mode */
-          <div className="space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-200">
-                <Edit3 className="h-4 w-4 text-cyan-400" />
-                <span>Mode Edit Teks Mandiri (Pilar 10)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsEditing(false)}
-                  className="flex items-center gap-1 px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-lg transition"
-                >
-                  <X className="h-3.5 w-3.5" />
-                  <span>Batal</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSaveEdit}
-                  className="flex items-center gap-1 px-3 py-1 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold rounded-lg transition"
-                >
-                  <Save className="h-3.5 w-3.5" />
-                  <span>Simpan Perubahan</span>
-                </button>
-              </div>
-            </div>
 
-            <textarea
-              value={editText}
-              onChange={(e) => setEditText(e.target.value)}
-              placeholder="Tuliskan arsitektur cakupan digital Anda di sini (mendukung format Markdown: ### Judul, **Tebal**, - Poin)..."
-              rows={14}
-              className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-xs md:text-sm text-slate-100 font-mono focus:outline-hidden focus:border-cyan-500 transition leading-relaxed resize-y"
-            />
-          </div>
-        ) : isBlank ? (
-          /* Clean Blank State (POLOS) */
-          <div className="py-12 px-4 text-center flex flex-col items-center justify-center gap-4">
-            <div className="h-14 w-14 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 shadow-inner">
-              <FileText className="h-7 w-7 text-slate-400" />
-            </div>
-
-            <div className="max-w-md">
-              <h4 className="text-sm font-bold text-white mb-1">
-                Kanvas Cakupan Digital Masih Polos
-              </h4>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Belum ada kajian cakupan digital dan telematika untuk proyek <span className="text-cyan-300 font-bold">"{currentTitle}"</span>. Klik tombol di bawah untuk menghasilkan arsitektur perangkat IoT, alur data real-time, dampak efisiensi kuantitatif, dan otomasi e-POD yang 100% se-arah dengan judul ini, atau tulis sendiri secara manual.
+          {/* 1. VISUAL ARCHITECTURE SCHEMATIC */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-6 shadow-2xs space-y-4">
+            {/* Schematic Top Header */}
+            <div className="text-center space-y-1">
+              <h3 className="text-base sm:text-lg font-black text-[#0a2540] tracking-tight">
+                Arsitektur Digital Control Tower
+              </h3>
+              <p className="text-[11px] sm:text-xs font-bold text-cyan-700 tracking-wide font-sans">
+                {data.kpiBanner}
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => handleGenerateContent(currentTitle)}
-                className="flex items-center gap-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-cyan-600/20 cursor-pointer active:scale-95"
-              >
-                <Sparkles className="h-4 w-4" />
-                <span>Buat Isian Baru Sesuai Judul</span>
-              </button>
+            {/* Architecture Node Map (Interactive & Responsive Visual Canvas) */}
+            <div className="relative py-4 px-2 sm:px-6">
+              {/* SVG Connector Lines for desktop view */}
+              <div className="hidden lg:block absolute inset-0 pointer-events-none">
+                <svg className="w-full h-full" viewBox="0 0 900 320" fill="none">
+                  {/* Left 4 incoming lines to center */}
+                  {/* Node 1 to Center */}
+                  <path d="M 230 45 L 360 145" stroke="#00909e" strokeWidth="1.5" strokeDasharray="3 3" />
+                  <polygon points="360,145 350,140 353,148" fill="#00909e" />
+                  
+                  {/* Node 2 to Center */}
+                  <path d="M 230 115 L 360 155" stroke="#00909e" strokeWidth="1.5" />
+                  <polygon points="360,155 350,150 351,158" fill="#00909e" />
 
-              <button
-                type="button"
-                onClick={handleStartEdit}
-                className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-xl text-xs font-bold transition cursor-pointer active:scale-95"
-              >
-                <Edit3 className="h-3.5 w-3.5 text-slate-400" />
-                <span>Tulis Manual</span>
-              </button>
+                  {/* Node 3 to Center */}
+                  <path d="M 230 195 L 360 165" stroke="#00909e" strokeWidth="1.5" />
+                  <polygon points="360,165 351,162 350,170" fill="#00909e" />
+
+                  {/* Node 4 to Center */}
+                  <path d="M 230 265 L 360 175" stroke="#00909e" strokeWidth="1.5" strokeDasharray="3 3" />
+                  <polygon points="360,175 353,172 350,180" fill="#00909e" />
+
+                  {/* Right 4 outgoing lines from center */}
+                  {/* Center to Node 1 */}
+                  <path d="M 540 145 L 670 45" stroke="#00909e" strokeWidth="1.5" strokeDasharray="3 3" />
+                  <polygon points="670,45 660,47 665,55" fill="#00909e" />
+
+                  {/* Center to Node 2 */}
+                  <path d="M 540 155 L 670 115" stroke="#00909e" strokeWidth="1.5" />
+                  <polygon points="670,115 659,112 660,120" fill="#00909e" />
+
+                  {/* Center to Node 3 */}
+                  <path d="M 540 165 L 670 195" stroke="#00909e" strokeWidth="1.5" />
+                  <polygon points="670,195 660,190 659,198" fill="#00909e" />
+
+                  {/* Center to Node 4 */}
+                  <path d="M 540 175 L 670 265" stroke="#00909e" strokeWidth="1.5" strokeDasharray="3 3" />
+                  <polygon points="670,265 665,255 660,263" fill="#00909e" />
+                </svg>
+              </div>
+
+              {/* Grid of Nodes */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-8 items-center relative z-10">
+                {/* Left Column: Inbound Data Sources */}
+                <div className="space-y-2.5">
+                  {data.inboundNodes.map((node, idx) => (
+                    <div
+                      key={node.id}
+                      className="p-2.5 sm:p-3 rounded-xl border border-slate-300 bg-white shadow-2xs hover:border-cyan-500 hover:shadow-xs transition text-center flex flex-col justify-center min-h-[58px]"
+                    >
+                      <div className="text-[11px] sm:text-xs font-bold text-slate-800 leading-tight">
+                        {node.title}
+                      </div>
+                      <div className="text-[9.5px] sm:text-[10px] text-slate-500 mt-0.5 font-medium">
+                        {node.subtitle}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Center Column: PANCARAN CONTROL TOWER HUB */}
+                <div className="flex flex-col items-center justify-center p-2">
+                  <div className="w-full rounded-2xl bg-[#0f2b48] text-white p-5 sm:p-6 text-center shadow-lg border-2 border-cyan-500/30 flex flex-col justify-center items-center min-h-[140px] transform hover:scale-[1.02] transition">
+                    <div className="text-xs sm:text-sm font-black tracking-wider uppercase mb-1 leading-snug">
+                      {data.centerNodeTitle}
+                    </div>
+                    <div className="text-[10px] sm:text-[11px] text-cyan-300 font-medium italic mt-1">
+                      {data.centerNodeSubtitle}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Column: Outbound & Client Touchpoints */}
+                <div className="space-y-2.5">
+                  {data.outboundNodes.map((node, idx) => (
+                    <div
+                      key={node.id}
+                      className="p-2.5 sm:p-3 rounded-xl border border-slate-300 bg-white shadow-2xs hover:border-cyan-500 hover:shadow-xs transition text-center flex flex-col justify-center min-h-[58px]"
+                    >
+                      <div className="text-[11px] sm:text-xs font-bold text-slate-800 leading-tight">
+                        {node.title}
+                      </div>
+                      <div className="text-[9.5px] sm:text-[10px] text-slate-500 mt-0.5 font-medium">
+                        {node.subtitle}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
+
+            {/* Caption */}
+            <p className="text-[10.5px] text-slate-500 italic text-left pt-1">
+              {data.diagramCaption}
+            </p>
           </div>
-        ) : (
-          /* Populated Unified Content */
-          <div className="space-y-2">
-            {/* Top Insight Bar */}
-            <div className="mb-4 bg-cyan-500/10 border border-cyan-500/20 rounded-xl p-3 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <ShieldCheck className="h-4 w-4 text-cyan-400 shrink-0" />
-                <span className="text-xs font-bold text-cyan-200 truncate">
-                  Fokus Cakupan Digital & Telematika: <span className="text-white font-extrabold">{currentTitle}</span>
-                </span>
-              </div>
-              <span className="text-[10px] font-mono uppercase bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded shrink-0 font-bold">
-                100% Se-arah Judul
-              </span>
-            </div>
 
-            {/* Seamless Narrative Content */}
-            <div className="prose prose-invert max-w-none">
-              {renderSeamlessNarrative(content)}
-            </div>
-
-            {/* Footer Bar */}
-            <div className="mt-6 pt-4 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
-              <div className="flex items-center gap-1.5 text-cyan-400 font-bold">
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                <span>Arsitektur digital aktif tersinkronisasi dengan judul proyek</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleStartEdit}
-                  className="hover:text-cyan-400 transition cursor-pointer font-medium"
-                >
-                  Edit Teks
-                </button>
-                <span>•</span>
-                <button
-                  type="button"
-                  onClick={handleClearAll}
-                  className="hover:text-rose-400 transition cursor-pointer font-medium"
-                >
-                  Kosongkan
-                </button>
-              </div>
-            </div>
+          {/* 2. EXPLANATORY NARRATIVE PARAGRAPH */}
+          <div className="text-xs sm:text-[12.5px] text-slate-700 leading-relaxed text-justify space-y-2">
+            <p>{data.narrativeParagraph}</p>
           </div>
-        )}
-      </div>
+
+          {/* 3. IMPLEMENTATION BUDGET & ROADMAP TABLE */}
+          <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-2xs">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-[#0a2540] text-white">
+                  <th className="py-3 px-4 font-bold w-36 sm:w-44">Tahap</th>
+                  <th className="py-3 px-4 font-bold">Lingkup</th>
+                  <th className="py-3 px-4 font-bold w-36 sm:w-48">Biaya Indikatif</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200 font-sans">
+                {data.budgetTable.map((row, idx) => (
+                  <tr
+                    key={idx}
+                    className={
+                      idx % 2 === 1
+                        ? "bg-[#f0f7fc] hover:bg-[#e4eff8] transition"
+                        : "bg-white hover:bg-slate-50 transition"
+                    }
+                  >
+                    <td className="py-3 px-4 font-bold text-slate-900 align-top">
+                      {row.stage}
+                    </td>
+                    <td className="py-3 px-4 text-slate-700 leading-relaxed align-top">
+                      {row.scope}
+                    </td>
+                    <td className="py-3 px-4 font-bold text-slate-800 align-top font-mono text-[11px]">
+                      {row.indicativeCost}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
+        /* DOCUMENT / MARKDOWN NARRATIVE VIEW */
+        <div className="bg-slate-50 p-6 sm:p-8 rounded-2xl border border-slate-200 max-w-4xl mx-auto font-sans leading-relaxed">
+          <div className="prose prose-slate max-w-none text-xs sm:text-sm space-y-4">
+            {data.narrativeMarkdown.split("\n\n").map((block, bIdx) => {
+              const trimmed = block.trim();
+              if (trimmed.startsWith("# ")) {
+                return (
+                  <h1 key={bIdx} className="text-lg sm:text-xl font-black text-cyan-900 border-b pb-2">
+                    {trimmed.replace("# ", "")}
+                  </h1>
+                );
+              }
+              if (trimmed.startsWith("## ")) {
+                return (
+                  <h2 key={bIdx} className="text-sm sm:text-base font-bold text-slate-900 mt-5 pt-2 border-t border-slate-200">
+                    {trimmed.replace("## ", "")}
+                  </h2>
+                );
+              }
+              if (trimmed.startsWith("### ")) {
+                return (
+                  <h3 key={bIdx} className="text-xs sm:text-sm font-bold text-cyan-800 mt-3">
+                    {trimmed.replace("### ", "")}
+                  </h3>
+                );
+              }
+              if (trimmed.startsWith("- ")) {
+                return (
+                  <ul key={bIdx} className="space-y-1.5 my-2 pl-4 list-disc text-slate-700">
+                    {trimmed.split("\n").map((line, lIdx) => (
+                      <li key={lIdx}>
+                        {line.replace(/^- /, "")}
+                      </li>
+                    ))}
+                  </ul>
+                );
+              }
+              return (
+                <p key={bIdx} className="text-slate-700 leading-relaxed text-justify">
+                  {trimmed}
+                </p>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+export default DigitalCoverageDeepDive;

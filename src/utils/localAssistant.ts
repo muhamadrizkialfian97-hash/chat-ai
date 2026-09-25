@@ -1,19 +1,19 @@
 /**
- * PRAMA Intelligent Local Expert Response Engine
- * Provides fully dynamic, context-aware, highly-detailed Indonesian responses
- * tailored directly to the user's prompt and active division.
+ * PRAMA Intelligent Senior Project Consultant Response Engine
+ * Provides fully dynamic, context-aware, highly-detailed Indonesian consultant responses
+ * tailored directly to the user's prompt, active pillar, and project domain.
  * Completely free of error notices, offline banners, or footnotes.
  */
 
 import { getSectorOpportunityProfile } from "./sectorOpportunityHelper";
-import { detectAndInferProjectTitleFromText } from "./projectDashboardHelper";
+import { detectAndInferProjectTitleFromText, defaultDashboardSections } from "./projectDashboardHelper";
 
 interface LocalResponse {
   text: string;
   sources?: Array<{ title: string; uri: string }>;
 }
 
-function _generateLocalSmartResponseRaw(
+export function _generateLocalSmartResponseRaw(
   message: string,
   activeDivision: string | null,
   history: Array<{ role: string; text: string }> = [],
@@ -39,294 +39,298 @@ function _generateLocalSmartResponseRaw(
     return { origin: "JAKARTA", destination: "SURABAYA" };
   };
 
-  // Helper to extract specific item or amount
+  // Helper to extract specific numeric amounts
   const extractNumericAmount = (text: string): number => {
     const match = /(?:Rp|rp|idr|IDR)\s*([\d\.]+)/.exec(text);
     if (match && match[1]) {
       const parsed = parseInt(match[1].replace(/\./g, ""), 10);
       if (!isNaN(parsed)) return parsed;
     }
-    return 1450000000; // default tractor head cost
+    return 1450000000;
   };
 
-  // Generates responses based on keywords & dynamic extraction
-  if (query.includes("market opportunity") || query.includes("peluang pasar") || query.includes("peluang") || query.includes("market gap") || query.includes("proyek") || query.includes("project") || query.includes("forestry") || query.includes("limbah") || query.includes("batubara") || query.includes("cold chain") || query.includes("port") || query.includes("semen") || query.includes("nikel") || query.includes("sawit") || query.includes("cpo")) {
-    const profile = getSectorOpportunityProfile(activeTitle);
-    
-    return {
-      text: `Berikut adalah bedah terstruktur (breakdown) dari dokumen **"MARKET OPPORTUNITY DEEP-DIVE: ${activeTitle.toUpperCase()}"** berdasarkan pilar data terkini:
-
----
-
-### **A. ANALISIS POTENSI PASAR & GAP (${profile.sectorBadge})**
-
-Peluang pasar **${profile.sectorName}** berfokus pada efisiensi, keandalan, dan kepatuhan dalam sistem rantai pasok transportasi untuk **"${activeTitle}"**.
-
-#### **🚀 1. Faktor Pendorong Pasar (Market Drivers)**
-${profile.driversList.map(item => `* **${item.title}:** ${item.description}`).join("\n")}
-
-#### **🎯 2. Celah Pasar & Solusi Logistik (Market Gap)**
-${profile.gapsList.map(item => `* **${item.title}:** ${item.description}`).join("\n")}
-
----
-
-### **B. PELUANG INOVASI TEKNOLOGI & EFISIENSI OPERASIONAL (TECH & OPERATIONAL EXCELLENCE)**
-
-Penerapan teknologi modern dan standarisasi operasional prima menjadi pilar utama keunggulan kompetitif Pancaran Group:
-
-#### **💻 3. Peluang Inovasi Teknologi**
-* **${profile.axleSimulatorTitle}:** ${profile.axleSimulatorSubtitle}
-* **${profile.pingTitle}:** ${profile.pingSubtitle}
-* **Sistem Pemantauan Telemetri:** Menggunakan GPS satelit hibrida untuk transparansi rute dan estimasi waktu tiba (ETA) real-time.
-
-#### **⚙️ 4. Nilai Tambah Keandalan & Keselamatan Operasional**
-* **Standardisasi Keselamatan K3:** Protokol inspeksi harian pra-jalan untuk menjamin zero accident di setiap rute hauling darat.
-* **Optimalisasi Utilisasi Bahan Bakar:** Sistem manajemen rute cerdas untuk memangkas waktu tunggu armada dan mengoptimalkan efisiensi rasio konsumsi solar industri.
-
----
-
-### **C. STRATEGI IMPLEMENTASI PENETRASI PASAR (${activeTitle.toUpperCase()})**
-
-Untuk memaksimalkan peluang pasar angkutan ini, Pancaran Group menetapkan 4 langkah strategis utama:
-
-#### **Langkah 1: Pemetaan Rute & Lokasi Proyek (Site Survey & Mapping)**
-* **Aktivitas:** Melakukan survei rute pengangkutan, menganalisis kelayakan jembatan, elevasi, serta titik-titik kritis di jalur operasional.
-* **Tujuan:** Menentukan konfigurasi sasis armada, jenis ban, serta daya mesin yang paling sesuai dengan karakteristik kargo.
-
-#### **Langkah 2: Integrasi Sertifikasi & Legalitas Kepatuhan**
-* **Aktivitas:** Mendaftarkan seluruh armada pengangkut ke dalam portal resmi regulasi pemerintah dan dokumen manifes digital.
-* **Tujuan:** Memberikan jaminan legalitas 100% dan kepatuhan audit K3LL bagi pemilik proyek.
-
-#### **Langkah 3: Pemasangan Telemetri GPS Satelit (High-Tech Fleet Deployment)**
-* **Aktivitas:** Memasang modul pelacak hibrida (seluler + satelit) pada setiap unit truk untuk mengawasi operasional di rute remote.
-* **Tujuan:** Mengawasi keselamatan berkendara (*driver behavior*), pencegahan kelebihan muatan, serta kelancaran bongkar muat.
-
-#### **Langkah 4: Skema Kontrak Jangka Panjang Berbasis Keandalan (Long-Term SLA Partnership)**
-* **Aktivitas:** Menjalin kemitraan tahunan eksklusif (*Long-Term Service Agreement*) dengan pemilik proyek korporat.
-* **Tujuan:** Mengamankan utilisasi armada secara kontinu dan memberikan kepastian ketersediaan unit armada darat berkapasitas tinggi.`
-    };
-  }
-
-  // 1. GREETINGS
+  // 1. GREETINGS & CASUAL ONBOARDING
   if (
-    query.match(/^(halo|hai|pagi|siang|sore|malam|permisi|hello|hi|p|assalamualaikum|apa kabar)/i)
+    query.match(/^(halo|hai|pagi|siang|sore|malam|permisi|hello|hi|p|assalamualaikum|apa kabar)$/i) ||
+    query === "halo konsultan" || query === "halo prama"
   ) {
-    const divName = activeDivision ? activeDivision.toUpperCase() : "UMUM";
+    const divName = activeDivision ? activeDivision.toUpperCase() : "STRATEGIS";
     return {
-      text: `### 👋 Selamat datang di PRAMA Workspace!
+      text: `### 👋 Halo! Saya PRAMA Senior Project Consultant
 
-Saya adalah **PRAMA Sistem AI Assistant**, pendamping analitis utama Anda di Pancaran Group. Saya siap mendukung pekerjaan Anda dalam menganalisis data logistik, menyusun naskah tender, menguji anggaran biaya unit, merancang kontrak hukum operasional, hingga menyusun kertas kerja audit internal.
+Selamat datang di ruang konsultasi proyek. Saya siap berdiskusi secara interaktif, membedah tantangan proyek **"${activeTitle}"**, serta memberikan **solusi taktis dan strategis berbasis 17 Pilar Manajemen Proyek**.
 
-Saat ini Anda terhubung di portal divisi **${divName}**. Silakan masukkan draf, pertanyaan, atau instruksi kerja Anda di sini! 
-Beberapa contoh tugas yang bisa saya selesaikan seketika:
-- 📈 **COMC:** *"Buatkan proposal tender logistik kontainer rute Jakarta ke Surabaya"*
-- 👥 **HCA:** *"Buatkan draf target KPI bulanan driver trailer"*
-- 💵 **FINA:** *"Simulasikan biaya beli suku cadang dwi-mingguan sebesar Rp 150.000.000"*
-- ⚖️ **LGA:** *"Tulis klausul draf kelayakan denda deviasi muatan ODOL"*
-- 🧐 **SPIA:** *"Buat checklist audit pencegahan fraud solar armada"*
+Anda dapat menanyakan apa saja, meminta analisis mendalam, atau berkonsultasi mengenai:
+1. 💡 **Solusi Masalah Operasional & SLA** (Rute, bottleneck, utilisasi armada, zero delay)
+2. 💰 **Kajian Finansial & Simulasi Angka** (Capex, Opex, P&L, Cash Flow, Target ROI, LTV/CAC)
+3. 🛡️ **Kerangka Mitigasi Risiko** (Kepatuhan Zero ODOL, HSE, AMDAL, kontrak legal B2B)
+4. 📈 **Strategi Penetrasi Pasar & Sizing** (Go-To-Market, TAM SAM SOM, analisis kompetitor)
+5. 👥 **Struktur Organisasi & SOP Standar** (Kualifikasi kru, KPI terukur, SOP lapangan)
 
-Silakan ketik pertanyaan Anda!`
+Apa topik, kendala, atau pilar proyek yang ingin kita diskusikan dan tuntaskan sekarang?`
     };
   }
 
-  // 2. COMERCIAL & BUSINESS DEVELOPMENT SPECIALIST (COMC)
-  if (division === "comercial" || query.includes("tarif") || query.includes("tender") || query.includes("proposal") || query.includes("bidding") || query.includes("kontainer") || query.includes("rute") || query.includes("ongkos") || query.includes("muat")) {
-    const { origin, destination } = extractCities(message);
-    const estDistance = origin === "JAKARTA" && destination === "SURABAYA" ? 780 : 450;
-    const basicFuel = Math.round(estDistance * 11000 * 0.4); // approx calculation
-    const basicTol = Math.round(estDistance * 2000);
-    const basicDriver = Math.round(estDistance * 1500);
-    const totalCOGS = basicFuel + basicTol + basicDriver + 1000000;
-    const recTariff = Math.round(totalCOGS * 1.25);
-
-    if (query.includes("tarif") || query.includes("biaya") || query.includes("hitung") || query.includes("harga")) {
-      return {
-        text: `### 📊 Simulasi Tarif Logistik & Analisis Margin: ${origin} s.d. ${destination}
-
-Berdasarkan parameter operasional armada Heavy Duty Pancaran Group, berikut kalkulasi perkiraan biaya pokok (COGS) dan rekomendasi harga bidding tender untuk rute **${origin} s.d. ${destination}**:
-
-#### 🚚 1. Detail Estimasi Biaya Operasi (Armada Trailer 40ft)
-| Pos Pembiayaan | Estimasi Nilai (IDR) | Proporsi | Catatan / Rujukan |
-| :--- | :--- | :--- | :--- |
-| **Bahan Bakar (Biosolar / Dex)** | Rp ${basicFuel.toLocaleString("id-ID")} | ${Math.round((basicFuel / totalCOGS) * 100)}% | Asumsi rata-rata konsumsi armada 1:3.2 |
-| **Tol Trans Nasional** | Rp ${basicTol.toLocaleString("id-ID")} | ${Math.round((basicTol / totalCOGS) * 100)}% | Tarif Golongan V (gandar penarik ganda) |
-| **Uang Saku & Insentif Sopir** | Rp ${basicDriver.toLocaleString("id-ID")} | ${Math.round((basicDriver / totalCOGS) * 100)}% | Sesuai regulasi upah minimum jalan tol |
-| **Penyusutan Ban & Amortisasi** | Rp 850.000 | ${Math.round((850000 / totalCOGS) * 100)}% | Penyusutan fisik ban per trans-trip |
-| **Maintenance & Overheads Bengkel** | Rp 750.000 | ${Math.round((750000 / totalCOGS) * 100)}% | Cadangan biaya depo dwi-mingguan |
-| **TOTAL BIAYA POKOK (COGS)** | **Rp ${totalCOGS.toLocaleString("id-ID")}** | **100%** | **Biaya Dasar Operasional Lapangan** |
-
-#### 📈 2. Rekomendasi Target Tarif Penawaran & Kontribusi Profit
-Untuk menjamin kesinambungan margin operasional Pancaran Group di atas **20%**, rancangan model penawaran kami adalah:
-1. **Saran Tarif Penawaran:** **Rp ${(recTariff - 200000).toLocaleString("id-ID")} - Rp ${(recTariff + 500000).toLocaleString("id-ID")}** per kontainer (One Way).
-2. **Estimasi Margin Operasional Bersih:** Rp ${(recTariff - totalCOGS).toLocaleString("id-ID")} (${Math.round(((recTariff - totalCOGS) / recTariff) * 100)}% margin laba).
-3. **Catatan Efisiensi:** Margin dapat dimaksimalkan hingga tambahan **12%** apabila depo logistik di tujuan berhasil mengamankan muatan balik (*Return Cargo*).`
-      };
-    }
-
+  // 2. FINANCIAL / CAPEX / OPEX / ROI / CASH FLOW
+  if (
+    query.includes("financial") || query.includes("finansial") || query.includes("capex") ||
+    query.includes("opex") || query.includes("roi") || query.includes("cash flow") ||
+    query.includes("p&l") || query.includes("modal") || query.includes("rugi laba") ||
+    query.includes("keuntungan") || query.includes("biaya investasi")
+  ) {
     return {
-      text: `### ✍️ Rancangan Draf Proposal Penawaran Tender Logistik & Bidding
+      text: `### 💼 Solusi Konsultasi Finansial & Kelayakan Investasi
+**Proyek:** ${activeTitle} | **Pilar 03: Financial Strategy**
 
-**PROPOSAL TEKNIS & KOMERSIAL PELAYANAN LOGISTIK**
-Dokumen penawaran resmi ini disiapkan secara otomatis oleh sistem kecerdasan **PRAMA Comercial (COMC)** untuk rute operasi koridor **${origin} - ${destination}**:
+Berdasarkan analisis benchmarking industri logistik dan transportasi korporat, berikut adalah telaah solusi finansial komprehensif untuk proyek **"${activeTitle}"**:
 
-\`\`\`markdown
-PROPOSAL BIDDING JASA EKSPEDISI TRAILER & CONTAINERIZED TRUCKING
-Nomor Dokumen: PRM/COMC-BID/2026/029
-Tanggal Pengajuan: 1 Juni 2026
+#### 📊 1. Parameter Struktur Permodalan & Alokasi Biaya
+- **Alokasi CAPEX Utama:** Pengadaan armada heavy duty berspesifikasi tinggi (Tractor Head / Multi-Axle Trailer / Dump Truck), instalasi modul telemetri GPS satelit hibrida, serta perlengkapan workshop terstandarisasi.
+- **Struktur OPEX Bulanan:** Konsumsi bahan bakar (Biosolar/Dex 35-42%), upah & insentif performa kru jalan (18-22%), biaya tol dan retribusi resmi (12-16%), serta pemeliharaan preventif dan ban (10-14%).
+- **Target Gross Margin:** Dianjurkan berada pada kisaran **24% – 28%** untuk menjaga ketahanan terhadap fluktuasi harga suku cadang dan solar.
 
-1. LATAR BELAKANG & KELAYAKAN
-Pancaran Group sebagai salah satu pilar logistik nasional berkomitmen tinggi untuk mengelola pengiriman kargo milik Mitra dengan integritas tinggi, didukung armada prima berumur muda, GPS tracking realtime, serta tim pengawas darurat jalan raya yang andal.
+#### 💡 2. Rekomendasi Solusi Pengamanan Arus Kas (Cash Flow Optimization)
+1. **Klausul Pembayaran B2B:** Terapkan skema Term of Payment (TOP) maksimal **30–45 hari kerja** yang dikunci dengan fasilitas *Invoice Financing* berbunga rendah untuk mencegah defisit modal kerja harian.
+2. **Formula Eskalasi Solar Otomatis:** Masukkan klausul *Fuel Surcharge Adjustment* berkala (misal tiap kenaikan harga solar ≥ 5% ditanggung bersama klien).
+3. **Target Payback Period & ROI:** Dengan utilisasi armada minimal **85%** (22–24 hari operasi/bulan), proyeksi titik impas (Break-Even Point) tercapai pada **bulan ke-28 hingga ke-34**, dengan estimasi **ROI tahunan 26,8%**.
 
-2. PARAMETER UTAMA SLA (SERVICE LEVEL AGREEMENT)
-- Ketepatan Waktu Bongkar-Muat (Lead Time): ≥ 98.7% di luar kendala bencana alam (Force Majeure)
-- Ketersediaan Unit Harian: Minimal 95% ketersediaan armada cadangan di depo terdekat
-- Keamanan Muatan: Kargo terlindungi penuh dengan Cargo Liability Insurance bernilai pertanggungan optimal
-
-3. JADWAL PENAWARAN TARIF INTEGRASI (EX-VAT)
-- Kontainer 20 FEET: Hubungi Tim Prama untuk simulasi muatan pendek.
-- Kontainer 40 FEET: Mengikuti harga tol optimal Trans-Jawa/lintas pulau (estimasi margin 22%).
-\`\`\`
-
-Apakah Anda membutuhkan kalkulasi komersial tambahan untuk jenis muatan berat lainnya (seperti curah/log/curah cair) guna melengkapi proposal ini?`
+#### 🎯 3. Langkah Taktis Eksekusi
+- Lakukan simulasi arus kas mingguan menggunakan simulator finansial.
+- Validasi rasio muatan balik (*return cargo*) untuk menekan biaya perjalanan kosong (*empty run*) di bawah 10%.`
     };
   }
 
-  // 3. HUMAN CAPITAL & AFFAIRS (HCA)
-  if (division === "hca" || query.includes("kpi") || query.includes("driver") || query.includes("karyawan") || query.includes("pegawai") || query.includes("gilir") || query.includes("rekrut") || query.includes("sopir") || query.includes("kru")) {
-    const isSopir = query.includes("sopir") || query.includes("driver") || query.includes("jalan");
-    const subject = isSopir ? "Sopir Trailer Heavy Duty" : "Kru Kapal Tugboat & Personel Depo";
-
+  // 3. RISK MANAGEMENT & MITIGATION
+  if (
+    query.includes("risk") || query.includes("risiko") || query.includes("mitigasi") ||
+    query.includes("bahaya") || query.includes("kendala") || query.includes("k3") ||
+    query.includes("hse") || query.includes("odol") || query.includes("kecelakaan")
+  ) {
     return {
-      text: `### 👥 Panduan Kinerja & Standarisasi Parameter KPI (${subject})
+      text: `### 🛡️ Solusi Konsultasi Manajemen Risiko & Mitigasi Operasional
+**Proyek:** ${activeTitle} | **Pilar 10: Risk Management Framework**
 
-**PRAMA HUMAN CAPITAL & AFFAIRS SYSTEM (HCA)**
-Berikut adalah rumusan Key Performance Indicators (KPI) dan tata kelola kinerja terpadu yang dirancang khusus untuk operasional di lapangan Pancaran Group:
+Sebagai konsultan proyek, berikut pemetaan risiko kritis dan solusi mitigasi preventif untuk menjamin kelancaran operasional **"${activeTitle}"**:
 
-#### 📊 1. Matriks Evaluasi KPI Terstruktur (Bobot Kumulatif: 100%)
-| Parameter Utama | Bobot | Target Pencapaian | Metode Verifikasi & Pelacakan |
-| :--- | :--- | :--- | :--- |
-| **Ketepatan Pengiriman (On-Time Delivery)** | 35% | Kesesuaian jadwal ≥ 98% | Audit berkas POD (Proof Of Delivery) & catatan pelacak GPS |
-| **Indeks Efisiensi Bahan Bakar (Fuel Ratio)** | 25% | Penggunaan solar rata-rata 1:3.2 | Unduhan kartu pengisian BBM non-tunai & sensor tangki |
-| **Aspek K3 & Keselamatan Jalan (Zero Incident)** | 25% | 0 Kecelakaan & 0 Melanggar ODOL | Pemeriksaan laporan kepolisian, tilang elektronik koridor tol |
-| **Perawatan Berkala Unit (KONDISI ARMADA)** | 15% | Kerusakan nol akibat kelalaian | Checklist harian buku inspeksi jalan driver |
+#### ⚠️ 1. Register Risiko Utama & Tingkat Dampak
+| Kode | Potensi Risiko | Probabilitas | Dampak | Indikator Utama |
+| :--- | :--- | :--- | :--- | :--- |
+| **R-01** | Keterlambatan Koridor & Kemacetan Fatal | Sedang | Tinggi | Deviasi rute > 15%, keterlambatan SLA |
+| **R-02** | Pelanggaran Dimensi & Kelebihan Muatan (ODOL) | Rendah-Sedang | Kritis | Tilang jembatan timbang WIM, denda regulasi |
+| **R-03** | Insiden Keamanan & Kecelakaan Kerja (K3) | Rendah | Bencana | Blindspot armada, kelelahan sopir |
+| **R-04** | Kebocoran Konsumsi Solar & Manipulasi Ban | Sedang | Sedang | Anomali selisih GPS vs struk SPBU |
 
-#### 🚢 2. Protokol Manajemen Roster & Istirahat Pengendara
-Menjaga kondisi kebugaran dan fokus kognitif sangat krusial untuk keselamatan kerja:
-1. **Skema Roster Operasional Darat:** Maksimal mengemudi terus-menerus adalah 4 jam, wajib istirahat minimal 30 menit. Batas kerja harian maksimal 12 jam per rotasi.
-2. **Skema kru Laut (Tugboat/Barge):** Jadwal rotasi **2 bulan di atas kapal (on-board) / 2 minggu cuti (off-board)** dengan syarat uji kesehatan fisik pra-layar.`
+#### 🛠️ 2. Solusi Mitigasi Terstruktur (Actionable Protocols)
+1. **Solusi R-01 (Route Contingency):** Sediakan secondary designated corridor dan monitoring Control Tower 24/7 dengan peringatan cuaca dini via sensor BMKG.
+2. **Solusi R-02 (Compliance Guarantee):** Terapkan inspeksi beban muatan di site origin dengan timbangan digital portabel sebelum armada keluar gate.
+3. **Solusi R-03 (Fatigue Management):** Wajibkan istirahat 30 menit setiap 4 jam mengemudi (maksimal 12 jam kerja/hari) diawasi sistem kamera AI DMS (Driver Monitoring System) pencegah kantuk.
+4. **Solusi R-04 (Anti-Fraud Telemetry):** Integrasikan sensor fuel level digital di tangki bahan bakar yang tersinkronisasi langsung dengan kartu fleet corporate cashless.`
     };
   }
 
-  // 4. FINANCE, ADMINISTRATION & ACCOUNTING (FINA)
-  if (division === "fina" || query.includes("anggaran") || query.includes("budget") || query.includes("biaya") || query.includes("uang") || query.includes("hitung") || query.includes("biaya") || query.includes("amortisasi") || query.includes("depresiasi") || query.includes("suku cadang") || query.includes("p&l") || query.includes("cash flow")) {
-    const rawCost = extractNumericAmount(message);
-    const cost = rawCost > 0 ? rawCost : 150000000;
-    const residual = Math.round(cost * 0.15);
-    const lifetime = 8;
-    const straightLineYear = Math.round((cost - residual) / lifetime);
-    const straightLineMonth = Math.round(straightLineYear / 12);
-
+  // 4. GO TO MARKET & COMMERCIAL STRATEGY
+  if (
+    query.includes("go to market") || query.includes("gtm") || query.includes("komersial") ||
+    query.includes("penjualan") || query.includes("sales") || query.includes("kontrak") ||
+    query.includes("akuisisi") || query.includes("bidding") || query.includes("tender")
+  ) {
     return {
-      text: `### 💵 Rekomendasi Alokasi Nilai Anggaran & Analisis Manajemen Penyusutan FINA
+      text: `### 🚀 Solusi Konsultasi Go-To-Market & Penetrasi Komersial B2B
+**Proyek:** ${activeTitle} | **Pilar 08: Go-To-Market Strategy**
 
-**PRAMA FINANCE & ACCOUNTING SYSTEM (FINA)**
-Berikut adalah laporan perencanaan keuangan dwi-mingguan serta analisis amortisasi aset tetap Pancaran Group:
+Berikut rekomendasi formulasi strategi komersial untuk memenangkan pangsa pasar pada proyek **"${activeTitle}"**:
 
-#### 📂 1. Tabel Depresiasi Berdasarkan Metode Garis Lurus (Straight-Line)
-Berdasarkan regulasi perpajakan komersial (Golongan Harta Berwujud 3 - Masa Pakai 8 Tahun) untuk investasi aset baru senilai **Rp ${cost.toLocaleString("id-ID")}**:
-- **Nilai Perolehan Awal:** Rp ${cost.toLocaleString("id-ID")}
-- **Aset Sisa / Nilai Residu (Estimasi 15%):** Rp ${residual.toLocaleString("id-ID")}
-- **Masa Operasional Ekonomis:** 8 Tahun
-- **Nilai Penyusutan Tahunan:** **Rp ${straightLineYear.toLocaleString("id-ID")} / Tahun**
-- **Beban Penyusutan Bulanan:** **Rp ${straightLineMonth.toLocaleString("id-ID")} / Bulan**
+#### 🎯 1. Segmentasi & Target Akun Kunci (Key Accounts)
+- **Tier-1 Enterprise (Anchor Clients):** Korporasi skala multinasional / BUMN dengan kebutuhan kontrak jangka panjang (2–5 tahun) dan jaminan volume bulanan (*Take-or-Pay*).
+- **Tier-2 Regular Accounts:** Kontrak tahunan dengan komitmen ritase stabil untuk pengisi kapasitas dasar armada.
+- **Tier-3 Spot/Taktis:** Pengisian sela armada saat jadwal perbaikan selesai atau pengisian rute balik (*backhaul cargo*).
 
-#### 💼 2. Rencana Anggaran Anggaran Operasional Depo Terjadwal
-Saran porsi pengeluaran anggaran untuk menjamin optimalisasi kelancaran distribusi:
-1. **Kebutuhan Utama (45%):** Pengadaan ban trailer radial baru serta perawatan terjadwal mesin tractor head utama.
-2. **Kebutuhan Preventif (35%):** Pembelian pelumas mesin premium, filter solar tahan lama, pemeliharaan sensor kelistrikan kabin.
-3. **Kebutuhan Administrasi (20%):** Lisensi pembaruan perangkat lunak navigasi, asuransi aset, serta pengurusan izin KIR/STNK berkala.`
+#### 💼 2. Value Proposition & Differentiator Pesaing
+1. **Jaminan Ketersediaan Unit (Fleet Availability ≥ 98%):** Penyediaan unit cadangan siaga (*dedicated stand-by units*) di buffer zone site.
+2. **Transparansi Dashboard Real-time:** Klien diberikan akses portal visibilitas ETA dan dokumen digital (*electronic Proof of Delivery - e-POD*).
+3. **Skema Tarif Kompetitif Terukur:** Model tarif ganda (Fixed Management Fee + Variable Trip Cost) yang memberikan efisiensi 8–12% bagi klien dibanding tarif konvensional.
+
+#### 📈 3. Roadmap Akuisisi Akun
+- **Bulan 1–2:** Penyusunan proposal teknis, audit legalitas, dan submission pre-qualification tender korporat.
+- **Bulan 3–4:** Eksekusi pilot trial batch pertama (5–10 unit) untuk membuktikan SLA ketepatan waktu.
+- **Bulan 5 ke depan:** Scale-up alokasi armada penuh dan penandatanganan Long-Term Service Agreement (LTSA).`
     };
   }
 
-  // 5. LEGAL & GOVERNANCE AFFAIRS (LGA)
-  if (division === "lga" || query.includes("hukum") || query.includes("kontrak") || query.includes("undang") || query.includes("odol") || query.includes("mou") || query.includes("adendum") || query.includes("klausul") || query.includes("sengketa") || query.includes("asuransi")) {
+  // 5. OPS MODEL, SLA & WORKFLOW
+  if (
+    query.includes("ops model") || query.includes("operasional") || query.includes("workflow") ||
+    query.includes("sla") || query.includes("alur kerja") || query.includes("flow process") ||
+    query.includes("lead time") || query.includes("sopir") || query.includes("rute")
+  ) {
     return {
-      text: `### ⚖️ Kepatuhan Regulasi Operasional & Draf Klausul Legalitas Hukum LGA
+      text: `### ⚙️ Solusi Konsultasi Operating Model & Standar SLA Operasional
+**Proyek:** ${activeTitle} | **Pilar 09: Ops Model & SLA**
 
-**PRAMA LEGAL & GOVERNANCE AFFAIRS (LGA)**
-Berikut adalah draf hukum antisipasi gangguan perjalanan serta panduan kepatuhan regulasi logistik nasional:
+Berikut blueprint operasional dan perancangan SLA terukur untuk kelancaran eksekusi **"${activeTitle}"**:
 
-#### 📄 1. rancangan Klausul Adendum Surcharge Deviasi Rute Operasional
-Klausul ini didesain sebagai perlindungan hukum terhadap biaya tol tambahan akibat pengalihan jalan tidak terduga:
-> **Pasal 18: Penyesuaian Tarif Akibat Deviasi Jalur Operasional**
-> *Apabila dalam masa kontrak kendaraan operasional logistik mengalami instruksi pengalihan jalur resmi oleh instansi berwenang (Kepolisian atau Kementerian Perhubungan), penutupan pintu tol, atau kerusakan jalan parah yang memaksimalkan tambahan jarak tempuh melebihi toleransi sebesar delapan persen (8%) dari rute pengantaran standar, maka Penyedia Jasa berhak mengenakan Biaya Tambahan Deviasi (Surcharge) sebesar Rp 5.500,- per kilometer tambahan yang dapat divalidasi melalui data pelacak GPS Prama.*
+#### 🔄 1. Alur Proses Operasional (Closed-Loop Workflow)
+1. **Pre-Trip Gate (Origin Inspection):** Pemeriksaan 15 poin laik jalan armada (KIR, rem, lampu, ban, sertifikasi driver, segel GPS). Waktu proses: **≤ 15 Menit**.
+2. **Dispatch & En-Route Transit:** Pengawalan perjalanan via IoT Control Tower dengan pembatas kecepatan maksimum 60 km/jam di tol dan 40 km/jam di jalan arteri.
+3. **Receiving & Weigh-in-Motion Gate:** Verifikasi muatan di jembatan timbang elektronik dan pencocokan manifes digital e-POD.
+4. **Post-Trip Demobilization:** Pembersihan unit, pelaporan logistik, dan persiapan rotasi rute berikutnya.
 
-#### 🛡️ 2. Mitigasi Risiko Kepatuhan Hukum Terhadap Regulasi ODOL
-- Semua unit penarik dan gandengan wajib terdaftar resmi dan lulus inspeksi kelaikan uji KIR berkala.
-- Berat kargo bersih maksimal disesuaikan dengan kapasitas JBB (Jumlah Berat yang Diperbolehkan) guna meminimalkan sanksi denda di pos timbangan jalan raya terpadu.`
+#### ⏱️ 2. Standar Target SLA Kunci
+- **On-Time Departure Rate:** ≥ 98,5% dari jadwal origin.
+- **On-Time Delivery SLA:** ≥ 97,8% di titik tujuan penerima.
+- **Lead-Time Insiden Tanggap Darurat:** Tim derek/mekanik lapangan tiba di lokasi dalam **< 45 Menit**.
+- **Penyelesaian Manifes Digital (e-POD):** Data terunggah otomatis ke server dalam **< 10 Menit** pasca-bongkar muat.`
     };
   }
 
-  // 6. SPIA INTERNAL AUDIT (SPIA)
-  if (division === "spia" || query.includes("solar") || query.includes("diesel") || query.includes("ban") || query.includes("audit") || query.includes("fraud") || query.includes("anomali") || query.includes("kertas kerja") || query.includes("inspeksi")) {
+  // 6. ORGANIZATION, HR & SOP
+  if (
+    query.includes("organisasi") || query.includes("organization") || query.includes("sop") ||
+    query.includes("kpi") || query.includes("karyawan") || query.includes("struktur") ||
+    query.includes("pelatihan") || query.includes("kompetensi")
+  ) {
     return {
-      text: `### 🧐 Prosedur Kerja Audit Internal & Checklist Deteksi Fraud SPIA
+      text: `### 👥 Solusi Konsultasi Organisasi, Kompetensi Staf & SOP Lapangan
+**Proyek:** ${activeTitle} | **Pilar 06: Organization & SOP**
 
-**PRAMA SATUAN PENGAWASAN INTERN (SPIA)**
-Inspeksi analitis dwi-mingguan dirancang untuk mengidentifikasi kebocoran operasional solar (diesel) dan ban di lapangan Pancaran Group:
+Berikut struktur organisasi taktis dan matriks kompetensi yang direkomendasikan untuk proyek **"${activeTitle}"**:
 
-#### ⛽ 1. Checklist Pengawasan Konsumsi Solar Terstruktur
-1. **Analisis Selisih Jarak GPS vs Odometer Obyektif:** Melacak posisi perjalanan riil dari sistem telemetri lalu membandingkannya dengan odometer fisik (Toleransi batas selisih maksimal **2%**).
-2. **Pencocokan Transmisi Transaksi SPBU:** Mencocokkan log digital kartu pembayaran bahan bakar non-tunai (waktu, lokasi SPBU, pelat armada) dengan data rute perjalanan di server Prama.
-3. **Penyelidikan Gejala Penurunan Solar Mendadak:** Mengaudit data tangki BBM ketika unit sedang berhenti istirahat untuk mendeteksi kecurangan pencurian bahan bakar solar lapangan.
+#### 🏢 1. Struktur Komando Lapangan (Project Hierarchy)
+- **Project Operations Manager:** Bertanggung jawab penuh atas ketercapaian SLA, P&L proyek, dan hubungan dengan perwakilan klien.
+- **HSE & Safety Officer:** Memastikan kepatuhan keselamatan kerja nol kecelakaan (*Zero Harm*) dan audit harian APD/armada.
+- **Fleet Dispatcher & Control Tower Lead:** Memantau pergerakan unit 24/7 dan mengoordinasikan jadwal rotasi kru.
+- **Chief Mechanic & Workshop Supervisor:** Menjaga kesiapan unit (*fleet readiness*) agar selalu di atas 95%.
 
-#### 🛞 2. Contoh Template Kertas Kerja Audit (Working Paper)
-| Indikator Anomali | Gejala Temuan Temuan | Potensi Penyalahgunaan | Prioritas Rekomendasi Solusi |
-| :--- | :--- | :--- | :--- |
-| **SPIA-BAN-TRAILER** | Pergantian ban < 35.000 KM | Ban orisinal ditukar dengan ban vulkanisir ilegal di bengkel luar | Lakukan audit fisik langsung mencocokkan nomor seri ban dengan stok depo |
-| **SPIA-SOLAR-TANGKI** | Penurunan solar saat parkir | Kuras solar ilegal oleh pihak ketiga / oknum pengemudi | Rekomendasikan pemasangan sistem GPS anti-tamper & kunci tutup tangki gembok |`
+#### 📋 2. KPI Terukur Tim Lapangan
+- **Pengemudi:** On-time rate ≥ 98%, Fuel efficiency target 1:3.2, 0 Pelanggaran kecepatan/tilang.
+- **Mekanik:** Rata-rata waktu perbaikan darurat (Mean Time to Repair - MTTR) < 2,5 Jam.
+- **Dispatcher:** Waktu alokasi armada pengganti saat anomali < 20 Menit.`
     };
   }
 
-  // 7. COMPLEX GENERIC QUERY PARSER (TENTANG PEMBUATAN DOKUMEN / ANALISA UMUM)
-  // Generates custom content tailored to whatever the user wrote!
-  const hasBuatkan = query.includes("buat") || query.includes("tulis") || query.includes("rancang") || query.includes("draft") || query.includes("susun");
-  const hasJelaskan = query.includes("jelas") || query.includes("terang") || query.includes("apa") || query.includes("bagaimana") || query.includes("mengapa");
+  // 7. TAM, SAM, SOM & MARKET SIZING
+  if (
+    query.includes("tam") || query.includes("sam") || query.includes("som") ||
+    query.includes("market size") || query.includes("potensi pasar") || query.includes("pangsa")
+  ) {
+    return {
+      text: `### 📊 Solusi Konsultasi Market Sizing (TAM, SAM, SOM)
+**Proyek:** ${activeTitle} | **Pilar 13: TAM SAM SOM**
+
+Berikut estimasi kalkulasi potensi pasar berbasis data sektoral logistik Indonesia untuk proyek **"${activeTitle}"**:
+
+#### 🌐 1. Estimasi Jenjang Pasar (Berdasarkan Nilai Industri Riil)
+1. **Total Addressable Market (TAM):** **Rp 24,5 Triliun – Rp 38,0 Triliun**
+   - Total estimasi belanja logistik nasional untuk komoditas dan industri terkait proyek ini di seluruh koridor utama Indonesia.
+2. **Serviceable Addressable Market (SAM):** **Rp 4,8 Triliun – Rp 7,2 Triliun**
+   - Potensi pasar yang dapat dijangkau langsung sesuai dengan koridor geografis, jangkauan izin trayek, dan spesifikasi armada heavy duty yang kita operasikan.
+3. **Serviceable Obtainable Market (SOM):** **Rp 280 Miliar – Rp 480 Miliar (Target Penetrasi 6% – 10% dari SAM)**
+   - Target riil perolehan kontrak yang dapat dimenangkan dan dieksekusi secara optimal dengan alokasi 35–60 unit armada operasional aktif.
+
+#### 💡 2. Rekomendasi Solusi Menguasai SOM
+- Prioritaskan penguncian kontrak Tier-1 multi-year untuk mengamankan 60% dari target SOM di tahun pertama.
+- Manfaatkan keunggulan sertifikasi keselamatan dan kepatuhan Zero ODOL sebagai pembeda utama saat proses bidding.`
+    };
+  }
+
+  // 8. TRANSITION MODEL (PRE-ON-POST)
+  if (
+    query.includes("transition") || query.includes("transisi") || query.includes("fase") ||
+    query.includes("pre-transition") || query.includes("on-transition") || query.includes("post-transition")
+  ) {
+    return {
+      text: `### 🔄 Solusi Konsultasi Model Transisi Proyek (Pre, On, Post)
+**Proyek:** ${activeTitle} | **Pilar 07: Transition Model**
+
+Untuk memastikan peralihan proyek berjalan tanpa gangguan operasional (*zero downtime*), berikut rekomendasi tahapan transisi terpadu untuk **"${activeTitle}"**:
+
+#### 1️⃣ Fase 1: Pre-Transition (Persiapan & Kalibrasi - Bulan 1)
+- Site survey rute dan asesmen kondisi jalan/jembatan timbang.
+- Finalisasi kontrak B2B, SOP bersama, dan integrasi API telemetri ke sistem klien.
+- Rekrutmen dan induksi pelatihan keselamatan (Defensive Driving Training) bagi seluruh driver.
+
+#### 2️⃣ Fase 2: On-Transition (Pelaksanaan & Ramp-Up - Bulan 2-3)
+- Deployment armada gelombang pertama (30% kapasitas) untuk uji coba koridor.
+- Evaluasi harian SLA ketepatan waktu, konsumsi bahan bakar, dan waktu bongkar-muat.
+- Ramp-up kapasitas bertahap hingga mencapai 100% armada aktif dalam 60 hari.
+
+#### 3️⃣ Fase 3: Post-Transition (Stabilisasi & Evaluasi - Bulan 4 ke atas)
+- Pelaksanaan audit operasional berkala dan Quarterly Business Review (QBR) bersama direksi klien.
+- Otomatisasi pelaporan berkala dan optimalisasi efisiensi biaya berkelanjutan (*continuous improvement*).`
+    };
+  }
+
+  // 9. DIGITAL COVERAGE & AUTOMATION
+  if (
+    query.includes("digital") || query.includes("otomatis") || query.includes("automation") ||
+    query.includes("iot") || query.includes("gps") || query.includes("aplikasi") ||
+    query.includes("software") || query.includes("sensor") || query.includes("telemetri")
+  ) {
+    return {
+      text: `### 💻 Solusi Konsultasi Digital Coverage & Otomatisasi Sistem
+**Proyek:** ${activeTitle} | **Pilar 11: Digital Coverage**
+
+Berikut rancangan arsitektur teknologi dan otomatisasi untuk mendongkrak efisiensi proyek **"${activeTitle}"**:
+
+#### 🛰️ 1. Pilar Perangkat Lunak & Sensor Digital (Tech Stack)
+- **Fleet Management System (FMS):** Dashboard terintegrasi untuk pemantauan posisi GPS, kecepatan, dan status mesin secara real-time.
+- **Electronic Proof of Delivery (e-POD):** Aplikasi mobile bagi driver untuk tanda tangan digital dan foto surat jalan di titik tujuan.
+- **Smart Fuel Sensor & IoT Telematics:** Sensor tangki bahan bakar dengan akurasi 99% untuk mencegah manipulasi dan kebocoran BBM.
+- **AI Driver Monitoring System (DMS):** Kamera pintar di kabin yang mendeteksi kantuk, kelelahan, dan gangguan fokus saat mengemudi.
+
+#### 📈 2. Dampak Efisiensi Bisnis
+- Mengurangi waktu verifikasi administrasi tagihan dari **5 hari menjadi kurang dari 2 jam**.
+- Menekan biaya bahan bakar hingga **8,5%** melalui optimasi rute dan pencegahan idle time armada.`
+    };
+  }
+
+  // 10. COMPETITOR STRATEGY & BENCHMARKING
+  if (
+    query.includes("competitor") || query.includes("pesaing") || query.includes("kompetitor") ||
+    query.includes("keunggulan") || query.includes("swot") || query.includes("rival")
+  ) {
+    return {
+      text: `### ⚔️ Solusi Konsultasi Strategi Bersaing & Keunggulan Kompetitif
+**Proyek:** ${activeTitle} | **Pilar 12: Competitor Strategy**
+
+Berikut analisis keunggulan bersaing dan strategi memenangkan kontrak untuk proyek **"${activeTitle}"**:
+
+#### 📊 1. Pemetaan Kekuatan Pesaing vs Keunggulan Kita
+- **Pesaing Tradisional:** Tarif murah namun sering terkendala armada tua, kurangnya transparansi pelacakan, dan tingginya angka kerusakan muatan.
+- **Keunggulan PRAMA Solution:**
+  1. Usia rata-rata armada di bawah 5 tahun dengan pemeliharaan terstandarisasi.
+  2. Kepatuhan 100% regulasi Zero ODOL dan jaminan asuransi kargo penuh (*All Risk Coverage*).
+  3. SLA ketepatan waktu dengan komitmen penalti transparan jika terjadi keterlambatan karena kelalaian internal.
+
+#### 🎯 2. Taktik Penguncian Klien (Client Lock-In Strategy)
+- Tawarkan kontrak berbasis SLA kinerja (*Performance-Based Contracting*) yang memberikan jaminan efisiensi bagi klien.
+- Integrasikan sistem e-POD kita langsung ke ERP klien (SAP/Oracle) sehingga menciptakan switching cost yang tinggi bagi kompetitor.`
+    };
+  }
+
+  // 11. GENERAL COMPLEX CONSULTATION QUERY
+  const profile = getSectorOpportunityProfile(activeTitle);
   
-  // Extract keywords to match dynamic topics
-  const topics: string[] = [];
-  if (query.includes("logistik") || query.includes("transport")) topics.push("Sistem Manajemen Logistik");
-  if (query.includes("proyek") || query.includes("manajemen")) topics.push("Tata Kelola Proyek Transportasi");
-  if (query.includes("rute") || query.includes("jalan")) topics.push("Optimasi Jalur Koridor");
-  if (query.includes("dokumen") || query.includes("kertas")) topics.push("Dokumentasi Kepatuhan Operasional");
-  
-  const mainTopic = topics.length > 0 ? topics[0] : "Manajemen Operasional Pancaran Group";
-
   return {
-    text: `### 📌 Analisis & Draf Dokumen Kerja Utama: ${mainTopic}
+    text: `### 💡 Solusi Konsultasi Proyek & Telaah Strategis
+**Proyek:** ${activeTitle} | **Sektor:** ${profile.sectorName} (${profile.sectorBadge})
 
-Terima kasih atas pertanyaan Anda mengenai **${message}**. 
+Menjawab pertanyaan Anda: *"**${message}**"*, berikut adalah solusi taktis dan telaah mendalam dari sudut pandang konsultan manajemen proyek:
 
-Menjawab kebutuhan Anda dengan pendekatan standar manajemen operasional berkinerja tinggi di Pancaran Group, berikut adalah rancangan analisis dan solusi taktis yang dapat segera diimplementasikan:
+#### 📋 1. Analisis Pokok Permasalahan & Konteks Lapangan
+Permasalahan ini berhubungan erat dengan optimalisasi rantai pasok dan keandalan operasional pada proyek **"${activeTitle}"**. Faktor-faktor kunci yang harus diperhatikan:
+- **Karakteristik Muatan & Rute:** Memerlukan kesesuaian spesifikasi armada dan pemetaan jalur yang bebas hambatan regulasi.
+- **Keseimbangan Biaya & Layanan:** Setiap peningkatan SLA harus diimbangi dengan struktur biaya pokok (COGS) yang terkontrol.
+- **Kepatuhan Terhadap Standar K3 & Lingkungan:** Menjamin seluruh aktivitas memenuhi audit K3LL dan regulasi kementerian terkait.
 
-#### 📋 1. Ringkasan Solusi & Metode Pendekatan
-Untuk mengoptimalkan kebutuhan tersebut secara akurat, proses kerja didasarkan pada tiga pilar akuntabilitas:
-1. **Analisis Kebutuhan Lapangan:** Mengevaluasi dinamika operasional rute harian serta ketersediaan kru di depo terdekat.
-2. **Kalkulasi Parameter Finansial:** Memastikan setiap alokasi budget berada dalam jalur estimasi biaya pokok (COGS) yang ideal agar meminimalkan deviasi pengeluaran.
-3. **Kepatuhan Terhadap SOP & Regulasi:** Seluruh proses diselaraskan dengan tata tertib operational, audit internal SPIA, serta regulasi kelayakan transportasi nasional.
+#### 🛠️ 2. Solusi Langkah Demi Langkah (Step-by-Step Action Plan)
+1. **Langkah 1 (Audit & Validasi Data Awal):** Lakukan verifikasi parameter volume harian, jadwal operasional, dan ketersediaan kru di depo terdekat.
+2. **Langkah 2 (Implementasi Standar Operasional & Kontrol):** Terapkan SOP inspeksi harian dan aktifkan pengawasan Control Tower 24/7 untuk mencegah deviasi.
+3. **Langkah 3 (Pengamanan Kontrak & Finansial):** Pastikan model penetapan tarif mencakup klausul pengaman inflasi/solar dan proteksi asuransi muatan.
+4. **Langkah 4 (Evaluasi Berkala & Perbaikan Berkelanjutan):** Lakukan review mingguan terhadap indikator keterlambatan dan efisiensi bahan bakar.
 
-#### 🛠️ 2. Draf Usulan Struktur & Rencana Implementasi
-Berikut adalah tabel draf langkah kerja atau pengalokasian langkah-langkah strategis yang direkomendasikan:
-
-| Tahap Kerja | Aktivitas Utama | Output yang Diharapkan | Target Waktu |
-| :--- | :--- | :--- | :--- |
-| **Tahap I: Inisiasi** | Pengumpulan draf dan kajian rute awal | Dokumen profil kelayakan teknis | Hari 1-3 |
-| **Tahap II: Komparasi** | Simulasi biaya pokok (COGS) dan margin operasi | Rujukan tarif final | Hari 4-5 |
-| **Tahap III: Audit** | Pemetaan draf hukum (LGA) & checklist pengawasan (SPIA) | Dokumen kontrak & PKS final | Hari 6-7 |
-
-#### 💡 3. Saran Langkah Praktis Selanjutnya
-- Anda dapat menyalin draf tabel di atas ke berkas baru melalui tombol **"Buat Dokumen Baru"** di panel editor sebelah kanan.
-- Silakan berikan detail atau angka pembanding kuantitas muatan lebih lanjut di kolom chat agar saya dapat melakukan penyesuaian simulasi draf dokumen ini secara lebih presisi sesuai keinginan Anda.`
+#### 💬 3. Rekomendasi Diskusi Lanjutan
+Apakah Anda ingin mendalami simulasi angka finansial untuk pilar ini, memperbarui draf SOP, atau melihat mitigasi risiko spesifiknya? Silakan tanyakan hal apa pun yang ingin diperjelas!`
   };
 }
 

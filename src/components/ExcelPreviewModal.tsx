@@ -1,20 +1,21 @@
-import React, { useState, useEffect } from "react";
-import { Download, Table, X, Edit2, Play, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import { Download, Table, X, Edit2, Play, Plus, ChevronLeft, ChevronRight, Sparkles, CheckCircle2, HelpCircle } from "lucide-react";
 import { ExcelData, exportToExcelFile } from "../utils/excelExporter";
+import { getFinancialRecommendations } from "../utils/financialRecommendations";
 
 interface ExcelPreviewModalProps {
   projectTitle: string;
-  division: string;
+  division?: string;
   isOpen: boolean;
   onClose: () => void;
-  initialCapex?: number; // fallback values
+  initialCapex?: number; // fallback values in millions
   annualSavings?: number;
   salesIncrease?: number;
 }
 
 export function ExcelPreviewModal({
   projectTitle,
-  division,
+  division = "Umum",
   isOpen,
   onClose,
   initialCapex,
@@ -23,70 +24,84 @@ export function ExcelPreviewModal({
 }: ExcelPreviewModalProps) {
   const [activeTab, setActiveTab] = useState<"tamsamsom" | "pl">("tamsamsom");
   
-  // Interactive finance variables populated with template default values
-  const [tam, setTam] = useState<number>(500000000000);
-  const [sam, setSam] = useState<number>(75000000000);
-  const [som, setSom] = useState<number>(15000000000);
+  // Retrieve standard financial recommendation for current project title
+  const rec = useMemo(() => getFinancialRecommendations(projectTitle), [projectTitle]);
 
-  // Capex components
-  const [capexTrucks, setCapexTrucks] = useState<number>(1336500000);
-  const [capexIT, setCapexIT] = useState<number>(148500000);
-  const [capexGudang, setCapexGudang] = useState<number>(99000000);
-  const [capexIzin, setCapexIzin] = useState<number>(66000000);
+  // Interactive finance variables populated with recommendation values
+  const [tam, setTam] = useState<number>(rec.tam);
+  const [sam, setSam] = useState<number>(rec.sam);
+  const [som, setSom] = useState<number>(rec.som);
+
+  // Dynamic Capex components
+  const [capex1, setCapex1] = useState<number>(rec.capexAssetCount * rec.capexAssetPrice);
+  const [capex2, setCapex2] = useState<number>(rec.capexSecondary1Amount);
+  const [capex3, setCapex3] = useState<number>(rec.capexSecondary2Amount);
+  const [capex4, setCapex4] = useState<number>(rec.capexSecondary3Amount);
 
   // Year 1-3 Revenue Projections
-  const [revenueY1, setRevenueY1] = useState<number>(1620000000);
-  const [revenueY2, setRevenueY2] = useState<number>(2025000000);
-  const [revenueY3, setRevenueY3] = useState<number>(2430000000);
+  const [revenueY1, setRevenueY1] = useState<number>(rec.revenueY1);
+  const [revenueY2, setRevenueY2] = useState<number>(rec.revenueY2);
+  const [revenueY3, setRevenueY3] = useState<number>(rec.revenueY3);
 
   // Year 1-3 OPEX components
-  const [gajiY1, setGajiY1] = useState<number>(240000000);
-  const [gajiY2, setGajiY2] = useState<number>(264000000);
-  const [gajiY3, setGajiY3] = useState<number>(290400000);
+  const [opex1Y1, setOpex1Y1] = useState<number>(rec.opex1Amount * 12);
+  const [opex1Y2, setOpex1Y2] = useState<number>(Math.round(rec.opex1Amount * 12 * 1.1));
+  const [opex1Y3, setOpex1Y3] = useState<number>(Math.round(rec.opex1Amount * 12 * 1.2));
 
-  const [bbmY1, setBbmY1] = useState<number>(360000000);
-  const [bbmY2, setBbmY2] = useState<number>(432000000);
-  const [bbmY3, setBbmY3] = useState<number>(496800000);
+  const [opex2Y1, setOpex2Y1] = useState<number>(rec.opex2Amount * 12);
+  const [opex2Y2, setOpex2Y2] = useState<number>(Math.round(rec.opex2Amount * 12 * 1.08));
+  const [opex2Y3, setOpex2Y3] = useState<number>(Math.round(rec.opex2Amount * 12 * 1.15));
 
-  const [maintY1, setMaintY1] = useState<number>(40000000);
-  const [maintY2, setMaintY2] = useState<number>(50000000);
-  const [maintY3, setMaintY3] = useState<number>(60000000);
+  const [opex3Y1, setOpex3Y1] = useState<number>(rec.opex3Amount * 12);
+  const [opex3Y2, setOpex3Y2] = useState<number>(Math.round(rec.opex3Amount * 12 * 1.08));
+  const [opex3Y3, setOpex3Y3] = useState<number>(Math.round(rec.opex3Amount * 12 * 1.15));
 
-  const [sewaY1, setSewaY1] = useState<number>(120000000);
-  const [sewaY2, setSewaY2] = useState<number>(125000000);
-  const [sewaY3, setSewaY3] = useState<number>(130000000);
+  const [opex4Y1, setOpex4Y1] = useState<number>(rec.opex4Amount * 12);
+  const [opex4Y2, setOpex4Y2] = useState<number>(Math.round(rec.opex4Amount * 12 * 1.05));
+  const [opex4Y3, setOpex4Y3] = useState<number>(Math.round(rec.opex4Amount * 12 * 1.1));
 
+  // Reset to current recommendation values on open or project title update
   useEffect(() => {
     if (isOpen) {
-      if (initialCapex && initialCapex > 0) {
-        // Convert Juta to Full IDR
-        const capexFull = initialCapex * 1000000;
-        setCapexTrucks(Math.round(capexFull * 0.81));
-        setCapexIT(Math.round(capexFull * 0.09));
-        setCapexGudang(Math.round(capexFull * 0.06));
-        setCapexIzin(Math.round(capexFull * 0.04));
-      }
-      if (salesIncrease && salesIncrease > 0) {
-        const revFull = salesIncrease * 1000000;
-        setRevenueY1(revFull);
-        setRevenueY2(Math.round(revFull * 1.25));
-        setRevenueY3(Math.round(revFull * 1.50));
+      const r = getFinancialRecommendations(projectTitle);
+      setTam(r.tam);
+      setSam(r.sam);
+      setSom(r.som);
 
-        const estSom = salesIncrease * 12.5 * 1000000;
-        setSom(estSom);
-        setSam(estSom * 5);
-        setTam(estSom * 33.3);
-      }
+      setCapex1(r.capexAssetCount * r.capexAssetPrice);
+      setCapex2(r.capexSecondary1Amount);
+      setCapex3(r.capexSecondary2Amount);
+      setCapex4(r.capexSecondary3Amount);
+
+      setRevenueY1(r.revenueY1);
+      setRevenueY2(r.revenueY2);
+      setRevenueY3(r.revenueY3);
+
+      setOpex1Y1(r.opex1Amount * 12);
+      setOpex1Y2(Math.round(r.opex1Amount * 12 * 1.1));
+      setOpex1Y3(Math.round(r.opex1Amount * 12 * 1.2));
+
+      setOpex2Y1(r.opex2Amount * 12);
+      setOpex2Y2(Math.round(r.opex2Amount * 12 * 1.08));
+      setOpex2Y3(Math.round(r.opex2Amount * 12 * 1.15));
+
+      setOpex3Y1(r.opex3Amount * 12);
+      setOpex3Y2(Math.round(r.opex3Amount * 12 * 1.08));
+      setOpex3Y3(Math.round(r.opex3Amount * 12 * 1.15));
+
+      setOpex4Y1(r.opex4Amount * 12);
+      setOpex4Y2(Math.round(r.opex4Amount * 12 * 1.05));
+      setOpex4Y3(Math.round(r.opex4Amount * 12 * 1.1));
     }
-  }, [isOpen, initialCapex, salesIncrease, annualSavings]);
+  }, [isOpen, projectTitle]);
 
   // Selected cell state for simulation
   const [selectedCell, setSelectedCell] = useState<{ row: number; col: string; val: string; formula: string; id?: string }>({
-    row: 5,
-    col: "F",
-    val: "Excel Simulator Ready",
+    row: 7,
+    col: "D",
+    val: rec.tam.toString(),
     formula: "",
-    id: ""
+    id: "tam"
   });
 
   const handleFormulaBarChange = (newValStr: string) => {
@@ -97,25 +112,25 @@ export function ExcelPreviewModal({
       case "tam": setTam(newVal); break;
       case "sam": setSam(newVal); break;
       case "som": setSom(newVal); break;
-      case "capexTrucks": setCapexTrucks(newVal); break;
-      case "capexIT": setCapexIT(newVal); break;
-      case "capexGudang": setCapexGudang(newVal); break;
-      case "capexIzin": setCapexIzin(newVal); break;
+      case "capex1": setCapex1(newVal); break;
+      case "capex2": setCapex2(newVal); break;
+      case "capex3": setCapex3(newVal); break;
+      case "capex4": setCapex4(newVal); break;
       case "revenueY1": setRevenueY1(newVal); break;
       case "revenueY2": setRevenueY2(newVal); break;
       case "revenueY3": setRevenueY3(newVal); break;
-      case "gajiY1": setGajiY1(newVal); break;
-      case "gajiY2": setGajiY2(newVal); break;
-      case "gajiY3": setGajiY3(newVal); break;
-      case "bbmY1": setBbmY1(newVal); break;
-      case "bbmY2": setBbmY2(newVal); break;
-      case "bbmY3": setBbmY3(newVal); break;
-      case "maintY1": setMaintY1(newVal); break;
-      case "maintY2": setMaintY2(newVal); break;
-      case "maintY3": setMaintY3(newVal); break;
-      case "sewaY1": setSewaY1(newVal); break;
-      case "sewaY2": setSewaY2(newVal); break;
-      case "sewaY3": setSewaY3(newVal); break;
+      case "opex1Y1": setOpex1Y1(newVal); break;
+      case "opex1Y2": setOpex1Y2(newVal); break;
+      case "opex1Y3": setOpex1Y3(newVal); break;
+      case "opex2Y1": setOpex2Y1(newVal); break;
+      case "opex2Y2": setOpex2Y2(newVal); break;
+      case "opex2Y3": setOpex2Y3(newVal); break;
+      case "opex3Y1": setOpex3Y1(newVal); break;
+      case "opex3Y2": setOpex3Y2(newVal); break;
+      case "opex3Y3": setOpex3Y3(newVal); break;
+      case "opex4Y1": setOpex4Y1(newVal); break;
+      case "opex4Y2": setOpex4Y2(newVal); break;
+      case "opex4Y3": setOpex4Y3(newVal); break;
       default: break;
     }
   };
@@ -123,12 +138,12 @@ export function ExcelPreviewModal({
   if (!isOpen) return null;
 
   // Calculators
-  const totalCapex = capexTrucks + capexIT + capexGudang + capexIzin;
+  const totalCapex = capex1 + capex2 + capex3 + capex4;
 
   // OPEX Totals
-  const totalOpexY1 = gajiY1 + bbmY1 + maintY1 + sewaY1;
-  const totalOpexY2 = gajiY2 + bbmY2 + maintY2 + sewaY2;
-  const totalOpexY3 = gajiY3 + bbmY3 + maintY3 + sewaY3;
+  const totalOpexY1 = opex1Y1 + opex2Y1 + opex3Y1 + opex4Y1;
+  const totalOpexY2 = opex1Y2 + opex2Y2 + opex3Y2 + opex4Y2;
+  const totalOpexY3 = opex1Y3 + opex2Y3 + opex3Y3 + opex4Y3;
 
   // Net Profit
   const netProfitY1 = revenueY1 - totalOpexY1;
@@ -163,52 +178,117 @@ export function ExcelPreviewModal({
   const paybackPeriodVal = avgNetProfit > 0 ? totalCapex / avgNetProfit : 0;
 
   const formatIDR = (num: number) => {
-    return num.toLocaleString("id-ID");
+    return Math.round(num).toLocaleString("id-ID");
   };
 
   const handleDownload = () => {
     const data: ExcelData = {
       projectTitle,
       division,
+      archetypeLabel: rec.archetypeLabel,
+      sectorTag: rec.sectorTag,
       tamValue: tam,
       samValue: sam,
       somValue: som,
-      capexTrucks,
-      capexIT,
-      capexGudang,
-      capexIzin,
+      tamDesc: rec.tamDesc,
+      samDesc: rec.samDesc,
+      somDesc: rec.somDesc,
+      capexTrucks: capex1,
+      capexIT: capex2,
+      capexGudang: capex3,
+      capexIzin: capex4,
+      capex1Label: rec.assetName,
+      capex2Label: rec.capexSecondary1Name,
+      capex3Label: rec.capexSecondary2Name,
+      capex4Label: rec.capexSecondary3Name,
       revenueY1,
       revenueY2,
       revenueY3,
-      gajiY1, gajiY2, gajiY3,
-      bbmY1, bbmY2, bbmY3,
-      maintY1, maintY2, maintY3,
-      sewaY1, sewaY2, sewaY3
+      gajiY1: opex1Y1, gajiY2: opex1Y2, gajiY3: opex1Y3,
+      bbmY1: opex2Y1, bbmY2: opex2Y2, bbmY3: opex2Y3,
+      maintY1: opex3Y1, maintY2: opex3Y2, maintY3: opex3Y3,
+      sewaY1: opex4Y1, sewaY2: opex4Y2, sewaY3: opex4Y3,
+      opex1Label: rec.opex1Name,
+      opex2Label: rec.opex2Name,
+      opex3Label: rec.opex3Name,
+      opex4Label: rec.opex4Name
     };
     exportToExcelFile(data);
   };
 
+  const handleResetToDashboard = () => {
+    const r = getFinancialRecommendations(projectTitle);
+    setTam(r.tam);
+    setSam(r.sam);
+    setSom(r.som);
+
+    setCapex1(r.capexAssetCount * r.capexAssetPrice);
+    setCapex2(r.capexSecondary1Amount);
+    setCapex3(r.capexSecondary2Amount);
+    setCapex4(r.capexSecondary3Amount);
+
+    setRevenueY1(r.revenueY1);
+    setRevenueY2(r.revenueY2);
+    setRevenueY3(r.revenueY3);
+
+    setOpex1Y1(r.opex1Amount * 12);
+    setOpex1Y2(Math.round(r.opex1Amount * 12 * 1.1));
+    setOpex1Y3(Math.round(r.opex1Amount * 12 * 1.2));
+
+    setOpex2Y1(r.opex2Amount * 12);
+    setOpex2Y2(Math.round(r.opex2Amount * 12 * 1.08));
+    setOpex2Y3(Math.round(r.opex2Amount * 12 * 1.15));
+
+    setOpex3Y1(r.opex3Amount * 12);
+    setOpex3Y2(Math.round(r.opex3Amount * 12 * 1.08));
+    setOpex3Y3(Math.round(r.opex3Amount * 12 * 1.15));
+
+    setOpex4Y1(r.opex4Amount * 12);
+    setOpex4Y2(Math.round(r.opex4Amount * 12 * 1.05));
+    setOpex4Y3(Math.round(r.opex4Amount * 12 * 1.1));
+  };
+
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-[#f3f2f1] text-[#333333] rounded-2xl w-full max-w-7xl h-[92vh] border border-slate-300 shadow-2xl flex flex-col overflow-hidden font-sans">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+      <div className="bg-[#f8fafc] text-slate-800 rounded-2xl w-full max-w-7xl h-[92vh] border border-slate-300 shadow-2xl flex flex-col overflow-hidden font-sans">
         
         {/* TOP CONTROL PANEL BAR */}
-        <div className="bg-[#107c41] text-white px-6 py-4 flex items-center justify-between shadow-md">
+        <div className="bg-[#107c41] text-white px-6 py-3.5 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-md shrink-0">
           <div className="flex items-center gap-3">
-            <div className="bg-white text-[#107c41] p-1.5 rounded-lg shadow">
+            <div className="bg-white text-[#107c41] p-2 rounded-xl shadow-sm">
               <Table className="h-5 w-5" />
             </div>
             <div className="text-left">
-              <span className="text-[9px] block font-bold uppercase tracking-widest text-[#dff0d8] font-mono leading-none">Excel Financial Workbook Simulator</span>
-              <h3 className="text-sm font-extrabold uppercase truncate max-w-lg mt-0.5">{projectTitle}</h3>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[9px] font-black uppercase tracking-wider text-emerald-100 font-mono bg-white/10 px-2 py-0.5 rounded">
+                  EXCEL SPREADSHEET ENGINE
+                </span>
+                <span className="text-[9px] font-black uppercase tracking-wider text-emerald-200 font-mono">
+                  ARKETIPE: {rec.archetypeLabel.toUpperCase()}
+                </span>
+                <span className="text-[9px] font-black uppercase tracking-wider text-cyan-200 font-mono bg-cyan-900/40 px-2 py-0.5 rounded border border-cyan-400/30">
+                  SKALA: {rec.scaleCategory.toUpperCase()}
+                </span>
+              </div>
+              <h3 className="text-sm md:text-base font-extrabold uppercase truncate max-w-xl mt-0.5 text-white">
+                Simulator Kelayakan &amp; Ekspor Excel: {projectTitle}
+              </h3>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={handleResetToDashboard}
+              className="bg-emerald-800/80 hover:bg-emerald-800 text-white text-[11px] font-bold px-3 py-2 rounded-lg flex items-center gap-1.5 transition active:scale-97 cursor-pointer border border-emerald-600/50"
+              title="Sinkronkan ulang seluruh angka dengan rekomendasi dashboard"
+            >
+              <span>🔄 Sinkronkan Data Dashboard</span>
+            </button>
             <button
               type="button"
               onClick={handleDownload}
-              className="bg-white text-[#107c41] hover:bg-emerald-50 text-[11px] font-bold px-4 py-2 rounded-lg flex items-center gap-1.5 shadow-sm transition active:scale-97 cursor-pointer"
+              className="bg-white text-[#107c41] hover:bg-emerald-50 text-[11px] font-black px-4 py-2 rounded-lg flex items-center gap-1.5 shadow-sm transition active:scale-97 cursor-pointer"
             >
               <Download className="h-4 w-4" />
               <span>Unduh File Excel (.xls)</span>
@@ -216,41 +296,53 @@ export function ExcelPreviewModal({
             <button
               type="button"
               onClick={onClose}
-              className="bg-emerald-850 bg-emerald-750 hover:bg-emerald-800 text-white text-[11px] font-bold px-3.5 py-2 rounded-lg transition active:scale-97 cursor-pointer border border-[#0d6434]"
+              className="bg-emerald-950/60 hover:bg-emerald-950 text-white text-[11px] font-bold px-3 py-2 rounded-lg transition active:scale-97 cursor-pointer border border-emerald-900/60"
             >
-              Tutup Simulator ✕
+              Tutup ✕
             </button>
           </div>
         </div>
 
         {/* RIBBON ACTIONS PRESETS BAR */}
-        <div className="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between text-xs text-slate-600 gap-4 shrink-0">
-          <div className="flex items-center gap-5">
-            <div className="flex items-center gap-1 bg-slate-100 px-2.5 py-1.5 rounded-lg border border-slate-200">
+        <div className="bg-white border-b border-slate-200 px-4 py-2 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-600 gap-2 shrink-0">
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-1 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
               <span className="font-bold text-[#107c41] text-[10px] font-mono">FILE:</span>
-              <span className="text-[10px] font-bold">ANALISIS_KELAYAKAN.xlsx</span>
+              <span className="text-[10px] font-bold text-slate-800">ESTIMASI_KELAYAKAN_{rec.archetype.toUpperCase()}.xlsx</span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wide">Petunjuk Penggunaan:</span>
-              <span className="text-[10px] text-slate-650 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded font-medium">
-                Double-click / ketik pada sel berlatar putih untuk menyimulasikan analisis keuangan live!
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wide">Status Sinkronisasi:</span>
+              <span className="text-[10px] text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded font-bold flex items-center gap-1">
+                <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                Angka Estimasi 100% Seragam dengan UI Dashboard
               </span>
             </div>
           </div>
-          <div className="text-[10px] font-mono font-bold text-slate-400">
-            Microsoft Excel 365 Web Engine
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setActiveTab("tamsamsom")}
+              className={`px-3 py-1 text-[10.5px] font-bold rounded-md transition ${activeTab === "tamsamsom" ? "bg-emerald-700 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+            >
+              1. Lembar TAM SAM SOM
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("pl")}
+              className={`px-3 py-1 text-[10.5px] font-bold rounded-md transition ${activeTab === "pl" ? "bg-emerald-700 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+            >
+              2. Lembar P&amp;L &amp; Cash Flow
+            </button>
           </div>
         </div>
 
         {/* EXCEL FORMULA BAR */}
-        <div className="bg-[#f3f2f1] border-b border-slate-300 py-1.5 px-3 flex items-center gap-1.5 text-xs text-slate-700 font-mono shrink-0">
+        <div className="bg-[#f1f5f9] border-b border-slate-300 py-1.5 px-3 flex items-center gap-1.5 text-xs text-slate-700 font-mono shrink-0">
           {/* Cell Index Indicator */}
           <div className="bg-white border border-slate-300 px-3 py-1 rounded text-center font-bold text-[#107c41] min-w-[50px] shadow-sm">
             {selectedCell.col}{selectedCell.row}
           </div>
-          {/* Split separator */}
           <div className="text-slate-400 px-1 font-sans text-lg">|</div>
-          {/* Formula symbol */}
           <div className="text-slate-500 italic font-bold select-none text-sm font-sans mr-1">
             fx
           </div>
@@ -260,811 +352,705 @@ export function ExcelPreviewModal({
               type="text"
               value={selectedCell.formula ? selectedCell.formula : selectedCell.val}
               onChange={(e) => handleFormulaBarChange(e.target.value)}
-              className="flex-1 bg-white border border-emerald-300 focus:ring-1 focus:ring-emerald-500 outline-none px-3 py-1 rounded shadow-sm text-left font-mono text-slate-800"
-              placeholder="Edit nilai sel di sini..."
+              className="flex-1 bg-white border border-emerald-300 focus:ring-1 focus:ring-emerald-500 outline-none px-3 py-1 rounded shadow-sm text-left font-mono text-slate-800 text-xs"
+              placeholder="Edit nilai estimasi sel di sini..."
             />
           ) : (
-            <div className="flex-1 bg-slate-100 border border-slate-200 px-3 py-1 rounded shadow-sm text-left truncate text-slate-500 font-mono select-all">
+            <div className="flex-1 bg-slate-100 border border-slate-200 px-3 py-1 rounded shadow-sm text-left truncate text-slate-500 font-mono text-xs">
               {selectedCell.formula ? selectedCell.formula : selectedCell.val}
             </div>
           )}
         </div>
 
         {/* EXCEL GRID CONTENT */}
-        <div className="flex-grow overflow-auto bg-white p-2 flex flex-col relative select-none">
-          
-          <table className="border-collapse table-fixed w-full min-w-[1000px] text-[11px] text-[#242424] font-sans">
-            {/* Column Letter Headers */}
+        <div className="flex-grow overflow-auto bg-white p-3 flex flex-col relative select-none">
+          <table className="border-collapse table-fixed w-full min-w-[1050px] text-[11px] text-slate-800 font-sans">
             <thead>
-              <tr className="bg-[#f3f2f1]">
+              <tr className="bg-[#f1f5f9]">
                 <th className="w-10 border border-slate-300 text-center py-1 font-normal font-mono text-slate-500"></th>
                 <th className="w-12 border border-slate-300 text-center font-normal font-mono text-slate-500">A</th>
-                <th className="w-220 border border-slate-300 text-center font-normal font-mono text-slate-500">B</th>
-                <th className="w-400 border border-slate-300 text-center font-normal font-mono text-slate-500">C</th>
-                <th className="w-160 border border-slate-300 text-center font-normal font-mono text-slate-500">D</th>
-                <th className="w-160 border border-slate-300 text-center font-normal font-mono text-slate-500">E</th>
-                <th className="w-160 border border-slate-300 text-center font-normal font-mono text-slate-500">F</th>
-                <th className="w-160 border border-slate-300 text-center font-normal font-mono text-slate-500">G</th>
+                <th className="w-260 border border-slate-300 text-center font-normal font-mono text-slate-500">B</th>
+                <th className="w-420 border border-slate-300 text-center font-normal font-mono text-slate-500">C</th>
+                <th className="w-180 border border-slate-300 text-center font-normal font-mono text-slate-500">D</th>
+                <th className="w-180 border border-slate-300 text-center font-normal font-mono text-slate-500">E</th>
+                <th className="w-180 border border-slate-300 text-center font-normal font-mono text-slate-500">F</th>
               </tr>
             </thead>
 
             {activeTab === "tamsamsom" ? (
               <tbody>
                 {/* TAM SAM SOM WORKSHEET */}
-                {/* Row 1 */}
                 <tr className="h-6">
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">1</td>
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">1</td>
                   <td className="border border-slate-100"></td>
-                  <td colSpan={5} className="font-extrabold text-[#1f4e78] text-sm pl-2 py-1 uppercase text-left">
-                    ANALISIS KELAYAKAN PROYEK LOGISTIK
+                  <td colSpan={5} className="font-extrabold text-[#107c41] text-sm pl-2 py-1 uppercase text-left">
+                    ESTIMASI KELAYAKAN PASAR: {projectTitle.toUpperCase()}
                   </td>
                 </tr>
-                {/* Row 2 */}
                 <tr className="h-5">
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">2</td>
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">2</td>
                   <td className="border border-slate-100"></td>
                   <td colSpan={5} className="italic text-slate-500 pl-2 text-left">
-                    Estimasi Pasar (TAM SAM SOM) &amp; Ringkasan Metrik Finansial
+                    Arketipe: {rec.archetypeLabel} | Sektor: {rec.sectorTag} | Estimasi Pasar (TAM SAM SOM) &amp; Ringkasan Metrik
                   </td>
                 </tr>
-                {/* Row 3 */}
                 <tr className="h-4">
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">3</td>
-                  <td colSpan={7} className="border border-slate-100"></td>
-                </tr>
-                
-                {/* Row 4 */}
-                <tr className="h-4">
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">4</td>
-                  <td colSpan={7} className="border border-slate-100"></td>
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">3</td>
+                  <td colSpan={6} className="border border-slate-100"></td>
                 </tr>
 
-                {/* Row 5: Section A */}
+                {/* Section A */}
                 <tr className="h-6">
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">5</td>
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">4</td>
                   <td className="border border-slate-100"></td>
-                  <td colSpan={5} className="font-bold text-[#1f4e78] text-xs pl-2 text-left">
+                  <td colSpan={5} className="font-bold text-slate-800 text-xs pl-2 text-left">
                     A. Estimasi Ukuran Pasar (Market Sizing)
                   </td>
                 </tr>
 
-                {/* Row 6: Header A */}
-                <tr className="bg-[#1f4e78] text-white font-bold h-7">
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">6</td>
+                <tr className="bg-[#107c41] text-white font-bold h-7">
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">5</td>
                   <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-3 text-left">Metrik</td>
-                  <td className="border border-slate-300 px-3 text-left">Deskripsi / Cakupan</td>
-                  <td className="border border-slate-300 px-3 text-right">Nilai Per Tahun (IDR)</td>
-                  <td colSpan={3} className="border border-slate-300"></td>
+                  <td className="border border-slate-300 px-3 text-left">Metrik Estimasi</td>
+                  <td className="border border-slate-300 px-3 text-left">Deskripsi &amp; Cakupan Metodologi</td>
+                  <td className="border border-slate-300 px-3 text-right">Nilai Estimasi (IDR)</td>
+                  <td colSpan={2} className="border border-slate-300"></td>
                 </tr>
 
-                 {/* Row 7: TAM Row */}
-                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 7, col: "D", val: tam.toString(), formula: "", id: "tam" })}>
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">7</td>
+                {/* TAM */}
+                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 6, col: "D", val: tam.toString(), formula: "", id: "tam" })}>
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">6</td>
                   <td className="border border-slate-300"></td>
                   <td className="border border-slate-300 px-3 font-bold text-left">TAM (Total Addressable Market)</td>
-                  <td className="border border-slate-300 px-3 text-slate-600 text-left">Total seluruh potensi pasar logistik di wilayah target (misal: Seluruh Indonesia/Provinsi)</td>
+                  <td className="border border-slate-300 px-3 text-slate-600 text-left">{rec.tamDesc}</td>
                   <td className="border border-slate-300 p-0 text-right bg-white select-text h-7">
                     <input 
                       type="number"
                       value={tam}
-                      onFocus={() => setSelectedCell({row: 7, col: "D", val: tam.toString(), formula: "", id: "tam" })}
+                      onFocus={() => setSelectedCell({row: 6, col: "D", val: tam.toString(), formula: "", id: "tam" })}
                       onChange={(e) => {
                         const val = Number(e.target.value);
                         setTam(val);
-                        setSelectedCell(prev => prev.row === 7 && prev.col === "D" ? { ...prev, val: val.toString() } : prev);
+                        setSelectedCell(prev => prev.row === 6 && prev.col === "D" ? { ...prev, val: val.toString() } : prev);
                       }}
-                      className="w-full h-full text-right outline-none border-none px-3 py-1 focus:bg-emerald-50 focus:ring-1 focus:ring-emerald-500 text-xs font-mono cursor-pointer"
+                      className="w-full h-full text-right outline-none border-none px-3 py-1 focus:bg-emerald-50 focus:ring-1 focus:ring-emerald-500 text-xs font-mono cursor-pointer font-bold text-slate-800"
                     />
-                  </td>
-                  <td colSpan={3} className="border border-slate-200 bg-[#fafafa]"></td>
-                </tr>
-
-                {/* Row 8: SAM Row */}
-                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 8, col: "D", val: sam.toString(), formula: "", id: "sam" })}>
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">8</td>
-                  <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-3 font-bold text-left">SAM (Serviceable Addressable Market)</td>
-                  <td className="border border-slate-300 px-3 text-slate-600 text-left">Pangsa pasar TAM yang sesuai dengan model bisnis &amp; jangkauan armada Anda</td>
-                  <td className="border border-slate-300 p-0 text-right bg-white select-text h-7">
-                    <input 
-                      type="number"
-                      value={sam}
-                      onFocus={() => setSelectedCell({row: 8, col: "D", val: sam.toString(), formula: "", id: "sam" })}
-                      onChange={(e) => {
-                        const val = Number(e.target.value);
-                        setSam(val);
-                        setSelectedCell(prev => prev.row === 8 && prev.col === "D" ? { ...prev, val: val.toString() } : prev);
-                      }}
-                      className="w-full h-full text-right outline-none border-none px-3 py-1 focus:bg-emerald-50 focus:ring-1 focus:ring-emerald-500 text-xs font-mono cursor-pointer"
-                    />
-                  </td>
-                  <td colSpan={3} className="border border-slate-200 bg-[#fafafa]"></td>
-                </tr>
-
-                {/* Row 9: SOM Row */}
-                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 9, col: "D", val: som.toString(), formula: "", id: "som" })}>
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">9</td>
-                  <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-3 font-bold text-left">SOM (Serviceable Obtainable Market)</td>
-                  <td className="border border-slate-300 px-3 text-slate-600 text-left">Target nyata pangsa pasar yang sanggup dilayani oleh kapasitas operasional Anda saat ini</td>
-                  <td className="border border-slate-300 p-0 text-right bg-white select-text h-7">
-                    <input 
-                      type="number"
-                      value={som}
-                      onFocus={() => setSelectedCell({row: 9, col: "D", val: som.toString(), formula: "", id: "som" })}
-                      onChange={(e) => {
-                        const val = Number(e.target.value);
-                        setSom(val);
-                        setSelectedCell(prev => prev.row === 9 && prev.col === "D" ? { ...prev, val: val.toString() } : prev);
-                      }}
-                      className="w-full h-full text-right outline-none border-none px-3 py-1 focus:bg-emerald-50 focus:ring-1 focus:ring-emerald-500 text-xs font-mono cursor-pointer"
-                    />
-                  </td>
-                  <td colSpan={3} className="border border-slate-200 bg-[#fafafa]"></td>
-                </tr>
-
-                {/* Row 10: Spacer */}
-                <tr className="h-5">
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">10</td>
-                  <td colSpan={7} className="border border-slate-100"></td>
-                </tr>
-
-                {/* Row 11: Spacer */}
-                <tr className="h-5">
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">11</td>
-                  <td colSpan={7} className="border border-slate-100"></td>
-                </tr>
-
-                {/* Row 12: Section B */}
-                <tr className="h-6">
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">12</td>
-                  <td className="border border-slate-100"></td>
-                  <td colSpan={5} className="font-bold text-[#1f4e78] text-xs pl-2 text-left">
-                    B. Ringkasan Kelayakan Proyek (Auto-calculated)
-                  </td>
-                </tr>
-
-                {/* Row 13: Header B */}
-                <tr className="bg-[#1f4e78] text-white font-bold h-7">
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">13</td>
-                  <td className="border border-slate-300"></td>
-                  <td colSpan={2} className="border border-slate-300 px-3 text-left">Indikator Keuangan</td>
-                  <td className="border border-slate-300 px-3 text-right">Nilai</td>
-                  <td className="border border-slate-300 px-3 text-left">Ambang Batas Kelayakan</td>
-                  <td colSpan={2} className="border border-slate-300"></td>
-                </tr>
-
-                {/* Row 14: CAPEX Row */}
-                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 14, col: "D", val: totalCapex.toString(), formula: "='2. P&L & Cash Flow'!C7"})}>
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">14</td>
-                  <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-3 font-bold text-left">Total CAPEX (Investasi Awal)</td>
-                  <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-3 text-right bg-slate-50 font-bold font-mono text-slate-900 text-xs">
-                    Rp {formatIDR(totalCapex)}
-                  </td>
-                  <td className="border border-slate-300 px-3 text-left bg-[#e2efda] text-[#385723] font-bold">
-                    Berdasarkan Kebutuhan Aset
                   </td>
                   <td colSpan={2} className="border border-slate-200 bg-[#fafafa]"></td>
                 </tr>
 
-                {/* Row 15: Pendapatan Row */}
-                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 15, col: "D", val: revenueY1.toString(), formula: "='2. P&L & Cash Flow'!C13"})}>
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">15</td>
+                {/* SAM */}
+                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 7, col: "D", val: sam.toString(), formula: "", id: "sam" })}>
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">7</td>
                   <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-3 font-bold text-left">Proyeksi Pendapatan (Tahun 1)</td>
+                  <td className="border border-slate-300 px-3 font-bold text-left">SAM (Serviceable Addressable Market)</td>
+                  <td className="border border-slate-300 px-3 text-slate-600 text-left">{rec.samDesc}</td>
+                  <td className="border border-slate-300 p-0 text-right bg-white select-text h-7">
+                    <input 
+                      type="number"
+                      value={sam}
+                      onFocus={() => setSelectedCell({row: 7, col: "D", val: sam.toString(), formula: "", id: "sam" })}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        setSam(val);
+                        setSelectedCell(prev => prev.row === 7 && prev.col === "D" ? { ...prev, val: val.toString() } : prev);
+                      }}
+                      className="w-full h-full text-right outline-none border-none px-3 py-1 focus:bg-emerald-50 focus:ring-1 focus:ring-emerald-500 text-xs font-mono cursor-pointer font-bold text-slate-800"
+                    />
+                  </td>
+                  <td colSpan={2} className="border border-slate-200 bg-[#fafafa]"></td>
+                </tr>
+
+                {/* SOM */}
+                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 8, col: "D", val: som.toString(), formula: "", id: "som" })}>
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">8</td>
                   <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-3 text-right bg-slate-50 font-bold font-mono text-slate-900 text-xs">
+                  <td className="border border-slate-300 px-3 font-bold text-left">SOM (Serviceable Obtainable Market)</td>
+                  <td className="border border-slate-300 px-3 text-slate-600 text-left">{rec.somDesc}</td>
+                  <td className="border border-slate-300 p-0 text-right bg-white select-text h-7">
+                    <input 
+                      type="number"
+                      value={som}
+                      onFocus={() => setSelectedCell({row: 8, col: "D", val: som.toString(), formula: "", id: "som" })}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        setSom(val);
+                        setSelectedCell(prev => prev.row === 8 && prev.col === "D" ? { ...prev, val: val.toString() } : prev);
+                      }}
+                      className="w-full h-full text-right outline-none border-none px-3 py-1 focus:bg-emerald-50 focus:ring-1 focus:ring-emerald-500 text-xs font-mono cursor-pointer font-bold text-slate-800"
+                    />
+                  </td>
+                  <td colSpan={2} className="border border-slate-200 bg-[#fafafa]"></td>
+                </tr>
+
+                <tr className="h-5">
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">9</td>
+                  <td colSpan={6} className="border border-slate-100"></td>
+                </tr>
+
+                {/* Section B */}
+                <tr className="h-6">
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">10</td>
+                  <td className="border border-slate-100"></td>
+                  <td colSpan={5} className="font-bold text-slate-800 text-xs pl-2 text-left">
+                    B. Ringkasan Kelayakan Proyek (Seragam dengan Dashboard)
+                  </td>
+                </tr>
+
+                <tr className="bg-[#107c41] text-white font-bold h-7">
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">11</td>
+                  <td className="border border-slate-300"></td>
+                  <td colSpan={2} className="border border-slate-300 px-3 text-left">Indikator Keuangan</td>
+                  <td className="border border-slate-300 px-3 text-right">Nilai Estimasi</td>
+                  <td className="border border-slate-300 px-3 text-left">Ambang Batas Kelayakan</td>
+                  <td className="border border-slate-300"></td>
+                </tr>
+
+                {/* CAPEX Summary */}
+                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 12, col: "D", val: totalCapex.toString(), formula: "='2. P&L & Cash Flow'!C10"})}>
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">12</td>
+                  <td className="border border-slate-300"></td>
+                  <td colSpan={2} className="border border-slate-300 px-3 font-bold text-left">Total CAPEX (Investasi Awal)</td>
+                  <td className="border border-slate-300 px-3 text-right bg-slate-50 font-bold font-mono text-emerald-800 text-xs">
+                    Rp {formatIDR(totalCapex)}
+                  </td>
+                  <td className="border border-slate-300 px-3 text-left bg-[#e2efda] text-[#385723] font-bold">
+                    Sesuai Alokasi Aset Modal ({rec.archetypeLabel})
+                  </td>
+                  <td className="border border-slate-200 bg-[#fafafa]"></td>
+                </tr>
+
+                {/* Revenue Y1 Summary */}
+                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 13, col: "D", val: revenueY1.toString(), formula: "='2. P&L & Cash Flow'!C13"})}>
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">13</td>
+                  <td className="border border-slate-300"></td>
+                  <td colSpan={2} className="border border-slate-300 px-3 font-bold text-left">Proyeksi Pendapatan (Tahun 1)</td>
+                  <td className="border border-slate-300 px-3 text-right bg-slate-50 font-bold font-mono text-emerald-800 text-xs">
                     Rp {formatIDR(revenueY1)}
                   </td>
                   <td className="border border-slate-300 px-3 text-left bg-[#e2efda] text-[#385723] font-bold">
                     Target SOM minimum terpenuhi
                   </td>
-                  <td colSpan={2} className="border border-slate-200 bg-[#fafafa]"></td>
+                  <td className="border border-slate-200 bg-[#fafafa]"></td>
                 </tr>
 
-                {/* Row 16: NPM Row */}
-                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 16, col: "D", val: averageNpm.toFixed(1) + "%", formula: "=AVERAGE('2. P&L & Cash Flow'!C21:E21)"})}>
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">16</td>
+                {/* NPM Summary */}
+                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 14, col: "D", val: averageNpm.toFixed(1) + "%", formula: "=AVERAGE('2. P&L & Cash Flow'!C21:E21)"})}>
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">14</td>
                   <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-3 font-bold text-left">Net Profit Margin (Rata-rata)</td>
-                  <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-3 text-right bg-slate-50 font-bold font-mono text-slate-900 text-xs">
+                  <td colSpan={2} className="border border-slate-300 px-3 font-bold text-left">Net Profit Margin (Rata-rata)</td>
+                  <td className="border border-slate-300 px-3 text-right bg-slate-50 font-bold font-mono text-cyan-800 text-xs">
                     {averageNpm.toFixed(1)}%
                   </td>
                   <td className="border border-slate-300 px-3 text-left bg-[#e2efda] text-[#385723] font-bold">
-                    Positif (&gt; 10%)
+                    Tingkat Margin Sehat (&gt; 15%)
                   </td>
-                  <td colSpan={2} className="border border-slate-200 bg-[#fafafa]"></td>
+                  <td className="border border-slate-200 bg-[#fafafa]"></td>
                 </tr>
 
-                {/* Row 17: Cash Flow Row */}
-                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 17, col: "D", val: (netCashFlowY1 + netCashFlowY2 + netCashFlowY3).toString(), formula: "=SUM('2. P&L & Cash Flow'!C26:E26)"})}>
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">17</td>
+                {/* Net Cash flow Summary */}
+                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 15, col: "D", val: (netCashFlowY1 + netCashFlowY2 + netCashFlowY3).toString(), formula: "=SUM('2. P&L & Cash Flow'!C26:E26)"})}>
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">15</td>
                   <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-3 font-bold text-left">Total Arus Kas Bersih (3 Tahun)</td>
-                  <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-3 text-right bg-slate-50 font-bold font-mono text-slate-900 text-xs">
+                  <td colSpan={2} className="border border-slate-300 px-3 font-bold text-left">Total Arus Kas Bersih (3 Tahun)</td>
+                  <td className="border border-slate-300 px-3 text-right bg-slate-50 font-bold font-mono text-emerald-800 text-xs">
                     Rp {formatIDR(netCashFlowY1 + netCashFlowY2 + netCashFlowY3)}
                   </td>
                   <td className="border border-slate-300 px-3 text-left bg-[#e2efda] text-[#385723] font-bold">
-                    Positif (Kumulatif)
+                    Positif Kumulatif
                   </td>
-                  <td colSpan={2} className="border border-slate-200 bg-[#fafafa]"></td>
+                  <td className="border border-slate-200 bg-[#fafafa]"></td>
                 </tr>
 
-                {/* Row 18: Payback Row */}
-                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 18, col: "D", val: paybackPeriodVal.toFixed(1) + " Tahun", formula: "=C14/AVERAGE('2. P&L & Cash Flow'!C20:E20)"})}>
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">18</td>
+                {/* Payback Period */}
+                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 16, col: "D", val: paybackPeriodVal.toFixed(1) + " Tahun", formula: "=C12/AVERAGE('2. P&L & Cash Flow'!C20:E20)"})}>
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">16</td>
                   <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-3 font-bold text-left">Payback Period / ROI (Tahun)</td>
-                  <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-3 text-right bg-slate-50 font-bold font-mono text-[#385723] text-xs">
-                    {paybackPeriodVal.toFixed(1)} Tahun
+                  <td colSpan={2} className="border border-slate-300 px-3 font-bold text-left">Estimasi Payback Period (PBP)</td>
+                  <td className="border border-slate-300 px-3 text-right bg-slate-50 font-black font-mono text-[#107c41] text-xs">
+                    {paybackPeriodVal.toFixed(1)} Tahun ({Math.round(paybackPeriodVal * 12)} Bulan)
                   </td>
                   <td className="border border-slate-300 px-3 text-left bg-[#e2efda] text-[#385723] font-bold">
-                    Kurang dari 3 Tahun
+                    Layak Investasi (&lt; 3 Tahun)
                   </td>
-                  <td colSpan={2} className="border border-slate-200 bg-[#fafafa]"></td>
+                  <td className="border border-slate-200 bg-[#fafafa]"></td>
                 </tr>
               </tbody>
             ) : (
               <tbody>
                 {/* P&L & CASH FLOW WORKSHEET */}
-                {/* Row 1: Empty Spacer */}
-                <tr className="h-4">
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">1</td>
-                  <td colSpan={7} className="border border-slate-100"></td>
-                </tr>
-
-                {/* Row 2: Title */}
                 <tr className="h-6">
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">2</td>
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">1</td>
                   <td className="border border-slate-100"></td>
-                  <td colSpan={5} className="font-extrabold text-[#1f4e78] text-sm pl-2 py-1 uppercase text-left">
-                    MODEL PROYEKSI KEUANGAN PROYEK (3 TAHUN)
+                  <td colSpan={5} className="font-extrabold text-[#107c41] text-sm pl-2 py-1 uppercase text-left">
+                    MODEL PROYEKSI KEUANGAN &amp; CASH FLOW (3 TAHUN)
                   </td>
                 </tr>
-
-                {/* Row 3: Empty Spacer */}
                 <tr className="h-5">
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">3</td>
-                  <td colSpan={7} className="border border-slate-100"></td>
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">2</td>
+                  <td className="border border-slate-100"></td>
+                  <td colSpan={5} className="italic text-slate-500 pl-2 text-left">
+                    Sinkronisasi Seragam Dashboard UI: {projectTitle}
+                  </td>
+                </tr>
+                <tr className="h-4">
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">3</td>
+                  <td colSpan={6} className="border border-slate-100"></td>
                 </tr>
 
-                {/* Row 4: Section Header */}
+                {/* CAPEX Section */}
                 <tr className="h-6">
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">4</td>
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">4</td>
                   <td className="border border-slate-100"></td>
-                  <td colSpan={5} className="font-bold text-[#1f4e78] text-xs pl-2 text-left">
-                    1. ESTIMASI CAPEX (Capital Expenditure)
+                  <td colSpan={5} className="font-bold text-slate-800 text-xs pl-2 text-left">
+                    1. ESTIMASI BIAYA INVESTASI MODAL (CAPEX)
                   </td>
                 </tr>
 
-                {/* Row 5: Column Headers */}
-                <tr className="bg-[#1f4e78] text-white font-bold h-7">
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">5</td>
+                <tr className="bg-[#107c41] text-white font-bold h-7">
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">5</td>
                   <td className="border border-slate-300"></td>
                   <td className="border border-slate-300 px-3 text-left">Komponen Investasi Awal</td>
-                  <td className="border border-slate-300 px-3 text-right">Nilai (IDR)</td>
-                  <td colSpan={2} className="border border-slate-300 px-3 text-left">Keterangan</td>
-                  <td colSpan={2} className="border border-slate-300"></td>
+                  <td className="border border-slate-300 px-3 text-right">Nilai Estimasi (IDR)</td>
+                  <td colSpan={3} className="border border-slate-300 px-3 text-left">Keterangan Estimasi Aset</td>
                 </tr>
 
-                {/* Row 6: Armada */}
-                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 6, col: "C", val: capexTrucks.toString(), formula: "", id: "capexTrucks" })}>
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">6</td>
+                {/* Capex 1 */}
+                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 6, col: "C", val: capex1.toString(), formula: "", id: "capex1" })}>
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">6</td>
                   <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-3 text-left">Armada Truk Logistik (DP / Pembelian Cash)</td>
+                  <td className="border border-slate-300 px-3 text-left font-semibold">{rec.assetName}</td>
                   <td className="border border-slate-300 px-3 text-right bg-white select-text">
                     <input 
                       type="number"
-                      value={capexTrucks}
-                      onFocus={() => setSelectedCell({row: 6, col: "C", val: capexTrucks.toString(), formula: "", id: "capexTrucks" })}
+                      value={capex1}
+                      onFocus={() => setSelectedCell({row: 6, col: "C", val: capex1.toString(), formula: "", id: "capex1" })}
                       onChange={(e) => {
                         const val = Number(e.target.value);
-                        setCapexTrucks(val);
+                        setCapex1(val);
                         setSelectedCell(prev => prev.row === 6 && prev.col === "C" ? { ...prev, val: val.toString() } : prev);
                       }}
-                      className="w-full text-right outline-none border-none p-0 focus:ring-1 focus:ring-emerald-500 text-xs font-mono"
+                      className="w-full text-right outline-none border-none p-0 focus:ring-1 focus:ring-emerald-500 text-xs font-mono font-bold text-slate-800"
                     />
                   </td>
-                  <td colSpan={2} className="border border-slate-300 px-3 italic text-slate-500 text-left">Misal: 3 Unit Truk Engkel</td>
-                  <td colSpan={2} className="border border-slate-200 bg-[#fafafa]"></td>
+                  <td colSpan={3} className="border border-slate-300 px-3 italic text-slate-500 text-left">Aset operasional inti utama ({rec.assetUnitLabel})</td>
                 </tr>
 
-                {/* Row 7: Sistem IT */}
-                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 7, col: "C", val: capexIT.toString(), formula: "", id: "capexIT" })}>
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">7</td>
+                {/* Capex 2 */}
+                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 7, col: "C", val: capex2.toString(), formula: "", id: "capex2" })}>
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">7</td>
                   <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-3 text-left">Sistem IT / Transport Management System (TMS)</td>
+                  <td className="border border-slate-300 px-3 text-left font-semibold">{rec.capexSecondary1Name}</td>
                   <td className="border border-slate-300 px-3 text-right bg-white select-text">
                     <input 
                       type="number"
-                      value={capexIT}
-                      onFocus={() => setSelectedCell({row: 7, col: "C", val: capexIT.toString(), formula: "", id: "capexIT" })}
+                      value={capex2}
+                      onFocus={() => setSelectedCell({row: 7, col: "C", val: capex2.toString(), formula: "", id: "capex2" })}
                       onChange={(e) => {
                         const val = Number(e.target.value);
-                        setCapexIT(val);
+                        setCapex2(val);
                         setSelectedCell(prev => prev.row === 7 && prev.col === "C" ? { ...prev, val: val.toString() } : prev);
                       }}
-                      className="w-full text-right outline-none border-none p-0 focus:ring-1 focus:ring-emerald-500 text-xs font-mono"
+                      className="w-full text-right outline-none border-none p-0 focus:ring-1 focus:ring-emerald-500 text-xs font-mono font-bold text-slate-800"
                     />
                   </td>
-                  <td colSpan={2} className="border border-slate-300 px-3 italic text-slate-500 text-left">Lisensi &amp; Setup Awal</td>
-                  <td colSpan={2} className="border border-slate-200 bg-[#fafafa]"></td>
+                  <td colSpan={3} className="border border-slate-300 px-3 italic text-slate-500 text-left">Infrastruktur &amp; Setup Awal</td>
                 </tr>
 
-                {/* Row 8: Peralatan Gudang */}
-                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 8, col: "C", val: capexGudang.toString(), formula: "", id: "capexGudang" })}>
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">8</td>
+                {/* Capex 3 */}
+                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 8, col: "C", val: capex3.toString(), formula: "", id: "capex3" })}>
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">8</td>
                   <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-3 text-left">Peralatan Gudang &amp; Pallet</td>
+                  <td className="border border-slate-300 px-3 text-left font-semibold">{rec.capexSecondary2Name}</td>
                   <td className="border border-slate-300 px-3 text-right bg-white select-text">
                     <input 
                       type="number"
-                      value={capexGudang}
-                      onFocus={() => setSelectedCell({row: 8, col: "C", val: capexGudang.toString(), formula: "", id: "capexGudang" })}
+                      value={capex3}
+                      onFocus={() => setSelectedCell({row: 8, col: "C", val: capex3.toString(), formula: "", id: "capex3" })}
                       onChange={(e) => {
                         const val = Number(e.target.value);
-                        setCapexGudang(val);
+                        setCapex3(val);
                         setSelectedCell(prev => prev.row === 8 && prev.col === "C" ? { ...prev, val: val.toString() } : prev);
                       }}
-                      className="w-full text-right outline-none border-none p-0 focus:ring-1 focus:ring-emerald-500 text-xs font-mono"
+                      className="w-full text-right outline-none border-none p-0 focus:ring-1 focus:ring-emerald-500 text-xs font-mono font-bold text-slate-800"
                     />
                   </td>
-                  <td colSpan={2} className="border border-slate-300 px-3 italic text-slate-500 text-left">Rak, Hand Pallet, Safety Tools</td>
-                  <td colSpan={2} className="border border-slate-200 bg-[#fafafa]"></td>
+                  <td colSpan={3} className="border border-slate-300 px-3 italic text-slate-500 text-left">Fasilitas Tempat &amp; Bangunan</td>
                 </tr>
 
-                {/* Row 9: Perizinan */}
-                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 9, col: "C", val: capexIzin.toString(), formula: "", id: "capexIzin" })}>
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">9</td>
+                {/* Capex 4 */}
+                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 9, col: "C", val: capex4.toString(), formula: "", id: "capex4" })}>
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">9</td>
                   <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-3 text-left">Perizinan &amp; Legalitas Proyek</td>
+                  <td className="border border-slate-300 px-3 text-left font-semibold">{rec.capexSecondary3Name}</td>
                   <td className="border border-slate-300 px-3 text-right bg-white select-text">
                     <input 
                       type="number"
-                      value={capexIzin}
-                      onFocus={() => setSelectedCell({row: 9, col: "C", val: capexIzin.toString(), formula: "", id: "capexIzin" })}
+                      value={capex4}
+                      onFocus={() => setSelectedCell({row: 9, col: "C", val: capex4.toString(), formula: "", id: "capex4" })}
                       onChange={(e) => {
                         const val = Number(e.target.value);
-                        setCapexIzin(val);
+                        setCapex4(val);
                         setSelectedCell(prev => prev.row === 9 && prev.col === "C" ? { ...prev, val: val.toString() } : prev);
                       }}
-                      className="w-full text-right outline-none border-none p-0 focus:ring-1 focus:ring-emerald-500 text-xs font-mono"
+                      className="w-full text-right outline-none border-none p-0 focus:ring-1 focus:ring-emerald-500 text-xs font-mono font-bold text-slate-800"
                     />
                   </td>
-                  <td colSpan={2} className="border border-slate-300 px-3 italic text-slate-500 text-left">Sertifikasi &amp; izin jalan armada</td>
-                  <td colSpan={2} className="border border-slate-200 bg-[#fafafa]"></td>
+                  <td colSpan={3} className="border border-slate-300 px-3 italic text-slate-500 text-left">Modal kerja &amp; legalitas perizinan NIB</td>
                 </tr>
 
-                {/* Row 10: TOTAL CAPEX Row */}
+                {/* Total Capex */}
                 <tr className="hover:bg-slate-50 h-7 font-bold bg-slate-50" onClick={() => setSelectedCell({row: 10, col: "C", val: totalCapex.toString(), formula: "=SUM(C6:C9)" })}>
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">10</td>
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">10</td>
                   <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-3 text-left text-slate-900">TOTAL CAPEX</td>
-                  <td className="border border-slate-300 px-3 text-right font-mono text-slate-950 text-xs">
+                  <td className="border border-slate-300 px-3 text-left text-slate-900 font-black">TOTAL ESTIMASI CAPEX</td>
+                  <td className="border border-slate-300 px-3 text-right font-mono text-emerald-800 text-xs font-black">
                     Rp {formatIDR(totalCapex)}
                   </td>
-                  <td colSpan={2} className="border border-slate-300 bg-[#fafafa]"></td>
-                  <td colSpan={2} className="border border-slate-200 bg-[#fafafa]"></td>
+                  <td colSpan={3} className="border border-slate-300 px-3 text-slate-600 italic">Total investasi sebelum mulai operasional</td>
                 </tr>
 
-                {/* Row 11: Spacer */}
                 <tr className="h-5">
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">11</td>
-                  <td colSpan={7} className="border border-slate-100"></td>
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">11</td>
+                  <td colSpan={6} className="border border-slate-100"></td>
                 </tr>
 
-                {/* Row 12: Column Headers */}
-                <tr className="bg-[#1f4e78] text-white font-bold h-7">
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">12</td>
+                {/* P&L Section */}
+                <tr className="bg-[#107c41] text-white font-bold h-7">
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">12</td>
                   <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-3 text-left">Item Laporan Keuangan</td>
+                  <td className="border border-slate-300 px-3 text-left">Item Laporan Keuangan (Estimasi)</td>
                   <td className="border border-slate-300 px-3 text-right">Tahun 1 (IDR)</td>
                   <td className="border border-slate-300 px-3 text-right">Tahun 2 (IDR)</td>
                   <td className="border border-slate-300 px-3 text-right">Tahun 3 (IDR)</td>
-                  <td colSpan={2} className="border border-slate-300"></td>
+                  <td className="border border-slate-300"></td>
                 </tr>
 
-                {/* Row 13: REVENUE */}
-                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 13, col: "C", val: "Detail Proyeksi Pendapatan", formula: "" })}>
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">13</td>
+                {/* Revenue */}
+                <tr className="hover:bg-slate-50 h-7">
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">13</td>
                   <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-3 font-bold text-left text-slate-900">PENDAPATAN (REVENUE)</td>
-                  <td className="border border-slate-300 px-3 text-right bg-white select-text font-bold" onClick={(e) => { e.stopPropagation(); setSelectedCell({row: 13, col: "D", val: revenueY1.toString(), formula: "", id: "revenueY1" })} }>
+                  <td className="border border-slate-300 px-3 font-black text-left text-slate-900">PENDAPATAN USAHA (REVENUE)</td>
+                  <td className="border border-slate-300 px-3 text-right bg-white select-text font-bold">
                     <input 
                       type="number"
                       value={revenueY1}
-                      onFocus={() => setSelectedCell({row: 13, col: "D", val: revenueY1.toString(), formula: "", id: "revenueY1" })}
+                      onFocus={() => setSelectedCell({row: 13, col: "C", val: revenueY1.toString(), formula: "", id: "revenueY1" })}
                       onChange={(e) => {
                         const val = Number(e.target.value);
                         setRevenueY1(val);
-                        setSelectedCell(prev => prev.row === 13 && prev.col === "D" ? { ...prev, val: val.toString() } : prev);
+                        setSelectedCell(prev => prev.row === 13 && prev.col === "C" ? { ...prev, val: val.toString() } : prev);
                       }}
-                      className="w-full text-right outline-none border-none p-0 focus:ring-1 focus:ring-emerald-500 text-xs font-mono font-bold"
+                      className="w-full text-right outline-none border-none p-0 focus:ring-1 focus:ring-emerald-500 text-xs font-mono font-bold text-slate-800"
                     />
                   </td>
-                  <td className="border border-slate-300 px-3 text-right bg-white select-text font-bold" onClick={(e) => { e.stopPropagation(); setSelectedCell({row: 13, col: "E", val: revenueY2.toString(), formula: "", id: "revenueY2" })} }>
+                  <td className="border border-slate-300 px-3 text-right bg-white select-text font-bold">
                     <input 
                       type="number"
                       value={revenueY2}
-                      onFocus={() => setSelectedCell({row: 13, col: "E", val: revenueY2.toString(), formula: "", id: "revenueY2" })}
+                      onFocus={() => setSelectedCell({row: 13, col: "D", val: revenueY2.toString(), formula: "", id: "revenueY2" })}
                       onChange={(e) => {
                         const val = Number(e.target.value);
                         setRevenueY2(val);
-                        setSelectedCell(prev => prev.row === 13 && prev.col === "E" ? { ...prev, val: val.toString() } : prev);
+                        setSelectedCell(prev => prev.row === 13 && prev.col === "D" ? { ...prev, val: val.toString() } : prev);
                       }}
-                      className="w-full text-right outline-none border-none p-0 focus:ring-1 focus:ring-emerald-500 text-xs font-mono font-bold"
+                      className="w-full text-right outline-none border-none p-0 focus:ring-1 focus:ring-emerald-500 text-xs font-mono font-bold text-slate-800"
                     />
                   </td>
-                  <td className="border border-slate-300 px-3 text-right bg-white select-text font-bold" onClick={(e) => { e.stopPropagation(); setSelectedCell({row: 13, col: "F", val: revenueY3.toString(), formula: "", id: "revenueY3" })} }>
+                  <td className="border border-slate-300 px-3 text-right bg-white select-text font-bold">
                     <input 
                       type="number"
                       value={revenueY3}
-                      onFocus={() => setSelectedCell({row: 13, col: "F", val: revenueY3.toString(), formula: "", id: "revenueY3" })}
+                      onFocus={() => setSelectedCell({row: 13, col: "E", val: revenueY3.toString(), formula: "", id: "revenueY3" })}
                       onChange={(e) => {
                         const val = Number(e.target.value);
                         setRevenueY3(val);
-                        setSelectedCell(prev => prev.row === 13 && prev.col === "F" ? { ...prev, val: val.toString() } : prev);
+                        setSelectedCell(prev => prev.row === 13 && prev.col === "E" ? { ...prev, val: val.toString() } : prev);
                       }}
-                      className="w-full text-right outline-none border-none p-0 focus:ring-1 focus:ring-emerald-500 text-xs font-mono font-bold"
+                      className="w-full text-right outline-none border-none p-0 focus:ring-1 focus:ring-emerald-500 text-xs font-mono font-bold text-slate-800"
                     />
                   </td>
-                  <td colSpan={2} className="border border-slate-200 bg-[#fafafa]"></td>
+                  <td className="border border-slate-200 bg-[#fafafa]"></td>
                 </tr>
 
-                {/* Row 14: OPEX Subtitle */}
+                {/* OPEX Subhead */}
                 <tr className="h-6 font-bold bg-slate-50">
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">14</td>
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">14</td>
                   <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-3 text-left">BIAYA OPERASIONAL (OPEX)</td>
+                  <td className="border border-slate-300 px-3 text-left font-black text-slate-800">BIAYA OPERASIONAL (OPEX)</td>
                   <td colSpan={3} className="border border-slate-300 bg-slate-50"></td>
-                  <td colSpan={2} className="border border-slate-200 bg-[#fafafa]"></td>
+                  <td className="border border-slate-200 bg-[#fafafa]"></td>
                 </tr>
 
-                {/* Row 15: Gaji Row */}
-                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 15, col: "C", val: "Detail Proyeksi Gaji", formula: "" })}>
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">15</td>
+                {/* OPEX 1 */}
+                <tr className="hover:bg-slate-50 h-7">
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">15</td>
                   <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-5 text-left text-slate-650">- Gaji Sopir &amp; Kru</td>
-                  <td className="border border-slate-300 px-3 text-right bg-white select-text" onClick={(e) => { e.stopPropagation(); setSelectedCell({row: 15, col: "D", val: gajiY1.toString(), formula: "", id: "gajiY1" })} }>
+                  <td className="border border-slate-300 px-5 text-left text-slate-700">- {rec.opex1Name}</td>
+                  <td className="border border-slate-300 px-3 text-right bg-white select-text">
                     <input 
                       type="number"
-                      value={gajiY1}
-                      onFocus={() => setSelectedCell({row: 15, col: "D", val: gajiY1.toString(), formula: "", id: "gajiY1" })}
-                      onChange={(e) => {
-                        const val = Number(e.target.value);
-                        setGajiY1(val);
-                        setSelectedCell(prev => prev.row === 15 && prev.col === "D" ? { ...prev, val: val.toString() } : prev);
-                      }}
+                      value={opex1Y1}
+                      onChange={(e) => setOpex1Y1(Number(e.target.value))}
                       className="w-full text-right outline-none border-none p-0 focus:ring-1 focus:ring-emerald-500 text-xs font-mono"
                     />
                   </td>
-                  <td className="border border-slate-300 px-3 text-right bg-white select-text" onClick={(e) => { e.stopPropagation(); setSelectedCell({row: 15, col: "E", val: gajiY2.toString(), formula: "", id: "gajiY2" })} }>
+                  <td className="border border-slate-300 px-3 text-right bg-white select-text">
                     <input 
                       type="number"
-                      value={gajiY2}
-                      onFocus={() => setSelectedCell({row: 15, col: "E", val: gajiY2.toString(), formula: "", id: "gajiY2" })}
-                      onChange={(e) => {
-                        const val = Number(e.target.value);
-                        setGajiY2(val);
-                        setSelectedCell(prev => prev.row === 15 && prev.col === "E" ? { ...prev, val: val.toString() } : prev);
-                      }}
+                      value={opex1Y2}
+                      onChange={(e) => setOpex1Y2(Number(e.target.value))}
                       className="w-full text-right outline-none border-none p-0 focus:ring-1 focus:ring-emerald-500 text-xs font-mono"
                     />
                   </td>
-                  <td className="border border-slate-300 px-3 text-right bg-white select-text" onClick={(e) => { e.stopPropagation(); setSelectedCell({row: 15, col: "F", val: gajiY3.toString(), formula: "", id: "gajiY3" })} }>
+                  <td className="border border-slate-300 px-3 text-right bg-white select-text">
                     <input 
                       type="number"
-                      value={gajiY3}
-                      onFocus={() => setSelectedCell({row: 15, col: "F", val: gajiY3.toString(), formula: "", id: "gajiY3" })}
-                      onChange={(e) => {
-                        const val = Number(e.target.value);
-                        setGajiY3(val);
-                        setSelectedCell(prev => prev.row === 15 && prev.col === "F" ? { ...prev, val: val.toString() } : prev);
-                      }}
+                      value={opex1Y3}
+                      onChange={(e) => setOpex1Y3(Number(e.target.value))}
                       className="w-full text-right outline-none border-none p-0 focus:ring-1 focus:ring-emerald-500 text-xs font-mono"
                     />
                   </td>
-                  <td colSpan={2} className="border border-slate-200 bg-[#fafafa]"></td>
+                  <td className="border border-slate-200 bg-[#fafafa]"></td>
                 </tr>
 
-                {/* Row 16: BBM Row */}
-                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 16, col: "C", val: "Detail Proyeksi BBM", formula: "" })}>
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">16</td>
+                {/* OPEX 2 */}
+                <tr className="hover:bg-slate-50 h-7">
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">16</td>
                   <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-5 text-left text-slate-650">- BBM &amp; Tol</td>
-                  <td className="border border-slate-300 px-3 text-right bg-white select-text" onClick={(e) => { e.stopPropagation(); setSelectedCell({row: 16, col: "D", val: bbmY1.toString(), formula: "", id: "bbmY1" })} }>
+                  <td className="border border-slate-300 px-5 text-left text-slate-700">- {rec.opex2Name}</td>
+                  <td className="border border-slate-300 px-3 text-right bg-white select-text">
                     <input 
                       type="number"
-                      value={bbmY1}
-                      onFocus={() => setSelectedCell({row: 16, col: "D", val: bbmY1.toString(), formula: "", id: "bbmY1" })}
-                      onChange={(e) => {
-                        const val = Number(e.target.value);
-                        setBbmY1(val);
-                        setSelectedCell(prev => prev.row === 16 && prev.col === "D" ? { ...prev, val: val.toString() } : prev);
-                      }}
+                      value={opex2Y1}
+                      onChange={(e) => setOpex2Y1(Number(e.target.value))}
                       className="w-full text-right outline-none border-none p-0 focus:ring-1 focus:ring-emerald-500 text-xs font-mono"
                     />
                   </td>
-                  <td className="border border-slate-300 px-3 text-right bg-white select-text" onClick={(e) => { e.stopPropagation(); setSelectedCell({row: 16, col: "E", val: bbmY2.toString(), formula: "", id: "bbmY2" })} }>
+                  <td className="border border-slate-300 px-3 text-right bg-white select-text">
                     <input 
                       type="number"
-                      value={bbmY2}
-                      onFocus={() => setSelectedCell({row: 16, col: "E", val: bbmY2.toString(), formula: "", id: "bbmY2" })}
-                      onChange={(e) => {
-                        const val = Number(e.target.value);
-                        setBbmY2(val);
-                        setSelectedCell(prev => prev.row === 16 && prev.col === "E" ? { ...prev, val: val.toString() } : prev);
-                      }}
+                      value={opex2Y2}
+                      onChange={(e) => setOpex2Y2(Number(e.target.value))}
                       className="w-full text-right outline-none border-none p-0 focus:ring-1 focus:ring-emerald-500 text-xs font-mono"
                     />
                   </td>
-                  <td className="border border-slate-300 px-3 text-right bg-white select-text" onClick={(e) => { e.stopPropagation(); setSelectedCell({row: 16, col: "F", val: bbmY3.toString(), formula: "", id: "bbmY3" })} }>
+                  <td className="border border-slate-300 px-3 text-right bg-white select-text">
                     <input 
                       type="number"
-                      value={bbmY3}
-                      onFocus={() => setSelectedCell({row: 16, col: "F", val: bbmY3.toString(), formula: "", id: "bbmY3" })}
-                      onChange={(e) => {
-                        const val = Number(e.target.value);
-                        setBbmY3(val);
-                        setSelectedCell(prev => prev.row === 16 && prev.col === "F" ? { ...prev, val: val.toString() } : prev);
-                      }}
+                      value={opex2Y3}
+                      onChange={(e) => setOpex2Y3(Number(e.target.value))}
                       className="w-full text-right outline-none border-none p-0 focus:ring-1 focus:ring-emerald-500 text-xs font-mono"
                     />
                   </td>
-                  <td colSpan={2} className="border border-slate-200 bg-[#fafafa]"></td>
+                  <td className="border border-slate-200 bg-[#fafafa]"></td>
                 </tr>
 
-                {/* Row 17: Maintenance Row */}
-                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 17, col: "C", val: "Detail Proyeksi Servis", formula: "" })}>
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">17</td>
+                {/* OPEX 3 */}
+                <tr className="hover:bg-slate-50 h-7">
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">17</td>
                   <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-5 text-left text-slate-650">- Maintenance &amp; Servis Armada</td>
-                  <td className="border border-slate-300 px-3 text-right bg-white select-text" onClick={(e) => { e.stopPropagation(); setSelectedCell({row: 17, col: "D", val: maintY1.toString(), formula: "", id: "maintY1" })} }>
+                  <td className="border border-slate-300 px-5 text-left text-slate-700">- {rec.opex3Name}</td>
+                  <td className="border border-slate-300 px-3 text-right bg-white select-text">
                     <input 
                       type="number"
-                      value={maintY1}
-                      onFocus={() => setSelectedCell({row: 17, col: "D", val: maintY1.toString(), formula: "", id: "maintY1" })}
-                      onChange={(e) => {
-                        const val = Number(e.target.value);
-                        setMaintY1(val);
-                        setSelectedCell(prev => prev.row === 17 && prev.col === "D" ? { ...prev, val: val.toString() } : prev);
-                      }}
+                      value={opex3Y1}
+                      onChange={(e) => setOpex3Y1(Number(e.target.value))}
                       className="w-full text-right outline-none border-none p-0 focus:ring-1 focus:ring-emerald-500 text-xs font-mono"
                     />
                   </td>
-                  <td className="border border-slate-300 px-3 text-right bg-white select-text" onClick={(e) => { e.stopPropagation(); setSelectedCell({row: 17, col: "E", val: maintY2.toString(), formula: "", id: "maintY2" })} }>
+                  <td className="border border-slate-300 px-3 text-right bg-white select-text">
                     <input 
                       type="number"
-                      value={maintY2}
-                      onFocus={() => setSelectedCell({row: 17, col: "E", val: maintY2.toString(), formula: "", id: "maintY2" })}
-                      onChange={(e) => {
-                        const val = Number(e.target.value);
-                        setMaintY2(val);
-                        setSelectedCell(prev => prev.row === 17 && prev.col === "E" ? { ...prev, val: val.toString() } : prev);
-                      }}
+                      value={opex3Y2}
+                      onChange={(e) => setOpex3Y2(Number(e.target.value))}
                       className="w-full text-right outline-none border-none p-0 focus:ring-1 focus:ring-emerald-500 text-xs font-mono"
                     />
                   </td>
-                  <td className="border border-slate-300 px-3 text-right bg-white select-text" onClick={(e) => { e.stopPropagation(); setSelectedCell({row: 17, col: "F", val: maintY3.toString(), formula: "", id: "maintY3" })} }>
+                  <td className="border border-slate-300 px-3 text-right bg-white select-text">
                     <input 
                       type="number"
-                      value={maintY3}
-                      onFocus={() => setSelectedCell({row: 17, col: "F", val: maintY3.toString(), formula: "", id: "maintY3" })}
-                      onChange={(e) => {
-                        const val = Number(e.target.value);
-                        setMaintY3(val);
-                        setSelectedCell(prev => prev.row === 17 && prev.col === "F" ? { ...prev, val: val.toString() } : prev);
-                      }}
+                      value={opex3Y3}
+                      onChange={(e) => setOpex3Y3(Number(e.target.value))}
                       className="w-full text-right outline-none border-none p-0 focus:ring-1 focus:ring-emerald-500 text-xs font-mono"
                     />
                   </td>
-                  <td colSpan={2} className="border border-slate-200 bg-[#fafafa]"></td>
+                  <td className="border border-slate-200 bg-[#fafafa]"></td>
                 </tr>
 
-                {/* Row 18: Sewa Row */}
-                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 18, col: "C", val: "Detail Proyeksi Sewa", formula: "" })}>
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">18</td>
+                {/* OPEX 4 */}
+                <tr className="hover:bg-slate-50 h-7">
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">18</td>
                   <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-5 text-left text-slate-650">- Sewa Kantor/Gudang &amp; Admin</td>
-                  <td className="border border-slate-300 px-3 text-right bg-white select-text" onClick={(e) => { e.stopPropagation(); setSelectedCell({row: 18, col: "D", val: sewaY1.toString(), formula: "", id: "sewaY1" })} }>
+                  <td className="border border-slate-300 px-5 text-left text-slate-700">- {rec.opex4Name}</td>
+                  <td className="border border-slate-300 px-3 text-right bg-white select-text">
                     <input 
                       type="number"
-                      value={sewaY1}
-                      onFocus={() => setSelectedCell({row: 18, col: "D", val: sewaY1.toString(), formula: "", id: "sewaY1" })}
-                      onChange={(e) => {
-                        const val = Number(e.target.value);
-                        setSewaY1(val);
-                        setSelectedCell(prev => prev.row === 18 && prev.col === "D" ? { ...prev, val: val.toString() } : prev);
-                      }}
+                      value={opex4Y1}
+                      onChange={(e) => setOpex4Y1(Number(e.target.value))}
                       className="w-full text-right outline-none border-none p-0 focus:ring-1 focus:ring-emerald-500 text-xs font-mono"
                     />
                   </td>
-                  <td className="border border-slate-300 px-3 text-right bg-white select-text" onClick={(e) => { e.stopPropagation(); setSelectedCell({row: 18, col: "E", val: sewaY2.toString(), formula: "", id: "sewaY2" })} }>
+                  <td className="border border-slate-300 px-3 text-right bg-white select-text">
                     <input 
                       type="number"
-                      value={sewaY2}
-                      onFocus={() => setSelectedCell({row: 18, col: "E", val: sewaY2.toString(), formula: "", id: "sewaY2" })}
-                      onChange={(e) => {
-                        const val = Number(e.target.value);
-                        setSewaY2(val);
-                        setSelectedCell(prev => prev.row === 18 && prev.col === "E" ? { ...prev, val: val.toString() } : prev);
-                      }}
+                      value={opex4Y2}
+                      onChange={(e) => setOpex4Y2(Number(e.target.value))}
                       className="w-full text-right outline-none border-none p-0 focus:ring-1 focus:ring-emerald-500 text-xs font-mono"
                     />
                   </td>
-                  <td className="border border-slate-300 px-3 text-right bg-white select-text" onClick={(e) => { e.stopPropagation(); setSelectedCell({row: 18, col: "F", val: sewaY3.toString(), formula: "", id: "sewaY3" })} }>
+                  <td className="border border-slate-300 px-3 text-right bg-white select-text">
                     <input 
                       type="number"
-                      value={sewaY3}
-                      onFocus={() => setSelectedCell({row: 18, col: "F", val: sewaY3.toString(), formula: "", id: "sewaY3" })}
-                      onChange={(e) => {
-                        const val = Number(e.target.value);
-                        setSewaY3(val);
-                        setSelectedCell(prev => prev.row === 18 && prev.col === "F" ? { ...prev, val: val.toString() } : prev);
-                      }}
+                      value={opex4Y3}
+                      onChange={(e) => setOpex4Y3(Number(e.target.value))}
                       className="w-full text-right outline-none border-none p-0 focus:ring-1 focus:ring-emerald-500 text-xs font-mono"
                     />
                   </td>
-                  <td colSpan={2} className="border border-slate-200 bg-[#fafafa]"></td>
+                  <td className="border border-slate-200 bg-[#fafafa]"></td>
                 </tr>
 
-                {/* Row 19: TOTAL OPEX */}
-                <tr className="hover:bg-slate-50 h-7 font-bold bg-slate-50" onClick={() => setSelectedCell({row: 19, col: "C", val: totalOpexY1.toString(), formula: "=SUM(C15:C18)" })}>
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">19</td>
+                {/* Total OPEX */}
+                <tr className="hover:bg-slate-50 h-7 font-bold bg-slate-50">
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">19</td>
                   <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-3 text-left">TOTAL OPEX</td>
-                  <td className="border border-slate-300 px-3 text-right font-mono text-slate-900 text-xs">Rp {formatIDR(totalOpexY1)}</td>
-                  <td className="border border-slate-300 px-3 text-right font-mono text-slate-900 text-xs">Rp {formatIDR(totalOpexY2)}</td>
-                  <td className="border border-slate-300 px-3 text-right font-mono text-slate-900 text-xs">Rp {formatIDR(totalOpexY3)}</td>
-                  <td colSpan={2} className="border border-slate-200 bg-[#fafafa]"></td>
-                </tr>
-
-                {/* Row 20: LABA BERSIH */}
-                <tr className="hover:bg-slate-50 h-7 font-bold bg-[#e2efda] text-[#385723]" onClick={() => setSelectedCell({row: 20, col: "C", val: netProfitY1.toString(), formula: "=C13-C19" })}>
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">20</td>
-                  <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-3 text-left">LABA BERSIH (NET PROFIT)</td>
-                  <td className="border border-slate-300 px-3 text-right font-mono text-xs">Rp {formatIDR(netProfitY1)}</td>
-                  <td className="border border-slate-300 px-3 text-right font-mono text-xs">Rp {formatIDR(netProfitY2)}</td>
-                  <td className="border border-slate-300 px-3 text-right font-mono text-xs">Rp {formatIDR(netProfitY3)}</td>
-                  <td colSpan={2} className="border border-slate-200 bg-[#fafafa]"></td>
-                </tr>
-
-                {/* Row 21: NET PROFIT MARGIN */}
-                <tr className="hover:bg-slate-50 h-7 font-bold bg-slate-50" onClick={() => setSelectedCell({row: 21, col: "C", val: npmY1.toFixed(1) + "%", formula: "=C20/C13" })}>
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">21</td>
-                  <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-3 text-left">NET PROFIT MARGIN (%)</td>
-                  <td className="border border-slate-300 px-3 text-right font-mono text-slate-900 text-xs">{npmY1.toFixed(1)}%</td>
-                  <td className="border border-slate-300 px-3 text-right font-mono text-slate-900 text-xs">{npmY2.toFixed(1)}%</td>
-                  <td className="border border-slate-300 px-3 text-right font-mono text-slate-900 text-xs">{npmY3.toFixed(1)}%</td>
-                  <td colSpan={2} className="border border-slate-200 bg-[#fafafa]"></td>
-                </tr>
-
-                {/* Row 22: CASH FLOW Section Header */}
-                <tr className="h-6 font-bold bg-slate-100">
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">22</td>
-                  <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-3 text-left">ARUS KAS (CASH FLOW)</td>
-                  <td colSpan={3} className="border border-slate-300 bg-slate-100"></td>
-                  <td colSpan={2} className="border border-slate-200 bg-[#fafafa]"></td>
-                </tr>
-
-                {/* Row 23: Saldo Kas Awal */}
-                <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 23, col: "C", val: "0", formula: "=Previous Saldo Kas Akhir" })}>
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">23</td>
-                  <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-5 text-left text-slate-650">+ Saldo Kas Awal</td>
-                  <td className="border border-slate-300 px-3 text-right font-mono text-slate-900 text-xs">Rp 0</td>
-                  <td className="border border-slate-300 px-3 text-right font-mono text-slate-900 text-xs">Rp {formatIDR(endCashY1)}</td>
-                  <td className="border border-slate-300 px-3 text-right font-mono text-slate-900 text-xs">Rp {formatIDR(endCashY2)}</td>
-                  <td colSpan={2} className="border border-slate-200 bg-[#fafafa]"></td>
-                </tr>
-
-                {/* Row 24: CAPEX Out */}
-                <tr className="hover:bg-slate-50 h-7 text-red-600" onClick={() => setSelectedCell({row: 24, col: "C", val: `-${totalCapex}`, formula: "=-C10" })}>
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">24</td>
-                  <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-5 text-left">- Arus Kas Keluar Investasi (CAPEX)</td>
-                  <td className="border border-slate-300 px-3 text-right font-mono text-xs">(Rp {formatIDR(totalCapex)})</td>
-                  <td className="border border-slate-300 px-3 text-right font-mono text-xs">Rp 0</td>
-                  <td className="border border-slate-300 px-3 text-right font-mono text-xs">Rp 0</td>
-                  <td colSpan={2} className="border border-slate-200 bg-[#fafafa]"></td>
-                </tr>
-
-                {/* Row 25: Ops Inflow */}
-                <tr className="hover:bg-slate-50 h-7 text-[#166534]" onClick={() => setSelectedCell({row: 25, col: "C", val: netProfitY1.toString(), formula: "=C20" })}>
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">25</td>
-                  <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-5 text-left">+ Masukan Kas Operasional (Net Profit)</td>
-                  <td className="border border-slate-300 px-3 text-right font-mono text-xs">Rp {formatIDR(netProfitY1)}</td>
-                  <td className="border border-slate-300 px-3 text-right font-mono text-xs">Rp {formatIDR(netProfitY2)}</td>
-                  <td className="border border-slate-300 px-3 text-right font-mono text-xs">Rp {formatIDR(netProfitY3)}</td>
-                  <td colSpan={2} className="border border-slate-200 bg-[#fafafa]"></td>
-                </tr>
-
-                {/* Row 26: NET CASH FLOW */}
-                <tr className="hover:bg-slate-50 h-7 font-bold bg-slate-50" onClick={() => setSelectedCell({row: 26, col: "C", val: netCashFlowY1.toString(), formula: "=C24+C25" })}>
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">26</td>
-                  <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-3 text-left">ARUS KAS BERSIH (NET CASH FLOW)</td>
-                  <td className="border border-slate-300 px-3 text-right font-mono text-xs text-red-650">
-                    {netCashFlowY1 < 0 ? `(Rp ${formatIDR(Math.abs(netCashFlowY1))})` : `Rp ${formatIDR(netCashFlowY1)}`}
+                  <td className="border border-slate-300 px-3 text-left text-slate-900 font-black">TOTAL OPEX TAHUNAN</td>
+                  <td className="border border-slate-300 px-3 text-right font-mono text-slate-900 font-bold text-xs">
+                    Rp {formatIDR(totalOpexY1)}
                   </td>
-                  <td className="border border-slate-300 px-3 text-right font-mono text-xs text-slate-900">Rp {formatIDR(netCashFlowY2)}</td>
-                  <td className="border border-slate-300 px-3 text-right font-mono text-xs text-slate-900">Rp {formatIDR(netCashFlowY3)}</td>
-                  <td colSpan={2} className="border border-slate-200 bg-[#fafafa]"></td>
+                  <td className="border border-slate-300 px-3 text-right font-mono text-slate-900 font-bold text-xs">
+                    Rp {formatIDR(totalOpexY2)}
+                  </td>
+                  <td className="border border-slate-300 px-3 text-right font-mono text-slate-900 font-bold text-xs">
+                    Rp {formatIDR(totalOpexY3)}
+                  </td>
+                  <td className="border border-slate-200 bg-[#fafafa]"></td>
                 </tr>
 
-                {/* Row 27: SALDO KAS AKHIR */}
-                <tr className="hover:bg-slate-50 h-7 font-bold bg-[#d9e1f2] text-[#1f4e78]" onClick={() => setSelectedCell({row: 27, col: "C", val: endCashY3.toString(), formula: "=C23+C26" })}>
-                  <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">27</td>
+                {/* Net profit */}
+                <tr className="hover:bg-slate-50 h-7 font-black bg-emerald-50/50">
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">20</td>
                   <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-3 text-left">SALDO KAS AKHIR</td>
-                  <td className="border border-slate-300 px-3 text-right font-mono text-xs text-red-650">
-                    {endCashY1 < 0 ? `(Rp ${formatIDR(Math.abs(endCashY1))})` : `Rp ${formatIDR(endCashY1)}`}
+                  <td className="border border-slate-300 px-3 text-left text-emerald-900 font-black">LABA BERSIH (NET PROFIT)</td>
+                  <td className="border border-slate-300 px-3 text-right font-mono text-emerald-700 font-black text-xs">
+                    Rp {formatIDR(netProfitY1)}
                   </td>
-                  <td className="border border-slate-300 px-3 text-right font-mono text-xs">Rp {formatIDR(endCashY2)}</td>
-                  <td className="border border-slate-300 px-3 text-right font-mono text-xs">Rp {formatIDR(endCashY3)}</td>
-                  <td colSpan={2} className="border border-slate-200 bg-[#fafafa]"></td>
+                  <td className="border border-slate-300 px-3 text-right font-mono text-emerald-700 font-black text-xs">
+                    Rp {formatIDR(netProfitY2)}
+                  </td>
+                  <td className="border border-slate-300 px-3 text-right font-mono text-emerald-700 font-black text-xs">
+                    Rp {formatIDR(netProfitY3)}
+                  </td>
+                  <td className="border border-slate-200 bg-[#fafafa]"></td>
+                </tr>
+
+                {/* NPM */}
+                <tr className="hover:bg-slate-50 h-7 font-bold">
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">21</td>
+                  <td className="border border-slate-300"></td>
+                  <td className="border border-slate-300 px-3 text-left text-slate-800">NET PROFIT MARGIN (%)</td>
+                  <td className="border border-slate-300 px-3 text-right font-mono text-cyan-800 font-bold text-xs">
+                    {npmY1.toFixed(1)}%
+                  </td>
+                  <td className="border border-slate-300 px-3 text-right font-mono text-cyan-800 font-bold text-xs">
+                    {npmY2.toFixed(1)}%
+                  </td>
+                  <td className="border border-slate-300 px-3 text-right font-mono text-cyan-800 font-bold text-xs">
+                    {npmY3.toFixed(1)}%
+                  </td>
+                  <td className="border border-slate-200 bg-[#fafafa]"></td>
+                </tr>
+
+                {/* Cash Flow Section */}
+                <tr className="h-6 font-bold bg-slate-50">
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">22</td>
+                  <td className="border border-slate-300"></td>
+                  <td className="border border-slate-300 px-3 text-left font-black text-slate-800">ARUS KAS (CASH FLOW)</td>
+                  <td colSpan={3} className="border border-slate-300 bg-slate-50"></td>
+                  <td className="border border-slate-200 bg-[#fafafa]"></td>
+                </tr>
+
+                {/* Saldo awal */}
+                <tr className="hover:bg-slate-50 h-7">
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">23</td>
+                  <td className="border border-slate-300"></td>
+                  <td className="border border-slate-300 px-5 text-left text-slate-600">+ Saldo Kas Awal</td>
+                  <td className="border border-slate-300 px-3 text-right font-mono text-slate-600">Rp 0</td>
+                  <td className="border border-slate-300 px-3 text-right font-mono text-slate-600">Rp {formatIDR(endCashY1)}</td>
+                  <td className="border border-slate-300 px-3 text-right font-mono text-slate-600">Rp {formatIDR(endCashY2)}</td>
+                  <td className="border border-slate-200 bg-[#fafafa]"></td>
+                </tr>
+
+                {/* CAPEX outflow */}
+                <tr className="hover:bg-slate-50 h-7">
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">24</td>
+                  <td className="border border-slate-300"></td>
+                  <td className="border border-slate-300 px-5 text-left text-red-600 font-semibold">- Investasi Awal (CAPEX)</td>
+                  <td className="border border-slate-300 px-3 text-right font-mono text-red-600 font-bold">(Rp {formatIDR(totalCapex)})</td>
+                  <td className="border border-slate-300 px-3 text-right font-mono text-slate-400">Rp 0</td>
+                  <td className="border border-slate-300 px-3 text-right font-mono text-slate-400">Rp 0</td>
+                  <td className="border border-slate-200 bg-[#fafafa]"></td>
+                </tr>
+
+                {/* Net profit inflow */}
+                <tr className="hover:bg-slate-50 h-7">
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">25</td>
+                  <td className="border border-slate-300"></td>
+                  <td className="border border-slate-300 px-5 text-left text-emerald-700 font-semibold">+ Laba Bersih Operasional</td>
+                  <td className="border border-slate-300 px-3 text-right font-mono text-emerald-700">Rp {formatIDR(netProfitY1)}</td>
+                  <td className="border border-slate-300 px-3 text-right font-mono text-emerald-700">Rp {formatIDR(netProfitY2)}</td>
+                  <td className="border border-slate-300 px-3 text-right font-mono text-emerald-700">Rp {formatIDR(netProfitY3)}</td>
+                  <td className="border border-slate-200 bg-[#fafafa]"></td>
+                </tr>
+
+                {/* Net Cash Flow */}
+                <tr className="hover:bg-slate-50 h-7 font-bold">
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">26</td>
+                  <td className="border border-slate-300"></td>
+                  <td className="border border-slate-300 px-3 text-left text-slate-900 font-bold">ARUS KAS BERSIH (NET CASH FLOW)</td>
+                  <td className={`border border-slate-300 px-3 text-right font-mono font-bold ${netCashFlowY1 >= 0 ? 'text-emerald-700' : 'text-amber-700'}`}>
+                    Rp {formatIDR(netCashFlowY1)}
+                  </td>
+                  <td className="border border-slate-300 px-3 text-right font-mono text-emerald-700 font-bold">
+                    Rp {formatIDR(netCashFlowY2)}
+                  </td>
+                  <td className="border border-slate-300 px-3 text-right font-mono text-emerald-700 font-bold">
+                    Rp {formatIDR(netCashFlowY3)}
+                  </td>
+                  <td className="border border-slate-200 bg-[#fafafa]"></td>
+                </tr>
+
+                {/* Ending cash balance */}
+                <tr className="hover:bg-slate-50 h-7 font-black bg-blue-50/60">
+                  <td className="bg-[#f1f5f9] text-center border border-slate-300 font-mono text-slate-400">27</td>
+                  <td className="border border-slate-300"></td>
+                  <td className="border border-slate-300 px-3 text-left text-blue-950 font-black">SALDO KAS AKHIR KUMULATIF</td>
+                  <td className={`border border-slate-300 px-3 text-right font-mono font-black ${endCashY1 >= 0 ? 'text-emerald-800' : 'text-amber-800'}`}>
+                    Rp {formatIDR(endCashY1)}
+                  </td>
+                  <td className={`border border-slate-300 px-3 text-right font-mono font-black ${endCashY2 >= 0 ? 'text-emerald-800' : 'text-amber-800'}`}>
+                    Rp {formatIDR(endCashY2)}
+                  </td>
+                  <td className="border border-slate-300 px-3 text-right font-mono text-emerald-800 font-black">
+                    Rp {formatIDR(endCashY3)}
+                  </td>
+                  <td className="border border-slate-200 bg-[#fafafa]"></td>
                 </tr>
               </tbody>
             )}
           </table>
-          
         </div>
 
-        {/* BOTTOM WORKSHEET TAB BAR - REAL EXCEL STYLE */}
-        <div className="bg-[#f3f2f1] border-t border-slate-300 h-10 flex items-center justify-between px-3 text-xs select-none shrink-0 text-[#333]">
-          <div className="flex items-center gap-1">
-            {/* Sheet Tabs Navigation Controls */}
-            <div className="flex border-r border-slate-300 pr-1.5 mr-1.5 text-slate-400 gap-0.5">
-              <button className="p-1 hover:bg-slate-200 rounded text-slate-500 transition cursor-pointer">
-                <ChevronLeft className="h-3.5 w-3.5" />
-              </button>
-              <button className="p-1 hover:bg-slate-200 rounded text-slate-500 transition cursor-pointer">
-                <ChevronRight className="h-3.5 w-3.5" />
-              </button>
-            </div>
-
-            {/* Tab 1 */}
-            <button
-              onClick={() => setActiveTab("tamsamsom")}
-              className={`flex items-center gap-1.5 px-4 h-10 border-r border-slate-300 font-bold transition cursor-pointer relative ${
-                activeTab === "tamsamsom" 
-                  ? "bg-white text-[#107c41] border-t-2 border-t-[#107c41]" 
-                  : "hover:bg-slate-200 text-slate-650"
-              }`}
-            >
-              <span className="text-[11px]">1. TAM SAM SOM &amp; Kelayakan</span>
-            </button>
-
-            {/* Tab 2 */}
-            <button
-              onClick={() => setActiveTab("pl")}
-              className={`flex items-center gap-1.5 px-4 h-10 border-r border-slate-300 font-bold transition cursor-pointer relative ${
-                activeTab === "pl" 
-                  ? "bg-white text-[#107c41] border-t-2 border-t-[#107c41]" 
-                  : "hover:bg-slate-200 text-slate-650"
-              }`}
-            >
-              <span className="text-[11px]">2. P&amp;L &amp; Cash Flow</span>
-            </button>
-
-            {/* Plus button */}
-            <button className="p-1.5 hover:bg-slate-250 hover:bg-slate-200 rounded-full text-slate-500 ml-1.5 transition cursor-pointer">
-              <Plus className="h-3.5 w-3.5" />
-            </button>
+        {/* BOTTOM EXPLANATION STATUS BAR */}
+        <div className="bg-[#f1f5f9] border-t border-slate-300 px-5 py-2.5 flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs text-slate-600 gap-2 shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-slate-700 font-mono text-[10px]">📊 METODOLOGI ESTIMASI:</span>
+            <span className="text-[10.5px] text-slate-600">
+              Kalkulasi laba rugi dan payback period dihitung otomatis berbasis estimasi operasional realistis arketipe <strong>{rec.archetypeLabel}</strong>.
+            </span>
           </div>
-
-          <div className="text-[10px] text-slate-500 font-medium font-mono">
-            Ready | 100% Zoom
+          <div className="text-[10px] font-mono font-bold text-slate-400">
+            PRAMA Live Feasibility Excel Grid v2.5
           </div>
         </div>
 

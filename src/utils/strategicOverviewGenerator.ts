@@ -4,7 +4,7 @@
  * generic filler, perfectly matching the specific commodity, corridor, fleet, and regulations.
  */
 
-import { detectProjectArchetype } from "./archetypeDetector";
+import { detectProjectArchetype } from "./archetypeDetector.ts";
 
 export interface StrategicOverviewResult {
   title: string;

@@ -4,7 +4,7 @@
  * realistic obtainable capture targets, and fleet sizing monetization metrics.
  */
 
-import { detectProjectArchetype } from "./archetypeDetector";
+import { detectProjectArchetype } from "./archetypeDetector.ts";
 
 export interface TamSamSomResult {
   title: string;

@@ -5,25 +5,36 @@ import {
   Copy,
   Check,
   Edit3,
+  Trash2,
   Save,
   X,
+  Building2,
+  ShieldCheck,
+  CheckCircle2,
   FileText,
   Truck,
+  Compass,
+  FileCheck2,
+  Scale,
+  Award,
+  AlertCircle,
+  LayoutGrid,
+  AlignLeft,
+  Briefcase,
   Layers,
-  CheckCircle2,
+  MapPin,
+  Clock,
+  Activity,
+  HeartHandshake,
+  CheckCircle,
+  AlertTriangle,
   Info,
   SlidersHorizontal,
-  ChevronRight,
-  ArrowRight,
-  Shield,
-  Anchor,
-  Maximize2
+  Zap
 } from "lucide-react";
 import {
   generateServiceDesignForTitle,
-  ServiceDesignResult,
-  WorkflowStageItem,
-  CargoComponentSpec
+  ServiceDesignResult
 } from "../utils/serviceDesignGenerator";
 import { exportAllSectionsToWord } from "../utils/projectDashboardHelper";
 
@@ -32,40 +43,58 @@ interface ServiceDesignProps {
   activeDivision?: string;
 }
 
+interface ParsedSection {
+  id: string;
+  rawTitle: string;
+  displayTitle: string;
+  stepNumber: string;
+  iconType: "journey" | "blueprint" | "failsafe" | "kpi" | "general";
+  quickSummary: string;
+  paragraphs: string[];
+  bullets: string[];
+  metaBadge: string;
+}
+
 export function ServiceDesignDeepDive({ projectTitle, activeDivision }: ServiceDesignProps) {
   const currentTitle = (projectTitle || "").trim() || "Kajian Kelayakan Strategis Logistik";
   const currentDiv = activeDivision || "Logistik & Transportasi";
 
   const storageKey = `prama_service_design_content_${currentTitle.toLowerCase().replace(/[^a-z0-9]/g, "_")}`;
 
-  // Content starts loaded from generator or saved
-  const [data, setData] = useState<ServiceDesignResult>(() => {
-    return generateServiceDesignForTitle(currentTitle, currentDiv);
+  // Content starts POLOS (empty) unless saved
+  const [content, setContent] = useState<string>(() => {
+    return localStorage.getItem(storageKey) || "";
   });
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editText, setEditText] = useState<string>("");
-  const [displayMode, setDisplayMode] = useState<"publication" | "document">("publication");
+  const [displayMode, setDisplayMode] = useState<"core" | "cards" | "document">("core");
+  const [lastGeneratedForTitle, setLastGeneratedForTitle] = useState<string>(() => {
+    return localStorage.getItem(`${storageKey}_title`) || "";
+  });
 
-  // Re-generate when title or division changes
+  // When projectTitle changes, load saved content for that title or start polos
   useEffect(() => {
-    const generated = generateServiceDesignForTitle(currentTitle, currentDiv);
-    setData(generated);
-    setEditText(generated.narrativeMarkdown);
+    const saved = localStorage.getItem(storageKey) || "";
+    setContent(saved);
+    setEditText(saved);
     setIsEditing(false);
-  }, [currentTitle, currentDiv]);
+  }, [storageKey]);
 
-  // Handler to generate fresh content
-  const handleRefresh = async () => {
+  // Handler to generate fresh, 100% title-tailored content
+  const handleGenerateContent = async (targetTitle: string = currentTitle) => {
     setIsLoading(true);
     setIsEditing(false);
+
     try {
-      const generated = generateServiceDesignForTitle(currentTitle, currentDiv);
-      setData(generated);
+      const generated = generateServiceDesignForTitle(targetTitle, currentDiv);
+      setContent(generated.narrativeMarkdown);
       setEditText(generated.narrativeMarkdown);
+      setLastGeneratedForTitle(targetTitle);
       localStorage.setItem(storageKey, generated.narrativeMarkdown);
+      localStorage.setItem(`${storageKey}_title`, targetTitle);
     } catch (err) {
       console.error("Error generating Service Design:", err);
     } finally {
@@ -73,150 +102,429 @@ export function ServiceDesignDeepDive({ projectTitle, activeDivision }: ServiceD
     }
   };
 
-  const handleCopy = () => {
-    if (data.narrativeMarkdown) {
-      navigator.clipboard.writeText(data.narrativeMarkdown);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
+  // Handler to completely wipe content and make it POLOS (blank)
+  const handleClearAll = () => {
+    setContent("");
+    setEditText("");
+    setIsEditing(false);
+    localStorage.removeItem(storageKey);
+    localStorage.removeItem(`${storageKey}_title`);
   };
 
+  // Handler to start editing manually
+  const handleStartEdit = () => {
+    setEditText(content);
+    setIsEditing(true);
+  };
+
+  // Save manual edits
   const handleSaveEdit = () => {
-    setData((prev) => ({
-      ...prev,
-      narrativeMarkdown: editText
-    }));
+    setContent(editText);
     localStorage.setItem(storageKey, editText);
     setIsEditing(false);
   };
 
+  // Copy narrative to clipboard
+  const handleCopy = () => {
+    if (!content) return;
+    navigator.clipboard.writeText(content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  // Helper to cleanly format bold markdown text
+  const formatTextWithBold = (text: string) => {
+    if (!text) return null;
+    const parts = text.split(/(\*\*.*?\*\*)/g);
+    return parts.map((part, pIdx) => {
+      if (part.startsWith("**") && part.endsWith("**")) {
+        return (
+          <strong key={pIdx} className="text-white font-bold tracking-wide">
+            {part.slice(2, -2)}
+          </strong>
+        );
+      }
+      return part;
+    });
+  };
+
+  // Section parser for structured Card Mode
+  const parsedSections = useMemo((): ParsedSection[] => {
+    if (!content || !content.trim()) return [];
+
+    const rawSections = content.split(/(?=^#{1,3}\s+)/m);
+    const result: ParsedSection[] = [];
+
+    rawSections.forEach((sec, idx) => {
+      const trimmed = sec.trim();
+      if (!trimmed) return;
+
+      const lines = trimmed.split("\n");
+      const firstLine = lines[0] || "";
+      const rawTitle = firstLine.replace(/^#{1,3}\s+/, "").trim();
+
+      // Clean title
+      let displayTitle = rawTitle.replace(/^\d+[\.\)]\s*/, "").trim();
+      if (!displayTitle) {
+        displayTitle = `Bagian Service Design ${idx + 1}`;
+      }
+
+      const titleLower = rawTitle.toLowerCase();
+      let iconType: ParsedSection["iconType"] = "general";
+      let metaBadge = "Service Architecture";
+      let stepNumber = `0${idx + 1}`;
+
+      if (titleLower.includes("siklus") || titleLower.includes("journey") || titleLower.includes("klien") || titleLower.includes("touchpoint")) {
+        iconType = "journey";
+        metaBadge = "Client Journey & Touchpoints";
+        stepNumber = "01";
+      } else if (titleLower.includes("blueprint") || titleLower.includes("prosedur") || titleLower.includes("standar") || titleLower.includes("layanan")) {
+        iconType = "blueprint";
+        metaBadge = "Operational Blueprint & SOP";
+        stepNumber = "02";
+      } else if (titleLower.includes("fail-safe") || titleLower.includes("darurat") || titleLower.includes("mitigasi") || titleLower.includes("kontinuitas")) {
+        iconType = "failsafe";
+        metaBadge = "Fail-Safe & Contingency";
+        stepNumber = "03";
+      } else if (titleLower.includes("kpi") || titleLower.includes("kepuasan") || titleLower.includes("metrik") || titleLower.includes("indikator")) {
+        iconType = "kpi";
+        metaBadge = "Customer Experience & KPIs";
+        stepNumber = "04";
+      }
+
+      const bodyLines = lines.slice(1);
+      const paragraphs: string[] = [];
+      const bullets: string[] = [];
+
+      bodyLines.forEach((bLine) => {
+        const blTrim = bLine.trim();
+        if (!blTrim) return;
+
+        if (blTrim.startsWith("- ") || blTrim.startsWith("* ") || blTrim.startsWith("• ")) {
+          bullets.push(blTrim.replace(/^[\*\-•]\s+/, "").trim());
+        } else {
+          paragraphs.push(blTrim);
+        }
+      });
+
+      let quickSummary = "";
+      if (paragraphs.length > 0) {
+        const firstP = paragraphs[0];
+        const sentenceMatch = firstP.match(/^([^\.\!\?]+[\.\!\?])/);
+        quickSummary = sentenceMatch ? sentenceMatch[1] : firstP.slice(0, 160) + "...";
+      } else if (bullets.length > 0) {
+        quickSummary = bullets[0];
+      }
+
+      result.push({
+        id: `sec-${idx}`,
+        rawTitle,
+        displayTitle,
+        stepNumber,
+        iconType,
+        quickSummary,
+        paragraphs,
+        bullets,
+        metaBadge
+      });
+    });
+
+    return result;
+  }, [content]);
+
+  // Render seamless narrative text for Document View
+  const renderSeamlessNarrative = (rawText: string) => {
+    if (!rawText || !rawText.trim()) return null;
+    const lines = rawText.split("\n");
+    const renderedNodes: React.ReactNode[] = [];
+
+    lines.forEach((line, index) => {
+      const trimmed = line.trim();
+
+      if (!trimmed) {
+        renderedNodes.push(<div key={`empty-${index}`} className="h-3" />);
+        return;
+      }
+
+      if (trimmed.startsWith("### ")) {
+        const headingText = trimmed.replace(/^###\s+/, "");
+        renderedNodes.push(
+          <div key={`h3-${index}`} className="mt-6 mb-3 pt-3 border-t border-slate-800 first:border-t-0 first:pt-0">
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-cyan-500 shrink-0" />
+              <h4 className="text-sm md:text-base font-bold text-white uppercase tracking-tight">
+                {headingText}
+              </h4>
+            </div>
+          </div>
+        );
+        return;
+      }
+
+      if (trimmed.startsWith("## ") || trimmed.startsWith("# ")) {
+        const headingText = trimmed.replace(/^#+\s+/, "");
+        renderedNodes.push(
+          <div key={`h2-${index}`} className="mt-7 mb-3.5 border-b border-cyan-500/20 pb-2">
+            <h3 className="text-base md:text-lg font-bold text-cyan-300 uppercase tracking-tight flex items-center gap-2">
+              <Layers className="h-4 w-4 text-cyan-400" />
+              {headingText}
+            </h3>
+          </div>
+        );
+        return;
+      }
+
+      if (trimmed.startsWith("- ") || trimmed.startsWith("* ") || trimmed.startsWith("• ")) {
+        const bulletContent = trimmed.replace(/^[\*\-•]\s+/, "");
+        renderedNodes.push(
+          <div key={`bullet-${index}`} className="flex items-start gap-2.5 ml-1 my-1.5 text-slate-300 text-xs md:text-[13px] leading-relaxed">
+            <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-cyan-400 shrink-0" />
+            <div className="flex-1">{formatTextWithBold(bulletContent)}</div>
+          </div>
+        );
+        return;
+      }
+
+      renderedNodes.push(
+        <p
+          key={`p-${index}`}
+          className="text-xs md:text-[13px] text-slate-300 leading-relaxed font-normal text-justify my-2.5"
+        >
+          {formatTextWithBold(trimmed)}
+        </p>
+      );
+    });
+
+    return renderedNodes;
+  };
+
+  const isBlank = !content || content.trim().length === 0;
+  const isTitleDifferent = content && lastGeneratedForTitle && lastGeneratedForTitle.toLowerCase() !== currentTitle.toLowerCase();
+
   return (
     <div
       id="service-design-deepdive-root"
-      className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-8 text-slate-800 shadow-sm mt-3 font-sans relative overflow-hidden"
+      className="bg-slate-900 border border-slate-800 rounded-3xl p-5 md:p-7 text-slate-100 shadow-xl mt-2 font-sans relative overflow-hidden"
     >
-      {/* Top Header & Actions Toolbar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 mb-6 border-b border-slate-200">
-        <div className="flex items-center gap-3">
-          <div className="h-11 w-11 rounded-xl bg-cyan-50 border border-cyan-200 flex items-center justify-center text-cyan-700 shrink-0">
-            <Layers className="h-5 w-5" />
+      {/* Top Header Bar */}
+      <div className="mb-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+          {/* Badge & Project Info */}
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-mono flex items-center gap-1.5">
+              <Layers className="h-3 w-3 text-cyan-400" />
+              PILAR 15 • SERVICE DESIGN BLUEPRINT
+            </span>
+            <span className="text-slate-600 hidden sm:inline">•</span>
+            <span className="text-xs text-slate-400 font-medium truncate max-w-xs sm:max-w-md">
+              Proyek: <strong className="text-slate-200">{currentTitle}</strong>
+            </span>
+            <span className="text-slate-600 hidden sm:inline">•</span>
+            <span
+              className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded font-bold ${
+                isBlank
+                  ? "bg-slate-800 text-slate-400 border border-slate-700"
+                  : "bg-emerald-500/10 text-emerald-300 border border-emerald-500/30"
+              }`}
+            >
+              {isBlank ? "Status: Polos" : "Status: Terstruktur Rapih"}
+            </span>
           </div>
-          <div>
+
+          {/* Action Buttons Toolbar */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {!isBlank && !isEditing && (
+              <>
+                {/* 3-Way Segmented View Switcher */}
+                <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 shrink-0 select-none">
+                  <button
+                    type="button"
+                    onClick={() => setDisplayMode("core")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                      displayMode === "core"
+                        ? "bg-cyan-600 text-white shadow-xs"
+                        : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
+                    }`}
+                    title="Tampilan Inti Pokok yang ringkas, visual, dan mudah dipahami"
+                  >
+                    <SlidersHorizontal className="h-3.5 w-3.5" />
+                    <span>Inti Pokok (Ringkas)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDisplayMode("cards")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                      displayMode === "cards"
+                        ? "bg-cyan-600 text-white shadow-xs"
+                        : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
+                    }`}
+                    title="Tampilan Kotak Rincian terstruktur per komponen"
+                  >
+                    <LayoutGrid className="h-3.5 w-3.5" />
+                    <span>Kotak Rincian</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDisplayMode("document")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                      displayMode === "document"
+                        ? "bg-cyan-600 text-white shadow-xs"
+                        : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
+                    }`}
+                    title="Tampilan Dokumen Narasi komprehensif"
+                  >
+                    <AlignLeft className="h-3.5 w-3.5" />
+                    <span>Dokumen Narasi</span>
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* Buat Isian Sesuai Judul / Buat Ulang */}
+            {!isEditing && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    try {
+                      const saved = localStorage.getItem("prama_dashboard_sections");
+                      const map = saved ? JSON.parse(saved) : {};
+                      map[15] = content;
+                      exportAllSectionsToWord(currentTitle, map);
+                    } catch(e) {
+                      exportAllSectionsToWord(currentTitle, { 15: content });
+                    }
+                  }}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition shadow-md shadow-emerald-600/20 cursor-pointer active:scale-95"
+                  title="Unduh seluruh laporan komprehensif ke format Word (.doc)"
+                >
+                  <FileText className="h-3.5 w-3.5" />
+                  <span>Unduh Word (.doc)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleGenerateContent(currentTitle)}
+                  disabled={isLoading}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-md transition disabled:opacity-50 cursor-pointer"
+                  title="Hasilkan isian Service Design yang tepat sesuai judul proyek"
+                >
+                  {isLoading ? (
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin text-white" />
+                  ) : (
+                    <Sparkles className="h-3.5 w-3.5 text-cyan-200" />
+                  )}
+                  <span>{isBlank ? "Buat Isian Sesuai Judul" : "Buat Ulang Sesuai Judul"}</span>
+                </button>
+              </>
+            )}
+
+            {/* Salin Teks */}
+            {!isBlank && !isEditing && (
+              <button
+                type="button"
+                onClick={handleCopy}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition cursor-pointer"
+                title="Salin naskah kajian ke clipboard"
+              >
+                {copied ? (
+                  <>
+                    <Check className="h-3.5 w-3.5 text-emerald-400" />
+                    <span className="text-emerald-400">Tersalin!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-3.5 w-3.5 text-slate-400" />
+                    <span>Salin</span>
+                  </>
+                )}
+              </button>
+            )}
+
+            {/* Edit Teks */}
+            {!isBlank && !isEditing && (
+              <button
+                type="button"
+                onClick={handleStartEdit}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition cursor-pointer"
+                title="Edit narasi kajian secara langsung"
+              >
+                <Edit3 className="h-3.5 w-3.5 text-slate-400" />
+                <span>Edit Teks</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Notice if title has changed */}
+        {isTitleDifferent && !isBlank && !isEditing && (
+          <div className="mt-3 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center justify-between gap-3 text-xs text-amber-200">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-cyan-100 text-cyan-800 font-mono">
-                PILAR 15 • SERVICE DESIGN BLUEPRINT
-              </span>
-              <span className="text-xs text-slate-400">•</span>
-              <span className="text-xs font-bold text-slate-600 truncate max-w-xs sm:max-w-md">
-                {currentTitle}
+              <AlertCircle className="h-4 w-4 text-amber-400 shrink-0" />
+              <span>
+                Judul Proyek Telah Diubah: <strong>"{currentTitle}"</strong>. Data saat ini masih mengacu pada "{lastGeneratedForTitle}".
               </span>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Rantai layanan end-to-end terintegrasi, spesifikasi kargo, matriks eksekusi 11 tahap, dan standar K3/Regulasi.
-            </p>
-          </div>
-        </div>
-
-        {/* Action Toolbar */}
-        <div className="flex items-center gap-2 flex-wrap self-end md:self-center">
-          {/* View Mode Toggle */}
-          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 shrink-0">
             <button
               type="button"
-              onClick={() => setDisplayMode("publication")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-                displayMode === "publication"
-                  ? "bg-white text-cyan-800 shadow-xs border border-slate-200"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
+              onClick={() => handleGenerateContent(currentTitle)}
+              className="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-bold text-[11px] shrink-0 transition cursor-pointer"
             >
-              <SlidersHorizontal className="h-3.5 w-3.5 text-cyan-600" />
-              <span>Desain Publikasi</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setDisplayMode("document")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-                displayMode === "document"
-                  ? "bg-white text-cyan-800 shadow-xs border border-slate-200"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <FileText className="h-3.5 w-3.5 text-slate-500" />
-              <span>Naskah Narasi</span>
+              Perbarui Sesuai Judul Baru
             </button>
           </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              try {
-                const saved = localStorage.getItem("prama_dashboard_sections");
-                const map = saved ? JSON.parse(saved) : {};
-                map[15] = data.narrativeMarkdown;
-                exportAllSectionsToWord(currentTitle, map);
-              } catch (e) {
-                exportAllSectionsToWord(currentTitle, { 15: data.narrativeMarkdown });
-              }
-            }}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer active:scale-95"
-            title="Unduh laporan Service Design ke format Word (.doc)"
-          >
-            <FileText className="h-3.5 w-3.5" />
-            <span>Unduh Word</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={handleRefresh}
-            disabled={isLoading}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-cyan-700 hover:bg-cyan-800 text-white shadow-xs transition disabled:opacity-50 cursor-pointer"
-            title="Perbarui Service Design sesuai judul dan data proyek"
-          >
-            {isLoading ? (
-              <RefreshCw className="h-3.5 w-3.5 animate-spin text-white" />
-            ) : (
-              <Sparkles className="h-3.5 w-3.5 text-cyan-200" />
-            )}
-            <span>Sinkronkan Ulang</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={handleCopy}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition cursor-pointer"
-            title="Salin naskah ke clipboard"
-          >
-            {copied ? (
-              <>
-                <Check className="h-3.5 w-3.5 text-emerald-600" />
-                <span className="text-emerald-600 font-bold">Tersalin!</span>
-              </>
-            ) : (
-              <>
-                <Copy className="h-3.5 w-3.5 text-slate-500" />
-                <span>Salin</span>
-              </>
-            )}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setIsEditing(!isEditing)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition cursor-pointer"
-            title="Edit naskah secara langsung"
-          >
-            <Edit3 className="h-3.5 w-3.5 text-slate-500" />
-            <span>{isEditing ? "Tutup Editor" : "Edit Teks"}</span>
-          </button>
-        </div>
+        )}
       </div>
 
-      {/* Direct Editor View */}
+      {/* BLANK STATE: Displayed when content is wiped or empty */}
+      {isBlank && (
+        <div className="py-14 px-6 text-center bg-slate-950/60 border border-dashed border-slate-800 rounded-2xl my-2">
+          <div className="h-14 w-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center mx-auto mb-4">
+            <Layers className="h-7 w-7" />
+          </div>
+          <h3 className="text-base font-bold text-white mb-1.5">
+            Belum Ada Data Service Design Terformat
+          </h3>
+          <p className="text-xs text-slate-400 max-w-lg mx-auto mb-6 leading-relaxed">
+            Data service design untuk <strong>"{currentTitle}"</strong> dalam keadaan polos.
+            Silakan klik tombol di bawah untuk membuat isian arsitektur pengalaman klien, blueprint operasional, dan SLA yang tepat sesuai judul proyek, atau input secara manual.
+          </p>
+          <div className="flex items-center justify-center gap-3 flex-wrap">
+            <button
+              type="button"
+              onClick={() => handleGenerateContent(currentTitle)}
+              disabled={isLoading}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-lg transition cursor-pointer"
+            >
+              {isLoading ? (
+                <RefreshCw className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4 text-cyan-200" />
+              )}
+              <span>Buat Isian Sesuai Judul</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const initText = `# KAJIAN SERVICE DESIGN: ${currentTitle.toUpperCase()}\n\n## 1. ARSITEKTUR SIKLUS KLIEN (CLIENT JOURNEY MAPPING)\n- Tahap 1: Onboarding & Audit Armada\n- Tahap 2: Penjadwalan Ritase Terpadu\n- Tahap 3: Monitoring Real-Time IoT\n- Tahap 4: Serah Terima Digital\n\n## 2. BLUEPRINT OPERASIONAL & SERVICE STANDARDS\n- SOP Layanan 24/7\n- Kualifikasi Pengemudi Profesional\n- Standardisasi Penanganan Kargo\n\n## 3. FAIL-SAFE PROTOCOLS & MITIGASI DARURAT\n- Unit Cadangan Standby\n- Rute Pengalihan Dinamis\n\n## 4. METRIK KEPUASAN PELANGGAN & KPI\n- On-Time Delivery: ≥ 98.5%\n- CSAT: ≥ 95%`;
+                setContent(initText);
+                setEditText(initText);
+                setIsEditing(true);
+              }}
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition cursor-pointer"
+            >
+              <Edit3 className="h-4 w-4 text-slate-400" />
+              <span>Tulis Manual / Input Data Sendiri</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* EDITING STATE: Direct manual textarea editor */}
       {isEditing && (
-        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 mb-6">
-          <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-200">
-            <span className="text-xs font-bold text-cyan-800 flex items-center gap-1.5">
+        <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800">
+          <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-800">
+            <span className="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
               <Edit3 className="h-3.5 w-3.5" />
               Editor Teks Service Design (Markdown)
             </span>
@@ -224,331 +532,214 @@ export function ServiceDesignDeepDive({ projectTitle, activeDivision }: ServiceD
               <button
                 type="button"
                 onClick={() => setIsEditing(false)}
-                className="px-3 py-1 rounded-lg text-xs font-semibold bg-slate-200 hover:bg-slate-300 text-slate-700 transition cursor-pointer"
+                className="flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition cursor-pointer"
               >
-                Batal
+                <X className="h-3.5 w-3.5" />
+                <span>Batal</span>
               </button>
               <button
                 type="button"
                 onClick={handleSaveEdit}
-                className="px-3.5 py-1 rounded-lg text-xs font-bold bg-cyan-700 hover:bg-cyan-800 text-white shadow transition cursor-pointer"
+                className="flex items-center gap-1 px-3.5 py-1 rounded-lg text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-white shadow transition cursor-pointer"
               >
-                Simpan Perubahan
+                <Save className="h-3.5 w-3.5" />
+                <span>Simpan Perubahan</span>
               </button>
             </div>
           </div>
           <textarea
             value={editText}
             onChange={(e) => setEditText(e.target.value)}
-            className="w-full h-80 bg-white border border-slate-300 rounded-xl p-3 text-xs text-slate-800 font-mono focus:outline-none focus:border-cyan-600 leading-relaxed resize-y"
+            className="w-full h-96 bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-slate-200 font-mono focus:outline-none focus:border-cyan-500 leading-relaxed resize-y"
+            placeholder="Tuliskan struktur Service Design, Client Journey, dan blueprint operasional..."
           />
         </div>
       )}
 
-      {/* MAIN PUBLICATION VIEW: Matching the exact uploaded PDF document layout */}
-      {displayMode === "publication" ? (
-        <div className="space-y-8 max-w-5xl mx-auto">
-          {/* SECTION HEADER */}
-          <div className="space-y-1">
-            <h2 className="text-xl sm:text-2xl font-black text-cyan-900 tracking-tight flex items-baseline gap-2">
-              <span className="text-cyan-700 font-mono">08</span>
-              <span>Pancaran / PRAMA Logistic — Service Design End-to-End</span>
-            </h2>
-            <p className="text-xs text-slate-500 font-medium italic">
-              {data.headerSubtitle}
-            </p>
-            <div className="h-0.5 w-full bg-cyan-600/30 mt-2" />
-          </div>
-
-          {/* 1. VISUAL WORKFLOW PROCESS DIAGRAM */}
-          <div className="space-y-3">
-            <h3 className="text-xs sm:text-sm font-black text-slate-900 tracking-tight">
-              {data.workflowTitle}
-            </h3>
-
-            {/* Flowchart Diagram Grid */}
-            <div className="bg-slate-50/70 p-4 sm:p-6 rounded-2xl border border-slate-200">
-              {/* Row 1: International & Border (Steps 01 - 06) */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 sm:gap-3 mb-4">
-                {data.endToEndWorkflow.slice(0, 6).map((step, idx) => (
-                  <div key={step.id} className="flex items-center gap-1.5">
-                    <div
-                      className={`flex-1 rounded-xl p-2.5 sm:p-3 text-white text-center flex flex-col justify-center min-h-[76px] shadow-xs transition hover:scale-[1.02] ${
-                        step.stageGroup === "international"
-                          ? "bg-[#142850] hover:bg-[#1f3c75]"
-                          : "bg-[#00909e] hover:bg-[#00a8b8]"
-                      }`}
-                    >
-                      <div className="text-[10px] font-black opacity-75 font-mono mb-0.5">
-                        {step.stepNumber}
-                      </div>
-                      <div className="text-[10px] sm:text-[11px] font-bold leading-tight line-clamp-2">
-                        {step.title}
-                      </div>
+      {/* CONTENT VIEW: Displayed when not blank and not editing */}
+      {!isBlank && !isEditing && (
+        <>
+          {displayMode === "core" ? (
+            /* CORE VIEW: Executive Summary, Key Highlights & Takeaways */
+            <div className="space-y-4">
+              {/* Executive Summary Hero Card */}
+              <div className="bg-gradient-to-r from-cyan-950/70 via-slate-900/90 to-slate-900 border border-cyan-500/30 rounded-2xl p-5 shadow-lg relative overflow-hidden">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex items-start gap-3.5">
+                    <div className="h-10 w-10 rounded-xl bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center shrink-0 mt-0.5">
+                      <Zap className="h-5 w-5 text-cyan-300" />
                     </div>
-                    {idx < 5 && (
-                      <ArrowRight className="h-3 w-3 text-slate-400 shrink-0 hidden md:block" />
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                          INTI SERVICE DESIGN • RANGKUMAN EKSEKUTIF
+                        </span>
+                        <span className="text-[11px] font-bold text-emerald-400 flex items-center gap-1">
+                          <CheckCircle2 className="h-3 w-3" />
+                          SOP & Blueprint Terintegrasi
+                        </span>
+                      </div>
+                      <p className="text-xs md:text-sm text-slate-200 leading-relaxed font-medium">
+                        Arsitektur layanan komersial dirancang end-to-end mulai dari akuisisi pesanan, alokasi armada real-time, pengawalan SLA ketat, hingga protokol pemulihan kendala lapangan (failsafe mechanism) khusus untuk <span className="text-cyan-300 font-bold">"{currentTitle}"</span>.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="shrink-0 flex items-center gap-2 border-t md:border-t-0 md:border-l border-slate-800 pt-3 md:pt-0 md:pl-4">
+                    <div className="bg-slate-950/80 px-3.5 py-2 rounded-xl border border-slate-800 text-center">
+                      <div className="text-[10px] text-slate-400 uppercase font-mono font-bold">Target On-Time Delivery</div>
+                      <div className="text-xs font-black text-cyan-300 mt-0.5">≥ 98.5%</div>
+                    </div>
+                    <div className="bg-slate-950/80 px-3.5 py-2 rounded-xl border border-slate-800 text-center">
+                      <div className="text-[10px] text-slate-400 uppercase font-mono font-bold">SLA Respon Insiden</div>
+                      <div className="text-xs font-black text-emerald-400 mt-0.5">&lt; 15 Menit</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 4 Quick Overview Highlight Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {parsedSections.map((sec, idx) => (
+                  <div
+                    key={sec.id || idx}
+                    className="bg-slate-950/80 border border-slate-800 hover:border-cyan-500/40 rounded-2xl p-4 transition shadow-sm space-y-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="h-7 w-7 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 font-bold text-xs">
+                          0{idx + 1}
+                        </div>
+                        <h4 className="text-xs md:text-sm font-bold text-white tracking-tight">
+                          {sec.displayTitle}
+                        </h4>
+                      </div>
+                      <span className="text-[9.5px] font-mono px-2 py-0.5 rounded bg-slate-900 text-cyan-300 border border-slate-800">
+                        {sec.metaBadge}
+                      </span>
+                    </div>
+
+                    {sec.quickSummary && (
+                      <p className="text-xs text-slate-300 leading-relaxed">
+                        {formatTextWithBold(sec.quickSummary)}
+                      </p>
+                    )}
+
+                    {sec.bullets.length > 0 && (
+                      <div className="space-y-1.5 pt-1 border-t border-slate-900">
+                        {sec.bullets.slice(0, 2).map((b, bIdx) => (
+                          <div key={bIdx} className="flex items-start gap-2 text-xs text-slate-300">
+                            <CheckCircle className="h-3.5 w-3.5 text-cyan-400 shrink-0 mt-0.5" />
+                            <span className="text-[11.5px] leading-relaxed">{formatTextWithBold(b)}</span>
+                          </div>
+                        ))}
+                      </div>
                     )}
                   </div>
                 ))}
-              </div>
-
-              {/* Connecting indicator from Row 1 to Row 2 */}
-              <div className="flex justify-end pr-8 mb-2 hidden md:flex">
-                <div className="h-4 w-0.5 bg-slate-300" />
-              </div>
-
-              {/* Row 2: Domestic & Installation (Steps 07 - 11) */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3">
-                {data.endToEndWorkflow.slice(6, 11).map((step, idx) => (
-                  <div key={step.id} className="flex items-center gap-1.5">
-                    <div
-                      className={`flex-1 rounded-xl p-2.5 sm:p-3 text-white text-center flex flex-col justify-center min-h-[76px] shadow-xs transition hover:scale-[1.02] ${
-                        step.stageGroup === "domestic"
-                          ? "bg-[#00909e] hover:bg-[#00a8b8]"
-                          : "bg-[#e26a2c] hover:bg-[#eb7d43]"
-                      }`}
-                    >
-                      <div className="text-[10px] font-black opacity-75 font-mono mb-0.5">
-                        {step.stepNumber}
-                      </div>
-                      <div className="text-[10px] sm:text-[11px] font-bold leading-tight line-clamp-2">
-                        {step.title}
-                      </div>
-                    </div>
-                    {idx < 4 && (
-                      <ArrowRight className="h-3 w-3 text-slate-400 shrink-0 hidden md:block" />
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {/* Color Legends */}
-              <div className="flex items-center justify-center gap-6 mt-5 pt-4 border-t border-slate-200 text-[10.5px] font-bold text-slate-600 flex-wrap">
-                <div className="flex items-center gap-2">
-                  <div className="h-3 w-3 rounded-xs bg-[#142850]" />
-                  <span>International & border</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="h-3 w-3 rounded-xs bg-[#00909e]" />
-                  <span>Domestic heavy logistics</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="h-3 w-3 rounded-xs bg-[#e26a2c]" />
-                  <span>Installation & lifecycle</span>
-                </div>
               </div>
             </div>
+          ) : displayMode === "cards" ? (
+            /* CARDS VIEW: 4 Structured, High-Impact Cards */
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {parsedSections.map((sec, idx) => {
+                let badgeColor = "bg-cyan-500/10 text-cyan-400 border-cyan-500/20";
+                let iconComponent = <Layers className="h-4 w-4 text-cyan-400" />;
 
-            {/* Caption */}
-            <p className="text-[10.5px] text-slate-500 italic text-center">
-              {data.workflowCaption}
-            </p>
-          </div>
+                if (sec.iconType === "journey") {
+                  badgeColor = "bg-blue-500/10 text-blue-400 border-blue-500/20";
+                  iconComponent = <Compass className="h-4 w-4 text-blue-400" />;
+                } else if (sec.iconType === "blueprint") {
+                  badgeColor = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+                  iconComponent = <FileCheck2 className="h-4 w-4 text-emerald-400" />;
+                } else if (sec.iconType === "failsafe") {
+                  badgeColor = "bg-amber-500/10 text-amber-400 border-amber-500/20";
+                  iconComponent = <ShieldCheck className="h-4 w-4 text-amber-400" />;
+                } else if (sec.iconType === "kpi") {
+                  badgeColor = "bg-purple-500/10 text-purple-400 border-purple-500/20";
+                  iconComponent = <Award className="h-4 w-4 text-purple-400" />;
+                }
 
-          {/* 2. CARGO ANATOMY & TECHNICAL SPECIFICATIONS */}
-          <div className="space-y-3">
-            <h3 className="text-xs sm:text-sm font-black text-slate-900 tracking-tight text-center">
-              {data.cargoAnatomy.title}
-            </h3>
-
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-6 grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
-              {/* Left Column: Visual Schematic SVG */}
-              <div className="md:col-span-5 bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col items-center justify-center min-h-[220px]">
-                {data.cargoAnatomy.diagramType === "wind_turbine" ? (
-                  <div className="relative w-full max-w-[200px] h-[200px] flex items-center justify-center">
-                    {/* Wind Turbine SVG Schematic */}
-                    <svg viewBox="0 0 200 220" className="w-full h-full stroke-cyan-800 fill-none">
-                      {/* Tower */}
-                      <line x1="100" y1="70" x2="95" y2="200" strokeWidth="3" />
-                      <line x1="100" y1="70" x2="105" y2="200" strokeWidth="3" />
-                      <line x1="85" y1="200" x2="115" y2="200" strokeWidth="4" />
-                      {/* Nacelle & Hub */}
-                      <rect x="90" y="60" width="22" height="12" rx="2" fill="#00909e" stroke="#142850" strokeWidth="1.5" />
-                      <circle cx="90" cy="66" r="5" fill="#e26a2c" stroke="#142850" strokeWidth="1.5" />
-                      {/* Blades */}
-                      <line x1="90" y1="66" x2="90" y2="10" stroke="#00909e" strokeWidth="2.5" strokeLinecap="round" />
-                      <line x1="90" y1="66" x2="35" y2="110" stroke="#00909e" strokeWidth="2.5" strokeLinecap="round" />
-                      <line x1="90" y1="66" x2="145" y2="110" stroke="#00909e" strokeWidth="2.5" strokeLinecap="round" />
-                      {/* Annotations */}
-                      <text x="10" y="115" fontSize="7" fill="#64748b" className="font-mono">Tip height: 160–240 m</text>
-                      <text x="100" y="45" fontSize="7" fill="#00909e" className="font-mono">Blade 75–95m</text>
-                    </svg>
-                  </div>
-                ) : data.cargoAnatomy.diagramType === "logging_truck" ? (
-                  <div className="w-full flex flex-col items-center justify-center py-4">
-                    <Truck className="h-16 w-16 text-cyan-700 mb-2" />
-                    <span className="text-[11px] font-bold text-slate-700">Logging Heavy Rig 6×4</span>
-                    <span className="text-[9.5px] text-slate-500">Kapasitas 45 Ton • Stanchion Steel</span>
-                  </div>
-                ) : data.cargoAnatomy.diagramType === "bulk_cement" ? (
-                  <div className="w-full flex flex-col items-center justify-center py-4">
-                    <Anchor className="h-16 w-16 text-cyan-700 mb-2" />
-                    <span className="text-[11px] font-bold text-slate-700">Tangki Hi-Blow V-Shape Pneumatik</span>
-                    <span className="text-[9.5px] text-slate-500">Tekanan Kerja 2.0 Bar • 34 m³</span>
-                  </div>
-                ) : (
-                  <div className="w-full flex flex-col items-center justify-center py-4">
-                    <Truck className="h-16 w-16 text-cyan-700 mb-2" />
-                    <span className="text-[11px] font-bold text-slate-700">Armada Logistik Terdedikasi</span>
-                    <span className="text-[9.5px] text-slate-500">Spesifikasi Angkutan Standar Korporasi</span>
-                  </div>
-                )}
-                <span className="text-[9px] text-slate-400 mt-2 font-mono">
-                  Dimensi platform offshore & onshore (indikatif)
-                </span>
-              </div>
-
-              {/* Right Column: Specification Cards Table */}
-              <div className="md:col-span-7 space-y-2 text-xs">
-                {data.cargoAnatomy.components.map((comp, idx) => (
+                return (
                   <div
-                    key={idx}
-                    className="p-2.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition flex flex-col sm:flex-row sm:items-center justify-between gap-1"
+                    key={sec.id || idx}
+                    className="bg-slate-950/80 border border-slate-800/90 rounded-2xl p-5 hover:border-slate-700 transition flex flex-col justify-between"
                   >
                     <div>
-                      <span className="font-bold text-slate-900 block sm:inline mr-2">
-                        {comp.name}
-                      </span>
-                      <span className="text-[10.5px] text-cyan-700 font-medium">
-                        {comp.transportMode}
-                      </span>
-                    </div>
-                    <span className="text-[10px] font-mono text-slate-600 shrink-0 bg-white px-2 py-0.5 rounded border border-slate-200 font-semibold">
-                      {comp.dimensionWeight}
-                    </span>
-                  </div>
-                ))}
+                      {/* Top Header of Card */}
+                      <div className="flex items-center justify-between gap-2 mb-3 pb-2.5 border-b border-slate-800">
+                        <div className="flex items-center gap-2">
+                          <div className="p-1.5 rounded-lg bg-slate-900 border border-slate-800">
+                            {iconComponent}
+                          </div>
+                          <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider">
+                            BAGIAN {sec.stepNumber}
+                          </span>
+                        </div>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${badgeColor}`}>
+                          {sec.metaBadge}
+                        </span>
+                      </div>
 
-                {/* Operational note box */}
-                <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-xl text-[10.5px] text-blue-900 leading-relaxed mt-2 font-medium">
-                  {data.cargoAnatomy.operationalNotes.split("\n").map((line, lIdx) => (
-                    <div key={lIdx}>{line}</div>
-                  ))}
-                </div>
+                      {/* Display Title */}
+                      <h4 className="text-sm font-bold text-white mb-2 leading-snug">
+                        {sec.displayTitle}
+                      </h4>
+
+                      {/* Quick Summary Callout Box */}
+                      {sec.quickSummary && (
+                        <div className="p-3 rounded-xl bg-cyan-950/30 border border-cyan-900/40 text-xs text-cyan-200/90 leading-relaxed mb-3 flex items-start gap-2">
+                          <Info className="h-3.5 w-3.5 text-cyan-400 shrink-0 mt-0.5" />
+                          <div>
+                            <span className="font-bold text-cyan-300 block text-[11px] mb-0.5">
+                              Penjelasan Singkat:
+                            </span>
+                            {formatTextWithBold(sec.quickSummary)}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Remaining Paragraphs */}
+                      {sec.paragraphs.slice(1).map((p, pIdx) => (
+                        <p
+                          key={pIdx}
+                          className="text-xs text-slate-300 leading-relaxed mb-2 text-justify"
+                        >
+                          {formatTextWithBold(p)}
+                        </p>
+                      ))}
+
+                      {/* Bullets Points */}
+                      {sec.bullets.length > 0 && (
+                        <div className="mt-3 space-y-2">
+                          {sec.bullets.map((b, bIdx) => (
+                            <div
+                              key={bIdx}
+                              className="flex items-start gap-2 p-2 rounded-lg bg-slate-900/70 border border-slate-800/80 text-xs text-slate-300"
+                            >
+                              <div className="mt-1 h-1.5 w-1.5 rounded-full bg-cyan-400 shrink-0" />
+                              <div className="flex-1 leading-relaxed">
+                                {formatTextWithBold(b)}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            /* DOCUMENT VIEW: Clean Seamless Narrative */
+            <div className="bg-slate-950/60 p-6 rounded-2xl border border-slate-800/80">
+              <div className="max-w-4xl mx-auto">
+                {renderSeamlessNarrative(content)}
               </div>
             </div>
-
-            <p className="text-[10.5px] text-slate-500 italic text-center">
-              {data.cargoAnatomy.imageCaption}
-            </p>
-          </div>
-
-          {/* 3. 11-STAGE COMPREHENSIVE EXECUTION MATRIX TABLE */}
-          <div className="space-y-3">
-            <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-xs">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="bg-[#0a2540] text-white">
-                    <th className="py-3 px-3.5 font-bold w-10 text-center">#</th>
-                    <th className="py-3 px-3.5 font-bold w-44">Tahap</th>
-                    <th className="py-3 px-3.5 font-bold">Aktivitas kunci</th>
-                    <th className="py-3 px-3.5 font-bold w-48">Peran Pancaran / Operator</th>
-                    <th className="py-3 px-3.5 font-bold w-40">KPI</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200 font-sans">
-                  {data.endToEndWorkflow.map((row, idx) => (
-                    <tr
-                      key={row.id}
-                      className={idx % 2 === 0 ? "bg-white hover:bg-slate-50" : "bg-slate-50/50 hover:bg-slate-100/70"}
-                    >
-                      <td className="py-2.5 px-3.5 font-bold text-center text-slate-500 font-mono">
-                        {row.id}
-                      </td>
-                      <td className="py-2.5 px-3.5 font-bold text-slate-900">
-                        {row.title}
-                      </td>
-                      <td className="py-2.5 px-3.5 text-slate-700 leading-relaxed">
-                        {row.keyActivities}
-                      </td>
-                      <td className="py-2.5 px-3.5 text-cyan-800 font-semibold text-[11px]">
-                        {row.operatorRole}
-                      </td>
-                      <td className="py-2.5 px-3.5 text-slate-600 font-mono text-[10.5px]">
-                        {row.kpi}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* 4. CATATAN DESAIN PENTING (REGULATORY & STRATEGIC HIGHLIGHTS) */}
-          <div className="p-5 rounded-2xl bg-cyan-50/50 border border-cyan-200 text-xs text-slate-800 space-y-2">
-            <h4 className="font-bold text-cyan-950 text-sm flex items-center gap-1.5">
-              <Info className="h-4 w-4 text-cyan-700" />
-              Catatan desain penting & pertimbangan strategis:
-            </h4>
-            <div className="space-y-2 pl-1 leading-relaxed text-[11.5px] text-slate-700">
-              {data.designNotes.map((note, nIdx) => (
-                <div key={nIdx} className="flex items-start gap-2">
-                  <div className="h-1.5 w-1.5 rounded-full bg-cyan-700 mt-1.5 shrink-0" />
-                  <div>
-                    {note.includes(":") ? (
-                      <>
-                        <strong className="text-slate-900">{note.split(":")[0]}:</strong>
-                        <span>{note.split(":")[1]}</span>
-                      </>
-                    ) : (
-                      <span>{note}</span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      ) : (
-        /* DOCUMENT / MARKDOWN NARRATIVE VIEW */
-        <div className="bg-slate-50 p-6 sm:p-8 rounded-2xl border border-slate-200 max-w-4xl mx-auto font-sans leading-relaxed">
-          <div className="prose prose-slate max-w-none text-xs sm:text-sm space-y-4">
-            {data.narrativeMarkdown.split("\n\n").map((block, bIdx) => {
-              const trimmed = block.trim();
-              if (trimmed.startsWith("# ")) {
-                return (
-                  <h1 key={bIdx} className="text-lg sm:text-xl font-black text-cyan-900 border-b pb-2">
-                    {trimmed.replace("# ", "")}
-                  </h1>
-                );
-              }
-              if (trimmed.startsWith("## ")) {
-                return (
-                  <h2 key={bIdx} className="text-sm sm:text-base font-bold text-slate-900 mt-5 pt-2 border-t border-slate-200">
-                    {trimmed.replace("## ", "")}
-                  </h2>
-                );
-              }
-              if (trimmed.startsWith("### ")) {
-                return (
-                  <h3 key={bIdx} className="text-xs sm:text-sm font-bold text-cyan-800 mt-3">
-                    {trimmed.replace("### ", "")}
-                  </h3>
-                );
-              }
-              if (trimmed.startsWith("- ")) {
-                return (
-                  <ul key={bIdx} className="space-y-1.5 my-2 pl-4 list-disc text-slate-700">
-                    {trimmed.split("\n").map((line, lIdx) => (
-                      <li key={lIdx}>
-                        {line.replace(/^- /, "")}
-                      </li>
-                    ))}
-                  </ul>
-                );
-              }
-              return (
-                <p key={bIdx} className="text-slate-700 leading-relaxed text-justify">
-                  {trimmed}
-                </p>
-              );
-            })}
-          </div>
-        </div>
+          )}
+        </>
       )}
     </div>
   );
 }
-
-export default ServiceDesignDeepDive;

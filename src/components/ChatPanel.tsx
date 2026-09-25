@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { ChatMessage, SavedFile } from "../types";
-import { Send, FileText, Globe, CircleAlert, Cpu, Eye, EyeOff, Settings, Sparkles, Download, Printer, ArrowLeft, LogOut, Bell, HardDrive, Users, CheckCircle, X, Search, Table, Minimize2, MessageSquare } from "lucide-react";
+import { Send, FileText, Globe, CircleAlert, Cpu, Eye, EyeOff, Settings, Sparkles, Download, Printer, ArrowLeft, LogOut, Bell, HardDrive, Users, CheckCircle, X, Search, Table } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { exportToWord, exportToPDF, downloadPDFDirect } from "../utils/documentExporter";
 const pramaLogo = "https://lh3.googleusercontent.com/d/1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X";
@@ -215,11 +215,10 @@ export default function ChatPanel({
           {onBackToDashboard && (
             <button
               onClick={onBackToDashboard}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-600 border border-slate-200 transition cursor-pointer shrink-0 text-xs font-bold shadow-3sm"
-              title="Minimize chat ke lambang di bawah"
+              className="flex h-8 w-8 items-center justify-center rounded-xl hover:bg-slate-100 border border-slate-200 text-slate-500 hover:text-indigo-650 transition cursor-pointer shrink-0"
+              title="Kembali ke Dashboard / Ganti Divisi"
             >
-              <Minimize2 className="h-3.5 w-3.5 text-blue-600" />
-              <span className="hidden sm:inline">Minimize</span>
+              <ArrowLeft className="h-4.5 w-4.5" />
             </button>
           )}
 
@@ -239,11 +238,11 @@ export default function ChatPanel({
             <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white animate-pulse" />
           </a>
           <div>
-            <span className="block font-sans font-extrabold text-slate-900 text-sm tracking-tight">PRAMA Senior Project Consultant</span>
+            <span className="block font-sans font-extrabold text-slate-900 text-sm tracking-tight">PRAMA Strategic AI Advisor</span>
             <div className="flex items-center gap-1.5 text-[10px] text-emerald-600 font-bold uppercase tracking-wider">
-              <span>{getDivisionTitle(activeDivision)} &bull; Diskusi Solusi Pilar</span>
+              <span>{getDivisionTitle(activeDivision)}</span>
               <span>•</span>
-              <span className="text-emerald-500 lowercase font-medium">{loading ? "sedang menyusun solusi..." : "konsultan aktif"}</span>
+              <span className="text-emerald-500 lowercase font-medium">{loading ? "sedang mengetik..." : "online"}</span>
             </div>
           </div>
         </div>

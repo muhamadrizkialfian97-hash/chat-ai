@@ -1,32 +1,11 @@
 /**
- * PRAMA AI Risk Management & Heat Map Matrix Generator (Pilar 16)
- * Generates tailored, 100% project-aligned 5x5 Risk Heat Map points,
- * categorised risk registers, likelihood-impact assessments, and mitigation protocols.
+ * PRAMA AI Risk Management & Mitigation Generator (Pilar 9: Enterprise Risk Management & HSE Framework)
+ * Generates tailored, 100% project-title-aligned risk registers, likelihood-impact assessments,
+ * operational/financial/regulatory mitigation protocols, and executive risk verdicts.
  */
-
-import { loadSavedProjectParameters, ProjectParameters } from "../types/projectParameters";
-
-export interface PlottedRiskItem {
-  id: string; // e.g. "R1"
-  label: string; // e.g. "R1 PPA/tender"
-  riskName: string; // full description
-  category: "core" | "logistic"; // "core" (blue) or "logistic" (brown/rust)
-  categoryName: string; // e.g. "EBT / Bisnis Inti" or "Logistik & Operasi"
-  prob: number; // 1 to 5 (1: Sangat rendah, 2: Rendah, 3: Sedang, 4: Tinggi, 5: Sangat tinggi)
-  impact: number; // 1 to 5 (1: Minor, 2: Moderat, 3: Signifikan, 4: Besar, 5: Kritis)
-  pxD: string; // e.g. "Tinggi", "Sedang", "Tinggi dampak", "Rendah"
-  mitigation: string; // Key mitigation strategy
-}
 
 export interface RiskManagementResult {
   title: string;
-  division: string;
-  sectorName: string;
-  heatMapTitle: string;
-  category1Name: string;
-  category2Name: string;
-  diagramCaption: string;
-  plottedRisks: PlottedRiskItem[];
   criticalRisksSummary: string;
   mitigationProtocolSummary: string;
   complianceSummary: string;
@@ -40,676 +19,333 @@ export function generateRiskManagementForTitle(
 ): RiskManagementResult {
   const title = (rawTitle || "").trim() || "Kajian Manajemen Risiko & Mitigasi Operasional Logistik";
   const titleLower = title.toLowerCase();
-  const divName = (division || "Logistik & Transportasi Komersial").trim();
-  const params: ProjectParameters = loadSavedProjectParameters(title);
+  const divName = (division || "Logistik & Operasional Darat").trim();
 
-  // 1. WIND FARM / PLTB / RENEWABLE ENERGY
-  if (
-    titleLower.includes("wind") ||
-    titleLower.includes("pltb") ||
-    titleLower.includes("angin") ||
-    titleLower.includes("turbin") ||
-    titleLower.includes("jeneponto") ||
-    titleLower.includes("sidrap") ||
-    titleLower.includes("blade")
-  ) {
-    const heatMapTitle = "Risk Heat Map — EBT (biru) & Logistic (coklat)";
-    const category1Name = "EBT & Bisnis Inti (biru)";
-    const category2Name = "Logistic & Eksekusi (coklat)";
-    const diagramCaption = "Gambar 16.1 — Heat map risiko (penilaian penulis).";
-
-    const plottedRisks: PlottedRiskItem[] = [
-      {
-        id: "R1",
-        label: "R1 PPA/tender",
-        riskName: "PPA/tender tertunda atau batal",
-        category: "core",
-        categoryName: "EBT & Komersial",
-        prob: 4.3,
-        impact: 4.8,
-        pxD: "Tinggi",
-        mitigation: "Stage-gate dev-capex; lokasi dalam RUPTL; portofolio 2–3 site"
-      },
-      {
-        id: "R2",
-        label: "R2 Wind resource",
-        riskName: "Sumber daya angin di bawah P50",
-        category: "core",
-        categoryName: "EBT & Teknis",
-        prob: 3.8,
-        impact: 4.9,
-        pxD: "Tinggi",
-        mitigation: "Pengukuran 12–24 bln, P90 bankable, turbin low-wind"
-      },
-      {
-        id: "R3",
-        label: "R3 Tarif/regulasi",
-        riskName: "Tarif/regulasi (revisi Perpres)",
-        category: "core",
-        categoryName: "EBT & Regulasi",
-        prob: 4.1,
-        impact: 4.1,
-        pxD: "Tinggi",
-        mitigation: "Negosiasi dekat HPT × F; advokasi via asosiasi"
-      },
-      {
-        id: "R4",
-        label: "R4 Grid/curtail",
-        riskName: "Grid & curtailment",
-        category: "core",
-        categoryName: "EBT & Interkoneksi",
-        prob: 3.5,
-        impact: 4.0,
-        pxD: "Sedang",
-        mitigation: "Grid study dini; klausul kompensasi; BESS"
-      },
-      {
-        id: "R5",
-        label: "R5 Lahan & sosial",
-        riskName: "Lahan & penerimaan sosial",
-        category: "core",
-        categoryName: "EBT & Sosial",
-        prob: 3.9,
-        impact: 3.3,
-        pxD: "Sedang",
-        mitigation: "Sewa lahan partisipatif, CSR desa, FPIC"
-      },
-      {
-        id: "R6",
-        label: "R6 Konstruksi",
-        riskName: "Konstruksi & COD delay",
-        category: "core",
-        categoryName: "EBT & EPC",
-        prob: 3.0,
-        impact: 4.5,
-        pxD: "Tinggi",
-        mitigation: "EPC lump-sum, LD, logistik terintegrasi"
-      },
-      {
-        id: "R7",
-        label: "R7 Kurs & bunga",
-        riskName: "Kurs & suku bunga",
-        category: "core",
-        categoryName: "EBT & Finansial",
-        prob: 3.6,
-        impact: 3.0,
-        pxD: "Sedang",
-        mitigation: "Pendanaan USD, hedging, concessional"
-      },
-      {
-        id: "R8",
-        label: "R8 Pipeline logistik",
-        riskName: "Pipeline logistik rendah (skenario Low)",
-        category: "logistic",
-        categoryName: "Logistik & Pasar",
-        prob: 4.7,
-        impact: 3.7,
-        pxD: "Tinggi",
-        mitigation: "Asset-light, utilisasi non-angin, captive anchor"
-      },
-      {
-        id: "R9",
-        label: "R9 Damage blade",
-        riskName: "Kerusakan blade saat angkut",
-        category: "logistic",
-        categoryName: "Logistik & Kargo",
-        prob: 2.1,
-        impact: 4.1,
-        pxD: "Sedang",
-        mitigation: "Engineering, IoT sensor, asuransi, SOP OEM"
-      },
-      {
-        id: "R10",
-        label: "R10 Jalan/jembatan",
-        riskName: "Jalan/jembatan tidak memadai",
-        category: "logistic",
-        categoryName: "Logistik & Rute",
-        prob: 3.7,
-        impact: 3.7,
-        pxD: "Sedang",
-        mitigation: "Route survey dini, blade lifter, perkuatan sementara"
-      },
-      {
-        id: "R11",
-        label: "R11 Crane idle",
-        riskName: "Crane idle antarproyek",
-        category: "logistic",
-        categoryName: "Logistik & Alat",
-        prob: 4.1,
-        impact: 2.8,
-        pxD: "Sedang",
-        mitigation: "Sewa/partner; beli hanya di atas gate"
-      },
-      {
-        id: "R12",
-        label: "R12 HSSE",
-        riskName: "Insiden HSSE (lifting)",
-        category: "logistic",
-        categoryName: "Logistik & K3",
-        prob: 2.3,
-        impact: 4.8,
-        pxD: "Tinggi dampak",
-        mitigation: "Lift plan, sertifikasi, budaya stop-work"
-      },
-      {
-        id: "R13",
-        label: "R13 Cuaca/laut",
-        riskName: "Cuaca/gelombang pada leg laut",
-        category: "logistic",
-        categoryName: "Logistik & Maritim",
-        prob: 3.2,
-        impact: 2.5,
-        pxD: "Rendah",
-        mitigation: "Weather window, perencanaan musim"
-      },
-      {
-        id: "R14",
-        label: "R14 TKDN",
-        riskName: "TKDN & perubahan kebijakan impor",
-        category: "logistic",
-        categoryName: "Logistik & Regulasi",
-        prob: 2.9,
-        impact: 2.9,
-        pxD: "Sedang",
-        mitigation: "Konfirmasi dini dengan ESDM/Kemenperin & lender"
-      }
-    ];
-
-    return buildRiskResult(
-      title,
-      divName,
-      "Logistik Proyek Energi Terbarukan & Heavy Haulage PLTB",
-      heatMapTitle,
-      category1Name,
-      category2Name,
-      diagramCaption,
-      plottedRisks
-    );
-  }
-
-  // 2. FORESTRY / KEHUTANAN HTI & LOGGING
-  if (
-    titleLower.includes("forestry") ||
-    titleLower.includes("kehutanan") ||
-    titleLower.includes("hutan") ||
-    titleLower.includes("kayu") ||
-    titleLower.includes("timber") ||
-    titleLower.includes("logging") ||
-    titleLower.includes("rapp") ||
-    titleLower.includes("pelalawan")
-  ) {
-    const heatMapTitle = "Risk Heat Map — Operasi HTI (biru) & Transportasi Logging (coklat)";
-    const category1Name = "Operasi HTI & Pasokan (biru)";
-    const category2Name = "Transportasi & Jalur (coklat)";
-    const diagramCaption = "Gambar 16.1 — Heat map risiko logistik kehutanan HTI (penilaian penulis).";
-
-    const plottedRisks: PlottedRiskItem[] = [
-      {
-        id: "R1",
-        label: "R1 Cuaca hujan / amblas",
-        riskName: "Jalan tanah HTI amblas saat musim hujan ekstrem",
-        category: "core",
-        categoryName: "Operasi HTI",
-        prob: 4.2,
-        impact: 4.7,
-        pxD: "Tinggi",
-        mitigation: "Penimbunan agregat batu, grader siaga, dan skedul tebang musim kering"
-      },
-      {
-        id: "R2",
-        label: "R2 Pasokan petak tebang",
-        riskName: "Keterlambatan harvesting di petak tebang HTI",
-        category: "core",
-        categoryName: "Operasi HTI",
-        prob: 3.5,
-        impact: 4.2,
-        pxD: "Tinggi",
-        mitigation: "Buffer logyard di pinggir jalan utama & monitoring harian"
-      },
-      {
-        id: "R3",
-        label: "R3 Legalitas SVLK/SIPUHH",
-        riskName: "Kendala administrasi verifikasi barcode kayu SVLK",
-        category: "core",
-        categoryName: "Regulasi HTI",
-        prob: 2.2,
-        impact: 4.6,
-        pxD: "Sedang",
-        mitigation: "Integrasi sistem e-SIPUHH KLHK real-time pra-pemberangkatan"
-      },
-      {
-        id: "R4",
-        label: "R4 Jembatan ponton rusak",
-        riskName: "Kerusakan jembatan ponton/penyeberangan sungai",
-        category: "core",
-        categoryName: "Infrastruktur",
-        prob: 2.8,
-        impact: 4.0,
-        pxD: "Sedang",
-        mitigation: "Inspeksi daya apung ponton mingguan dan perkuatan sling kawat baja"
-      },
-      {
-        id: "R5",
-        label: "R5 Konflik batas lahan",
-        riskName: "Klaim lahan tenurial oleh masyarakat lokal",
-        category: "core",
-        categoryName: "Sosial",
-        prob: 3.2,
-        impact: 3.4,
-        pxD: "Sedang",
-        mitigation: "Program CSR kemitraan kehutanan dan pendekatan musyawarah desa"
-      },
-      {
-        id: "R6",
-        label: "R6 Truk terbalik di tikungan",
-        riskName: "Truk logging terbalik akibat stanchion patah / beban geser",
-        category: "logistic",
-        categoryName: "Transportasi Logging",
-        prob: 2.4,
-        impact: 4.8,
-        pxD: "Tinggi dampak",
-        mitigation: "Inspeksi berkala stanchion baja, web-sling pengikat, batas muat m³"
-      },
-      {
-        id: "R7",
-        label: "R7 Blindspot telematika",
-        riskName: "Hilang kontak GPS di pedalaman hutan HTI",
-        category: "logistic",
-        categoryName: "Telematika",
-        prob: 4.4,
-        impact: 2.6,
-        pxD: "Sedang",
-        mitigation: "GPS satelit hibrida dual-band dan radio komunikasi repeater HT"
-      },
-      {
-        id: "R8",
-        label: "R8 Antrean woodyard pabrik",
-        riskName: "Kongesti antrean bongkar di woodyard pabrik pulp",
-        category: "logistic",
-        categoryName: "Destinasi Pabrik",
-        prob: 3.9,
-        impact: 3.1,
-        pxD: "Sedang",
-        mitigation: "Sistem slot booking kedatangan digital berbasis e-manifest"
-      },
-      {
-        id: "R9",
-        label: "R9 Kerusakan ban off-road",
-        riskName: "Pecah ban akibat tunggul kayu dan bebatuan tajam",
-        category: "logistic",
-        categoryName: "Armada",
-        prob: 4.5,
-        impact: 2.7,
-        pxD: "Sedang",
-        mitigation: "Penggunaan ban mining pattern radial ply dan tim servis keliling"
-      },
-      {
-        id: "R10",
-        label: "R10 HSSE kelelahan supir",
-        riskName: "Microsleep supir hauling pada shift malam",
-        category: "logistic",
-        categoryName: "HSSE",
-        prob: 3.0,
-        impact: 4.5,
-        pxD: "Tinggi",
-        mitigation: "Kamera AI pemantau kantuk DSS dan rest area terjadwal"
-      }
-    ];
-
-    return buildRiskResult(
-      title,
-      divName,
-      "Logistik Pengangkutan Hasil Hutan Tanaman Industri (HTI)",
-      heatMapTitle,
-      category1Name,
-      category2Name,
-      diagramCaption,
-      plottedRisks
-    );
-  }
-
-  // 3. SEMEN CURAH / HI-BLOW & MATERIAL
-  if (
-    titleLower.includes("semen") ||
-    titleLower.includes("cement") ||
-    titleLower.includes("hi-blow") ||
-    titleLower.includes("klinker") ||
-    titleLower.includes("beton")
-  ) {
-    const heatMapTitle = "Risk Heat Map — Komersial Semen (biru) & Operasional Tangki (coklat)";
-    const category1Name = "Komersial & Regulasi (biru)";
-    const category2Name = "Operasional Tangki Silo (coklat)";
-    const diagramCaption = "Gambar 16.1 — Heat map risiko distribusi semen curah Hi-Blow (penilaian penulis).";
-
-    const plottedRisks: PlottedRiskItem[] = [
-      {
-        id: "R1",
-        label: "R1 Zero ODOL penindakan",
-        riskName: "Penindakan batas muatan sumbu MST 10 ton di jembatan timbang",
-        category: "core",
-        categoryName: "Regulasi",
-        prob: 3.8,
-        impact: 4.8,
-        pxD: "Tinggi",
-        mitigation: "Penimbangan digital ketat di loading plant, batas muat 28–30 ton"
-      },
-      {
-        id: "R2",
-        label: "R2 Volatilitas solar industri",
-        riskName: "Kenaikan mendadak harga bahan bakar solar non-subsidi",
-        category: "core",
-        categoryName: "Finansial",
-        prob: 4.2,
-        impact: 3.8,
-        pxD: "Tinggi",
-        mitigation: "Klausul Fuel Adjustment Factor (FAF) otomatis dalam kontrak B2B"
-      },
-      {
-        id: "R3",
-        label: "R3 Denda demurrage batching",
-        riskName: "Penalti keterlambatan tiba saat jadwal pengecoran beton",
-        category: "core",
-        categoryName: "Komersial",
-        prob: 3.1,
-        impact: 4.0,
-        pxD: "Sedang",
-        mitigation: "Buffer time rute 15%, GPS dynamic ETA, armada siaga cadangan"
-      },
-      {
-        id: "R4",
-        label: "R4 Overpressure bejana",
-        riskName: "Bahaya kelebihan tekanan pada dinding tangki silo saat unloader",
-        category: "logistic",
-        categoryName: "Keselamatan Tangki",
-        prob: 2.1,
-        impact: 4.9,
-        pxD: "Tinggi dampak",
-        mitigation: "Dual safety pressure relief valves 2.2 bar & sensor alarm digital"
-      },
-      {
-        id: "R5",
-        label: "R5 Penyumbatan pipa semen",
-        riskName: "Pneumatic pipe choking akibat udara kompresor lembap",
-        category: "logistic",
-        categoryName: "Operasi Blower",
-        prob: 3.6,
-        impact: 3.2,
-        pxD: "Sedang",
-        mitigation: "Instalasi tabung air dryer & water trap pada unit kompresor"
-      },
-      {
-        id: "R6",
-        label: "R6 Tumpahan debu semen",
-        riskName: "Pecah selang kopling atau kebocoran paking manhole",
-        category: "logistic",
-        categoryName: "Lingkungan",
-        prob: 2.7,
-        impact: 3.5,
-        pxD: "Sedang",
-        mitigation: "Uji tekanan selang berkala dan penggantian seal paking rutin"
-      },
-      {
-        id: "R7",
-        label: "R7 Bekerja di ketinggian",
-        riskName: "Kru terjatuh saat membuka manhole atas tangki",
-        category: "logistic",
-        categoryName: "HSSE",
-        prob: 2.3,
-        impact: 4.6,
-        pxD: "Tinggi dampak",
-        mitigation: "Full body harness terikat pada lifeline catwalk atas tangki"
-      }
-    ];
-
-    return buildRiskResult(
-      title,
-      divName,
-      "Logistik Distribusi Semen Curah Hi-Blow",
-      heatMapTitle,
-      category1Name,
-      category2Name,
-      diagramCaption,
-      plottedRisks
-    );
-  }
-
-  // 4. PERTAMBANGAN NIKEL / BATUBARA
-  if (
-    titleLower.includes("tambang") ||
-    titleLower.includes("nikel") ||
-    titleLower.includes("nickel") ||
-    titleLower.includes("batubara") ||
-    titleLower.includes("coal") ||
-    titleLower.includes("mineral")
-  ) {
-    const heatMapTitle = "Risk Heat Map — Tambang & Smelter (biru) & Hauling Berat (coklat)";
-    const category1Name = "Tambang & Smelter (biru)";
-    const category2Name = "Hauling Dump Truck (coklat)";
-    const diagramCaption = "Gambar 16.1 — Heat map risiko pengangkutan pertambangan (penilaian penulis).";
-
-    const plottedRisks: PlottedRiskItem[] = [
-      {
-        id: "R1",
-        label: "R1 Verifikasi SIMBARA",
-        riskName: "Penghentian izin hauling akibat ketidaksinkronan kuota RKAB",
-        category: "core",
-        categoryName: "Regulasi ESDM",
-        prob: 2.9,
-        impact: 4.9,
-        pxD: "Tinggi",
-        mitigation: "Integrasi API sistem timbangan jembatan langsung ke SIMBARA Ditjen Minerba"
-      },
-      {
-        id: "R2",
-        label: "R2 Cuaca hujan & jalan licin",
-        riskName: "Hauling dihentikan total saat jalan tambang berlumpur licin",
-        category: "core",
-        categoryName: "Operasi Tambang",
-        prob: 4.4,
-        impact: 4.1,
-        pxD: "Tinggi",
-        mitigation: "Perkerasan jalan dengan batu split, drainase terawat, klausul slippery allowance"
-      },
-      {
-        id: "R3",
-        label: "R3 Denda demurrage tongkang",
-        riskName: "Keterlambatan pemuatan tongkang di pelabuhan jetty",
-        category: "core",
-        categoryName: "Komersial",
-        prob: 3.3,
-        impact: 4.2,
-        pxD: "Sedang",
-        mitigation: "Buffer stockpile intermediate di jetty dan optimalisasi ritase 2 shift"
-      },
-      {
-        id: "R4",
-        label: "R4 Tipper dump rollover",
-        riskName: "Dump truck terbalik saat membongkar muatan di bibir hopper",
-        category: "logistic",
-        categoryName: "Keselamatan Alat",
-        prob: 2.2,
-        impact: 4.9,
-        pxD: "Tinggi dampak",
-        mitigation: "Sensor inclinometer pengunci hidrolik dan pemadatan rutin area dumping"
-      },
-      {
-        id: "R5",
-        label: "R5 Rem blong di turunan",
-        riskName: "Overheating rem saat menuruni jalan tambang curam bermuatan penuh",
-        category: "logistic",
-        categoryName: "Mekanikal Truk",
-        prob: 2.4,
-        impact: 4.8,
-        pxD: "Tinggi dampak",
-        mitigation: "Kewajiban penggunaan engine retarder dan jalur penyelamat (runaway ramp)"
-      },
-      {
-        id: "R6",
-        label: "R6 Fatigue supir shift malam",
-        riskName: "Microsleep supir dump truck di jalur tambang 24 jam",
-        category: "logistic",
-        categoryName: "HSSE",
-        prob: 3.4,
-        impact: 4.7,
-        pxD: "Tinggi",
-        mitigation: "Kamera pemantau kantuk AI DSS dengan getaran kursi dan alarm kabin"
-      },
-      {
-        id: "R7",
-        label: "R7 Kerusakan sasis & bak",
-        riskName: "Retak sasis akibat impak bongkahan batu bijih keras",
-        category: "logistic",
-        categoryName: "Pemeliharaan",
-        prob: 3.8,
-        impact: 3.2,
-        pxD: "Sedang",
-        mitigation: "Pelat bak baja anti-abrasi Hardox 450 dan jadwal servis preventif terjadwal"
-      }
-    ];
-
-    return buildRiskResult(
-      title,
-      divName,
-      "Logistik Hauling Mineral Pertambangan",
-      heatMapTitle,
-      category1Name,
-      category2Name,
-      diagramCaption,
-      plottedRisks
-    );
-  }
-
-  // 5. DEFAULT COMMERCIAL LOGISTICS
-  const heatMapTitle = "Risk Heat Map — Komersial & Regulasi (biru) & Operasional Rute (coklat)";
-  const category1Name = "Komersial & Regulasi (biru)";
-  const category2Name = "Operasional & Armada (coklat)";
-  const diagramCaption = "Gambar 16.1 — Heat map risiko distribusi kargo (penilaian penulis).";
-
-  const plottedRisks: PlottedRiskItem[] = [
-    {
-      id: "R1",
-      label: "R1 Kepatuhan regulasi jalan",
-      riskName: "Penindakan regulasi beban gandar dan izin lintasan jalan nasional",
-      category: "core",
-      categoryName: "Regulasi",
-      prob: 3.5,
-      impact: 4.6,
-      pxD: "Tinggi",
-      mitigation: "Survei jembatan timbang, verifikasi berat kargo, perizinan resmi Kemenhub"
-    },
-    {
-      id: "R2",
-      label: "R2 Keterlambatan tiba (SLA)",
-      riskName: "Kemacetan rute dan keterlambatan pengiriman ke klien",
-      category: "core",
-      categoryName: "Komersial",
-      prob: 3.9,
-      impact: 3.7,
-      pxD: "Sedang",
-      mitigation: "Routing dinamis AI, buffer waktu pengiriman, tim pengawalan konvoi"
-    },
-    {
-      id: "R3",
-      label: "R3 Fluktuasi biaya solar",
-      riskName: "Kenaikan harga bahan bakar non-subsidi",
-      category: "core",
-      categoryName: "Finansial",
-      prob: 4.1,
-      impact: 3.6,
-      pxD: "Sedang",
-      mitigation: "Klausul penyesuaian tarif BBM (Fuel Surcharge) dalam kontrak perjanjian"
-    },
-    {
-      id: "R4",
-      label: "R4 Kerusakan muatan kargo",
-      riskName: "Kerusakan fisik barang akibat guncangan atau penanganan salah",
-      category: "logistic",
-      categoryName: "Kargo",
-      prob: 2.3,
-      impact: 4.5,
-      pxD: "Sedang",
-      mitigation: "Lashing terstandarisasi, sensor shock IoT, asuransi Marine Cargo komprehensif"
-    },
-    {
-      id: "R5",
-      label: "R5 Kerusakan unit di jalan",
-      riskName: "Mogok atau kerusakan mekanis kendaraan di tengah rute",
-      category: "logistic",
-      categoryName: "Armada",
-      prob: 3.2,
-      impact: 3.5,
-      pxD: "Sedang",
-      mitigation: "Pemeliharaan preventif ketat, jaringan bengkel rekanan 24 jam"
-    },
-    {
-      id: "R6",
-      label: "R6 Insiden keselamatan HSSE",
-      riskName: "Kecelakaan lalu lintas akibat kelelahan supir",
-      category: "logistic",
-      categoryName: "HSSE",
-      prob: 2.8,
-      impact: 4.8,
-      pxD: "Tinggi dampak",
-      mitigation: "Telematika pemantau kecepatan, batas jam kerja supir, pelatihan defensive driving"
+  // Route extraction
+  let origin = "";
+  let dest = "";
+  const routeMatch = /(?:dari|koridor|jalur|rute|pengangkutan|distribusi|hauling)?\s*([A-Za-z\s]+?)\s*(?:ke|sampai|menuju|-|s\.d|to)\s*([A-Za-z\s]+)/i.exec(title);
+  if (routeMatch && routeMatch[1] && routeMatch[2]) {
+    const rawOrig = routeMatch[1].replace(/pengangkutan|distribusi|hauling|kajian|strategis|proyek/gi, "").trim();
+    const rawDest = routeMatch[2].trim();
+    if (rawOrig.length > 2 && rawDest.length > 2) {
+      origin = rawOrig;
+      dest = rawDest;
     }
-  ];
+  }
+  const routeName = origin && dest ? `${origin} ke ${dest}` : "Koridor Utama Proyek";
 
-  return buildRiskResult(
-    title,
-    divName,
-    "Logistik Distribusi Komersial Terpadu",
-    heatMapTitle,
-    category1Name,
-    category2Name,
-    diagramCaption,
-    plottedRisks
-  );
-}
+  let criticalRisksSummary = "";
+  let mitigationProtocolSummary = "";
+  let complianceSummary = "";
+  let kpiSummary = "";
+  let narrativeMarkdown = "";
 
-function buildRiskResult(
-  title: string,
-  division: string,
-  sectorName: string,
-  heatMapTitle: string,
-  category1Name: string,
-  category2Name: string,
-  diagramCaption: string,
-  plottedRisks: PlottedRiskItem[]
-): RiskManagementResult {
-  const criticalRisksSummary = plottedRisks.filter((r) => r.pxD.includes("Tinggi")).map((r) => r.riskName).join("; ");
-  const mitigationProtocolSummary = plottedRisks.map((r) => `${r.id}: ${r.mitigation}`).join("; ");
-  const complianceSummary = "Kepatuhan penuh standar K3LL, audit kelaikan armada, dan regulasi pemerintah terkait.";
-  const kpiSummary = "Zero Fatal Incidents, Damage Rate < 0.1%, Contract SLA Compliance ≥ 98.5%.";
+  // 1. SEMEN / BULK CEMENT / CLINKER
+  if (titleLower.includes("semen") || titleLower.includes("cement") || titleLower.includes("clinker") || titleLower.includes("klinker")) {
+    criticalRisksSummary = "Pneumatik bejana tekan tangki silo overpressure, penyumbatan pipa unloader, razia jembatan timbang Zero ODOL, dan tumpahan debu semen.";
+    mitigationProtocolSummary = "Instalasi katup pelepas tekanan otomatis (safety PRV 2.5 bar), kalibrasi blower berkala, kepatuhan muatan MST 10 Ton, dan SOP K3 bejana tekan.";
+    complianceSummary = "Kelaikan sertifikasi bejana tekan Disnaker, izin KIR Kemenhub, dan sertifikat K3LL pabrik semen rekanan.";
+    kpiSummary = "Zero Fatal Accidents, Zero ODOL Sanctions (100%), Unloader Clogging Rate (< 0.5%).";
 
-  const narrativeMarkdown = `# 16 RISK ANALYSIS
-**Proyek:** ${title.toUpperCase()}
-**Divisi:** ${division} • **Sektor:** ${sectorName}
+    narrativeMarkdown = `### 1. Register Risiko Utama & Analisis Probabilitas-Dampak (Risk Matrix & Assessment)
+Identifikasi risiko proyek **"${title}"** pada koridor **${routeName}** yang telah dipetakan secara terukur:
+  - **Risiko R-01 (Tinggi / Dampak 4, Probabilitas 3): Bahaya Tekanan Lebih Tangki Silo (*Overpressure Bejana Tekan*):** Risiko malfungsi kompresor unloader blower yang melebihi batas toleransi dinding tangki (ambang batas > 2.2 bar) saat pembongkaran di silo batching plant.
+  - **Risiko R-02 (Ekstrem / Dampak 5, Probabilitas 2): Penindakan Jembatan Timbang & Regulasi Zero ODOL:** Risiko tilang operasional, penurunan paksa muatan, atau penahanan unit akibat pelanggaran batas Muatan Sumbu Terberat (MST 10 Ton) di jalan nasional/provinsi.
+  - **Risiko R-03 (Sedang / Dampak 3, Probabilitas 4): Penyumbatan Material Semen Lembap (*Pneumatic Pipe Clogging*):** Risiko pengendapan atau penggumpalan semen di dasar corong aerasi akibat infiltrasi uap air udara kompresor, mengakibatkan keterlambatan waktu bongkar (*demurrage*).
+  - **Risiko R-04 (Tinggi / Dampak 4, Probabilitas 2): Pencemaran Debu Semen ke Lingkungan (*Dust Spillage*):** Risiko kebocoran paking manhole atas atau pecah selang kopling discharge saat proses transfer semen bertekanan.
 
----
+### 2. Analisis Risiko Operasional & Keselamatan Kerja (Operational & HSE Risks)
+Dampak langsung terhadap kelangsungan operasi lapangan:
+  - **Risiko Bekerja di Ketinggian (Working at Heights):** Pengemudi atau kru berisiko terjatuh dari atas punggung tangki silo saat membuka palka manhole pengisian di packing plant semen.
+  - **Kelelahan Pengemudi Rute Jarak Jauh (Driver Fatigue):** Tekanan target ritase harian berpotensi memicu kecelakaan lalu lintas tabrakan belakang di jalur pantura/tol.
+  - **Kerusakan Kompresor di Lapangan:** Kerusakan mekanis mesin unloader blower independen saat berada di lokasi batching plant terpencil tanpa ketersediaan suku cadang cepat.
 
-## 1. REGISTER RISIKO & MATRIKS HEAT MAP
-*${heatMapTitle}*
+### 3. Analisis Risiko Finansial, Regulasi, & Kepatuhan (Financial & Regulatory Risks)
+  - **Klausul Denda Demurrage Pabrik:** Penalti finansial dari pengelola batching plant apabila unit armada terlambat tiba dan mengakibatkan berhentinya pengecoran proyek infrastruktur prioritas.
+  - **Volatilitas Harga Bahan Bakar Solar Industri:** Kenaikan harga solar nonsubsidi secara mendadak yang menggerus margin laba operasi jika tidak diproteksi oleh klausul kontrak.
+  - **Kepatuhan Izin Bejana Tekan:** Risiko pembekuan operasi oleh pengawas ketenagakerjaan apabila masa uji hidrostatik tangki silo kedaluwarsa.
 
-| Kode | Risiko | P × D | Mitigasi utama |
-| :--- | :--- | :--- | :--- |
-${plottedRisks.map((r) => `| **${r.id}** | ${r.riskName} | **${r.pxD}** | ${r.mitigation} |`).join("\n")}
+### 4. Strategi Mitigasi Terperinci & Rencana Kontinjensi (Mitigation & Contingency Protocols)
+  - **Protokol M-01 (Tekanan Aman Terpadu):** Pemasangan ganda katup pengaman tekanan (*dual safety pressure relief valves*) yang terkalibrasi otomatis membuka pada tekanan 2.2 bar dan pengukur tekanan digital di kabin supir.
+  - **Protokol M-02 (Kepatuhan Muatan Timbangan Digital):** Penimbangan jembatan ganda pra-keberangkatan (*pre-departure axle weighing*) dengan batas toleransi muat maksimal 28–30 ton per unit guna menjamin 100% Zero ODOL.
+  - **Protokol M-03 (Water Trap & Air Dryer Compressor):** Pemasangan tabung penyaring uap air pada sistem kompresor unloader blower untuk mencegah semen menggumpal di pipa pengeluaran.
+  - **Protokol M-04 (Safety Harness & Lifeline Rigging):** Kewajiban pemakaian Full Body Harness dengan tali penambat pada catwalk atas tangki saat melakukan inspeksi manhole.
 
----
+### 5. Matriks Tata Kelola Risiko & KPI Mitigasi (Risk Governance & Performance Index)
+* **Indeks Keselamatan Kerja (HSE Index):** Zero Lost Time Injury (LTI) dan Zero Fatality (100% aman).
+* **Kepatuhan Zero ODOL:** Nihil sanksi tilang atau penahanan unit di seluruh jembatan timbang resmi (100%).
+* **Tingkat Kesiapan Katup Pengaman:** 100% katup keselamatan tangki silo terkalibrasi dan berstempel resmi.
+* **Kecepatan Tanggap Insiden:** Waktu respons tim darurat mobile bengkel tiba di lokasi breakdown < 90 menit.
 
-## 2. RANGKUMAN KATEGORI & MITIGASI UTAMA
-- **Kategori 1:** ${category1Name}
-- **Kategori 2:** ${category2Name}
-- **Prinsip Mitigasi:** Eliminasi risiko melalui stage-gate governance, kontrol teknis preventif, kepatuhan HSSE, dan proteksi asuransi komprehensif.`;
+### 6. Rekomendasi Eksekutif Kesiapan Risiko (Executive Risk Readiness Verdict)
+Profil risiko proyek **"${title}"** dinilai **Terkendali dengan Baik & Memenuhi Standar Keselamatan Industri (RISK-CONTROLLED - APPROVED)**. Penerapan protokol keselamatan bejana tekan dan kepatuhan beban jalan Zero ODOL menjadi prasyarat mutlak sebelum peluncuran unit armada.`;
+  }
+
+  // 2. NIKEL / NICKEL ORE / SMELTER
+  else if (titleLower.includes("nikel") || titleLower.includes("nickel") || titleLower.includes("smelter") || titleLower.includes("laterit")) {
+    criticalRisksSummary = "Jalan hauling amblas lumpur laterit, tergulingnya tipper dump truck saat dumping di hopper, blind spot tanjakan kritis tambang, dan sanksi SIMBARA.";
+    mitigationProtocolSummary = "Aplikasi ban mining E-4, pembatasan kemiringan jalan hauling < 8%, instalasi inclinometer hidrolik, dan kepatuhan pelaporan digital SIMBARA.";
+    complianceSummary = "Standar Good Mining Practice Kementerian ESDM, sertifikasi K3 Pertambangan (SMKP), dan sertifikat uji kelaikan alat berat.";
+    kpiSummary = "Zero Fatal Accident, Mechanical Availability (≥90%), Dump Truck Rollover Rate (0%).";
+
+    narrativeMarkdown = `### 1. Register Risiko Utama & Analisis Probabilitas-Dampak (Risk Matrix & Assessment)
+Identifikasi risiko proyek pertambangan dan hilirisasi nikel **"${title}"**:
+  - **Risiko R-01 (Ekstrem / Dampak 5, Probabilitas 3): Terguling Saat Membongkar Muatan (*Tipper Rollover at Dumping Area*):** Risiko dump truck terguling di bibir hopper smelter atau tepi disposal akibat tanah amblas dan distribusi muatan laterit basah yang tidak merata.
+  - **Risiko R-02 (Tinggi / Dampak 4, Probabilitas 4): Jalan Hauling Licin & Amblas Saat Hujan (*Slippery & Bogging Road*):** Karakteristik tanah laterit nikel yang berubah menjadi bubur licin saat diguyur hujan deras, berisiko menghentikan total konvoi hauling.
+  - **Risiko R-03 (Tinggi / Dampak 4, Probabilitas 2): Tabrakan Beruntun di Titik Buta Tanjakan (*Blind-Spot Collision*):** Insiden tabrakan antar unit tambang pada tikungan tajam dan tanjakan curam jalan tambang akibat keterbatasan jarak pandang.
+  - **Risiko R-04 (Kritis / Dampak 5, Probabilitas 2): Pemblokiran Sistem Digital SIMBARA:** Risiko penghentian operasional oleh Ditjen Minerba apabila surat jalan digital tidak sinkron dengan kuota RKAB smelter.
+
+### 2. Analisis Risiko Operasional & Keselamatan Kerja (Operational & HSE Risks)
+  - **Kelelahan Pengemudi Shift Malam (Driver Fatigue):** Operasional 20–24 jam berisiko tinggi memicu fenomena microsleep saat melintasi jalur tambang yang gelap.
+  - **Keausan Ekstrem Rangka & Ban Tambang:** Beban dinamis bebatuan laterit keras yang merusak sasis dan memicu ledakan ban (*tire blowout*).
+  - **Gesekan Sosial dengan Masyarakat Lingkar Tambang:** Potensi konflik sosial terkait debu jalan hauling dan kompensasi warga desa penyangga.
+
+### 3. Analisis Risiko Finansial, Regulasi, & Kepatuhan
+  - **Denda Keterlambatan Pasokan Smelter:** Sanksi pemotongan tarif angkut apabila volume pasokan bijih harian gagal memenuhi kapasitas minimum tungku smelter.
+  - **Audit Ketat Kaidah Pertambangan (SMKP Minerba):** Risiko penghentian sementara operasional kontraktor hauling jika tidak memenuhi Sistem Manajemen Keselamatan Pertambangan.
+
+### 4. Strategi Mitigasi Terperinci & Rencana Kontinjensi
+  - **Protokol M-01 (Inclinometer & Ground Compaction):** Pemasangan sensor kemiringan kabin (*inclinometer*) yang mengunci mekanisme dumping jika kemiringan tanah melebihi 5 derajat, disertai pemadatan rutin bibir hopper oleh compactor.
+  - **Protokol M-02 (Grade Resistance & Water Truck Control):** Penegakan batas kelandaian jalan hauling maksimal 8% dan pembatasan kecepatan 35 km/jam, didukung penyemprotan teratur water truck dan grader.
+  - **Protokol M-03 (Fatigue AI Camera & Rotary Buggy Whip):** Pemasangan kamera pemantau kantuk berbasis AI pada seluruh armada serta tiang bendera keselamatan tinggi (*buggy whip*) dengan lampu strobo.
+  - **Protokol M-04 (Integrasi API SIMBARA Terpadu):** Sinkronisasi otomatis timbangan jembatan pelabuhan dengan sistem SIMBARA sebelum unit diberangkatkan.
+
+### 5. Matriks Tata Kelola Risiko & KPI Mitigasi
+* **Tingkat Fatalitas (Fatal Incident Rate):** Nol kecelakaan fatal (Zero Fatality).
+* **Tingkat Insiden Terguling:** Nihil kasus unit dump truck terguling di disposal/hopper (Zero Rollover).
+* **Ketersediaan Mekanik Suku Cadang:** Mechanical Availability tetap di atas 90%.
+
+### 6. Rekomendasi Eksekutif Kesiapan Risiko
+Kajian manajemen risiko untuk **"${title}"** dinyatakan **Layak & Terkendali secara Prosedural (FEASIBLE - GO)**. Standar SMKP Pertambangan wajib diterapkan sebelum hauling perdana dimulai.`;
+  }
+
+  // 3. BATUBARA / COAL
+  else if (titleLower.includes("batubara") || titleLower.includes("coal") || titleLower.includes("hauling batubara")) {
+    criticalRisksSummary = "Swabakar batubara di bak tronton, tumpahan debu hitam di jalan hauling/pemukiman, denda demurrage tongkang, dan kegagalan rem sasis berat.";
+    mitigationProtocolSummary = "Terpal otomatis kedap udara, penyiraman water truck berjadwal, monitoring suhu inframerah batubara, dan audit sistem rem retarder.";
+    complianceSummary = "Izin Usaha Jasa Pertambangan (IUJP), izin lintasan jalan khusus tambang, dan regulasi pencegahan pencemaran udara PP 22/2021.";
+    kpiSummary = "Zero Spontaneous Combustion Incidents, Zero Demurrage Penalties, 100% Brake Check Compliance.";
+
+    narrativeMarkdown = `### 1. Register Risiko Utama & Analisis Probabilitas-Dampak (Risk Matrix & Assessment)
+Identifikasi risiko proyek **"${title}"**:
+  - **Risiko R-01 (Tinggi / Dampak 4, Probabilitas 3): Kebakaran Swabakar Batubara (*Spontaneous Combustion*):** Risiko batubara berkalori rendah bereaksi dengan oksigen dan mengalami kenaikan suhu ekstrem hingga terbakar di dalam bak saat antrean macet.
+  - **Risiko R-02 (Ekstrem / Dampak 5, Probabilitas 2): Denda Demurrage Tongkang Pelabuhan Jetty:** Keterlambatan suplai ritase dump truck saat tongkang bersandar yang memicu denda keterlambatan sandar puluhan juta rupiah per hari.
+  - **Risiko R-03 (Tinggi / Dampak 4, Probabilitas 3): Tumpahan Debu Batubara & Aksi Protes Warga (*Dust Pollution & Community Blockade*):** Partikel debu batubara berterbangan ke kawasan pemukiman di sekitar koridor hauling yang berpotensi memicu pemblokiran jalan oleh warga.
+  - **Risiko R-04 (Ekstrem / Dampak 5, Probabilitas 2): Rem Blong di Turunan Jalan Hauling (*Brake Failure*):** Kehilangan daya pengereman pada muatan penuh 30–40 ton akibat overheating rem teromol saat menuruni jalan curam.
+
+### 2. Analisis Risiko Operasional & Keselamatan Kerja
+  - **Visibilitas Nol Akibat Kabut Debu Kering:** Kurangnya jarak pandang saat konvoi armada di siang hari yang memicu risiko tabrak belakang.
+  - **Pecah Ban Ganda Akibat Beban Panas:** Gesekan ekstrem ban pada permukaan jalan bebatuan tajam saat suhu udara tinggi.
+
+### 3. Analisis Risiko Finansial, Regulasi, & Kepatuhan
+  - **Sanksi Pencemaran Lingkungan Hidup:** Denda administratif dari instansi lingkungan hidup atas tumpahan batubara di jalan umum atau perairan jetty.
+  - **Penalti Biaya Kontrak Suplai PLTU:** Pemotongan nilai pembayaran kontrak apabila kalori batubara turun akibat terbakar di perjalanan.
+
+### 4. Strategi Mitigasi Terperinci & Rencana Kontinjensi
+  - **Protokol M-01 (Sensor Termal Inframerah & Pemadaman Siaga):** Pemindaian suhu muatan menggunakan thermal gun sebelum meninggalkan stockpile dan penyiapan instalasi nozzle semprot air busa.
+  - **Protokol M-02 (Buffer Stock & Armada Cadangan Pelabuhan):** Penyiagaan 15% unit armada cadangan di area parkir jetty guna mengantisipasi keterlambatan rute utama saat tongkang bersandar.
+  - **Protokol M-03 (Terpal Otomatis & Water Truck Terjadwal):** Penguncian bak menggunakan automatic cover tarp dan pengoperasian armada water truck setiap 45 menit sekali.
+  - **Protokol M-04 (Pemeriksaan Harian Rem Retarder):** Wajib uji fungsional retarder hidrolik/exhaust brake sebelum setiap shift kerja dimulai.
+
+### 5. Matriks Tata Kelola Risiko & KPI Mitigasi
+* **Nihil Kebakaran Batubara di Bak (Zero Combustion):** 100% muatan tiba dalam suhu aman (< 50°C).
+* **Nihil Denda Keterlambatan Tongkang:** 100% batubara termuat dalam batas waktu laytime kapal.
+* **Tingkat Kepatuhan Penutupan Terpal:** 100% armada tertutup rapat tanpa kebocoran debu.
+
+### 6. Rekomendasi Eksekutif Kesiapan Risiko
+Mitigasi risiko proyek **"${title}"** dinyatakan **Sangat Solid & Terkelola (APPROVED - GO)**.`;
+  }
+
+  // 4. FORESTRY / KEHUTANAN / KAYU / PULP & PAPER
+  else if (titleLower.includes("forestry") || titleLower.includes("kehutanan") || titleLower.includes("kayu") || titleLower.includes("log") || titleLower.includes("pulp") || titleLower.includes("timber")) {
+    criticalRisksSummary = "Trailer logging amblas di jalan gambut lunak, rantai lashing penahan kayu putus di jalan bergelombang, kayu busuk melewati SLA 48 jam, dan sanksi lacak balak SVLK.";
+    mitigationProtocolSummary = "Bolster stanchion baja tersertifikasi, rantai lashing hidrolik ganda, traktor winch penarik di tanjakan licin, dan sistem barcode SKSHHK.";
+    complianceSummary = "Sistem Verifikasi Legalitas Kayu (SVLK/FSC), regulasi jalan konsesi HTI, dan standar keselamatan angkutan logging.";
+    kpiSummary = "Zero Log Spill Incidents, Fresh Wood Intake SLA (≥95%), Zero Illegal Logging Disputes.";
+
+    narrativeMarkdown = `### 1. Register Risiko Utama & Analisis Probabilitas-Dampak (Risk Matrix & Assessment)
+Identifikasi risiko proyek pengangkutan kehutanan dan pulp & paper **"${title}"**:
+  - **Risiko R-01 (Ekstrem / Dampak 5, Probabilitas 2): Muatan Kayu Log Terlepas di Perjalanan (*Log Spill Hazard*):** Risiko rantai pengikat putus pada jalur bergelombang yang mengakibatkan gelondongan kayu berhamburan ke jalan.
+  - **Risiko R-02 (Tinggi / Dampak 4, Probabilitas 4): Armada Amblas di Jalur Gambut Lunak (*Peatland Bogging*):** Jalan konsesi tanah gambut yang runtuh saat musim hujan lebat, menjebak konvoi trailer logging berhari-hari.
+  - **Risiko R-03 (Tinggi / Dampak 4, Probabilitas 3): Penurunan Rendemen Serat Kayu Busuk (*Wood Degradation Beyond SLA*):** Keterlambatan pengiriman melebihi ambang batas 48 jam dari tebangan yang memicu pembusukan kayu dan penolakan oleh log yard pabrik mill.
+  - **Risiko R-04 (Kritis / Dampak 5, Probabilitas 1): Sengketa Legalitas Asal-Usul Kayu (*SVLK Dispute*):** Ketidaksesuaian barcode fisik kayu dengan manifes elektronik SKSHHK yang berpotensi memicu penyitaan oleh penegak hukum kehutanan.
+
+### 2. Analisis Risiko Operasional & Keselamatan Kerja
+  - **Terguling di Tanjakan Berlumpur Konsesi:** Ketidakseimbangan pusat gravitasi trailer berbeban 40 ton di jalan tanah licin.
+  - **Bahaya Terjepit Saat Pembongkaran di Log Yard:** Risiko kru terkena runtuhan batang kayu saat rantai penahan dibuka.
+
+### 3. Analisis Risiko Finansial, Regulasi, & Kepatuhan
+  - **Denda Penolakan Muatan Kayu Kering/Lapuk:** Kerugian finansial akibat diskon berat atau pemotongan harga per meter kubik oleh mill.
+  - **Sanksi Pencabutan Akreditasi Vendor:** Hilangnya status rekanan terpercaya di grup konglomerasi kertas nasional.
+
+### 4. Strategi Mitigasi Terperinci & Rencana Kontinjensi
+  - **Protokol M-01 (Sertifikasi Rantai Lashing Baja G-80 & Bolster):** Uji kekuatan tarik berkala seluruh rantai pengikat baja dan sistem stanchion tegak trailer.
+  - **Protokol M-02 (Pos Penarik Winch Reaksi Cepat):** Penempatan unit traktor evakuasi (*winch dozer*) di setiap tanjakan licin dan area rawan amblas jalur gambut.
+  - **Protokol M-03 (Lacak Digital Transit Time Barcode):** Pemindaian barcode SKSHHK sejak pemuatan di petak tebang untuk memastikan waktu tempuh ke mill tetap di bawah 36 jam.
+  - **Protokol M-04 (SOP Pelepasan Muatan Jarak Jauh):** Penerapan mekanisme quick release trip stake dari sisi samping aman kendaraan saat proses bongkar muat log crane.
+
+### 5. Matriks Tata Kelola Risiko & KPI Mitigasi
+* **Nihil Tumpahan Kayu Log di Jalan:** Zero Log Spillage Incident (100% aman).
+* **Tingkat Pasokan Kayu Segar Sesuai SLA:** Realisasi kayu segar masuk mill ≥ 95%.
+* **Kepatuhan Dokumen Lacak Balak:** 100% kayu terverifikasi legalitas SVLK.
+
+### 6. Rekomendasi Eksekutif Kesiapan Risiko
+Penerapan sistem mitigasi risiko proyek **"${title}"** dinilai **Sangat Layak & Memenuhi Kriteria Keamanan HTI (APPROVED - GO)**.`;
+  }
+
+  // 5. LIMBAH B3 / MEDIS / WASTE MANAGEMENT
+  else if (titleLower.includes("limbah") || titleLower.includes("waste") || titleLower.includes("b3") || titleLower.includes("sampah") || titleLower.includes("medis")) {
+    criticalRisksSummary = "Kebocoran cairan zat beracun/infeksius ke jalan raya, kecelakaan fatal pencemaran air, pembekuan izin FESTRONIK, dan tuntutan hukum pidana lingkungan hidup.";
+    mitigationProtocolSummary = "Bak kedap cairan bersertifikasi, spill containment kit terstandar di kabin, pengemudi tersertifikasi BNSP B3, dan asuransi tanggung jawab lingkungan.";
+    complianceSummary = "Izin Angkutan B3 Hubdat, Rekomendasi Pengangkutan Limbah B3 KLHK, dan manifes elektronik FESTRONIK real-time.";
+    kpiSummary = "Zero Spill to Environment (100%), Festronik Discrepancy (0%), 100% Certified Hazmat Drivers.";
+
+    narrativeMarkdown = `### 1. Register Risiko Utama & Analisis Probabilitas-Dampak (Risk Matrix & Assessment)
+Identifikasi risiko proyek pengangkutan limbah berbahaya dan beracun **"${title}"**:
+  - **Risiko R-01 (Bencana / Dampak 5, Probabilitas 1): Tumpahan Bahan Beracun ke Lingkungan (*Catastrophic Chemical Spillage*):** Risiko kebocoran tangki atau drum limbah B3 akibat benturan di jalan raya yang mencemari saluran air pemukiman warga.
+  - **Risiko R-02 (Kritis / Dampak 5, Probabilitas 1): Gugatan Hukum Pidana Lingkungan (UU No. 32/2009):** Risiko pidana penjara dan denda miliaran rupiah bagi pengurus perusahaan apabila terbukti melakukan kelalaian pembuangan limbah tanpa izin.
+  - **Risiko R-03 (Tinggi / Dampak 4, Probabilitas 2): Kegagalan Sinkronisasi FESTRONIK Real-Time:** Kendala jaringan seluler di jalur antar-kota yang mengakibatkan keterlambatan penerbitan berita acara penyerahan limbah digital ke sistem KLHK.
+  - **Risiko R-04 (Tinggi / Dampak 4, Probabilitas 2): Paparan Gas Beracun / Infeksius pada Awak Armada:** Risiko gangguan kesehatan fatal pengemudi akibat kebocoran uap kimia berbahaya atau tusukan limbah medis jarum suntik.
+
+### 2. Analisis Risiko Operasional & Keselamatan Kerja
+  - **Reaksi Kimia Eksotermik di Dalam Bak:** Pencampuran jenis limbah yang tidak kompatibel yang dapat memicu ledakan atau pelepasan gas beracun di perjalanan.
+  - **Kontaminasi Silang Saat Pembersihan Tangki:** Risiko sisa residu kimia mencemari air buangan pool tanpa instalasi IPAL pengolahan air limbah terakreditasi.
+
+### 3. Analisis Risiko Finansial, Regulasi, & Kepatuhan
+  - **Pencabutan Izin Operasi KLHK & Dishub:** Pembekuan izin angkutan B3 seketika jika ditemukan pelanggaran rute atau armada tanpa sertifikasi uji KIR B3.
+  - **Klaim Kerugian Biaya Remediasi Lahan:** Beban biaya pemulihan lingkungan (*cleanup & remediation cost*) yang sangat besar jika terjadi pencemaran tanah.
+
+### 4. Strategi Mitigasi Terperinci & Rencana Kontinjensi
+  - **Protokol M-01 (Kompartemen Kedap Cairan & Spill Kit Standar OSHA):** Pengecekan bak boks kedap cairan dengan tanggul penampung tumpahan (*secondary containment*), disertai spill kit kimia lengkap di kabin truk.
+  - **Protokol M-02 (Asuransi Liabilitas Lingkungan Hidup):** Polis asuransi perlindungan tanggung jawab pencemaran lingkungan (*Environmental Impairment Liability Insurance*) dengan nilai pertanggungan memadai.
+  - **Protokol M-03 (Pengemudi Bersertifikasi Kompetensi BNSP B3):** 100% awak armada wajib lulus sertifikasi pengangkutan bahan berbahaya dan pelatihan tanggap darurat tumpahan (simulasi respons < 5 menit).
+  - **Protokol M-04 (GPS Geofencing & Larangan Jalur Padat):** Sistem pelacakan satelit dengan alarm otomatis jika armada menyimpang dari rute angkutan B3 resmi yang telah disetujui instansi berwenang.
+
+### 5. Matriks Tata Kelola Risiko & KPI Mitigasi
+* **Nihil Tumpahan Bahan Kimia (Zero Spill Index):** 100% nihil pencemaran lingkungan hidup.
+* **Kepatuhan Sinkronisasi Manifes FESTRONIK:** 100% dokumen terbit dan tervalidasi real-time.
+* **Tingkat Kesiapan Alat Keselamatan (PPE & Spill Kit):** 100% armada memenuhi standar inspeksi pra-jalan.
+
+### 6. Rekomendasi Eksekutif Kesiapan Risiko
+Status kesiapan mitigasi risiko proyek **"${title}"** berada pada level **Sangat Patuh Regulasi & Siap Beroperasi (COMPLIANT - APPROVED)**.`;
+  }
+
+  // 6. SAWIT / CPO / PERKEBUNAN
+  else if (titleLower.includes("sawit") || titleLower.includes("cpo") || titleLower.includes("tbs") || titleLower.includes("palm") || titleLower.includes("perkebunan")) {
+    criticalRisksSummary = "Pencurian muatan CPO di jalan raya (kencing di jalan), kenaikan kadar asam lemak bebas (FFA), kerusakan segel katup pelepasan, dan penyusutan tonase volume.";
+    mitigationProtocolSummary = "Instalasi E-Seal digital GPS satelit, tangki SUS 304 food-grade terisolasi, toleransi susut < 0.2%, dan patroli jalur lintas pengawalan.";
+    complianceSummary = "Tera metrologi tangki berkala, sertifikasi ISPO/RSPO rantai pasok minyak sawit, dan standar higienitas tangki pengangkut makanan.";
+    kpiSummary = "Cargo Retention Rate (≥99.8%), FFA Degradation (< 0.1%), Zero Digital Seal Tampering.";
+
+    narrativeMarkdown = `### 1. Register Risiko Utama & Analisis Probabilitas-Dampak (Risk Matrix & Assessment)
+Identifikasi risiko proyek **"${title}"**:
+  - **Risiko R-01 (Tinggi / Dampak 4, Probabilitas 4): Praktik Pencurian Muatan Minyak di Jalan (*CPO Thefts / Kencing di Jalan*):** Risiko pembobolan katup pembuangan atau manhole atas di pangkalan liar saat sopir beristirahat.
+  - **Risiko R-02 (Tinggi / Dampak 4, Probabilitas 3): Kenaikan Kadar Asam Lemak Bebas (*FFA Degradation*):** Kemacetan parah atau keterlambatan waktu bongkar di bulking terminal pelabuhan yang memicu hidrolisis minyak dan kenaikan FFA di atas batas toleransi kontrak.
+  - **Risiko R-03 (Sedang / Dampak 3, Probabilitas 3): Penyusutan Volume di Luar Toleransi (*Excessive Shrinkage*):** Selisih timbangan antara PKS dan pelabuhan melebihi 0.2% yang menimbulkan pemotongan invoice pembayaran transporter.
+  - **Risiko R-04 (Tinggi / Dampak 4, Probabilitas 2): Kontaminasi Residu Bejana Tangki (*Tank Contamination*):** Pencucian tangki yang tidak sempurna meninggalkan sisa air atau karat, merusak kualitas minyak satu tangki penuh.
+
+### 2. Analisis Risiko Operasional & Keselamatan Kerja
+  - **Pecah Selang Bongkar di Bulking Terminal:** Tekanan pompa hisap pelabuhan yang merusak sambungan selang elastis tangki.
+  - **Kecelakaan Truk Tangki Cairan di Tanjakan Licin:** Efek gelombang cairan di dalam tangki (*liquid surge*) yang mengganggu stabilitas pengendalian kemudi.
+
+### 3. Analisis Risiko Finansial, Regulasi, & Kepatuhan
+  - **Klaim Finansial Penurunan Kualitas Mutu Minyak:** Denda atau penolakan kargo oleh pabrik refinery minyak goreng.
+  - **Legalitas Tera Tangki Metrologi:** Sanksi administratif dan penolakan timbangan jika surat tera tangki telah kedaluwarsa.
+
+### 4. Strategi Mitigasi Terperinci & Rencana Kontinjensi
+  - **Protokol M-01 (Segel Elektronik GPS Satelit / E-Seal):** Pemasangan segel digital pintar pada katup pelepasan bawah (*discharge valve*) dan manhole atas yang memicu alarm otomatis ke ruang kendali pusat jika terbuka di luar geofence resmi.
+  - **Protokol M-02 (Tangki Stainless Steel SUS 304 dengan Baffle Sekat):** Bejana tangki bersekat anti-surge guna menstabilkan cairan saat bermanuver di jalan raya serta pemanas uap (*steam coil*) untuk mencegah pembekuan minyak.
+  - **Protokol M-03 (SOP Cuci Uap Berstandar & Uji Laboratorium Pra-Muat):** Penerbitan sertifikat pembersihan tangki (*Tank Cleaning Certificate*) bebas air sebelum pengisian pipa PKS dimulai.
+  - **Protokol M-04 (Rute Terpilih & Pengawalan Berkala):** Penentuan koridor resmi dengan rest area rekanan bersertifikat keamanan ketat.
+
+### 5. Matriks Tata Kelola Risiko & KPI Mitigasi
+* **Integritas Volume Tiba (Cargo Retention):** Akurasi volume timbangan tiba ≥ 99.8%.
+* **Kestabilan Kualitas FFA:** Kenaikan kadar asam lemak selama perjalanan terkendali < 0.1%.
+* **Nihil Pembobolan Segel Digital:** Zero Unauthorized Valve Opening (100% utuh).
+
+### 6. Rekomendasi Eksekutif Kesiapan Risiko
+Mitigasi risiko proyek **"${title}"** dinyatakan **Sangat Aman & Terlindungi (APPROVED - GO)**.`;
+  }
+
+  // 7. KONTAINER / PETIKEMAS / PELABUHAN
+  else if (titleLower.includes("kontainer") || titleLower.includes("container") || titleLower.includes("petikemas") || titleLower.includes("port") || titleLower.includes("pelabuhan")) {
+    criticalRisksSummary = "Keterlambatan tiba melewati vessel closing time, kunci twistlock terlepas di jalan tol, denda demurrage/detention harian kontainer, dan kerusakan kompresor reefer.";
+    mitigationProtocolSummary = "Dedicated tractor head, double-check penguncian 4 twistlock, integrasi slot Truck Booking System pelabuhan, dan genset reefer cadangan.";
+    complianceSummary = "Truck Identification Card (TID) pelabuhan, sertifikasi kelaikan sasis trailer KIR Kemenhub, dan standar SOLAS VGM timbangan petikemas.";
+    kpiSummary = "On-Time Closing Time (100%), Twistlock Failure Rate (0%), Zero Shipping Line Demurrage.";
+
+    narrativeMarkdown = `### 1. Register Risiko Utama & Analisis Probabilitas-Dampak (Risk Matrix & Assessment)
+Identifikasi risiko proyek pengangkutan peti kemas **"${title}"**:
+  - **Risiko R-01 (Kritis / Dampak 5, Probabilitas 3): Melewati Batas Waktu Penerimaan Kapal (*Missed Vessel Closing Time*):** Keterlambatan akibat kemacetan jalan tol atau antrean gerbang terminal yang mengakibatkan kontainer ekspor tertinggal kapal.
+  - **Risiko R-02 (Ekstrem / Dampak 5, Probabilitas 1): Petikemas Terlempar Akibat Kegagalan Twistlock (*Container Rollover/Detachment*):** Risiko sasis twistlock tidak terkunci sempurna saat bermanuver di tikungan jalan tol, berisiko fatal menjatuhkan boks kontainer.
+  - **Risiko R-03 (Tinggi / Dampak 4, Probabilitas 4): Denda Keterlambatan Pengembalian Kontainer (*Demurrage & Detention Penalties*):** Penalti denda harian puluhan dolar per boks dari pelayaran internasional akibat keterlambatan pengembalian kontainer kosong ke depo.
+  - **Risiko R-04 (Tinggi / Dampak 4, Probabilitas 2): Kegagalan Daya Listrik Kontainer Reefer (*Reefer Genset Breakdown*):** Suplai listrik genset mobile terputus di jalan yang memicu kenaikan suhu kargo beku ekspor bernilai tinggi.
+
+### 2. Analisis Risiko Operasional & Keselamatan Kerja
+  - **Kemacetan Masif Akses Masuk Gerbang Dermaga:** Penumpukan truk di luar gerbang terminal petikemas saat ada lonjakan kapal ekspor serentak.
+  - **Kerusakan Sasis Trailer Retak Struktural:** Kegagalan sasis trailer akibat beban berat kargo 40ft melampaui batas elastisitas baja.
+
+### 3. Analisis Risiko Finansial, Regulasi, & Kepatuhan
+  - **Klaim Kerugian Barang Ekspor (Cargo Loss Claim):** Tuntutan ganti rugi pemilik barang apabila kargo tertinggal kapal dan membatalkan Letter of Credit (L/C) perdagangan internasional.
+  - **Sertifikasi Berat Petikemas SOLAS VGM:** Larangan muat ke kapal jika berat timbangan kargo tidak sesuai dengan data Verified Gross Mass resmi.
+
+### 4. Strategi Mitigasi Terperinci & Rencana Kontinjensi
+  - **Protokol M-01 (Buffer Time Keberangkatan & Jalur Khusus Closing):** Keberangkatan kontainer dijadwalkan tiba di gerbang terminal minimal 8 jam sebelum vessel closing time.
+  - **Protokol M-02 (SOP Penguncian Fisik 4 Sudut Twistlock):** Pemeriksaan fisik dan penandaan visual (*twistlock locked tag*) oleh staf safety sebelum truk keluar dari gerbang pabrik.
+  - **Protokol M-03 (Pemesanan Slot Kedatangan Digital Truck Booking System):** Reservasi slot gate-in pelabuhan secara online untuk mendapatkan prioritas masuk dermaga tanpa antrean.
+  - **Protokol M-04 (Genset Mobile Dual-Engine Cadangan):** Pemeliharaan berkala genset reefer dan sensor alarm suhu digital otomatis ke kabin supir.
+
+### 5. Matriks Tata Kelola Risiko & KPI Mitigasi
+* **Ketepatan Closing Time Kapal:** 100% kontainer ekspor tiba sebelum batas closing.
+* **Nihil Insiden Lepas Twistlock:** Zero Twistlock Failure (100% aman).
+* **Nihil Denda Keterlambatan Pelayaran:** Bebas biaya demurrage & detention (100%).
+
+### 6. Rekomendasi Eksekutif Kesiapan Risiko
+Mitigasi risiko proyek **"${title}"** dinyatakan **Sangat Siap & Terakreditasi (APPROVED - GO)**.`;
+  }
+
+  // 8. GENERAL / OTHER COMMERCIAL LOGISTICS
+  else {
+    criticalRisksSummary = `Insiden kecelakaan armada di koridor ${routeName}, keterlambatan waktu tempuh SLA, lonjakan biaya solar operasional, dan sanksi pelanggaran regulasi jalan.`;
+    mitigationProtocolSummary = "Pelatihan Defensive Driving pengemudi, pemeliharaan preventif terjadwal, telematika GPS real-time, dan klausul proteksi kontrak.";
+    complianceSummary = "Uji KIR kendaraan Kemenhub, standar keselamatan kerja K3LL, dan perizinan trayek angkutan darat.";
+    kpiSummary = "Zero Lost Time Injury (LTI), On-Time Delivery SLA (≥96%), Fleet Roadworthiness (100%).";
+
+    narrativeMarkdown = `### 1. Register Risiko Utama & Analisis Probabilitas-Dampak (Risk Matrix & Assessment)
+Identifikasi risiko proyek **"${title}"** difokuskan pada pemetaan ancaman operasional, finansial, dan kepatuhan hukum di koridor yang dituju:
+  - **Risiko R-01 (Tinggi / Dampak 4, Probabilitas 3): Kecelakaan Lalu Lintas di Jalur Distribusi (*Traffic Collision*):** Potensi kecelakaan armada akibat kelalaian pengemudi, blind-spot, atau kondisi mekanis kendaraan yang tidak prima.
+  - **Risiko R-02 (Tinggi / Dampak 4, Probabilitas 3): Keterlambatan Waktu Pengiriman Melampaui SLA (*Delivery Delay*):** Risiko kemacetan jalur utama, cuaca ekstrem, atau kerusakan teknis di jalan yang berakibat pada penalti komersial dari klien.
+  - **Risiko R-03 (Sedang / Dampak 3, Probabilitas 4): Lonjakan Biaya Bahan Bakar & Suku Cadang (*Fuel & Spare Parts Volatility*):** Fluktuasi harga solar industri dan kenaikan harga suku cadang yang menekan margin keuntungan operasi transporter.
+  - **Risiko R-04 (Tinggi / Dampak 4, Probabilitas 2): Sanksi Pelanggaran Regulasi Jalan & Muatan (*Regulatory Non-Compliance*):** Pelanggaran izin trayek, keterlambatan uji KIR, atau batas beban sumbu jalan yang berisiko pada penahanan armada.
+
+### 2. Analisis Risiko Operasional & Keselamatan Kerja (Operational & HSE Risks)
+  - **Kelelahan Pengemudi (Fatigue Management):** Jam mengemudi tanpa jeda istirahat memadai yang menurunkan refleks dan kewaspadaan pengemudi.
+  - **Kerusakan Mekanis Mendadak (On-Road Breakdown):** Kegagalan sistem pengereman, transmisi, atau ban pecah di jalur antarkota yang memicu kemacetan dan risiko kecelakaan.
+  - **Keamanan Muatan Kargo:** Risiko pencurian, perusakan segel, atau kehilangan barang selama transit perjalanan.
+
+### 3. Analisis Risiko Finansial, Regulasi, & Kepatuhan (Financial & Regulatory Risks)
+  - **Penalti Kinerja Kontrak (SLA Breach Penalty):** Pemotongan nilai penagihan jasa angkutan apabila tingkat ketepatan waktu pengiriman berada di bawah kesepakatan kontrak.
+  - **Risiko Keterlambatan Pembayaran Piutang (Bad Debts / Cash Flow Risk):** Perputaran arus kas yang terganggu akibat keterlambatan pembayaran invoice oleh klien korporat.
+
+### 4. Strategi Mitigasi Terperinci & Rencana Kontinjensi (Mitigation & Contingency Protocols)
+  - **Protokol M-01 (Standar Keselamatan Defensive Driving):** Seluruh pengemudi wajib menjalani pelatihan berkendara aman berkala dan pemeriksaan kesehatan (*fit to work test*) sebelum bertugas.
+  - **Protokol M-02 (Sistem Pemeliharaan Preventif Terencana):** Servis berkala per 10.000 km dan inspeksi checklist keselamatan harian sebelum kendaraan keluar dari depo (*pre-trip inspection*).
+  - **Protokol M-03 (Telematika GPS & Monitoring Kecepatan):** Pemasangan pelacak GPS cerdas dengan notifikasi alarm otomatis jika kecepatan melebihi batas aman yang ditentukan.
+  - **Protokol M-04 (Klausul Kontrak Fuel Escalation & Asuransi Kargo):** Perlindungan finansial melalui penyesuaian tarif otomatis saat kenaikan solar dan asuransi muatan komprehensif (*all-risk cargo insurance*).
+
+### 5. Matriks Tata Kelola Risiko & KPI Mitigasi (Risk Governance & Performance Index)
+* **Tingkat Keselamatan Kerja (Safety Index):** Nihil kecelakaan fatal (Zero Fatality & Zero LTI).
+* **Ketepatan Waktu Pengiriman (On-Time Delivery):** Realisasi kedatangan tepat waktu mencapai ≥ 96%.
+* **Kelaikan Fisik Armada (Roadworthiness Rate):** 100% armada memiliki dokumen uji KIR dan surat izin aktif.
+* **Kecepatan Penanganan Insiden di Jalan:** Tim bantuan darurat mekanik tiba di lokasi insiden < 90 menit.
+
+### 6. Rekomendasi Eksekutif Kesiapan Risiko (Executive Risk Readiness Verdict)
+Rencana mitigasi dan manajemen risiko untuk proyek **"${title}"** dinilai **Sangat Layak & Memenuhi Kaidah Manajemen Risiko Korporat (FEASIBLE - APPROVED)**. Seluruh langkah pencegahan telah dirancang komprehensif untuk meminimalkan potensi kerugian finansial maupun operasional.`;
+  }
 
   return {
     title,
-    division,
-    sectorName,
-    heatMapTitle,
-    category1Name,
-    category2Name,
-    diagramCaption,
-    plottedRisks,
     criticalRisksSummary,
     mitigationProtocolSummary,
     complianceSummary,

@@ -1,47 +1,16 @@
 /**
  * Service Design Generator (Pilar 15)
  * Dynamically synthesizes title-tailored end-to-end Service Design Blueprint,
- * 11-Stage Workflow Process, Cargo Anatomy, Execution Matrix, and Design Notes.
+ * Client Journey Mapping, SLA standards, and Operational Fail-Safe protocols.
  */
 
-import { loadSavedProjectParameters, ProjectParameters } from "../types/projectParameters.ts";
-
-export interface WorkflowStageItem {
-  id: number;
-  stageGroup: "international" | "domestic" | "installation";
-  groupName: string;
-  stepNumber: string;
-  title: string;
-  keyActivities: string;
-  operatorRole: string;
-  kpi: string;
-}
-
-export interface CargoComponentSpec {
-  name: string;
-  transportMode: string;
-  dimensionWeight: string;
-}
-
-export interface CargoAnatomy {
-  title: string;
-  diagramType: "wind_turbine" | "logging_truck" | "bulk_cement" | "mining_hauling" | "cpo_tanker" | "cold_chain" | "general_cargo";
-  components: CargoComponentSpec[];
-  operationalNotes: string;
-  imageCaption: string;
-}
+import { detectProjectArchetype } from "./archetypeDetector.ts";
 
 export interface ServiceDesignResult {
   title: string;
   division: string;
   sectorName: string;
   targetCommodity: string;
-  headerSubtitle: string;
-  workflowTitle: string;
-  endToEndWorkflow: WorkflowStageItem[];
-  cargoAnatomy: CargoAnatomy;
-  designNotes: string[];
-  workflowCaption: string;
   clientJourney: {
     stage: string;
     touchpoints: string;
@@ -71,940 +40,843 @@ export function generateServiceDesignForTitle(projectTitle: string, divisionName
   const pName = (projectTitle || "Kajian Kelayakan Strategis Logistik").trim();
   const lower = pName.toLowerCase();
   const divName = divisionName || "Logistik & Transportasi";
-  const params: ProjectParameters = loadSavedProjectParameters(pName);
 
-  // 1. WIND FARM & RENEWABLE ENERGY (PLTB / EBT)
-  if (
-    lower.includes("wind") ||
-    lower.includes("pltb") ||
-    lower.includes("angin") ||
-    lower.includes("turbin") ||
-    lower.includes("jeneponto") ||
-    lower.includes("sidrap") ||
-    lower.includes("blade")
-  ) {
-    const sector = "Logistik Proyek Energi Terbarukan & Heavy Haulage PLTB";
-    const commodity = params.commodity || "Komponen Turbin Angin (WTG Blade 75-95m, Nacelle 85-130T, Tower Section, & Hub)";
-
-    const endToEndWorkflow: WorkflowStageItem[] = [
-      {
-        id: 1,
-        stageGroup: "international",
-        groupName: "International & border",
-        stepNumber: "01",
-        title: "OEM / Factory Pickup",
-        keyActivities: "Koordinasi packing list & ASN serial, inspeksi pra-muat, pengangkutan pabrik → pelabuhan asal",
-        operatorRole: "Partner (forwarder origin) + supervisi",
-        kpi: "Ready-for-pickup vs rencana"
-      },
-      {
-        id: 2,
-        stageGroup: "international",
-        groupName: "International & border",
-        stepNumber: "02",
-        title: "Origin Port & Loading",
-        keyActivities: "Stowage plan, lashing blade, stevedoring, dokumen ekspor",
-        operatorRole: "Partner + engineer Pancaran on-site",
-        kpi: "Loading rate, zero damage"
-      },
-      {
-        id: 3,
-        stageGroup: "international",
-        groupName: "International & border",
-        stepNumber: "03",
-        title: "Ocean Freight (breakbulk)",
-        keyActivities: "Charter breakbulk/heavy-lift (Tiongkok/Eropa → Indonesia), asuransi marine cargo",
-        operatorRole: "Integrator (charter/broker)",
-        kpi: "ETA adherence"
-      },
-      {
-        id: 4,
-        stageGroup: "international",
-        groupName: "International & border",
-        stepNumber: "04",
-        title: "Indonesian Port Discharge",
-        keyActivities: "Bongkar heavy-lift, port storage, kontrak Pelindo/BUP, verifikasi kondisi fisik",
-        operatorRole: "Self + subkon",
-        kpi: "Discharge rate, dwell time < 3 hari"
-      },
-      {
-        id: 5,
-        stageGroup: "international",
-        groupName: "International & border",
-        stepNumber: "05",
-        title: "Customs Clearance",
-        keyActivities: "PIB/PEB, fasilitas pembebasan bea masuk/Masterlist ESDM, PPJK, jalur prioritas",
-        operatorRole: "Self (customs broker)",
-        kpi: "Clearance lead-time < 48 jam"
-      },
-      {
-        id: 6,
-        stageGroup: "domestic",
-        groupName: "Domestic heavy logistics",
-        stepNumber: "06",
-        title: "Marshalling Yard",
-        keyActivities: "Yard dekat pelabuhan/site, inventori per serial, pre-assembly ringan komponen",
-        operatorRole: "Self (yard sewa/kelola)",
-        kpi: "Akurasi inventori 100%"
-      },
-      {
-        id: 7,
-        stageGroup: "domestic",
-        groupName: "Domestic heavy logistics",
-        stepNumber: "07",
-        title: "Route & Bridge Engineering",
-        keyActivities: "Route survey, swept-path analysis, analisis jembatan, modifikasi jalan, izin dispensasi",
-        operatorRole: "Self + konsultan struktur",
-        kpi: "Izin tepat waktu, zero route failure"
-      },
-      {
-        id: 8,
-        stageGroup: "domestic",
-        groupName: "Domestic heavy logistics",
-        stepNumber: "08",
-        title: "Heavy Haul / Oversize",
-        keyActivities: "Blade trailer extendable/blade lifter, tower adapter, modular trailer SPMT, konvoi berpengawal",
-        operatorRole: "Self (armada milik)",
-        kpi: "OTIF ≥ 98%, zero incident"
-      },
-      {
-        id: 9,
-        stageGroup: "domestic",
-        groupName: "Domestic heavy logistics",
-        stepNumber: "09",
-        title: "Site Delivery & Laydown",
-        keyActivities: "Laydown, just-in-sequence untuk erection, offloading dengan crane bantu di site",
-        operatorRole: "Self",
-        kpi: "Crane idle-hour = 0"
-      },
-      {
-        id: 10,
-        stageGroup: "installation",
-        groupName: "Installation & lifecycle",
-        stepNumber: "10",
-        title: "Erection Support (TCI)",
-        keyActivities: "Crane crawler 800–1.200 t + tailing crane, tim rigging bersertifikat, lift plan presisi",
-        operatorRole: "Partner/lease → JV",
-        kpi: "Turbin terpasang/minggu"
-      },
-      {
-        id: 11,
-        stageGroup: "installation",
-        groupName: "Installation & lifecycle",
-        stepNumber: "11",
-        title: "O&M Logistics",
-        keyActivities: "Penggantian blade/gearbox/generator, crane on-call, spare parts hub terpusat",
-        operatorRole: "Self + partner crane",
-        kpi: "Downtime pelanggan < 24 jam"
-      }
-    ];
-
-    const cargoAnatomy: CargoAnatomy = {
-      title: "Anatomi WTG kelas 6–7 MW & Karakter Kargo",
-      diagramType: "wind_turbine",
-      components: [
-        {
-          name: "Blade (×3)",
-          transportMode: "Blade trailer extendable / blade lifter",
-          dimensionWeight: "Panjang 75–95 m • 25–35 t/unit"
-        },
-        {
-          name: "Nacelle",
-          transportMode: "Modular trailer / SPMT; crane ≥ 800 t",
-          dimensionWeight: "85–130 t • L 12–18 m"
-        },
-        {
-          name: "Hub + drivetrain",
-          transportMode: "Low-bed multi-axle",
-          dimensionWeight: "40–70 t"
-        },
-        {
-          name: "Tower (4–5 seksi)",
-          transportMode: "Tower adaptor / clamp trailer",
-          dimensionWeight: "Ø 4.5–5.5 m • 50–90 t/seksi"
-        },
-        {
-          name: "Transformer & BoP",
-          transportMode: "Lowbed & kontainer reguler",
-          dimensionWeight: "Muatan berat & peti kemas"
-        }
-      ],
-      operationalNotes: "• 10–12 muatan oversize per turbin • 100 MW = 16 WTG = 170–200 pergerakan heavy haul\n• Hub height: 80–140 m; rotor Ø 170–200 m, butuh crane crawler 800–1.200 t",
-      imageCaption: "Gambar 8.2 — Karakter kargo WTG modern kelas 6–7 MW (Ilustrasi)."
-    };
-
-    const designNotes = [
-      "Azas cabotage: angkutan laut domestik antar-pelabuhan Indonesia wajib memakai kapal berbendera Indonesia (UU Pelayaran No. 17/2008). Bila kargo impor ditransshipment di hub (mis. Surabaya/Makassar) lalu diteruskan ke pelabuhan site pesisir, leg ini menjadi keunggulan alami armada tongkang & LCT berlisensi.",
-      "Port selection adalah keputusan biaya terbesar kedua setelah ocean freight: pelabuhan yang dekat site namun terbatas fasilitas crane/draught dapat menghemat jarak heavy haul darat, tetapi menambah risiko demurrage bongkar muat.",
-      "Blade lifter (mengangkat blade miring hingga ±60°) memungkinkan melewati tikungan tajam, perkampungan sempit, & perbukitan tanpa pelebaran jalan sipil masif — terbukti lebih hemat biaya dan waktu proyek."
-    ];
-
-    return buildResult(pName, divName, sector, commodity, "Dari OEM/factory hingga site, erection support, dan O&M logistics", "End-to-End Wind Project Logistics — lingkup layanan PRAMA Logistic", endToEndWorkflow, cargoAnatomy, designNotes, "Gambar 8.1 — Rantai layanan Wind Project Logistics yang ditawarkan (desain penulis).");
-  }
-
-  // 2. FORESTRY / KEHUTANAN HTI & PULP PAPER
-  if (
-    lower.includes("forestry") ||
-    lower.includes("kehutanan") ||
-    lower.includes("hutan") ||
-    lower.includes("kayu") ||
-    lower.includes("timber") ||
-    lower.includes("logging") ||
-    lower.includes("rapp") ||
-    lower.includes("pelalawan")
-  ) {
-    const sector = "Logistik Pengangkutan Hasil Hutan Tanaman Industri (HTI)";
-    const commodity = params.commodity || "Kayu Bulat (Log Acacia & Eucalyptus) 42-45 Ton/Rit";
-
-    const endToEndWorkflow: WorkflowStageItem[] = [
-      {
-        id: 1,
-        stageGroup: "international",
-        groupName: "Hulu & Konsesi HTI",
-        stepNumber: "01",
-        title: "Tebang & Landing Point",
-        keyActivities: "Koordinasi peta petak tebang, penumpukan kayu di log landing, verifikasi barcode SKSHHK",
-        operatorRole: "Mitra pemanenan + supervisi PRAMA",
-        kpi: "Stok landing vs rencana rit"
-      },
-      {
-        id: 2,
-        stageGroup: "international",
-        groupName: "Hulu & Konsesi HTI",
-        stepNumber: "02",
-        title: "Log Scaling & Grading",
-        keyActivities: "Pengukuran diameter, volume m³, sortir kualitas kayu bulat, pemeriksaan kelayakan muat",
-        operatorRole: "Surveyor scaler terakreditasi",
-        kpi: "Akurasi kubikasi ≥ 99%"
-      },
-      {
-        id: 3,
-        stageGroup: "international",
-        groupName: "Hulu & Konsesi HTI",
-        stepNumber: "03",
-        title: "Loading Crane / Excavator",
-        keyActivities: "Pemuatan kayu ke bak logging truck dengan log grapple excavator, penataan stanchion",
-        operatorRole: "Operator grapple terlatih",
-        kpi: "Waktu muat < 35 menit"
-      },
-      {
-        id: 4,
-        stageGroup: "international",
-        groupName: "Hulu & Konsesi HTI",
-        stepNumber: "04",
-        title: "Lashing & Safety Check",
-        keyActivities: "Pemasangan rantai pengikat baja (lashing chain), uji kekencangan, checklist rem & ban",
-        operatorRole: "Driver & helper tersertifikasi K3",
-        kpi: "Zero lashing failure"
-      },
-      {
-        id: 5,
-        stageGroup: "international",
-        groupName: "Hulu & Konsesi HTI",
-        stepNumber: "05",
-        title: "Dispatch Gate & E-Dokumen",
-        keyActivities: "Verifikasi e-SKSHHK KLHK, penimbangan jembatan timbang hulu, aktivasi GPS satelit",
-        operatorRole: "Self (PRAMA Dispatcher)",
-        kpi: "Dispatch lead-time < 10 menit"
-      },
-      {
-        id: 6,
-        stageGroup: "domestic",
-        groupName: "Koridor Hauling & Transfer",
-        stepNumber: "06",
-        title: "Main Hauling Corridor",
-        keyActivities: "Perjalanan rute jalan tanah/gravel HTI (85 km), monitoring konvoi via GPS satelit blankspot",
-        operatorRole: "Self (Armada Logging 6x4)",
-        kpi: "Kecepatan rata-rata 35-40 km/jam"
-      },
-      {
-        id: 7,
-        stageGroup: "domestic",
-        groupName: "Koridor Hauling & Transfer",
-        stepNumber: "07",
-        title: "Road Grader & Emergency Push",
-        keyActivities: "Unit grader & bulldozer standby di titik tanjakan lumpur kritis saat hujan lebat",
-        operatorRole: "Tim rescue jalan PRAMA",
-        kpi: "Waktu evakuasi < 25 menit"
-      },
-      {
-        id: 8,
-        stageGroup: "domestic",
-        groupName: "Koridor Hauling & Transfer",
-        stepNumber: "08",
-        title: "Log Pond / River Jetty",
-        keyActivities: "Bongkar log di tepi sungai, transfer ke tongkang 300ft (bila menggunakan multimoda air)",
-        operatorRole: "Self + operator ponton",
-        kpi: "Turnaround time ponton < 4 jam"
-      },
-      {
-        id: 9,
-        stageGroup: "domestic",
-        groupName: "Koridor Hauling & Transfer",
-        stepNumber: "09",
-        title: "Mill Gate In & Weighbridge",
-        keyActivities: "Verifikasi tonase bruto-tarra jembatan timbang digital pabrik pulp, barcode scanning",
-        operatorRole: "Joint security & QC mill",
-        kpi: "Antrian timbang < 15 menit"
-      },
-      {
-        id: 10,
-        stageGroup: "installation",
-        groupName: "Hilir Pabrik & Pemeliharaan",
-        stepNumber: "10",
-        title: "Woodyard Unloading & Feed",
-        keyActivities: "Unloading dengan overhead crane/wood unloader, pengisian langsung ke chipper feeder",
-        operatorRole: "Penerima pabrik (mill operator)",
-        kpi: "Zero backlog antrian"
-      },
-      {
-        id: 11,
-        stageGroup: "installation",
-        groupName: "Hilir Pabrik & Pemeliharaan",
-        stepNumber: "11",
-        title: "Workshop, Tire & PMS Hub",
-        keyActivities: "Pemeriksaan harian di pool pusat, penggantian ban vulkanisir/ori, servis oli berkala",
-        operatorRole: "Self (Mekanik internal)",
-        kpi: "Ketersediaan armada (PA) ≥ 94%"
-      }
-    ];
-
-    const cargoAnatomy: CargoAnatomy = {
-      title: "Anatomi Truk Logging 6×4 & Karakter Kayu Bulat HTI",
-      diagramType: "logging_truck",
-      components: [
-        {
-          name: "Kayu Bulat Acacia / Eucalyptus",
-          transportMode: "Logging Rigid 6×4 with Stanchion Steel Post",
-          dimensionWeight: "Panjang 2.4–4.0 m • Berat Jenis 0.85–0.95 t/m³"
-        },
-        {
-          name: "Prime Mover 6×4 Heavy Duty",
-          transportMode: "380–420 HP Engine, Hub Reduction Axle",
-          dimensionWeight: "GVW 48–55 Ton • Chassis Reinforced"
-        },
-        {
-          name: "Stanchion & Tiang Penyangga",
-          transportMode: "High-Tensile Steel Post (Baja Tahan Bentur)",
-          dimensionWeight: "Tinggi 2.2 m • Kapasitas 45 Ton Muatan"
-        },
-        {
-          name: "Sistem Pengikat Baja (Lashing Chain)",
-          transportMode: "Grade 80 Transport Chain & Ratchet Binder",
-          dimensionWeight: "3–4 Titik Lashing • Kapasitas Beban 10 Ton/rantai"
-        },
-        {
-          name: "Telematika Satelit Hybrid",
-          transportMode: "GPS Tracker with Dual GSM & Iridium Satellite",
-          dimensionWeight: "Panic Button + Sensor Kecepatan & Muatan"
-        }
-      ],
-      operationalNotes: "• Rute hauling HTI 85 km • Ritase harian: 2–3 rit/unit • Target konsumsi solar: 1:1.6 km/liter\n• Muatan nominal: 42–45 Ton per ritase • Kepatuhan standar keselamatan K3 KLHK 100%",
-      imageCaption: "Gambar 8.2 — Karakter kargo kayu bulat HTI dan spesifikasi unit logging 6×4 (Ilustrasi)."
-    };
-
-    const designNotes = [
-      "Kepatuhan regulasi SVLK & SKSHHK: Setiap truk wajib mengantongi dokumen angkutan hasil hutan elektronik resmi guna mencegah penahanan aparat dan memastikan legalitas pasokan pabrik pulp & paper.",
-      "Manajemen jalan cuaca basah (Wet Weather Road Policy): Pemasangan stasiun cuaca dan komunikasi radio rig untuk menghentikan sementara hauling saat curah hujan > 30 mm guna mencegah kerusakan parah pada badan jalan koridor.",
-      "Optimalisasi umur ban (Tire Management): Penggunaan ban tipe block lug all-traction dan kontrol tekanan angin harian (110–120 PSI) terbukti memangkas biaya Opex ban hingga 28% di medan berlumpur."
-    ];
-
-    return buildResult(pName, divName, sector, commodity, "Dari log landing konsesi HTI hingga woodyard pabrik pulp & paper", "End-to-End Forestry Hauling Logistics — lingkup layanan PRAMA Logistic", endToEndWorkflow, cargoAnatomy, designNotes, "Gambar 8.1 — Rantai layanan Forestry Management Logistics yang ditawarkan (desain penulis).");
-  }
-
-  // 3. SEMEN CURAH HI-BLOW & MATERIAL KONSTRUKSI
-  if (
-    lower.includes("semen") ||
-    lower.includes("cement") ||
-    lower.includes("hi-blow") ||
-    lower.includes("klinker") ||
-    lower.includes("beton") ||
-    lower.includes("mortar")
-  ) {
-    const sector = "Logistik Distribusi Semen Curah Hi-Blow & Material Konstruksi";
-    const commodity = params.commodity || "Semen Curah OPC / PCC Tipe I & V Tekanan Pneumatik (32-40 Ton/Unit)";
-
-    const endToEndWorkflow: WorkflowStageItem[] = [
-      {
-        id: 1,
-        stageGroup: "international",
-        groupName: "Pabrik Semen & Terminal Silo",
-        stepNumber: "01",
-        title: "Silo Intake & Order Queue",
-        keyActivities: "Penerimaan Delivery Order (DO) digital pabrik, verifikasi nomor antrian silo pengisian",
-        operatorRole: "Self (PRAMA Dispatcher)",
-        kpi: "Waktu antrian < 20 menit"
-      },
-      {
-        id: 2,
-        stageGroup: "international",
-        groupName: "Pabrik Semen & Terminal Silo",
-        stepNumber: "02",
-        title: "Pneumatic Loading Spout",
-        keyActivities: "Penyambungan corong silo ke manhole tangki V-Shape, pengisian semen curah gravitasi-udara",
-        operatorRole: "Operator silo pabrik + driver",
-        kpi: "Waktu pengisian < 30 menit"
-      },
-      {
-        id: 3,
-        stageGroup: "international",
-        groupName: "Pabrik Semen & Terminal Silo",
-        stepNumber: "03",
-        title: "Weighbridge Out & Seal",
-        keyActivities: "Penimbangan tonase netto muatan, pemasangan segel bernomor seri di seluruh katup discharge",
-        operatorRole: "Pabrik semen QC & timbang",
-        kpi: "Akurasi tonase ± 0.2%"
-      },
-      {
-        id: 4,
-        stageGroup: "international",
-        groupName: "Pabrik Semen & Terminal Silo",
-        stepNumber: "04",
-        title: "Pre-Trip Inspection (PTI)",
-        keyActivities: "Pemeriksaan kompresor blower, katup safety valve tangki, tekanan udara dan lampu",
-        operatorRole: "Mekanik checklist PRAMA",
-        kpi: "Lolos checklist 100%"
-      },
-      {
-        id: 5,
-        stageGroup: "international",
-        groupName: "Pabrik Semen & Terminal Silo",
-        stepNumber: "05",
-        title: "E-Surat Jalan & Dispatch",
-        keyActivities: "Penerbitan surat jalan elektronik terintegrasi SAP klien, rute GPS geofenced",
-        operatorRole: "Self (Control Tower)",
-        kpi: "Zero manual paper delay"
-      },
-      {
-        id: 6,
-        stageGroup: "domestic",
-        groupName: "Koridor Distribusi & Intermodal",
-        stepNumber: "06",
-        title: "Jalur Tol & Arteri Antar-Kota",
-        keyActivities: "Perjalanan rute distribusi Jawa-Bali/Sumatera dengan pemantauan kecepatan & rest stop 4 jam",
-        operatorRole: "Self (Armada Hi-Blow)",
-        kpi: "ETA akurasi ± 15 menit"
-      },
-      {
-        id: 7,
-        stageGroup: "domestic",
-        groupName: "Koridor Distribusi & Intermodal",
-        stepNumber: "07",
-        title: "Intermodal Ferry Crossing",
-        keyActivities: "Penyeberangan feri terpadu (mis. Ketapang-Gilimanuk / Merak-Bakauheni) via jalur prioritas",
-        operatorRole: "Mitra penyeberangan + PRAMA",
-        kpi: "Dwell time pelabuhan < 1 jam"
-      },
-      {
-        id: 8,
-        stageGroup: "domestic",
-        groupName: "Koridor Distribusi & Intermodal",
-        stepNumber: "08",
-        title: "Transit Depot & Rest Area",
-        keyActivities: "Pemeriksaan berkala baut roda dan suhu ban, pergantian shift driver rute jarak jauh",
-        operatorRole: "Pool transit PRAMA",
-        kpi: "Inspeksi transit < 15 menit"
-      },
-      {
-        id: 9,
-        stageGroup: "domestic",
-        groupName: "Koridor Distribusi & Intermodal",
-        stepNumber: "09",
-        title: "Customer Gate Arrival",
-        keyActivities: "Tiba di batching plant / precast yard pelanggan, verifikasi segel utuh dan e-DO",
-        operatorRole: "Customer receiver & driver",
-        kpi: "Ketepatan waktu tiba ≥ 98.5%"
-      },
-      {
-        id: 10,
-        stageGroup: "installation",
-        groupName: "Bongkar Pneumatik & Retensi",
-        stepNumber: "10",
-        title: "Pneumatic Blower Discharge",
-        keyActivities: "Pengaktifan kompresor blower unit, pemompaan semen curah ke silo penyimpanan pelanggan (2 bar)",
-        operatorRole: "Driver terlatih pneumatik",
-        kpi: "Laju bongkar 1.2 t/menit (< 45 mnt)"
-      },
-      {
-        id: 11,
-        stageGroup: "installation",
-        groupName: "Bongkar Pneumatik & Retensi",
-        stepNumber: "11",
-        title: "Digital ePOD & Sisa Tangki Nol",
-        keyActivities: "Tanda tangan penerimaan digital, verifikasi sisa semen tangki 0 kg (clean blow), update SAP",
-        operatorRole: "Self (ePOD Mobile App)",
-        kpi: "Loss/susut muatan = 0%"
-      }
-    ];
-
-    const cargoAnatomy: CargoAnatomy = {
-      title: "Anatomi Truk Tangki Semen Hi-Blow V-Shape & Karakter Semen Curah",
-      diagramType: "bulk_cement",
-      components: [
-        {
-          name: "Semen Curah OPC / PCC",
-          transportMode: "Tangki Baja Bertekanan Pneumatik (Hi-Blow)",
-          dimensionWeight: "Bulk Density 1.25–1.40 t/m³ • Suhu Loading 50–70°C"
-        },
-        {
-          name: "Tangki V-Shape / W-Shape",
-          transportMode: "High-Tensile Carbon Steel Q345R / Stainless",
-          dimensionWeight: "Volume 28–34 m³ • Tekanan Kerja 2.0 Bar"
-        },
-        {
-          name: "Kompresor Blower Pneumatik",
-          transportMode: "Rotary Air Compressor Driven by PTO / Diesel Engine",
-          dimensionWeight: "Debit Udara 10–12 m³/menit • Laju Bongkar 1.2 T/mnt"
-        },
-        {
-          name: "Fluidizing Aeration Canvas Pad",
-          transportMode: "Multi-Ply Air Permeable Fabric (Fluidisasi Semen)",
-          dimensionWeight: "Mencegah Semen Membatu & Menjamin Unloading Tuntas"
-        },
-        {
-          name: "Manifold & Butterfly Discharge Valve",
-          transportMode: "Katup Pelepasan 4 Inci + Selang Fleksibel Tahan Abrasi",
-          dimensionWeight: "Konektor Standar Camlock 4\" Male/Female"
-        }
-      ],
-      operationalNotes: "• Kapasitas muatan: 32–40 Ton/unit • Tekanan uji tangki: 3.0 Bar • Jarak unloading vertikal: hingga 35 meter ke puncak silo\n• Garansi susut muatan 0% berkat sistem pneumatic fluidization tertutup rapat",
-      imageCaption: "Gambar 8.2 — Karakter kargo semen curah dan spesifikasi truk tangki Hi-Blow (Ilustrasi)."
-    };
-
-    const designNotes = [
-      "Pencegahan Pembekuan & Kontaminasi Kelembaban: Seluruh unit tangki dilengkapi katup pengering udara (air moisture trap) agar udara kompresor bebas kondensasi air yang dapat menggumpalkan semen.",
-      "Segel Digital Anti-Pencurian (Tamper-Proof e-Seal): Pemasangan segel RFID berkode unik pada manhole dan katup bawah yang tercatat di sistem ePOD guna memastikan tidak ada semen curah yang disedot ilegal di perjalanan.",
-      "Optimasi Ritase Double Driver: Rute antar-provinsi jarak jauh (> 350 km) menerapkan sistem supir bergantian untuk menjamin utilisasi unit mencapai 22–24 jam operasional harian tanpa melanggar jam istirahat pengemudi."
-    ];
-
-    return buildResult(pName, divName, sector, commodity, "Dari silo pabrik semen klinker hingga batching plant proyek infrastruktur", "End-to-End Bulk Cement Logistics — lingkup layanan PRAMA Logistic", endToEndWorkflow, cargoAnatomy, designNotes, "Gambar 8.1 — Rantai layanan Bulk Cement Transportation yang ditawarkan (desain penulis).");
-  }
-
-  // 4. PERTAMBANGAN NIKEL & BATUBARA (MINING HAULING)
-  if (
-    lower.includes("tambang") ||
-    lower.includes("nikel") ||
-    lower.includes("nickel") ||
-    lower.includes("batubara") ||
-    lower.includes("coal") ||
-    lower.includes("mineral") ||
-    lower.includes("hauling")
-  ) {
-    const sector = "Logistik Hauling Mineral Pertambangan & Heavy Off-Road";
-    const commodity = params.commodity || (lower.includes("nikel") ? "Bijih Nikel (Nickel Ore Saprolite & Limonite) 40-50 Ton" : "Batubara Curah Kalori Tinggi (Bulk Coal)");
-
-    const endToEndWorkflow: WorkflowStageItem[] = [
-      {
-        id: 1,
-        stageGroup: "international",
-        groupName: "Front Tambang & Pit ROM",
-        stepNumber: "01",
-        title: "Pit Face & Grade Sorting",
-        keyActivities: "Penentuan titik penggalian pit tambang, pemetaan kadar Ni/kalori batubara, koordinasi fleet dispatch",
-        operatorRole: "Mine planning & PRAMA dispatch",
-        kpi: "Kesesuaian kadar ore 100%"
-      },
-      {
-        id: 2,
-        stageGroup: "international",
-        groupName: "Front Tambang & Pit ROM",
-        stepNumber: "02",
-        title: "Excavator Heavy Loading",
-        keyActivities: "Pemuatan ore dengan Excavator kelas 50-80T, penataan distribusi bobot bak dump truck",
-        operatorRole: "Operator excavator tambang",
-        kpi: "Waktu muat < 4.5 menit (4-5 pass)"
-      },
-      {
-        id: 3,
-        stageGroup: "international",
-        groupName: "Front Tambang & Pit ROM",
-        stepNumber: "03",
-        title: "Pit Weighbridge & Moisture Test",
-        keyActivities: "Penimbangan tonase basah (wet metric ton), sampling kadar air (moisture content) cepat",
-        operatorRole: "QC tambang & timbang",
-        kpi: "Payload compliance 98-105%"
-      },
-      {
-        id: 4,
-        stageGroup: "international",
-        groupName: "Front Tambang & Pit ROM",
-        stepNumber: "04",
-        title: "Tarping & Dust Suppression",
-        keyActivities: "Penutupan terpal mekanik bak truk (bila rute melewati area publik), penyiraman rute tambang",
-        operatorRole: "Driver & water truck team",
-        kpi: "Zero spillage muatan"
-      },
-      {
-        id: 5,
-        stageGroup: "international",
-        groupName: "Front Tambang & Pit ROM",
-        stepNumber: "05",
-        title: "Fatigue Monitoring & Gate Out",
-        keyActivities: "Pemeriksaan kamera sensor kantuk (Driver Fatigue AI), tes alkohol berkala, izin gerak",
-        operatorRole: "Self (HSE Tambang PRAMA)",
-        kpi: "Zero accident, fit-to-work 100%"
-      },
-      {
-        id: 6,
-        stageGroup: "domestic",
-        groupName: "Jalur Hauling Khusus",
-        stepNumber: "06",
-        title: "Dedicated Haul Road Transit",
-        keyActivities: "Perjalanan rute hauling khusus non-publik (35-60 km), pengawalan radio dua arah saluran tambang",
-        operatorRole: "Self (Dump Truck 6x4/8x4)",
-        kpi: "Cycle time sesuai target"
-      },
-      {
-        id: 7,
-        stageGroup: "domestic",
-        groupName: "Jalur Hauling Khusus",
-        stepNumber: "07",
-        title: "Gradient & Bridge Safety Check",
-        keyActivities: "Pemberlakuan gigi rendah di turunan curam, batas kecepatan maksimal 40 km/jam, jaga jarak 50m",
-        operatorRole: "Driver terstandar K3 ESDM",
-        kpi: "Kepatuhan batas kecepatan 100%"
-      },
-      {
-        id: 8,
-        stageGroup: "domestic",
-        groupName: "Jalur Hauling Khusus",
-        stepNumber: "08",
-        title: "Intermediate Checkpoint",
-        keyActivities: "Pemeriksaan baut roda, kebocoran hidrolik tipper, dan tekanan rem di pos tengah rute",
-        operatorRole: "Pit-stop mechanic PRAMA",
-        kpi: "Pemeriksaan < 3 menit"
-      },
-      {
-        id: 9,
-        stageGroup: "domestic",
-        groupName: "Jalur Hauling Khusus",
-        stepNumber: "09",
-        title: "Jetty / Smelter Gate In",
-        keyActivities: "Tiba di area pelabuhan jetty/stockpile smelter, scan barcode ritase, antrian hopper",
-        operatorRole: "Port controller & driver",
-        kpi: "Waktu tunggu dumping < 10 mnt"
-      },
-      {
-        id: 10,
-        stageGroup: "installation",
-        groupName: "Dumping & Stockpile Jetty",
-        stepNumber: "10",
-        title: "Hydraulic Tipper Dumping",
-        keyActivities: "Pengangkatan bak hidrolik tipper, penuangan mineral ke grizzly feeder / stockpile jetty",
-        operatorRole: "Driver & spotter jetty",
-        kpi: "Waktu dumping < 2 menit"
-      },
-      {
-        id: 11,
-        stageGroup: "installation",
-        groupName: "Dumping & Stockpile Jetty",
-        stepNumber: "11",
-        title: "Barge Loading & Heavy PMS",
-        keyActivities: "Pemuatan tongkang 300ft via conveyor chute, pencucian kolong unit & servis terjadwal",
-        operatorRole: "Self + jetty operator",
-        kpi: "Kesiapan armada (PA) ≥ 92%"
-      }
-    ];
-
-    const cargoAnatomy: CargoAnatomy = {
-      title: "Anatomi Dump Truck Tipper Heavy-Duty & Karakter Mineral Hauling",
-      diagramType: "mining_hauling",
-      components: [
-        {
-          name: "Bijih Nikel (Nickel Ore) / Batubara",
-          transportMode: "Heavy Duty Tipper Dump Truck (6×4 / 8×4)",
-          dimensionWeight: "Bulk Density 1.3–1.6 t/m³ • Moisture Content 30–35%"
-        },
-        {
-          name: "Bak Dump Tipper Reinforced",
-          transportMode: "Baja Tahan Abrasi HARDOX 450 / High-Tensile Steel",
-          dimensionWeight: "Volume 24–32 m³ • Kapasitas Beban 40–50 Ton"
-        },
-        {
-          name: "Silinder Hidrolik Teleskopik",
-          transportMode: "Heavy Duty Front-End Hydraulic Hoist (Hyva/Penta)",
-          dimensionWeight: "Tekanan Hidrolik 190–250 Bar • Sudut Angkat 52°"
-        },
-        {
-          name: "Sistem Keselamatan Tambang (K3 ESDM)",
-          transportMode: "ROPS/FOPS Cabin, Buggy Whip Flag, Rotary Lamp",
-          dimensionWeight: "Fatigue AI Camera, Radio Komunikasi VHF 2-Way"
-        },
-        {
-          name: "Ban Off-Road E-4 Mining Pattern",
-          transportMode: "Ukuran 12.00R24 / 325/95R24 Radial Mining Tires",
-          dimensionWeight: "Tread Depth Ekstra Tebal Tahan Robekan Batuan Tajam"
-        }
-      ],
-      operationalNotes: "• Operasional 2 shift (22 jam/hari) • Target ritase: 6–8 rit/hari per unit • Rata-rata payload: 42–48 WMT\n• Kepatuhan zero accident dan implementasi SOP keselamatan pertambangan Kepmen ESDM No. 1827/2018",
-      imageCaption: "Gambar 8.2 — Karakter kargo mineral tambang dan spesifikasi dump truck heavy hauling (Ilustrasi)."
-    };
-
-    const designNotes = [
-      "Standar Keselamatan Golden Rules Tambang (HSE Mandate): Seluruh pengemudi wajib memiliki SIMPER aktif dan lulus tes bebas narkoba/alkohol, serta dilengkapi sensor kamera AI pemantau kantuk (Fatigue Monitoring System).",
-      "Manajemen Drainase & Penyiraman Jalur Hauling: Pengoperasian water truck berkala untuk meredam debu pekat tanpa membuat jalan hauling menjadi licin (muddy slick) yang membahayakan armada berat.",
-      "Pemeliharaan Ban & Batuan Tajam (Road Grading): Penempatan motor grader untuk membersihkan batuan lepas (spill rocks) di sepanjang rute hauling guna memperpanjang umur pakai ban hingga 35%."
-    ];
-
-    return buildResult(pName, divName, sector, commodity, "Dari pit tambang hulu hingga stockpile jetty tongkang dan pabrik smelter", "End-to-End Mining Hauling Logistics — lingkup layanan PRAMA Logistic", endToEndWorkflow, cargoAnatomy, designNotes, "Gambar 8.1 — Rantai layanan Heavy Mining Hauling yang ditawarkan (desain penulis).");
-  }
-
-  // 5. DEFAULT / GENERAL COMMERCIAL LOGISTICS FALLBACK
-  const sector = params.sector || "Logistik Distribusi Komersial Terpadu";
-  const commodity = params.commodity || cleanCore(pName);
-
-  const endToEndWorkflow: WorkflowStageItem[] = [
-    {
-      id: 1,
-      stageGroup: "international",
-      groupName: "Hulu & Akuisisi Kargo",
-      stepNumber: "01",
-      title: "Order Intake & Demand Booking",
-      keyActivities: "Penerimaan Purchase Order (PO), verifikasi spesifikasi kargo, alokasi kapasitas armada",
-      operatorRole: "Self (PRAMA Dispatcher)",
-      kpi: "Booking confirmation < 15 menit"
-    },
-    {
-      id: 2,
-      stageGroup: "international",
-      groupName: "Hulu & Akuisisi Kargo",
-      stepNumber: "02",
-      title: "Pre-Loading Inspection",
-      keyActivities: "Pemeriksaan kebersihan armada, kelengkapan surat izin, kalibrasi alat ukur",
-      operatorRole: "QA/QC Surveyor",
-      kpi: "Checklist kelaikan 100%"
-    },
-    {
-      id: 3,
-      stageGroup: "international",
-      groupName: "Hulu & Akuisisi Kargo",
-      stepNumber: "03",
-      title: "Stowage & Cargo Loading",
-      keyActivities: "Pemuatan muatan ke armada, penataan berat gandar, pengikatan kargo terstandar",
-      operatorRole: "Tim loading & driver",
-      kpi: "Loading cycle time < 45 menit"
-    },
-    {
-      id: 4,
-      stageGroup: "international",
-      groupName: "Hulu & Akuisisi Kargo",
-      stepNumber: "04",
-      title: "Weighbridge & Security Seal",
-      keyActivities: "Penimbangan tonase bruto-tarra, pemasangan segel bernomor seri unik, foto bukti muatan",
-      operatorRole: "Security & weighbridge",
-      kpi: "Akurasi timbang ± 0.1%"
-    },
-    {
-      id: 5,
-      stageGroup: "international",
-      groupName: "Hulu & Akuisisi Kargo",
-      stepNumber: "05",
-      title: "Dispatch & Digital Manifest",
-      keyActivities: "Penerbitan surat jalan digital e-POD, sinkronisasi status ke control tower terpusat",
-      operatorRole: "Self (Dispatcher)",
-      kpi: "Dispatch lead-time < 5 menit"
-    },
-    {
-      id: 6,
-      stageGroup: "domestic",
-      groupName: "Koridor Distribusi Darat",
-      stepNumber: "06",
-      title: "Active GPS Transit Tracking",
-      keyActivities: "Monitoring pergerakan armada secara real-time via PRAMA Telematics, alert deviasi rute",
-      operatorRole: "Self (Control Tower 24/7)",
-      kpi: "Visibilitas rute 100%"
-    },
-    {
-      id: 7,
-      stageGroup: "domestic",
-      groupName: "Koridor Distribusi Darat",
-      stepNumber: "07",
-      title: "Safety Rest & Geofence Route",
-      keyActivities: "Pengendalian jam istirahat pengemudi di rest area terdaftar, kepatuhan batas kecepatan",
-      operatorRole: "Driver profesional",
-      kpi: "Kepatuhan SOP K3 100%"
-    },
-    {
-      id: 8,
-      stageGroup: "domestic",
-      groupName: "Koridor Distribusi Darat",
-      stepNumber: "08",
-      title: "Dynamic Rerouting & Rescue",
-      keyActivities: "Pengalihan rute instan bila terjadi kemacetan ekstrem, aktivasi armada rescue terdekat",
-      operatorRole: "PRAMA Road Assistance",
-      kpi: "Respon insiden < 15 menit"
-    },
-    {
-      id: 9,
-      stageGroup: "domestic",
-      groupName: "Koridor Distribusi Darat",
-      stepNumber: "09",
-      title: "Destination Arrival & Check",
-      keyActivities: "Tiba di lokasi gudang/site penerima, verifikasi keutuhan segel dan surat jalan",
-      operatorRole: "Customer receiver & driver",
-      kpi: "On-Time Arrival ≥ 98.5%"
-    },
-    {
-      id: 10,
-      stageGroup: "installation",
-      groupName: "Hilir & Serah Terima",
-      stepNumber: "10",
-      title: "Unloading & Cargo Inspection",
-      keyActivities: "Pembongkaran muatan dengan peralatan bantu sesuai standar penanganan kargo",
-      operatorRole: "Customer unloader team",
-      kpi: "Zero damage / kehilangan"
-    },
-    {
-      id: 11,
-      stageGroup: "installation",
-      groupName: "Hilir & Serah Terima",
-      stepNumber: "11",
-      title: "Digital ePOD & Billing",
-      keyActivities: "Tanda tangan digital penerimaan barang, penerbitan invoice otomatis, survei kepuasan",
-      operatorRole: "Self (PRAMA Mobile App)",
-      kpi: "Penyelesaian ePOD real-time"
-    }
-  ];
-
-  const cargoAnatomy: CargoAnatomy = {
-    title: `Anatomi Kargo & Karakteristik Muatan: ${commodity}`,
-    diagramType: "general_cargo",
-    components: [
-      {
-        name: commodity,
-        transportMode: params.fleetRequirement || "Armada Truk Terdedikasi Spesifikasi Khusus",
-        dimensionWeight: params.targetCapacity || "Sesuai Target Volume & Berat Standar Kargo"
-      },
-      {
-        name: "Prime Mover & Sasis Muatan",
-        transportMode: "Chassis Baja High-Tensile Laik Uji Dishub",
-        dimensionWeight: "Kapasitas Sumbu MST 10 Ton • Sertifikat Uji KIR"
-      },
-      {
-        name: "Sistem Pengaman & Lashing",
-        transportMode: "Strap Baja / Webbing Ratchet Tie-Down Tahan Getaran",
-        dimensionWeight: "Standar Keamanan Penahan Muatan SNI & K3"
-      },
-      {
-        name: "Sensor Telematika & IoT",
-        transportMode: "GPS Tracker Real-Time Dual Channel GSM/Satellite",
-        dimensionWeight: "Sensor Pintu, Kecepatan, & Bahan Bakar"
-      }
-    ],
-    operationalNotes: `• Koridor rute: ${params.routeCorridor || "Rute Distribusi Nasional"} • Jumlah armada: ${params.fleetCount || 10} unit\n• Garansi ketepatan waktu pengiriman (OTIF) ≥ 98.5% dan keamanan muatan terjamin asuransi komprehensif`,
-    imageCaption: `Gambar 8.2 — Karakter kargo ${commodity} dan spesifikasi armada operasional (Ilustrasi).`
-  };
-
-  const designNotes = [
-    "Kepatuhan Regulasi Batas Muatan (Zero ODOL): Seluruh armada dioperasikan sesuai dengan batas Muatan Sumbu Terberat (MST) resmi Kemenhub guna memastikan keselamatan jalan raya dan kelancaran perizinan.",
-    "Pemantauan Sentral Control Tower 24/7: Pengawasan rute aktif tanpa henti guna mendeteksi deviasi jalur, waktu berhenti tidak wajar, atau potensi keterlambatan pengiriman.",
-    "Protokol Cadangan & Emergency Replacement: Kesiapan armada pengganti di simpul-simpul strategis untuk menjamin kontinuitas rantai pasok klien korporasi tanpa hambatan."
-  ];
-
-  return buildResult(pName, divName, sector, commodity, "Dari titik hulu/pabrik hingga lokasi penerima, bongkar muat, dan O&M logistics", `End-to-End ${commodity} Logistics — lingkup layanan PRAMA Logistic`, endToEndWorkflow, cargoAnatomy, designNotes, `Gambar 8.1 — Rantai layanan ${commodity} yang ditawarkan (desain penulis).`);
-}
-
-function cleanCore(title: string): string {
-  return title
+  // Clean title for commodity text
+  const cleanCore = pName
     .replace(/^(kajian strategis|kajian kelayakan|analisis kelayakan|proyek|project|kajian|analisis|evaluasi|rencana bisnis|proposal)[\s:]+/i, "")
-    .trim() || title;
-}
+    .trim() || pName;
 
-function buildResult(
-  pName: string,
-  divName: string,
-  sector: string,
-  commodity: string,
-  headerSubtitle: string,
-  workflowTitle: string,
-  endToEndWorkflow: WorkflowStageItem[],
-  cargoAnatomy: CargoAnatomy,
-  designNotes: string[],
-  workflowCaption: string
-): ServiceDesignResult {
-  const narrative = `# KAJIAN SERVICE DESIGN: ${pName.toUpperCase()}
+  // 1. Susu / Dairy / Lembang / Peternakan / Cold Chain
+  if (
+    lower.includes("susu") ||
+    lower.includes("dairy") ||
+    lower.includes("lembang") ||
+    lower.includes("milk") ||
+    lower.includes("sapi") ||
+    lower.includes("peternakan") ||
+    lower.includes("kpsbu")
+  ) {
+    const sector = "Rantai Dingin Susu Segar & Dairy Cold Chain Logistics";
+    const commodity = "Susu Murni Segar (Fresh Raw Milk) & Olahan Susu Dingin";
+
+    const narrative = `# KAJIAN SERVICE DESIGN: ${pName.toUpperCase()}
 **Divisi:** ${divName} • **Sektor:** ${sector}
-**Komoditas Utama:** ${commodity}
-**Lingkup Layanan:** ${headerSubtitle}
+**Status:** Terstruktur Rapih • Standar Kelaikan Food-Grade BPOM & SNI 3141.1:2011
 
 ---
 
-## 1. RANTAI LAYANAN END-TO-END (11 TAHAPAN OPERASIONAL)
-${endToEndWorkflow
-  .map(
-    (w) =>
-      `### [${w.stepNumber}] ${w.title.toUpperCase()} (${w.groupName})\n- **Aktivitas Kunci:** ${w.keyActivities}\n- **Peran Operator:** ${w.operatorRole}\n- **KPI Terukur:** ${w.kpi}`
-  )
-  .join("\n\n")}
+## 1. ARSITEKTUR SIKLUS KLIEN (CLIENT JOURNEY MAPPING)
+Desain layanan dirancang khusus untuk memenuhi siklus pemerahan susu sapi harian peternak Lembang & Jawa Barat menuju pabrik pengolahan susu (IPS) secara terjadwal:
+- **Tahap 1 - Onboarding & Audit Sanitasi Tangki:** Tim teknis PRAMA dan quality assurance klien melakukan inspeksi kebersihan manhole tangki stainless steel 304/316, kalibrasi sensor suhu chiller, dan uji residu pembersih sebelum armada diterjunkan ke rute.
+- **Tahap 2 - Penjadwalan Ritase Pasca Pemerahan:** Pengambilan susu terjadwal ketat 2 kali sehari (Ritase Pagi pukul 05.30–08.30 WIB dan Ritase Sore pukul 14.30–17.30 WIB) langsung di cooling center koperasi peternak (KPSBU Lembang & sekitarnya) guna menghindari kenaikan derajat keasaman susu.
+- **Tahap 3 - Monitoring Suhu Aktif Sepanjang Perjalanan:** Sensor telematika IoT mengirimkan data suhu real-time setiap 3 menit dengan rentang stabil 2°C – 4°C, dilengkapi alarm otomatis ke control tower apabila deviasi suhu menyentuh > 5°C.
+- **Tahap 4 - Uji Penerimaan di Pabrik & Serah Terima Digital:** Setibanya di gerbang pabrik IPS, pengemudi menyerahkan e-surat jalan dan data log suhu digital, dilanjutkan pengujian sampel laboratorium (uji alkohol, berat jenis, dan reduktase) sebelum proses bongkar tangki (unloading).
 
 ---
 
-## 2. ANATOMI KARGO & KARAKTERISTIK MUATAN
-**${cargoAnatomy.title}**
-${cargoAnatomy.components
-  .map((c) => `- **${c.name}:** ${c.transportMode} (${c.dimensionWeight})`)
-  .join("\n")}
-
-**Catatan Operasional:**
-${cargoAnatomy.operationalNotes}
+## 2. BLUEPRINT OPERASIONAL & PROSEDUR STANDAR LAYANAN
+- **SOP Sanitasi Clean-In-Place (CIP) Otomatis:** Setiap unit tangki wajib melalui proses siklus pencucian kimia CIP food-grade (pembilasan air hangat, sirkulasi caustic soda, asam nitrat, dan bilasan akhir steril) maksimal 2 jam setelah pembongkaran.
+- **Agitator Sirkulasi Kontinu:** Tangki dilengkapi sistem agitator mekanis berputar lambat guna mencegah terjadinya pemisahan lapisan krim lemak (cream layer separation) selama proses pengangkutan rute berkelok Lembang–Bandung.
+- **Dedicated Driver Food-Grade:** Seluruh pengemudi dibekali sertifikasi higienitas penanganan pangan cair, APD lengkap (sepatu boots steril, hairnet, dan seragam khusus), serta pemahaman SOP penanganan darurat kebocoran seal katup bawah.
 
 ---
 
-## 3. CATATAN DESAIN PENTING & REGULASI
-${designNotes.map((n, i) => `${i + 1}. ${n}`).join("\n\n")}
+## 3. FAIL-SAFE PROTOCOLS & MITIGASI DARURAT LAPANGAN
+- **Insiden Kerusakan Mesin Chiller Pendingin:** Unit cadangan (standby tanker) di pool Bandung dikerahkan dalam tempo < 45 menit dengan pompa transfer steril portable berdaya hisap cepat.
+- **Kemacetan Ekstrem Jalur Wisata Lembang:** Implementasi rute alternatif geofencing via Cisarua–Parongpong–Padalarang dan koordinasi prioritas pengawalan logistik pangan esensial.
+- **Penolakan Sampel Kualitas Susu:** Protokol investigasi silang sampel cadangan tersegel (retained sample) bersama surveyor independen untuk transparansi klaim asuransi.
+
+---
+
+## 4. METRIK KEPUASAN KLIEN & INDIKATOR KINERJA (KPI)
+- **Ketepatan Waktu Penerimaan (On-Time Delivery):** Target ≥ 99.2% sesuai batas toleransi asam susu sebelum dipasteurisasi.
+- **Konsistensi Suhu Kargo Selama Transit:** 100% data log suhu berada pada rentang 2°C – 4°C tanpa insiden thermal shock.
+- **Customer Satisfaction Score (CSAT):** Target skor ≥ 95% dari manajer logistik dan quality control pabrik pengolahan susu.`;
+
+    return {
+      title: pName,
+      division: divName,
+      sectorName: sector,
+      targetCommodity: commodity,
+      clientJourney: [
+        {
+          stage: "Tahap 1: Onboarding & Audit Sanitasi",
+          touchpoints: "Verifikasi sertifikat food-grade, kalibrasi sensor chiller, dan protokol sanitasi CIP tangki stainless steel.",
+          description: "Pemeriksaan menyeluruh sebelum kontrak aktif untuk memastikan tangki bebas kontaminan bakteri dan residu kimia.",
+          kpi: "Audit Kelaikan Food-Grade: 100% Lolos"
+        },
+        {
+          stage: "Tahap 2: Ritase Pasca Pemerahan",
+          touchpoints: "Jadwal ritase pagi (05.30-08.30) & sore (14.30-17.30) di Cooling Center KPSBU Lembang.",
+          description: "Pengangkutan susu segar segera setelah diperah untuk menjaga kestabilan bakteriologis dan berat jenis.",
+          kpi: "Waktu Muat Cooling Center: < 40 Menit"
+        },
+        {
+          stage: "Tahap 3: Pemantauan Suhu IoT Real-Time",
+          touchpoints: "PRAMA Telematics Dashboard, sensor digital logger 2°C–4°C, agitator sirkulasi susu.",
+          description: "Transmisi data suhu per 3 menit dengan alert dini jika ada fluktuasi menuju control room 24/7.",
+          kpi: "Deviasi Suhu Maksimal: ± 0.5°C"
+        },
+        {
+          stage: "Tahap 4: Penerimaan Pabrik & e-DO",
+          touchpoints: "Pabrik IPS (Ultrajaya, Cimory, Frisian Flag, dll.), uji lab cepat (alkohol & BJ), serah terima digital.",
+          description: "Proses transfer muatan ke silo penyimpanan pabrik dengan sistem pompa aseptik tertutup.",
+          kpi: "Waktu Unloading Pabrik: < 50 Menit"
+        }
+      ],
+      operationalBlueprint: [
+        {
+          serviceCode: "SD-CIP-01",
+          title: "SOP Sanitasi Tangki Clean-In-Place (CIP)",
+          standard: "Siklus 4 Tahap Sterilisasi",
+          detail: "Pencucian otomatis dengan larutan alkali & asam food-grade bertekanan tinggi setiap selesai ritase."
+        },
+        {
+          serviceCode: "SD-AGT-02",
+          title: "Agitator Mekanis Anti-Separasi Lemak",
+          standard: "Putaran Stabil 30 RPM",
+          detail: "Pengadukan perlahan kontinu di dalam tangki agar kadar lemak susu homogen dan tidak mengendap."
+        },
+        {
+          serviceCode: "SD-SLA-03",
+          title: "Jaminan SLA Keandalan Ritase Harian",
+          standard: "Zero Downtime Cadangan 1:5",
+          detail: "Penyediaan 1 unit truk tangki cadangan siap gerak di pool Lembang/Bandung guna menjamin kontinuitas pasokan harian."
+        },
+        {
+          serviceCode: "SD-TRF-04",
+          title: "Indeksasi Tarif Transparan & Terukur",
+          standard: "IDR per Liter / KM Terikat SLA",
+          detail: "Struktur biaya transparan berbasis literase muatan dengan penyesuaian harga BBM industri yang jelas."
+        }
+      ],
+      failSafeProtocols: [
+        {
+          incident: "Kenaikan Suhu Tangki > 5°C",
+          mitigation: "Aktivasi genset kompresor auxiliary cadangan dan rute prioritas darurat ke processing plant terdekat.",
+          slaResolution: "Respon Teknis < 15 Menit"
+        },
+        {
+          incident: "Kemacetan Jalur Wisata Lembang",
+          mitigation: "Pengalihan rute otomatis via koridor logistik Cisarua–Padalarang dipandu PRAMA Smart Routing.",
+          slaResolution: "Deviasi Jadwal < 25 Menit"
+        },
+        {
+          incident: "Kendala Kerusakan Mesin Truk",
+          mitigation: "Pengerahan truk penarik evakuasi & transfer susu menggunakan pompa portabel stainless steel steril.",
+          slaResolution: "Truk Pengganti Tiba < 45 Menit"
+        }
+      ],
+      cxMetrics: [
+        {
+          metric: "On-Time In-Full (OTIF)",
+          target: "≥ 99.2%",
+          explanation: "Ketepatan waktu tiba di receiving plant sebelum batas kadaluwarsa toleransi asam susu mentah."
+        },
+        {
+          metric: "Kestabilan Suhu 2°C – 4°C",
+          target: "99.8%",
+          explanation: "Persentase perjalanan di mana suhu susu berada dalam koridor dingin optimal standar BPOM."
+        },
+        {
+          metric: "Tingkat Kerusakan Muatan (Spillage/Spoilage)",
+          target: "< 0.05%",
+          explanation: "Jaminan proteksi komoditas bernilai tinggi dengan tingkat kehilangan fisik mendekati nol."
+        },
+        {
+          metric: "Client Net Promoter Score (NPS)",
+          target: "+78",
+          explanation: "Tingkat kepuasan dan loyalitas manajer pengadaan IPS serta pengurus koperasi peternak."
+        }
+      ],
+      narrativeMarkdown: narrative
+    };
+  }
+
+  // 2. Semen / Cement / Clinker
+  if (lower.includes("semen") || lower.includes("cement") || lower.includes("clinker") || lower.includes("klinker")) {
+    const sector = "Logistik Distribusi Semen Curah & Bahan Bangunan Industri";
+    const commodity = "Semen Curah Kering & Clinker";
+
+    const narrative = `# KAJIAN SERVICE DESIGN: ${pName.toUpperCase()}
+**Divisi:** ${divName} • **Sektor:** ${sector}
+**Standar:** Kepatuhan MST Kemenhub & Keselamatan Bejana Tekan Silo
+
+---
+
+## 1. ARSITEKTUR SIKLUS KLIEN (CLIENT JOURNEY MAPPING)
+- **Onboarding & Kalibrasi Silo:** Verifikasi nozel kompresor blower, pengujian sambungan pipa coupling unloader, dan sinkronisasi kapasitas silo penampung batching plant mitra.
+- **Dispatch & Pemuatan di Pabrik Semen:** Penimbangan gandar otomatis, pengisian semen curah melalui corong spout berfilter debu, serta penyegelan manhole dengan segel bernomor seri.
+- **Monitoring Koridor Angkutan Bebas ODOL:** Pelacakan rute tol dan arteri via PRAMA Telematics dengan pengawasan berat sumbu terberat (MST) 10 ton agar terhindar dari tilang jembatan timbang WIM.
+- **Bongkar Tekanan Pneumatik Cepat:** Proses discharge udara bertekanan tinggi (1.5-2.0 bar) langsung ke silo vertikal tanpa polusi debu beterbangan.
+
+---
+
+## 2. BLUEPRINT OPERASIONAL
+- **Standardisasi Unloader Blower Tekanan Tinggi:** Waktu pembongkaran muatan 25-30 ton tuntas dalam durasi < 45 menit.
+- **Pemeliharaan Kompresor Terjadwal:** Inspeksi filter udara blower per 200 jam kerja untuk mencegah keausan piston kompresor.
+- **SOP Nol Ceceran Semen (Zero Dust Spillage):** Penggunaan selang unloader heavy-duty tahan abrasi dengan klem pengunci ganda.
+
+---
+
+## 3. FAIL-SAFE PROTOCOLS
+- **Pipa Silo Tersumbat (Choked Hose):** Prosedur dekompresi darurat dan pembersihan pipa dengan katup blow-back khusus.
+- **Kerusakan Kompresor Saat Bongkar:** Penyediaan truk cadangan bertenaga PTO independen untuk menuntaskan pemompaan semen.
+
+---
+
+## 4. METRIK KEPUASAN KLIEN
+- **SLA Waktu Bongkar Silo:** < 45 Menit per 28 Ton
+- **Keandalan Ritase Sesuai Jadwal Proyek Ready-Mix:** ≥ 98.8%
+- **Nol Insiden ODOL & Pelanggaran Lalu Lintas:** 100% Kepatuhan`;
+
+    return {
+      title: pName,
+      division: divName,
+      sectorName: sector,
+      targetCommodity: commodity,
+      clientJourney: [
+        {
+          stage: "Tahap 1: Sinkronisasi Silo Pabrik",
+          touchpoints: "Pemeriksaan pipa konektor batching plant, uji tekanan kompresor, kalibrasi jembatan timbang.",
+          description: "Memastikan kompatibilitas armada tangki kapsul dengan silo penerima klien.",
+          kpi: "Kesesuaian Nozel: 100%"
+        },
+        {
+          stage: "Tahap 2: Pemuatan Pabrik Semen",
+          touchpoints: "Loading spout otomatis, e-weighbridge, segel digital manhole.",
+          description: "Pengisian presisi sesuai kapasitas batas tonase MST 10 ton resmi Kemenhub.",
+          kpi: "Waktu Muat: < 35 Menit"
+        },
+        {
+          stage: "Tahap 3: Transit Bebas ODOL",
+          touchpoints: "GPS tracking, integrasi sensor batas kecepatan jalan tol.",
+          description: "Perjalanan terkawal dengan mitigasi kemacetan menuju simpul proyek infrastruktur.",
+          kpi: "Kecepatan Aman: 60-70 km/jam"
+        },
+        {
+          stage: "Tahap 4: Pembongkaran Pneumatik",
+          touchpoints: "Kompresor unloader 2 bar, selang food-grade/cement grade bebas debu.",
+          description: "Penghembusan semen curah ke tangki silo vertikal batching plant mitra.",
+          kpi: "Waktu Discharge: < 45 Menit"
+        }
+      ],
+      operationalBlueprint: [
+        {
+          serviceCode: "SD-BLW-01",
+          title: "SOP Kompresor Blower Pneumatik",
+          standard: "Tekanan Kerja 1.8 Bar",
+          detail: "Pengaturan katup fluida udara stabil untuk memastikan pengosongan tangki tanpa sisa kerak semen."
+        },
+        {
+          serviceCode: "SD-ODL-02",
+          title: "Kepatuhan Total Batas Muatan (Zero ODOL)",
+          standard: "Batas MST 10 Ton Jalan Kelas I",
+          detail: "Jaminan bebas sanksi tilang dan bebas hambatan di setiap jembatan timbang elektronik (WIM)."
+        },
+        {
+          serviceCode: "SD-SCH-03",
+          title: "Penjadwalan Ritase Berbasis Jadwal Pengecoran",
+          standard: "Sinkronisasi Just-In-Time (JIT)",
+          detail: "Pengiriman terjadwal sesuai ritme batching plant proyek jalan tol atau gedung tinggi."
+        },
+        {
+          serviceCode: "SD-SAF-04",
+          title: "Protokol Bejana Tekan Disnaker",
+          standard: "Sertifikasi Uji Hidrostatik Berkala",
+          detail: "Pemeriksaan integritas dinding tangki kapsul secara berkala guna menjamin keselamatan kerja K3."
+        }
+      ],
+      failSafeProtocols: [
+        {
+          incident: "Kompresor Mati Mendadak",
+          mitigation: "Aktivasi unit kompresor cadangan terpasang pada prime mover pendukung.",
+          slaResolution: "Pemulihan < 20 Menit"
+        },
+        {
+          incident: "Penyumbatan Jalur Pipa Silo",
+          mitigation: "Pelepasan tekanan terarah melalui blow-off valve dan pembersihan selang bertekanan.",
+          slaResolution: "Normalisasi < 30 Menit"
+        },
+        {
+          incident: "Antrean Padat di Silo Proyek",
+          mitigation: "Koordinasi real-time via PRAMA Dispatcher untuk penjadwalan ulang ritase susulan.",
+          slaResolution: "Respon Dispatch < 10 Menit"
+        }
+      ],
+      cxMetrics: [
+        {
+          metric: "Siklus Waktu Bongkar (Discharge Cycle)",
+          target: "< 45 Menit",
+          explanation: "Kecepatan pembongkaran tanpa meninggalkan residu serbuk semen di dalam kapsul."
+        },
+        {
+          metric: "Ketepatan Pengiriman JIT",
+          target: "≥ 99.0%",
+          explanation: "Menghindari berhentinya aktivitas batching plant ready-mix akibat keterlambatan pasokan."
+        },
+        {
+          metric: "Nol Kebocoran Debu Semen",
+          target: "100% Bebas Emisi Debu",
+          explanation: "Menjaga kebersihan area kerja batching plant dan kepatuhan baku mutu lingkungan."
+        },
+        {
+          metric: "Retensi Kontrak Klien Korporat",
+          target: "≥ 90%",
+          explanation: "Tingkat perpanjangan kontrak tahunan dengan produsen semen dan kontraktor karya."
+        }
+      ],
+      narrativeMarkdown: narrative
+    };
+  }
+
+  // 3. Batubara / Tambang / Mining
+  if (lower.includes("batubara") || lower.includes("coal") || lower.includes("tambang") || lower.includes("hauling") || lower.includes("nikel")) {
+    const isNickel = lower.includes("nikel") || lower.includes("nickel");
+    const sector = isNickel ? "Hauling Tambang Nikel & Pasokan Smelter" : "Transportasi Hauling Batubara Tambang ke Jetty";
+    const commodity = isNickel ? "Bijih Nikel Laterit (Saprolite / Limonite)" : "Batubara Termal Curah";
+
+    const narrative = `# KAJIAN SERVICE DESIGN: ${pName.toUpperCase()}
+**Divisi:** ${divName} • **Sektor:** ${sector}
+**Standar:** Kepatuhan SMKP Minerba & SIMBARA ESDM
+
+---
+
+## 1. ARSITEKTUR SIKLUS KLIEN (CLIENT JOURNEY MAPPING)
+- **Tahap 1 - Pre-Operation & Safety Induction:** Seluruh armada dan operator melewati inspeksi kelayakan tambang (commissioning unit) dengan standar K3 pertambangan ketat.
+- **Tahap 2 - Pemuatan di Pit / Stockpile:** Pengisian muatan diawasi tim checker tambang dengan verifikasi muatan melalui jembatan timbang terintegrasi SIMBARA.
+- **Tahap 3 - Hauling Terpantau di Dedicated Road:** Perjalanan melintasi jalan tambang khusus dengan pembatasan kecepatan maksimum 40 km/jam, diawasi sistem telematika GPS dan kamera AI DMS kelelahan sopir.
+- **Tahap 4 - Dumping di Jetty / Hopper Smelter:** Manuver pembongkaran cepat di fasilitas crushing plant atau stockpile pelabuhan jetty tanpa antrean berkepanjangan.
+
+---
+
+## 2. BLUEPRINT OPERASIONAL & PERFORMA UNIT
+- **Ketersediaan Armada (Physical Availability - PA):** Target ketersediaan armada minimal 90% dengan dukungan tim mekanik dan mobile workshop 24/7 di pitstop rute hauling.
+- **SOP Keselamatan Tambang K3:** Penggunaan buggy whip, rotary lamp, radio komunikasi dua arah (two-way radio) saluran tambang, serta seatbelt 3-titik.
+- **Penyiraman Jalan Hauling (Dust Control):** Pengoperasian water truck rutin untuk menjaga visibilitas pandangan dan menekan paparan debu batubara/tambang.
+
+---
+
+## 3. FAIL-SAFE PROTOCOLS
+- **Unit Breakdown di Jalur Hauling:** Unit rescue lowbed/towing segera menarik armada ke bahu jalan dalam < 15 menit agar tidak menghambat aliran truk di belakangnya.
+- **Kondisi Hujan Lebat (Slippery Road):** Protokol stop hauling otomatis saat kondisi jalan dinilai licin membahayakan hingga inspeksi tim safety menyatakan jalan layak dilalui.
+
+---
+
+## 4. METRIK KEPUASAN KLIEN
+- **Physical Availability (PA):** ≥ 90.0%
+- **Pencapaian Target Tonase Bulanan:** ≥ 98.5%
+- **Tingkat Kepatuhan SIMBARA / Surat Jalan:** 100%`;
+
+    return {
+      title: pName,
+      division: divName,
+      sectorName: sector,
+      targetCommodity: commodity,
+      clientJourney: [
+        {
+          stage: "Tahap 1: Commissioning Tambang",
+          touchpoints: "Inspeksi K3, verifikasi SIMPER pengemudi, uji rem dan emisi gas buang.",
+          description: "Audit kesiapan unit operasional sesuai kaidah pertambangan yang baik (Good Mining Practice).",
+          kpi: "Lolos Uji Tambang: 100%"
+        },
+        {
+          stage: "Tahap 2: Pemuatan Pit / Stockpile",
+          touchpoints: "Loading excavator, jembatan timbang weighbridge, integrasi SIMBARA.",
+          description: "Pencatatan tonase muatan secara digital sebelum memasuki koridor jalan angkut.",
+          kpi: "Waktu Siklus Timbang: < 3 Menit"
+        },
+        {
+          stage: "Tahap 3: Hauling Koridor Khusus",
+          touchpoints: "GPS tracking, kontrol batas kecepatan, kamera AI Driver Monitoring System.",
+          description: "Pengangkutan melintasi rute tambang dengan mitigasi debu dan kelelahan operator.",
+          kpi: "Kecepatan Maksimal: 40 km/jam"
+        },
+        {
+          stage: "Tahap 4: Dumping di Jetty / Crusher",
+          touchpoints: "Manuver hopper, verifikasi surat jalan digital, pencatatan ritase akhir.",
+          description: "Penurunan muatan secara presisi untuk pengisian tongkang atau pabrik pengolahan.",
+          kpi: "Waktu Dumping: < 2.5 Menit"
+        }
+      ],
+      operationalBlueprint: [
+        {
+          serviceCode: "SD-MIN-01",
+          title: "Jaminan Ketersediaan Armada (Physical Availability)",
+          standard: "PA ≥ 90% Kontinu",
+          detail: "Mobile workshop dan tim mekanik siap sedia di pit-stop rute untuk meminimalkan downtime perbaikan."
+        },
+        {
+          serviceCode: "SD-SAF-02",
+          title: "SOP Keselamatan Tambang Komprehensif",
+          standard: "Zero Lost Time Injury (Zero LTI)",
+          detail: "Kepatuhan total terhadap sistem manajemen keselamatan pertambangan (SMKP Minerba ESDM)."
+        },
+        {
+          serviceCode: "SD-TRK-03",
+          title: "Integrasi Pelaporan Real-Time SIMBARA",
+          standard: "Sinkronisasi Digital 100%",
+          detail: "Setiap ritase terdata otomatis ke server pengawas untuk transparansi royalti dan legalitas komoditas."
+        },
+        {
+          serviceCode: "SD-DUS-04",
+          title: "Pengendalian Debu & Pemeliharaan Jalan",
+          standard: "Siklus Water Truck Terjadwal",
+          detail: "Penyiraman berkala rute hauling guna menjaga keselamatan pandangan dan kesehatan lingkungan sekitar."
+        }
+      ],
+      failSafeProtocols: [
+        {
+          incident: "Truk Mogok di Rute Hauling",
+          mitigation: "Unit evakuasi menarik truk ke safety bay dalam < 15 menit agar jalan tidak macet.",
+          slaResolution: "Jalur Bebas < 15 Menit"
+        },
+        {
+          incident: "Jalan Amblas / Licin Pasca Hujan",
+          mitigation: "Pengerahan motor grader dan compactor tim jalan tambang untuk pemadatan cepat.",
+          slaResolution: "Pemulihan Rute < 45 Menit"
+        },
+        {
+          incident: "Deteksi Pengemudi Mengantuk via AI",
+          mitigation: "Peringatan getar kursi kabin, alarm suara, dan instruksi berhenti di rest bay terdekat.",
+          slaResolution: "Intervensi Instan < 3 Detik"
+        }
+      ],
+      cxMetrics: [
+        {
+          metric: "Pencapaian Ritase Kontrak (Monthly Quota)",
+          target: "≥ 98.5%",
+          explanation: "Pemenuhan target tonase bulanan yang disepakati dengan pemilik konsesi tambang."
+        },
+        {
+          metric: "Ketersediaan Fisik Armada (PA)",
+          target: "≥ 90.0%",
+          explanation: "Rasio waktu kesiapan armada beroperasi dibandingkan total jam kerja kalender."
+        },
+        {
+          metric: "Zero Fatal Incident (K3 Tambang)",
+          target: "0 Insiden",
+          explanation: "Komitmen mutlak keselamatan kerja bagi seluruh operator dan aset di area tambang."
+        },
+        {
+          metric: "Efisiensi Konsumsi Solar (Fuel Ratio)",
+          target: "Sesuai Target Desain ±3%",
+          explanation: "Optimalisasi rute dan gaya berkendara pengemudi untuk efisiensi biaya operasional."
+        }
+      ],
+      narrativeMarkdown: narrative
+    };
+  }
+
+  // 4. Default / Archetype-Aligned (Manufacturing, Personal SME, or Custom Transport)
+  const archetype = detectProjectArchetype(pName);
+
+  if (archetype === 'manufacturing') {
+    const sector = `Fasilitas Manufaktur & Fabrikasi Industri ${cleanCore}`;
+    const commodity = `Produk Manufaktur & Pasokan Industri ${cleanCore}`;
+
+    const narrative = `# KAJIAN SERVICE DESIGN: ${pName.toUpperCase()}
+**Divisi:** ${divName} • **Sektor:** ${sector}
+**Standar:** Manajemen Mutu Manufaktur ISO 9001:2015 & Layanan Kemitraan Industri B2B
+
+---
+
+## 1. ARSITEKTUR SIKLUS PELANGGAN INDUSTRI (CLIENT JOURNEY MAPPING)
+- **Tahap 1 - Penjajakan Kebutuhan & Spesifikasi Teknis:** Review spesifikasi teknis produk, penerbitan Certificate of Analysis (CoA) prototipe, dan kesepakatan Minimum Order Quantity (MOQ).
+- **Tahap 2 - Penjadwalan Produksi & Uji Sampel (Pilot Run):** Penjadwalan batch produksi pada sistem ERP/MRP dan verifikasi sampel perdana sebelum produksi massal.
+- **Tahap 3 - Monitoring Produksi & Kontrol Kualitas Lini:** Pemantauan progres batch real-time melalui sistem SCADA dengan inspeksi kualitas ketat (reject rate < 1.5%).
+- **Tahap 4 - Pengemasan Standar Industri & Pengiriman Tepat Waktu:** Pengemasan palet terstandar, pelabelan barcode batch, dan pengiriman tepat waktu ke gudang distributor (OTIF ≥ 98.8%).
+
+---
+
+## 2. BLUEPRINT OPERASIONAL & MUTU PABRIK
+- **Total Productive Maintenance (TPM):** Perawatan terjadwal mesin pabrik guna mempertahankan Overall Equipment Effectiveness (OEE) ≥ 85%.
+- **Sistem Manajemen Mutu Berlapis (Inbound, In-Process, Outbound):** Pengujian laboratorium mandiri untuk setiap kedatangan bahan baku dan produk jadi.
+- **Standardisasi Keselamatan K3 & 5R:** Budaya Ringkas, Rapi, Resik, Rawat, Rajin di seluruh lantai produksi.
+
+---
+
+## 3. FAIL-SAFE PROTOCOLS & RENCANA KONTINUITAS BISNIS
+- **Kerusakan Mesin Kritis (Breakdown):** Kesiapan teknisi siaga internal dan suku cadang kritis di lokasi dengan batas perbaikan < 30 menit.
+- **Keterlambatan Pasokan Bahan Baku:** Pengamanan safety stock bahan baku minimal 21 hari kerja dan kontrak ganda dengan pemasok cadangan.
+- **Deteksi Cacat Kualitas Batch:** Penghentian lini otomatis (*jidoka*), karantina batch, dan penelusuran akar masalah (*root cause analysis*).
 
 ---
 
 ## 4. INDIKATOR KINERJA UTAMA (KPI)
-- **Ketepatan Waktu Penerimaan (OTIF):** Target ≥ 98.5%
-- **Loss / Susut Muatan:** 0% (Zero Damage)
-- **Tingkat Kesiapan Armada (PA):** Target ≥ 94%`;
+- **Ketepatan Pengiriman (OTIF - On-Time In-Full):** Target ≥ 98.8%
+- **Tingkat Cacat Produk (Defect/Reject Rate):** Target < 1.45%
+- **Kepuasan Akun Distributor:** Target ≥ 94%`;
+
+    return {
+      title: pName,
+      division: divName,
+      sectorName: sector,
+      targetCommodity: commodity,
+      clientJourney: [
+        {
+          stage: "Tahap 1: Evaluasi Teknis & Spesifikasi Sampel",
+          touchpoints: "Spesifikasi produk, pengujian laboratorium sampel, verifikasi CoA.",
+          description: "Pencocokan toleransi mutu produk dengan kebutuhan distributor/klien industri.",
+          kpi: "Waktu Validasi Sampel: < 5 Hari Kerja"
+        },
+        {
+          stage: "Tahap 2: Kontrak Volume & Penjadwalan Batch",
+          touchpoints: "Purchase Order (PO), alokasi jadwal produksi ERP, ketersediaan bahan baku.",
+          description: "Penguncian jadwal mesin dan pemesanan bahan baku berkualitas tinggi.",
+          kpi: "Konfirmasi Jadwal Produksi: < 24 Jam"
+        },
+        {
+          stage: "Tahap 3: Pemantauan Produksi & Quality Control",
+          touchpoints: "Monitoring SCADA/IoT, inspeksi QC per stasiun, laporan hasil uji batch.",
+          description: "Pengendalian parameter produksi presisi guna mencegah cacat fabrikasi.",
+          kpi: "Lolos QC Lini Pertama: ≥ 98.5%"
+        },
+        {
+          stage: "Tahap 4: Pengemasan & Pengiriman OTIF",
+          touchpoints: "Palletizing, wrapping, surat jalan digital, konfirmasi penerimaan gudang.",
+          description: "Pengiriman barang ke gudang klien dalam kondisi utuh dan higienis.",
+          kpi: "On-Time In-Full (OTIF): ≥ 98.8%"
+        }
+      ],
+      operationalBlueprint: [
+        {
+          serviceCode: "MFG-TPM-01",
+          title: "Total Productive Maintenance (TPM)",
+          standard: "OEE ≥ 85%",
+          detail: "Jadwal pemeliharaan preventif harian dan mingguan seluruh mesin vital lini produksi."
+        },
+        {
+          serviceCode: "MFG-QMS-02",
+          title: "Sistem Mutu Berlapis ISO 9001",
+          standard: "Reject Rate < 1.5%",
+          detail: "Inspeksi ketat bahan baku masuk, uji proses stasiun kerja, dan uji pelepasan produk akhir."
+        },
+        {
+          serviceCode: "MFG-K3L-03",
+          title: "Standardisasi K3 & Tata Kelola 5R",
+          standard: "Zero Accident",
+          detail: "Penerapan alat pelindung diri (APD) lengkap, jalur evakuasi bebas hambatan, dan ventilasi prima."
+        },
+        {
+          serviceCode: "MFG-AUD-04",
+          title: "Audit Kepatuhan & Sertifikasi Berkala",
+          standard: "Nilai Audit A",
+          detail: "Kepatuhan terhadap sertifikasi halal, SNI, BPOM, dan regulasi lingkungan hidup."
+        }
+      ],
+      failSafeProtocols: [
+        {
+          incident: "Kerusakan Mendadak Mesin Utama (Breakdown)",
+          mitigation: "Aktivasi mesin cadangan dan pengerahan teknisi internal siaga dengan suku cadang kritis.",
+          slaResolution: "Penanganan Mesin < 30 Menit"
+        },
+        {
+          incident: "Keterlambatan Pasokan Bahan Baku Pemasok",
+          mitigation: "Pemanfaatan persediaan pengaman (safety stock) 21 hari dan order ke pemasok alternatif terverifikasi.",
+          slaResolution: "Aktivasi Pemasok Cadangan < 6 Jam"
+        },
+        {
+          incident: "Komplain Mutu dari Distributor",
+          mitigation: "Penarikan batch bermasalah, penggantian unit 100% tanpa biaya, dan audit investigasi QC.",
+          slaResolution: "Respon & Penggantian < 24 Jam"
+        }
+      ],
+      cxMetrics: [
+        {
+          metric: "On-Time In-Full Delivery (OTIF)",
+          target: "≥ 98.8%",
+          explanation: "Persentase pengiriman pesanan industri yang tiba tepat waktu dan dalam volume lengkap."
+        },
+        {
+          metric: "Tingkat Cacat Produksi (Reject Rate)",
+          target: "< 1.45%",
+          explanation: "Rasio produk cacat terhadap total unit yang diproduksi pada lini pabrik."
+        },
+        {
+          metric: "Kepuasan Klien Distributor (CSAT)",
+          target: "≥ 94%",
+          explanation: "Tingkat kepuasan distributor terhadap stabilitas mutu produk dan ketepatan pasokan."
+        },
+        {
+          metric: "Kepatuhan K3 & Lingkungan (Safety Compliance)",
+          target: "100% Zero Accident",
+          explanation: "Nol kecelakaan kerja fatal dan kepatuhan penuh terhadap baku mutu lingkungan limbah."
+        }
+      ],
+      narrativeMarkdown: narrative
+    };
+  }
+
+  if (archetype === 'personal_sme') {
+    const sector = `Unit Usaha Mandiri & Ritel Konsumen ${cleanCore}`;
+    const commodity = `Produk & Layanan Konsumen ${cleanCore}`;
+
+    const narrative = `# KAJIAN SERVICE DESIGN: ${pName.toUpperCase()}
+**Divisi:** ${divName} • **Sektor:** ${sector}
+**Standar:** Pelayanan Konsumen Prima (Customer Hospitality) & Higiene Higienis Terstandarisasi
+
+---
+
+## 1. ARSITEKTUR SIKLUS PELANGGAN (CUSTOMER JOURNEY MAPPING)
+- **Tahap 1 - Penemuan & Daya Tarik Tempat (Awareness):** Tampilan fasad bersih, pencahayaan menarik, plang nama jelas, dan reputasi positif Google Maps.
+- **Tahap 2 - Penyambutan & Pemesanan Cepat (Ordering):** Sambutan ramah 3S (Senyum, Sapa, Salam), buku menu informatif, dan pencatatan transaksi via aplikasi POS kasir digital.
+- **Tahap 3 - Penyiapan Pesanan & Higiene (Preparation):** Proses penyajian higienis berstandar SOP ringkas dengan waktu tunggu di bawah 6 menit.
+- **Tahap 4 - Penyerahan & Pembayaran Non-Tunai (Checkout):** Pembayaran instan via QRIS Bank Indonesia atau tunai rapi dengan struk otomatis.
+- **Tahap 5 - Retensi & Loyalitas (Loyalty):** Program stempel loyalitas digital dan permintaan ulasan kepuasan Google Maps.
+
+---
+
+## 2. BLUEPRINT OPERASIONAL TEMPAT USAHA MANDIRI
+- **Opening & Closing Checklist SOP:** Prosedur kebersihan harian, pengecekan inventori bahan, sanitasi meja/alat, dan pencocokan uang kas.
+- **Standar Keramahan & Kecepatan Layanan:** Pelatihan staf dalam melayani pesanan secara cepat, tepat, dan penuh perhatian.
+- **Manajemen Kerapian & Higiene Ruangan:** Penggunaan perlengkapan sanitasi dan kebersihan toilet/ruangan secara berkala setiap 2 jam.
+
+---
+
+## 3. FAIL-SAFE PROTOCOLS & PENANGANAN KELUHAN
+- **Lonjakan Antrean Jam Sibuk (Peak Hours):** Pembagian tugas cepat kasir dan asisten penyiapan bahan siap saji (*pre-prep*).
+- **Kehabisan Stok Bahan Utama:** Pengadaan cepat dari pemasok grosir langganan cadangan dalam radius 3 km.
+- **Keluhan Pelanggan Terhadap Produk/Layanan:** Permohonan maaf langsung, penggantian produk secara gratis, dan pencatatan perbaikan SOP.
+
+---
+
+## 4. INDIKATOR KINERJA UTAMA (KPI)
+- **Waktu Layanan Transaksi:** Target < 5 Menit per pelanggan
+- **Rating Google Maps:** Target ≥ 4.8 Bintang
+- **Tingkat Kepuasan Pelanggan:** Target ≥ 95% ulasan positif`;
+
+    return {
+      title: pName,
+      division: divName,
+      sectorName: sector,
+      targetCommodity: commodity,
+      clientJourney: [
+        {
+          stage: "Tahap 1: Penemuan & Daya Tarik Suasana",
+          touchpoints: "Tampilan plang usaha, kebersihan tempat, ulasan Google Maps & media sosial.",
+          description: "Menarik perhatian calon pelanggan lokal dengan tempat yang bersih dan nyaman.",
+          kpi: "Trafik Kunjungan Harian: 110 - 150 Orang"
+        },
+        {
+          stage: "Tahap 2: Sambutan Ramah & Pemesanan Kasir",
+          touchpoints: "Senyum sapa staf kasir, daftar harga jelas, tablet POS kasir.",
+          description: "Proses pemesanan ramah dan pencatatan pesanan secara akurat tanpa antrean lama.",
+          kpi: "Waktu Pemesanan Kasir: < 90 Detik"
+        },
+        {
+          stage: "Tahap 3: Penyiapan Produk Berkualitas Higienis",
+          touchpoints: "Dapur/area penyiapan bersih, bahan segar, kemasan rapi dan estetik.",
+          description: "Pembuatan produk sesuai takaran resep SOP standar untuk menjamin konsistensi rasa.",
+          kpi: "Waktu Penyiapan Pesanan: < 5 Menit"
+        },
+        {
+          stage: "Tahap 4: Pembayaran Digital & Ulasan Pelanggan",
+          touchpoints: "Barcode QRIS, struk digital, kartu loyalitas, ulasan bintang 5 Google.",
+          description: "Kemudahan pembayaran non-tunai dan membangun hubungan hangat dengan pelanggan.",
+          kpi: "Kepuasan Pelanggan (CSAT): ≥ 95.2%"
+        }
+      ],
+      operationalBlueprint: [
+        {
+          serviceCode: "SME-OPN-01",
+          title: "SOP Pembukaan Usaha (Opening Checklist)",
+          standard: "Siap Tepat Pukul 09:30",
+          detail: "Sanitasi seluruh meja, cek stok bahan baku segar harian, dan pengisian modal kembalian kasir."
+        },
+        {
+          serviceCode: "SME-HSP-02",
+          title: "Standar Keramahan Pelayanan (3S)",
+          standard: "Senyum, Sapa, Salam 100%",
+          detail: "Pelayanan pelanggan dengan sikap santun, penuh perhatian, dan responsif terhadap permintaan."
+        },
+        {
+          serviceCode: "SME-HGN-03",
+          title: "Standar Higiene & Kebersihan Ruangan",
+          standard: "Inspeksi Berkala 2 Jam",
+          detail: "Pembersihan berkala area pelanggan, tempat cuci tangan higienis, dan pengelolaan sampah tertutup."
+        },
+        {
+          serviceCode: "SME-CLS-04",
+          title: "SOP Penutupan & Rekonsiliasi Kas (Closing)",
+          standard: "Selisih Kas Rp 0",
+          detail: "Rekonsiliasi total penjualan POS dengan kas fisik dan mutasi bank QRIS harian."
+        }
+      ],
+      failSafeProtocols: [
+        {
+          incident: "Antrean Panjang di Jam Sibuk (Rush Hour)",
+          mitigation: "Aktivasi staf pendamping untuk mencatat pesanan lebih awal dari antrean.",
+          slaResolution: "Waktu Antre Kasir < 3 Menit"
+        },
+        {
+          incident: "Kehabisan Bahan Baku di Tengah Jam Buka",
+          mitigation: "Pemesanan instan ke pemasok cadangan lokal terdekat dengan pengantaran cepat.",
+          slaResolution: "Restock Bahan < 45 Menit"
+        },
+        {
+          incident: "Komplain Pelanggan Terhadap Rasa / Pesanan",
+          mitigation: "Penggantian pesanan baru secara gratis dan pemberian voucher diskon kunjungan berikutnya.",
+          slaResolution: "Penggantian Langsung < 3 Menit"
+        }
+      ],
+      cxMetrics: [
+        {
+          metric: "Kecepatan Pelayanan (Service Speed)",
+          target: "< 5 Menit",
+          explanation: "Rata-rata waktu dari pemesanan di kasir hingga produk diterima pelanggan."
+        },
+        {
+          metric: "Rating Ulasan Google Maps",
+          target: "≥ 4.8 Bintang",
+          explanation: "Reputasi positif online dari ulasan riil pelanggan lokal."
+        },
+        {
+          metric: "Tingkat Kepuasan Pelanggan (CSAT)",
+          target: "≥ 95.2%",
+          explanation: "Persentase pelanggan yang menyatakan puas dengan kualitas dan kebersihan tempat."
+        },
+        {
+          metric: "Akurasi Kasir & Pembukuan",
+          target: "100% Selisih Rp 0",
+          explanation: "Kesesuaian mutlak antara pencatatan sistem kasir dengan uang tunai dan QRIS."
+        }
+      ],
+      narrativeMarkdown: narrative
+    };
+  }
+
+  // Transport Generic
+  const sector = `Layanan Operasional Logistik Khusus ${cleanCore}`;
+  const commodity = `Komoditas & Muatan Terjadwal ${cleanCore}`;
+
+  const narrative = `# KAJIAN SERVICE DESIGN: ${pName.toUpperCase()}
+**Divisi:** ${divName} • **Sektor:** ${sector}
+**Standar:** Service Blueprint Terintegrasi & Pengalaman Pelanggan B2B
+
+---
+
+## 1. ARSITEKTUR SIKLUS KLIEN (CLIENT JOURNEY MAPPING)
+Desain layanan operasional untuk proyek **"${pName}"** dirancang secara menyeluruh guna memberikan pengalaman terbaik (end-to-end customer journey) bagi mitra korporat:
+- **Tahap 1 - Konsultasi Kebutuhan & Onboarding:** Pemetaan spesifikasi armada komersial, audit kapasitas muatan, penetapan Service Level Agreement (SLA), dan perumusan matriks rute optimal.
+- **Tahap 2 - Perencanaan Operasional & Dispatch Terjadwal:** Sinkronisasi jadwal pengiriman dengan manajemen rantai pasok klien guna menjamin kepastian pasokan tepat waktu (just-in-time).
+- **Tahap 3 - Monitoring Perjalanan Real-Time:** Akses langsung bagi klien melalui portal digital PRAMA Dashboard dengan pemantauan posisi GPS, kecepatan, dan waktu perkiraan tiba (ETA).
+- **Tahap 4 - Penyelesaian Ritase & Laporan Analitik Digital:** Penyerahan bukti serah terima barang (electronic proof of delivery / e-POD) dan ringkasan performa bulanan untuk review efisiensi biaya.
+
+---
+
+## 2. BLUEPRINT OPERASIONAL & KUALITAS LAYANAN
+- **Pusat Kendali Operasi 24/7 (Control Tower):** Tim pemantau sentral siap memberikan respon instan terhadap anomali perjalanan atau kendala rute.
+- **Standar Pemeliharaan Armada Preventif:** Seluruh unit armada menjalani servis berkala ketat guna menjamin kelaikan jalan dan memangkas risiko kerusakan di jalan.
+- **Standardisasi Pengemudi Profesional:** Pelatihan defensive driving bersertifikat dan pemeriksaan kesehatan pengemudi sebelum bertugas.
+
+---
+
+## 3. FAIL-SAFE PROTOCOLS & RENCANA KONTINUITAS BISNIS
+- **Mitigasi Kemacetan / Gangguan Jalur Utama:** Rute cadangan terencana dengan navigasi dinamis berbasis data lalu lintas terkini.
+- **Armada Cadangan Siap Pakai:** Penyediaan unit pengganti di pangkalan terdekat guna menjamin kelangsungan pengiriman tanpa penundaan lama.
+
+---
+
+## 4. INDIKATOR KINERJA UTAMA (KPI)
+- **Ketepatan Waktu Tiba (On-Time Delivery):** Target ≥ 98.5%
+- **Tingkat Kerusakan Barang (Damage-Free Delivery):** Target ≥ 99.8%
+- **Waktu Tanggap Darurat Layanan Klien:** < 15 Menit`;
 
   return {
     title: pName,
     division: divName,
     sectorName: sector,
     targetCommodity: commodity,
-    headerSubtitle,
-    workflowTitle,
-    endToEndWorkflow,
-    cargoAnatomy,
-    designNotes,
-    workflowCaption,
-    clientJourney: endToEndWorkflow.slice(0, 4).map((w) => ({
-      stage: `Tahap ${w.stepNumber}: ${w.title}`,
-      touchpoints: w.keyActivities,
-      description: `Peran: ${w.operatorRole}`,
-      kpi: w.kpi
-    })),
-    operationalBlueprint: endToEndWorkflow.slice(4, 8).map((w) => ({
-      serviceCode: `SD-${w.stepNumber}`,
-      title: w.title,
-      standard: w.kpi,
-      detail: w.keyActivities
-    })),
-    failSafeProtocols: [
+    clientJourney: [
       {
-        incident: "Kendala Rute / Kerusakan Teknis di Perjalanan",
-        mitigation: "Pengerahan unit rescue dan armada cadangan terdekat dalam tempo < 45 menit.",
-        slaResolution: "Respon Cepat < 45 Menit"
+        stage: "Tahap 1: Onboarding & Desain Rute",
+        touchpoints: "Kickoff meeting, verifikasi SLA kontrak, pemetaan rute dan spesifikasi armada.",
+        description: "Penyusunan parameter operasional yang presisi sesuai karakter kargo proyek.",
+        kpi: "Waktu Onboarding: < 7 Hari Kerja"
       },
       {
-        incident: "Keterlambatan Bongkar Muat di Titik Tujuan",
-        mitigation: "Koordinasi dispatch fleksibel dan alokasi buffer time untuk mencegah penumpukan.",
-        slaResolution: "Resolusi Koordinasi < 15 Menit"
+        stage: "Tahap 2: Dispatch & Pemuatan Kargo",
+        touchpoints: "Checklist pra-keberangkatan, penimbangan, e-manifest surat jalan.",
+        description: "Pemeriksaan kelayakan armada dan pemuatan muatan sesuai batas tonase resmi.",
+        kpi: "Waktu Loading: Sesuai Standar Kargo"
+      },
+      {
+        stage: "Tahap 3: Pemantauan Perjalanan Aktif",
+        touchpoints: "PRAMA Telematics Dashboard, GPS tracking, notifikasi update berkala.",
+        description: "Visibilitas penuh perjalanan bagi tim logistik klien sepanjang koridor distribusi.",
+        kpi: "Akurasi Estimasi Waktu Tiba (ETA): ± 15 Menit"
+      },
+      {
+        stage: "Tahap 4: Serah Terima & Digital ePOD",
+        touchpoints: "Konfirmasi penerimaan barang, tanda tangan digital, penerbitan invoice otomatis.",
+        description: "Penyelesaian administrasi secara transparan dan tanpa tumpukan berkas manual.",
+        kpi: "Waktu Verifikasi ePOD: Real-Time"
+      }
+    ],
+    operationalBlueprint: [
+      {
+        serviceCode: "SD-OPS-01",
+        title: "Control Tower Operasional 24 Jam",
+        standard: "Monitoring Aktif 365 Hari",
+        detail: "Pusat komando pemantau keselamatan dan kecepatan respon terhadap segala kondisi darurat di lapangan."
+      },
+      {
+        serviceCode: "SD-MNT-02",
+        title: "Pemeliharaan Armada Terjadwal (PMS)",
+        standard: "Interval Servis Ketat",
+        detail: "Pemeriksaan rutin rem, ban, mesin, dan sistem elektrikal guna mencegah breakdown armada di perjalanan."
+      },
+      {
+        serviceCode: "SD-DRV-03",
+        title: "Kualifikasi Pengemudi Profesional",
+        standard: "Sertifikasi Defensive Driving",
+        detail: "Standardisasi perilaku mengemudi aman dan ramah bahan bakar untuk meminimalkan risiko kecelakaan."
+      },
+      {
+        serviceCode: "SD-REV-04",
+        title: "Review Kinerja Berkala (QBR)",
+        standard: "Evaluasi Triwulanan Terstruktur",
+        detail: "Pertemuan berkala dengan manajemen klien guna membahas optimasi rute dan efisiensi biaya logistik."
+      }
+    ],
+    failSafeProtocols: [
+      {
+        incident: "Gangguan Teknis Armada di Perjalanan",
+        mitigation: "Pengerahan unit rescue dan armada cadangan terdekat untuk pengalihan muatan segera.",
+        slaResolution: "Truk Pengganti < 60 Menit"
+      },
+      {
+        incident: "Penutupan Jalur Distribusi Utama",
+        mitigation: "Pengalihan otomatis ke koridor alternatif yang telah disurvei kelaikan jalannya.",
+        slaResolution: "Respon Navigasi < 10 Menit"
+      },
+      {
+        incident: "Perselisihan Data Timbangan / Muatan",
+        mitigation: "Verifikasi rekaman timbangan digital terenkripsi dan pembuktian foto kondisi muatan.",
+        slaResolution: "Klarifikasi < 2 Jam"
       }
     ],
     cxMetrics: [
       {
-        metric: "On-Time In-Full Delivery (OTIF)",
+        metric: "On-Time Delivery Rate",
         target: "≥ 98.5%",
-        explanation: "Pengiriman muatan tiba tepat waktu dan dalam kondisi prima."
+        explanation: "Persentase pengiriman muatan yang tiba di titik tujuan sesuai batas waktu kontrak."
       },
       {
-        metric: "Tingkat Keamanan Muatan",
+        metric: "Tingkat Keamanan Muatan (Safe Transit)",
+        target: "≥ 99.8%",
+        explanation: "Muatan sampai di lokasi penerima tanpa kerusakan fisik atau kehilangan kuantitas."
+      },
+      {
+        metric: "Kepuasan Pelanggan (Customer Satisfaction)",
+        target: "≥ 92%",
+        explanation: "Hasil survei kepuasan berkala terhadap kualitas pengemudi dan kemudahan koordinasi."
+      },
+      {
+        metric: "Rasio Kepatuhan Regulasi & K3",
         target: "100%",
-        explanation: "Nol kerusakan fisik atau susut muatan sepanjang koridor distribusi."
+        explanation: "Nol pelanggaran terhadap aturan keselamatan lalu lintas, batas muatan jalan, dan izin lingkungan."
       }
     ],
     narrativeMarkdown: narrative

@@ -4,18 +4,24 @@
  * Tailored for Independent Businesses, Coffee Shops, Boutiques, Laundries, Clinics, Workshops, and Local Retail.
  */
 
+import { getFinancialRecommendations } from "./financialRecommendations.ts";
+
 export function generatePersonalSmeDefaultContent(num: number, title: string, projectTitle: string, shortDesc?: string): string {
   const pName = projectTitle || "Kajian Usaha Mandiri & Bisnis UMKM";
+  const rec = getFinancialRecommendations(pName);
+  const formatIDR = (n: number) => `Rp ${Math.round(n).toLocaleString("id-ID")}`;
   switch(num) {
     case 1:
       return `### 1. Global/NAT Overview\n\n` +
         `**1.1 Latar Belakang Makro & Konteks Pemberdayaan UMKM Nasional**\n` +
         `Kajian strategis untuk unit usaha **${pName}** mengacu pada kebijakan nasional penguatan ekonomi kerakyatan melalui **PP No. 7 Tahun 2021** (Kemudahan, Pelindungan, dan Pemberdayaan Koperasi dan Usaha Mikro, Kecil, dan Menengah). Sektor usaha mandiri merupakan tulang punggung ekonomi dengan kontribusi lebih dari 61% terhadap PDB nasional dan daya tahan tinggi terhadap volatilitas makro.\n\n` +
         `**1.2 Analisis Peluang Pasar Lokal & Karakteristik Konsumen**\n` +
+        `Kondisi demografi dan gaya hidup konsumen di sekitar lokasi usaha menunjukkan perubahan perilaku belanja yang sangat positif dan prospektif:\n` +
         `- **Peningkatan Daya Beli Komunitas Lokal:** Pertumbuhan populasi usia produktif dan peningkatan belanja gaya hidup di area perkotaan/pemukiman mandiri.\n` +
         `- **Preferensi Produk Otentik & Pelayanan Personal:** Konsumen modern cenderung memilih tempat usaha yang menawarkan atmosfer ramah, kebersihan prima, dan kemudahan transaksi digital.\n` +
         `- **Dukungan Ekosistem Digital UMKM:** Ketersediaan platform pembayaran digital nasional (QRIS), layanan pesan-antar instan, dan perizinan terintegrasi secara elektronik.\n\n` +
         `**1.3 Kepatuhan Standar & Regulasi Usaha Mandiri (Compliance Matrix)**\n` +
+        `Operasional unit usaha dirancang memenuhi seluruh standar legalitas, higienitas, dan kewajiban perpajakan yang berlaku:\n` +
         `- **Legalitas Usaha Terpadu:** Kepemilikan **Nomor Induk Berusaha (NIB) Perseorangan** melalui sistem OSS RBA (KBLI Skala Mikro/Kecil Risiko Rendah).\n` +
         `- **Standar Higiene & Kualitas:** Sertifikat Laik Higiene Sanitasi dan Sertifikasi Halal Gratis (SEHATI BPJPH) untuk kepastian mutu produk konsumsi.\n` +
         `- **Kepatuhan Pajak UMKM:** Pendaftaran NPWP Usaha dan pemanfaatan skema PPh Final UMKM 0.5% sesuai PP No. 23/2018 (bebas pajak omset di bawah Rp 500 Juta/tahun bagi WP Orang Pribadi).\n` +
@@ -28,6 +34,7 @@ export function generatePersonalSmeDefaultContent(num: number, title: string, pr
         `**2.1 Analisis Permintaan Konsumen Lokal (Local Market Demand)**\n` +
         `Analisis pasar di sekitar lokasi proyek **${pName}** menunjukkan tingginya potensi trafik harian (rata-rata 800 - 1.500 pejalan kaki/kendaraan per hari) yang membutuhkan produk dan layanan berkualitas, cepat, dan berharga rasional.\n\n` +
         `**2.2 Kesenjangan Kompetitor & Peluang Diferensiasi Unik (USP)**\n` +
+        `Evaluasi mendalam terhadap kondisi persaingan di sekitar lokasi usaha membuka peluang penetrasi besar melalui keunggulan diferensiasi produk dan layanan:\n` +
         `- **Kelemahan Pemain Lama Sekitar:** Kurangnya standarisasi kebersihan tempat, staf yang kurang ramah, serta tidak tersedianya pembayaran non-tunai (QRIS/E-Wallet).\n` +
         `- **Keunggulan Produk Otentik (Unique Selling Proposition):** Menghadirkan produk berkualitas premium dengan bahan baku pilihan dan kemasan higienis yang estetik.\n` +
         `- **Potensi Margin Laba Sehat:** Margin kotor berkisar **48.0% - 55.0%** dan margin laba bersih rata-rata **28.5% - 34.7%** *(Detail Asal %: Efisiensi pembelian bahan baku grosir mingguan memangkas HPP sebesar 12.0% + penghematan biaya promosi organik media sosial 8.5% = akumulasi margin laba bersih 28.5% - 34.7%)*.\n\n` +
@@ -35,25 +42,36 @@ export function generatePersonalSmeDefaultContent(num: number, title: string, pr
         `Dengan target penetrasi komunitas sekitar dan pemasaran media sosial aktif, omset usaha diproyeksikan bertumbuh sebesar **14.5% per kuartal** seiring dengan meningkatnya basis pelanggan setia.`;
 
     case 3:
+      const p1Pct = rec.totalCapex > 0 ? ((rec.capexAssetCount * rec.capexAssetPrice / rec.totalCapex) * 100).toFixed(1) : "0.0";
+      const p2Pct = rec.totalCapex > 0 ? ((rec.capexSecondary1Amount / rec.totalCapex) * 100).toFixed(1) : "0.0";
+      const p3Pct = rec.totalCapex > 0 ? ((rec.capexSecondary2Amount / rec.totalCapex) * 100).toFixed(1) : "0.0";
+      const p4Pct = rec.totalCapex > 0 ? ((rec.capexSecondary3Amount / rec.totalCapex) * 100).toFixed(1) : "0.0";
+      const o1Pct = rec.totalMonthlyOpex > 0 ? ((rec.opex1Amount / rec.totalMonthlyOpex) * 100).toFixed(1) : "0.0";
+      const o2Pct = rec.totalMonthlyOpex > 0 ? ((rec.opex2Amount / rec.totalMonthlyOpex) * 100).toFixed(1) : "0.0";
+      const o3Pct = rec.totalMonthlyOpex > 0 ? ((rec.opex3Amount / rec.totalMonthlyOpex) * 100).toFixed(1) : "0.0";
+      const o4Pct = rec.totalMonthlyOpex > 0 ? ((rec.opex4Amount / rec.totalMonthlyOpex) * 100).toFixed(1) : "0.0";
+      const monthlyOmset = Math.round(rec.revenueY1 / 12);
+      const monthlyNet = Math.round(rec.netProfitY1 / 12);
+      const npmY1 = rec.revenueY1 > 0 ? ((rec.netProfitY1 / rec.revenueY1) * 100).toFixed(1) : "0.0";
       return `### 3. Financial (Capex, Opex, P&L, Cash Flow, ROI)\n\n` +
         `**3.1 Struktur Pengeluaran Modal Awal (CAPEX)**\n` +
-        `- **Sewa Tempat Usaha (Tenor 1 - 2 Tahun):** Alokasi pembayaran sewa ruko/kios strategis sebesar Rp 75.000.000 (**34.1%** - *Detail %: Rp 75.000.000 / Total Modal Awal Rp 220.000.000 × 100% = 34.09%*).\n` +
-        `- **Renovasi Interior, Pencahayaan, Estetika & Signage:** Pengerjaan booth/interior, meja kasir, AC, dan neon box sebesar Rp 65.000.000 (**29.5%** - *Detail %: Rp 65.000.000 / Total Modal Awal Rp 220.000.000 × 100% = 29.55%*).\n` +
-        `- **Pengadaan Mesin & Peralatan Kerja Pokok:** Mesin utama, lemari pendingin, tablet kasir POS, printer struk, dan etalase sebesar Rp 55.000.000 (**25.0%** - *Detail %: Rp 55.000.000 / Total Modal Awal Rp 220.000.000 × 100% = 25.00%*).\n` +
-        `- **Modal Kerja Awal & Persediaan Bahan Baku Perdana:** Belanja bahan baku awal, seragam staf, dan dana kas operasional sebesar Rp 25.000.000 (**11.4%** - *Detail %: Rp 25.000.000 / Total Modal Awal Rp 220.000.000 × 100% = 11.36%*).\n` +
-        `- **Total Grand CAPEX:** **Rp 220.000.000** (**100.0%**; Struktur modal: 60% Tabungan Modal Mandiri / 40% Kemitraan Keluarga/KUR Mikro Perbankan).\n\n` +
+        `- **${rec.assetName}:** Alokasi pengadaan ${rec.capexAssetCount} ${rec.assetUnitLabel} sebesar ${formatIDR(rec.capexAssetCount * rec.capexAssetPrice)} (**${p1Pct}%** - *Detail: ${rec.capexAssetCount} unit @ ${formatIDR(rec.capexAssetPrice)}*).\n` +
+        `- **${rec.capexSecondary1Name}:** Sebesar ${formatIDR(rec.capexSecondary1Amount)} (**${p2Pct}%** dari modal awal).\n` +
+        `- **${rec.capexSecondary2Name}:** Sebesar ${formatIDR(rec.capexSecondary2Amount)} (**${p3Pct}%** dari modal awal).\n` +
+        `- **${rec.capexSecondary3Name}:** Sebesar ${formatIDR(rec.capexSecondary3Amount)} (**${p4Pct}%** dari modal awal).\n` +
+        `- **Total Grand CAPEX:** **${formatIDR(rec.totalCapex)}** (**100.0%**; Struktur modal: 60% Modal Mandiri / 40% Kemitraan Usaha & KUR).\n\n` +
         `**3.2 Struktur Biaya Operasional (OPEX) Bulanan**\n` +
-        `- **Bahan Baku & Kemasan (COGS/HPP):** Rp 28.000.000 / bulan (45.2% dari total OPEX bulanan).\n` +
-        `- **Gaji Staf & Upah Kerja (3 - 4 Orang):** Rp 18.000.000 / bulan (29.0% dari total OPEX bulanan).\n` +
-        `- **Utilitas (Listrik, Air Bersih & Paket Internet Wifi):** Rp 6.500.000 / bulan (10.5% dari total OPEX bulanan).\n` +
-        `- **Pemasaran Media Sosial, Retribusi & Pemeliharaan:** Rp 9.500.000 / bulan (15.3% dari total OPEX bulanan).\n` +
-        `- **Total OPEX Bulanan:** **Rp 62.000.000** (100.0%).\n\n` +
+        `- **${rec.opex1Name}:** ${formatIDR(rec.opex1Amount)} / bulan (${o1Pct}% dari total OPEX bulanan).\n` +
+        `- **${rec.opex2Name}:** ${formatIDR(rec.opex2Amount)} / bulan (${o2Pct}% dari total OPEX bulanan).\n` +
+        `- **${rec.opex3Name}:** ${formatIDR(rec.opex3Amount)} / bulan (${o3Pct}% dari total OPEX bulanan).\n` +
+        `- **${rec.opex4Name}:** ${formatIDR(rec.opex4Amount)} / bulan (${o4Pct}% dari total OPEX bulanan).\n` +
+        `- **Total OPEX Bulanan:** **${formatIDR(rec.totalMonthlyOpex)}** (100.0%).\n\n` +
         `**3.3 Proyeksi Pendapatan & Pengembalian Investasi (ROI)**\n` +
-        `- **Target Penjualan Bulanan (Omset):** Rata-rata 120 transaksi/hari × nilai keranjang belanja Rp 26.500 = **Rp 95.400.000 per bulan**.\n` +
-        `- **Laba Bersih Bulanan:** Omset Rp 95.400.000 - OPEX Rp 62.000.000 = **Rp 33.400.000 per bulan** (**35.0%** net profit margin).\n` +
-        `- **Titik Impas / Break Even Point (BEP):** Omset minimal untuk menutup OPEX adalah Rp 62.000.000/bulan (tercapai hanya dengan 78 transaksi/hari).\n` +
-        `- **Payback Period:** Modal awal Rp 220.000.000 kembali penuh dalam waktu **6.6 Bulan - 8.5 Bulan**.\n` +
-        `- **Return on Investment (ROI Tahunan):** Sebesar **82.5%** *(Detail Perhitungan %: Proyeksi Laba Bersih Tahun I Rp 181.500.000 [setelah diskon pembukaan] / Total Modal Rp 220.000.000 × 100% = 82.50% kelayakan finansial sangat prima)*.`;
+        `- **Target Penjualan Bulanan (Omset):** Rata-rata target penjualan **${formatIDR(monthlyOmset)} per bulan** (${formatIDR(rec.revenueY1)} / tahun).\n` +
+        `- **Laba Bersih Bulanan:** Omset ${formatIDR(monthlyOmset)} - OPEX ${formatIDR(rec.totalMonthlyOpex)} = **${formatIDR(monthlyNet)} per bulan** (**${npmY1}%** net profit margin).\n` +
+        `- **Titik Impas / Break Even Point (BEP):** Omset minimal untuk menutup OPEX adalah ${formatIDR(rec.totalMonthlyOpex)}/bulan.\n` +
+        `- **Payback Period:** Modal awal ${formatIDR(rec.totalCapex)} kembali penuh dalam waktu **${rec.paybackText}**.\n` +
+        `- **Return on Investment (ROI Tahunan):** Sebesar **${rec.roiPercentage}%** dengan IRR **${rec.irrPercentage}%** (indikator kelayakan finansial sangat prima).`;
 
     case 4:
       return `### 4. Supply & Demand\n\n` +
@@ -140,13 +158,15 @@ export function generatePersonalSmeDefaultContent(num: number, title: string, pr
         `- **Pelayanan Akrab & Hangat:** Hubungan personal yang erat dengan pelanggan membuat tingkat retensi kunjungan kembali sangat tinggi.`;
 
     case 12:
+      const samPct = rec.tam > 0 ? ((rec.sam / rec.tam) * 100).toFixed(1) : "15.0";
+      const somPct = rec.sam > 0 ? ((rec.som / rec.sam) * 100).toFixed(1) : "10.0";
       return `### 12. TAM, SAM, SOM\n\n` +
         `**12.1 Total Addressable Market (TAM) - Belanja Konsumen Kota**\n` +
-        `Total potensi belanja masyarakat di wilayah kota/kabupaten untuk kategori produk/jasa terkait diestimasikan sebesar **Rp 85.000.000.000 per tahun** (Rp 85 Miliar).\n\n` +
+        `Total potensi belanja masyarakat di wilayah kota/kabupaten untuk kategori produk/jasa terkait diestimasikan sebesar **${formatIDR(rec.tam)} per tahun**.\n\n` +
         `**12.2 Serviceable Addressable Market (SAM) - Radius Layanan 3 - 5 KM**\n` +
-        `Porsi pasar lokal yang berada dalam radius jangkauan langsung tempat usaha (populasi sekitar 45.000 jiwa) bernilai sebesar **Rp 12.000.000.000 per tahun** (**14.1%** dari total TAM kota).\n\n` +
+        `Porsi pasar lokal yang berada dalam radius jangkauan langsung tempat usaha bernilai sebesar **${formatIDR(rec.sam)} per tahun** (**${samPct}%** dari total TAM).\n\n` +
         `**12.3 Serviceable Obtainable Market (SOM) - Target Omset Usaha Mandiri**\n` +
-        `Target perolehan omset tahunan yang realistis diraih oleh unit usaha **${pName}** adalah sebesar **Rp 1.144.800.000 per tahun** (**9.5%** dari total SAM terjangkau - *Detail %: Target Omset Tahunan Rp 1.144.800.000 / SAM Rp 12.000.000.000 × 100% = 9.54% pangsa pasar lokal realistis*) atau setara rata-rata omset Rp 95.400.000 per bulan.`;
+        `Target perolehan omset tahunan yang realistis diraih oleh unit usaha **${pName}** adalah sebesar **${formatIDR(rec.som)} per tahun** (**${somPct}%** dari total SAM terjangkau) atau setara rata-rata omset ${formatIDR(Math.round(rec.som / 12))} per bulan.`;
 
     case 13:
       return `### 13. CAC, LTV\n\n` +

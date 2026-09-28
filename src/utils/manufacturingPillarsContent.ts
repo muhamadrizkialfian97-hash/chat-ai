@@ -3,8 +3,12 @@
  * Tailored for Factory, Assembly, Fabrication, Processing, Food/Beverage, AMDK, Garment, and Industrial Operations.
  */
 
+import { getFinancialRecommendations } from "./financialRecommendations.ts";
+
 export function generateManufacturingDefaultContent(num: number, title: string, projectTitle: string, shortDesc?: string): string {
   const pName = projectTitle || "Kajian Strategis Manufaktur & Pabrik";
+  const rec = getFinancialRecommendations(pName);
+  const formatIDR = (n: number) => `Rp ${Math.round(n).toLocaleString("id-ID")}`;
   switch(num) {
     case 1:
       return `### 1. Global/NAT Overview\n\n` +
@@ -34,23 +38,38 @@ export function generateManufacturingDefaultContent(num: number, title: string, 
         `Tingkat pertumbuhan tahunan gabungan (CAGR) pasar produk industri terkait diestimasikan sebesar **10.8%** *(Detail Asal %: Berdasarkan data tren pertumbuhan indeks output industri manufaktur non-migas BPS dan Kementerian Perindustrian)*, membuka ruang ekspansi kapasitas yang sangat terukur.`;
 
     case 3:
+      const p1Pct = rec.totalCapex > 0 ? ((rec.capexAssetCount * rec.capexAssetPrice / rec.totalCapex) * 100).toFixed(1) : "0.0";
+      const p2Pct = rec.totalCapex > 0 ? ((rec.capexSecondary1Amount / rec.totalCapex) * 100).toFixed(1) : "0.0";
+      const p3Pct = rec.totalCapex > 0 ? ((rec.capexSecondary2Amount / rec.totalCapex) * 100).toFixed(1) : "0.0";
+      const p4Pct = rec.totalCapex > 0 ? ((rec.capexSecondary3Amount / rec.totalCapex) * 100).toFixed(1) : "0.0";
+      const o1Pct = rec.totalMonthlyOpex > 0 ? ((rec.opex1Amount / rec.totalMonthlyOpex) * 100).toFixed(1) : "0.0";
+      const o2Pct = rec.totalMonthlyOpex > 0 ? ((rec.opex2Amount / rec.totalMonthlyOpex) * 100).toFixed(1) : "0.0";
+      const o3Pct = rec.totalMonthlyOpex > 0 ? ((rec.opex3Amount / rec.totalMonthlyOpex) * 100).toFixed(1) : "0.0";
+      const o4Pct = rec.totalMonthlyOpex > 0 ? ((rec.opex4Amount / rec.totalMonthlyOpex) * 100).toFixed(1) : "0.0";
+      const ebitda1Pct = rec.revenueY1 > 0 ? ((rec.ebitdaY1 / rec.revenueY1) * 100).toFixed(1) : "0.0";
+      const ebitda2Pct = rec.revenueY2 > 0 ? ((rec.ebitdaY2 / rec.revenueY2) * 100).toFixed(1) : "0.0";
+      const ebitda3Pct = rec.revenueY3 > 0 ? ((rec.ebitdaY3 / rec.revenueY3) * 100).toFixed(1) : "0.0";
+      const net1Pct = rec.revenueY1 > 0 ? ((rec.netProfitY1 / rec.revenueY1) * 100).toFixed(1) : "0.0";
+      const net2Pct = rec.revenueY2 > 0 ? ((rec.netProfitY2 / rec.revenueY2) * 100).toFixed(1) : "0.0";
+      const net3Pct = rec.revenueY3 > 0 ? ((rec.netProfitY3 / rec.revenueY3) * 100).toFixed(1) : "0.0";
       return `### 3. Financial (Capex, Opex, P&L, Cash Flow, ROI)\n\n` +
         `**3.1 Struktur Pengeluaran Modal (CAPEX)**\n` +
-        `- **Mesin Produksi Utama & Lini Perakitan:** Pengadaan unit mesin pemroses, conveyor otomatis, dan cetakan industri sebesar Rp 3.200.000.000 (**75.1%** - *Detail %: Rp 3.200.000.000 / Total CAPEX Rp 4.260.000.000 × 100% = 75.12%*).\n` +
-        `- **Infrastruktur Utilitas Pabrik:** Instalasi panel daya listrik 3-phasa industri, genset cadangan, kompresor udara, dan sistem tata udara sebesar Rp 450.000.000 (**10.6%** - *Detail %: Rp 450.000.000 / Total CAPEX Rp 4.260.000.000 × 100% = 10.56%*).\n` +
-        `- **Fasilitas Bangunan Pabrik, Gudang & Perizinan:** Renovasi area produksi bersih, rak penyimpanan pallet, instalasi IPAL limbah, dan legalitas IUI sebesar Rp 610.000.000 (**14.3%** - *Detail %: Rp 610.000.000 / Total CAPEX Rp 4.260.000.000 × 100% = 14.32%*).\n` +
-        `- **Total Grand CAPEX:** **Rp 4.260.000.000** (**100.0%**; Struktur modal: 35% Modal Kas Internal / 65% Fasilitas Kredit Investasi Perbankan).\n\n` +
+        `- **${rec.assetName}:** Pengadaan ${rec.capexAssetCount} ${rec.assetUnitLabel} sebesar ${formatIDR(rec.capexAssetCount * rec.capexAssetPrice)} (**${p1Pct}%** - *Detail: ${rec.capexAssetCount} unit @ ${formatIDR(rec.capexAssetPrice)}*).\n` +
+        `- **${rec.capexSecondary1Name}:** Sebesar ${formatIDR(rec.capexSecondary1Amount)} (**${p2Pct}%** dari modal awal).\n` +
+        `- **${rec.capexSecondary2Name}:** Sebesar ${formatIDR(rec.capexSecondary2Amount)} (**${p3Pct}%** dari modal awal).\n` +
+        `- **${rec.capexSecondary3Name}:** Sebesar ${formatIDR(rec.capexSecondary3Amount)} (**${p4Pct}%** dari modal awal).\n` +
+        `- **Total Grand CAPEX:** **${formatIDR(rec.totalCapex)}** (**100.0%**; Struktur modal: 35% Modal Kas Internal / 65% Fasilitas Kredit Investasi Perbankan).\n\n` +
         `**3.2 Struktur Biaya Operasional (OPEX) Bulanan**\n` +
-        `- **Bahan Baku Utama & Bahan Penolong:** Rp 155.000.000 / bulan (53.4% dari total OPEX bulanan).\n` +
-        `- **Gaji Tim Produksi, Teknisi, QC & Staf Pabrik:** Rp 72.000.000 / bulan (24.8% dari total OPEX bulanan).\n` +
-        `- **Utilitas Energi (Listrik Industri, Air & Bahan Bakar):** Rp 38.000.000 / bulan (13.1% dari total OPEX bulanan).\n` +
-        `- **Perawatan Mesin, Spare Part & Overhead Kantor:** Rp 25.000.000 / bulan (8.6% dari total OPEX bulanan).\n` +
-        `- **Total OPEX Bulanan:** **Rp 290.000.000** (100.0%).\n\n` +
+        `- **${rec.opex1Name}:** ${formatIDR(rec.opex1Amount)} / bulan (${o1Pct}% dari total OPEX bulanan).\n` +
+        `- **${rec.opex2Name}:** ${formatIDR(rec.opex2Amount)} / bulan (${o2Pct}% dari total OPEX bulanan).\n` +
+        `- **${rec.opex3Name}:** ${formatIDR(rec.opex3Amount)} / bulan (${o3Pct}% dari total OPEX bulanan).\n` +
+        `- **${rec.opex4Name}:** ${formatIDR(rec.opex4Amount)} / bulan (${o4Pct}% dari total OPEX bulanan).\n` +
+        `- **Total OPEX Bulanan:** **${formatIDR(rec.totalMonthlyOpex)}** (100.0%).\n\n` +
         `**3.3 Proyeksi Laba/Rugi (P&L) & Pengembalian Investasi (ROI)**\n` +
-        `- **Tahun 1:** Pendapatan Rp 5.200.000.000 | EBITDA Rp 1.638.000.000 (**31.5%** margin) | Laba Bersih Rp 1.050.000.000 (**20.2%** net margin).\n` +
-        `- **Tahun 2:** Pendapatan Rp 6.450.000.000 | EBITDA Rp 2.140.000.000 (**33.2%** margin) | Laba Bersih Rp 1.450.000.000 (**22.5%** net margin).\n` +
-        `- **Tahun 3:** Pendapatan Rp 7.800.000.000 | EBITDA Rp 2.690.000.000 (**34.5%** margin) | Laba Bersih Rp 1.920.000.000 (**24.6%** net margin).\n` +
-        `- **Metrik Finansial Investasi:** Payback Period tercapai dalam **2.2 Tahun**, Internal Rate of Return (IRR) sebesar **25.4%** *(Detail: Melampaui suku bunga kredit komersial 9.5% dengan premi risiko industri yang sehat)*, dan Net Present Value (NPV) positif Rp 2.180.000.000.`;
+        `- **Tahun 1:** Pendapatan ${formatIDR(rec.revenueY1)} | EBITDA ${formatIDR(rec.ebitdaY1)} (**${ebitda1Pct}%** margin) | Laba Bersih ${formatIDR(rec.netProfitY1)} (**${net1Pct}%** net margin).\n` +
+        `- **Tahun 2:** Pendapatan ${formatIDR(rec.revenueY2)} | EBITDA ${formatIDR(rec.ebitdaY2)} (**${ebitda2Pct}%** margin) | Laba Bersih ${formatIDR(rec.netProfitY2)} (**${net2Pct}%** net margin).\n` +
+        `- **Tahun 3:** Pendapatan ${formatIDR(rec.revenueY3)} | EBITDA ${formatIDR(rec.ebitdaY3)} (**${ebitda3Pct}%** margin) | Laba Bersih ${formatIDR(rec.netProfitY3)} (**${net3Pct}%** net margin).\n` +
+        `- **Metrik Finansial Investasi:** Payback Period tercapai dalam **${rec.paybackText}**, Internal Rate of Return (IRR) sebesar **${rec.irrPercentage}%**, dan Return on Investment (ROI) sebesar **${rec.roiPercentage}%**.`;
 
     case 4:
       return `### 4. Supply & Demand\n\n` +
@@ -140,13 +159,15 @@ export function generateManufacturingDefaultContent(num: number, title: string, 
         `- **Sertifikasi Terverifikasi:** Standar ISO 9001, ISO 14001, dan sertifikasi uji mutu produk yang lengkap menjadi penentu utama dalam memenangkan tender korporat B2B.`;
 
     case 12:
+      const samPct = rec.tam > 0 ? ((rec.sam / rec.tam) * 100).toFixed(1) : "15.0";
+      const somPct = rec.sam > 0 ? ((rec.som / rec.sam) * 100).toFixed(1) : "10.0";
       return `### 12. TAM, SAM, SOM\n\n` +
         `**12.1 Total Addressable Market (TAM) - Pasar Industri Nasional**\n` +
-        `Total belanja nasional untuk kategori produk manufaktur sejenis di Indonesia diestimasikan mencapai **Rp 15.000.000.000.000 per tahun** (Rp 15 Triliun), didorong oleh permintaan industri domestik dan proyek pembangunan infrastruktur nasional.\n\n` +
+        `Total belanja nasional untuk kategori produk manufaktur sejenis di Indonesia diestimasikan mencapai **${formatIDR(rec.tam)} per tahun**.\n\n` +
         `**12.2 Serviceable Addressable Market (SAM) - Wilayah Distribusi Target**\n` +
-        `Porsi pasar yang realistis dapat dijangkau dalam radius logistik koridor distribusi pabrik diestimasikan sebesar **Rp 2.200.000.000.000 per tahun** (**14.7%** dari total TAM nasional).\n\n` +
+        `Porsi pasar yang realistis dapat dijangkau dalam radius logistik koridor distribusi pabrik diestimasikan sebesar **${formatIDR(rec.sam)} per tahun** (**${samPct}%** dari total TAM nasional).\n\n` +
         `**12.3 Serviceable Obtainable Market (SOM) - Target Kapasitas Pabrik**\n` +
-        `Target perolehan pangsa pasar riil yang dapat dipenuhi oleh kapasitas terpasang lini produksi tahap awal adalah sebesar **Rp 220.000.000.000 per tahun** (**10.0%** dari SAM terjangkau - *Detail %: Rp 220 Miliar / Rp 2.200 Miliar × 100% = 10.00% target penetrasi kapasitas optimal pabrik*) atau setara omset rata-rata Rp 18.3 Miliar per bulan saat kapasitas 100% komersial.`;
+        `Target perolehan pangsa pasar riil yang dapat dipenuhi oleh kapasitas terpasang lini produksi tahap awal adalah sebesar **${formatIDR(rec.som)} per tahun** (**${somPct}%** dari SAM terjangkau) atau setara omset rata-rata ${formatIDR(Math.round(rec.som / 12))} per bulan saat kapasitas komersial.`;
 
     case 13:
       return `### 13. CAC, LTV\n\n` +

@@ -11,6 +11,7 @@ import { generateTamSamSomForTitle } from "./tamSamSomGenerator.ts";
 import { generateServiceDesignForTitle } from "./serviceDesignGenerator.ts";
 import { generatePotentialConsumersForTitle } from "./potentialConsumersGenerator.ts";
 import { detectProjectArchetype } from "./archetypeDetector.ts";
+import { getFinancialRecommendations } from "./financialRecommendations.ts";
 import { generateManufacturingDefaultContent, getManufacturingVisualHtml } from "./manufacturingPillarsContent.ts";
 import { generatePersonalSmeDefaultContent, getPersonalSmeVisualHtml } from "./personalSmePillarsContent.ts";
 
@@ -1243,11 +1244,23 @@ export function getPillarDashboardVisualHtml(secNumber: number, title: string, p
     }
 
     case 3: { // Financial Model
+      const rec = getFinancialRecommendations(displayTitle);
+      const fmt = (n: number) => `Rp ${Math.round(n).toLocaleString("id-ID")}`;
+      const p1Pct = rec.totalCapex > 0 ? ((rec.capexAssetCount * rec.capexAssetPrice / rec.totalCapex) * 100).toFixed(1) : "0.0";
+      const p2Pct = rec.totalCapex > 0 ? ((rec.capexSecondary1Amount / rec.totalCapex) * 100).toFixed(1) : "0.0";
+      const p3Pct = rec.totalCapex > 0 ? ((rec.capexSecondary2Amount / rec.totalCapex) * 100).toFixed(1) : "0.0";
+      const p4Pct = rec.totalCapex > 0 ? ((rec.capexSecondary3Amount / rec.totalCapex) * 100).toFixed(1) : "0.0";
+      const e1Pct = rec.revenueY1 > 0 ? ((rec.ebitdaY1 / rec.revenueY1) * 100).toFixed(1) : "0.0";
+      const e2Pct = rec.revenueY2 > 0 ? ((rec.ebitdaY2 / rec.revenueY2) * 100).toFixed(1) : "0.0";
+      const e3Pct = rec.revenueY3 > 0 ? ((rec.ebitdaY3 / rec.revenueY3) * 100).toFixed(1) : "0.0";
+      const n1Pct = rec.revenueY1 > 0 ? ((rec.netProfitY1 / rec.revenueY1) * 100).toFixed(1) : "0.0";
+      const n2Pct = rec.revenueY2 > 0 ? ((rec.netProfitY2 / rec.revenueY2) * 100).toFixed(1) : "0.0";
+      const n3Pct = rec.revenueY3 > 0 ? ((rec.netProfitY3 / rec.revenueY3) * 100).toFixed(1) : "0.0";
       const cards = [
-        { label: "Grand Total CAPEX", val: "Rp 4.260.000.000", sub: "✓ Alokasi Armada, IoT & Depo", color: "#2563eb" },
-        { label: "Biaya Operasional Bulanan", val: "Rp 280.000.000 / bln", sub: "★ BBM, Kru, Maintenance & Legal", color: "#059669" },
-        { label: "Payback Period", val: "2.1 - 2.5 Tahun", sub: "● Pengembalian Investasi Cepat", color: "#d97706" },
-        { label: "Proyeksi IRR / ROI", val: "24.5% / 32.8%", sub: "★ Sangat Menguntungkan", color: "#7c3aed" }
+        { label: "Grand Total CAPEX", val: fmt(rec.totalCapex), sub: `✓ Alokasi ${rec.assetUnitLabel} & Fasilitas`, color: "#2563eb" },
+        { label: "Biaya Operasional Bulanan", val: `${fmt(rec.totalMonthlyOpex)} / bln`, sub: "★ OPEX Rutin & Biaya Operasi", color: "#059669" },
+        { label: "Payback Period", val: rec.paybackText, sub: "● Pengembalian Investasi Cepat", color: "#d97706" },
+        { label: "Proyeksi IRR / ROI", val: `${rec.irrPercentage}% / ${rec.roiPercentage}%`, sub: "★ Sangat Menguntungkan", color: "#7c3aed" }
       ];
       return `
         ${renderMetricCards(cards)}
@@ -1263,28 +1276,35 @@ export function getPillarDashboardVisualHtml(secNumber: number, title: string, p
           </thead>
           <tbody>
             <tr>
-              <td style="${tdStyle}">Pengadaan Truk & Karoseri Spesifikasi Khusus</td>
-              <td style="${tdStyle}">Rp 3.500.000.000</td>
-              <td style="${tdStyle}">82.1%</td>
-              <td style="${tdStyle}">Unit baru bersertifikasi SRUT & standar Euro 4</td>
+              <td style="${tdStyle}">${rec.assetName}</td>
+              <td style="${tdStyle}">${fmt(rec.capexAssetCount * rec.capexAssetPrice)}</td>
+              <td style="${tdStyle}">${p1Pct}%</td>
+              <td style="${tdStyle}">Pengadaan ${rec.capexAssetCount} ${rec.assetUnitLabel} @ ${fmt(rec.capexAssetPrice)}</td>
             </tr>
             <tr>
-              <td style="${tdAltStyle}">Perangkat IoT Telematics, Sensor & Control Tower</td>
-              <td style="${tdAltStyle}">Rp 350.000.000</td>
-              <td style="${tdAltStyle}">8.2%</td>
-              <td style="${tdAltStyle}">GPS dual-band, fuel sensor, ADAS camera, & e-POD tab</td>
+              <td style="${tdAltStyle}">${rec.capexSecondary1Name}</td>
+              <td style="${tdAltStyle}">${fmt(rec.capexSecondary1Amount)}</td>
+              <td style="${tdAltStyle}">${p2Pct}%</td>
+              <td style="${tdAltStyle}">Infrastruktur sistem, perangkat keras pendukung & telematika</td>
             </tr>
             <tr>
-              <td style="${tdStyle}">Fasilitas Depo, Perizinan Usaha, & Modal Kerja Awal</td>
-              <td style="${tdStyle}">Rp 410.000.000</td>
-              <td style="${tdStyle}">9.7%</td>
-              <td style="${tdStyle}">Setup workshop maintenance & asuransi kargo perdana</td>
+              <td style="${tdStyle}">${rec.capexSecondary2Name}</td>
+              <td style="${tdStyle}">${fmt(rec.capexSecondary2Amount)}</td>
+              <td style="${tdStyle}">${p3Pct}%</td>
+              <td style="${tdStyle}">Fasilitas lokasi, setup fisik & perizinan operasional</td>
             </tr>
+            ${rec.capexSecondary3Amount > 0 ? `
+            <tr>
+              <td style="${tdAltStyle}">${rec.capexSecondary3Name}</td>
+              <td style="${tdAltStyle}">${fmt(rec.capexSecondary3Amount)}</td>
+              <td style="${tdAltStyle}">${p4Pct}%</td>
+              <td style="${tdAltStyle}">Sertifikasi standar mutu, legalitas izin & asuransi</td>
+            </tr>` : ''}
             <tr style="background-color: #f1f5f9; font-weight: bold;">
               <td style="${tdStyle}">GRAND TOTAL CAPEX PROYEK</td>
-              <td style="${tdStyle}">Rp 4.260.000.000</td>
+              <td style="${tdStyle}">${fmt(rec.totalCapex)}</td>
               <td style="${tdStyle}">100.0%</td>
-              <td style="${tdStyle}">Struktur pembiayaan: 30% Equity / 70% Leasing Komersial</td>
+              <td style="${tdStyle}">Struktur pembiayaan: Modal Kas Internal & Fasilitas Pembiayaan</td>
             </tr>
           </tbody>
         </table>
@@ -1302,36 +1322,83 @@ export function getPillarDashboardVisualHtml(secNumber: number, title: string, p
           <tbody>
             <tr>
               <td style="${tdStyle}"><strong>Total Pendapatan (Revenue)</strong></td>
-              <td style="${tdStyle}">Rp 4.800.000.000</td>
-              <td style="${tdStyle}">Rp 5.850.000.000</td>
-              <td style="${tdStyle}">Rp 7.100.000.000</td>
+              <td style="${tdStyle}">${fmt(rec.revenueY1)}</td>
+              <td style="${tdStyle}">${fmt(rec.revenueY2)}</td>
+              <td style="${tdStyle}">${fmt(rec.revenueY3)}</td>
             </tr>
             <tr>
               <td style="${tdAltStyle}">Beban Operasional Pokok (OPEX / COGS)</td>
-              <td style="${tdAltStyle}">Rp 3.360.000.000</td>
-              <td style="${tdAltStyle}">Rp 4.000.000.000</td>
-              <td style="${tdAltStyle}">Rp 4.720.000.000</td>
+              <td style="${tdAltStyle}">${fmt(rec.totalAnnualOpex)}</td>
+              <td style="${tdAltStyle}">${fmt(rec.revenueY2 - rec.ebitdaY2)}</td>
+              <td style="${tdAltStyle}">${fmt(rec.revenueY3 - rec.ebitdaY3)}</td>
             </tr>
             <tr>
               <td style="${tdStyle}"><strong>EBITDA Operasional</strong></td>
-              <td style="${tdStyle}">Rp 1.440.000.000 (30.0%)</td>
-              <td style="${tdStyle}">Rp 1.850.000.000 (31.6%)</td>
-              <td style="${tdStyle}">Rp 2.380.000.000 (33.5%)</td>
+              <td style="${tdStyle}">${fmt(rec.ebitdaY1)} (${e1Pct}%)</td>
+              <td style="${tdStyle}">${fmt(rec.ebitdaY2)} (${e2Pct}%)</td>
+              <td style="${tdStyle}">${fmt(rec.ebitdaY3)} (${e3Pct}%)</td>
             </tr>
             <tr>
-              <td style="${tdAltStyle}">Depresiasi, Bunga Leasing, & Pajak</td>
-              <td style="${tdAltStyle}">Rp 520.000.000</td>
-              <td style="${tdAltStyle}">Rp 600.000.000</td>
-              <td style="${tdAltStyle}">Rp 700.000.000</td>
+              <td style="${tdAltStyle}">Depresiasi & Pajak</td>
+              <td style="${tdAltStyle}">${fmt(rec.ebitdaY1 - rec.netProfitY1)}</td>
+              <td style="${tdAltStyle}">${fmt(rec.ebitdaY2 - rec.netProfitY2)}</td>
+              <td style="${tdAltStyle}">${fmt(rec.ebitdaY3 - rec.netProfitY3)}</td>
             </tr>
             <tr style="background-color: #f0fdf4; font-weight: bold;">
               <td style="${tdStyle}"><strong>Laba Bersih (Net Profit)</strong></td>
-              <td style="${tdStyle}">Rp 920.000.000 (19.2%)</td>
-              <td style="${tdStyle}">Rp 1.250.000.000 (21.3%)</td>
-              <td style="${tdStyle}">Rp 1.680.000.000 (23.6%)</td>
+              <td style="${tdStyle}">${fmt(rec.netProfitY1)} (${n1Pct}%)</td>
+              <td style="${tdStyle}">${fmt(rec.netProfitY2)} (${n2Pct}%)</td>
+              <td style="${tdStyle}">${fmt(rec.netProfitY3)} (${n3Pct}%)</td>
             </tr>
           </tbody>
         </table>
+
+        <div style="${sectionHeaderStyle}">Tabel 3.3: Hasil Kelayakan Investasi Multi-Skenario (Best, Base & Worst Case)</div>
+        <table style="${tableStyle}">
+          <thead>
+            <tr>
+              <th style="${thStyle}">Indikator Kelayakan Finansial</th>
+              <th style="${thStyle}; text-align: right;">Best Case (+10% Rev, -10% CAPEX)</th>
+              <th style="${thStyle}; text-align: right;">Base Case (Rekomendasi Acuan)</th>
+              <th style="${thStyle}; text-align: right;">Worst Case (-15% Rev, +15% CAPEX)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="${tdStyle}"><strong>Equity IRR (%)</strong></td>
+              <td style="${tdStyle}; text-align: right; color: #059669;"><strong>${(rec.irrPercentage * 1.35).toFixed(1)}%</strong></td>
+              <td style="${tdStyle}; text-align: right; color: #0d9488;"><strong>${rec.irrPercentage}%</strong></td>
+              <td style="${tdStyle}; text-align: right; color: #e11d48;"><strong>${Math.max(4.5, rec.irrPercentage * 0.55).toFixed(1)}%</strong></td>
+            </tr>
+            <tr>
+              <td style="${tdAltStyle}">Project IRR (%)</td>
+              <td style="${tdAltStyle}; text-align: right;">${(rec.irrPercentage * 1.10).toFixed(1)}%</td>
+              <td style="${tdAltStyle}; text-align: right;">${(rec.irrPercentage * 0.80).toFixed(1)}%</td>
+              <td style="${tdAltStyle}; text-align: right;">${(rec.irrPercentage * 0.45).toFixed(1)}%</td>
+            </tr>
+            <tr>
+              <td style="${tdStyle}">Payback Period Ekuitas</td>
+              <td style="${tdStyle}; text-align: right;">${(rec.paybackYears * 0.75).toFixed(1)} Tahun</td>
+              <td style="${tdStyle}; text-align: right;">${rec.paybackText}</td>
+              <td style="${tdStyle}; text-align: right;">${(rec.paybackYears * 1.45).toFixed(1)} Tahun</td>
+            </tr>
+            <tr>
+              <td style="${tdAltStyle}">Debt Service Coverage Ratio (DSCR)</td>
+              <td style="${tdAltStyle}; text-align: right;">2.30x (Min 1.85x)</td>
+              <td style="${tdAltStyle}; text-align: right;">1.68x (Min 1.35x)</td>
+              <td style="${tdAltStyle}; text-align: right;">1.18x (Min 1.02x)</td>
+            </tr>
+            <tr style="background-color: #f8fafc; font-weight: bold;">
+              <td style="${tdStyle}">Status Rekomendasi Investasi</td>
+              <td style="${tdStyle}; text-align: right; color: #059669;">SANGAT LAYAK (GO)</td>
+              <td style="${tdStyle}; text-align: right; color: #0d9488;">LAYAK (GO)</td>
+              <td style="${tdStyle}; text-align: right; color: #e11d48;">MARGINAL</td>
+            </tr>
+          </tbody>
+        </table>
+        <div style="font-size: 8.5pt; color: #64748b; font-style: italic; margin-top: 3pt;">
+          Catatan BEP: Arus kas operasional tetap positif selama tingkat utilisasi kapasitas terpasang bertahan di atas 58.5%.
+        </div>
       `;
     }
 
@@ -1702,54 +1769,62 @@ export function getPillarDashboardVisualHtml(secNumber: number, title: string, p
     }
 
     case 12: { // TAM SAM SOM
-      let tamData: any = null;
+      let tRes: any = null;
       try {
-        tamData = generateTamSamSomForTitle(projectTitle);
+        tRes = generateTamSamSomForTitle(projectTitle);
       } catch (e) {}
 
-      const tamVal = tamData?.tamValue || "Rp 12.500.000.000.000";
-      const samVal = tamData?.samValue || "Rp 1.850.000.000.000";
-      const somVal = tamData?.somValue || "Rp 185.000.000.000";
+      const tamShort = tRes?.tamValueShortIdr || "Rp 12,8 Triliun";
+      const samShort = tRes?.samValueShortIdr || "Rp 5,28 Triliun";
+      const somShort = tRes?.somValueShortIdr || "Rp 1,52–2,00 Triliun";
+      const sector = tRes?.sectorName || "Logistik & Transportasi Komersial Terpadu";
+      const timeline = tRes?.timelineRange || "2025–2034";
 
       const cards = [
-        { label: "Total Addressable Market (TAM)", val: tamVal, sub: "✓ Potensi Pasar Logistik Makro", color: "#2563eb" },
-        { label: "Serviceable Addressable (SAM)", val: samVal, sub: "★ Pasar Terjangkau Koridor Layanan", color: "#059669" },
-        { label: "Serviceable Obtainable (SOM)", val: somVal, sub: "● Target Penetrasi Realistis PRAMA", color: "#7c3aed" }
+        { label: "Total Addressable Market (TAM)", val: tamShort, sub: `✓ Valuasi Pasar Makro Sektor`, color: "#475569" },
+        { label: "Serviceable Addressable (SAM)", val: samShort, sub: `★ Pasar Terjangkau Koridor Operasi`, color: "#0d9488" },
+        { label: "Serviceable Obtainable (SOM)", val: somShort, sub: `● Target Penetrasi Riil Armada`, color: "#0f172a" }
+      ];
+
+      const tRows = tRes?.tableData || [
+        { layer: "TAM", definition: "Seluruh potensi nilai pasar makro pada sektor terkait.", valueIdr: tamShort },
+        { layer: "SAM", definition: "Pangsa pasar pada koridor operasional yang memenuhi standar kelaikan dan regulasi.", valueIdr: samShort },
+        { layer: "SOM", definition: "Target penguasaan omset riil yang dapat dilayani oleh kapasitas terpasang armada.", valueIdr: somShort },
+        { layer: "Pasar adjacent", definition: "Peluang diversifikasi kargo dan layanan nilai tambah sekunder.", valueIdr: "Tidak dihitung dalam SOM (upside)" }
       ];
 
       return `
         ${renderMetricCards(cards)}
-        <div style="${sectionHeaderStyle}">Tabel 12.1: Perhitungan Ukuran Pasar (Market Sizing Analysis)</div>
+        <div style="font-size: 11pt; font-weight: bold; color: #0d9488; margin-top: 6pt; margin-bottom: 2pt; font-family: 'Calibri', 'Segoe UI', Arial, sans-serif;">
+          04 TAM / SAM / SOM — Ukuran pasar layanan ${sector} di Indonesia (${timeline})
+        </div>
+        <div style="${sectionHeaderStyle}">Tabel 12.1: Analisis Kuantitatif Lapisan Pasar (TAM/SAM/SOM Breakdown)</div>
         <table style="${tableStyle}">
           <thead>
             <tr>
-              <th style="${thStyle}">Level Analisis Pasar</th>
+              <th style="${thStyle}">Lapisan Pasar</th>
+              <th style="${thStyle}">Definisi & Asumsi Perhitungan</th>
               <th style="${thStyle}">Nilai Estimasi (IDR)</th>
-              <th style="${thStyle}">Porsi Rasio</th>
-              <th style="${thStyle}">Asumsi & Metodologi Perhitungan</th>
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td style="${tdStyle}"><strong>Total Addressable Market (TAM)</strong></td>
-              <td style="${tdStyle}"><strong>${tamVal}</strong></td>
-              <td style="${tdStyle}">100% Makro</td>
-              <td style="${tdStyle}">Seluruh perputaran nilai jasa transportasi dan logistik sektor terkait di Indonesia</td>
-            </tr>
-            <tr>
-              <td style="${tdAltStyle}"><strong>Serviceable Addressable Market (SAM)</strong></td>
-              <td style="${tdAltStyle}"><strong>${samVal}</strong></td>
-              <td style="${tdAltStyle}">12% - 15% dari TAM</td>
-              <td style="${tdAltStyle}">Pasar koridor rute yang secara geografis dan regulasi dapat dilayani oleh armada PRAMA</td>
-            </tr>
-            <tr>
-              <td style="${tdStyle}"><strong>Serviceable Obtainable Market (SOM)</strong></td>
-              <td style="${tdStyle}"><strong>${somVal}</strong></td>
-              <td style="${tdStyle}">8% - 10% dari SAM</td>
-              <td style="${tdStyle}">Target pangsa pasar realistis yang dapat direbut pada tahap peluncuran operasi tahun 1 - 2</td>
-            </tr>
+            ${tRows.map((r: any, idx: number) => `
+              <tr>
+                <td style="${idx % 2 === 0 ? tdStyle : tdAltStyle}"><strong>${r.layer}</strong></td>
+                <td style="${idx % 2 === 0 ? tdStyle : tdAltStyle}">${r.definition}</td>
+                <td style="${idx % 2 === 0 ? tdStyle : tdAltStyle}"><strong>${r.valueIdr}</strong></td>
+              </tr>
+            `).join('')}
           </tbody>
         </table>
+        <div style="font-size: 8.5pt; color: #64748b; font-style: italic; margin-top: 3pt; margin-bottom: 6pt;">
+          Gambar 4.1 — TAM/SAM/SOM ${sector} (estimasi analitis & riset pasar).
+        </div>
+        ${tRes?.deepDiveNarrative ? `
+          <div style="font-size: 9pt; color: #334155; line-height: 1.5; margin-top: 6pt; text-align: justify; background-color: #f8fafc; border-left: 3pt solid #0d9488; padding: 6pt 8pt;">
+            <strong>Kajian Narasi Analitis Sektoral:</strong> ${tRes.deepDiveNarrative}
+          </div>
+        ` : ''}
       `;
     }
 
@@ -1922,43 +1997,52 @@ export function getPillarDashboardVisualHtml(secNumber: number, title: string, p
         consumerData = generatePotentialConsumersForTitle(projectTitle);
       } catch (e) {}
 
-      const targetList = consumerData?.targetAccounts || [
-        { companyName: "PT Industri Manufaktur Utama Indonesia", category: "Tier-1 Corporate", location: "Kawasan Industri Terpadu", demandVolume: "500 - 800 Ton / Bulan", specificNeed: "Jaminan SLA ketepatan waktu pengiriman & kepatuhan Zero ODOL" },
-        { companyName: "PT Logistik Distribusi Nasional Sentosa", category: "Enterprise Partner", location: "Koridor Distribusi Regional", demandVolume: "350 - 500 Ton / Bulan", specificNeed: "Transparansi telematika IoT & integrasi sistem bukti serah terima e-POD" },
-        { companyName: "PT Mitra Niaga Ekspedisi Nusantara", category: "B2B Contract Client", location: "Depo Pusat Regional", demandVolume: "200 - 400 Ton / Bulan", specificNeed: "Armada dedicated bertarif kompetitif dengan kontrak tahunan stabil" }
+      const segList: any[] = consumerData?.customerSegments || [
+        { segment: "IPP / pemilik Proyek", publicExamples: "Pengembang proyek utama & BUMN", primaryNeed: "Kepastian jadwal COD, biaya tetap, HSSE, asuransi", priority: "Sangat tinggi" },
+        { segment: "OEM / Prinsipal Mesin", publicExamples: "Pabrikan peralatan utama & eksportir", primaryNeed: "Mitra lokal port-to-site terkualifikasi, DAP/DDP delivery", priority: "Sangat tinggi (kanal volume)" },
+        { segment: "EPC / BoP Contractor", publicExamples: "EPC nasional & asing pelaksana konstruksi", primaryNeed: "Heavy haul, crane, laydown, koordinasi perizinan jalan", priority: "Tinggi" },
+        { segment: "Captive", publicExamples: "Proyek konsorsium internal / captive fleet", primaryNeed: "Biaya kompetitif & rekam jejak operasional terpercaya", priority: "Anchor (tahun 1–3)" },
+        { segment: "O&M / Aftermarket", publicExamples: "Operator pemeliharaan rutin & penggantian komponen", primaryNeed: "Penggantian komponen besar berkala, ketersediaan crane on-call", priority: "Menengah (recurring)" },
+        { segment: "Adjacent Sector", publicExamples: "Sektor industri terkait dan infrastruktur pendukung", primaryNeed: "Kargo berat industri dan optimalisasi utilisasi armada", priority: "Tinggi (utilisasi)" }
       ];
 
       const cards = [
-        { label: "Target Akun Teridentifikasi", val: "8 - 12 Korporasi", sub: "✓ Pipeline B2B Enterprise Terverifikasi", color: "#2563eb" },
-        { label: "Estimasi Pipeline Nilai Kontrak", val: "Rp 28 - 45 Miliar / th", sub: "★ Potensi Pendapatan Tahunan", color: "#059669" },
-        { label: "Profil DMU Terpetakan", val: "Procurement & Supply Chain VP", sub: "● Strategi Konversi Terarah", color: "#7c3aed" }
+        { label: "Target Segmen Industri", val: `${segList.length} Segmen Terpetakan`, sub: "✓ Pipeline B2B Enterprise Terverifikasi", color: "#0d9488" },
+        { label: "Prioritas Akuisisi Utama", val: "IPP & OEM Tier-1", sub: "★ Kanal Volume Kontrak Multi-Tahun", color: "#e11d48" },
+        { label: "Standar Layanan & SLA", val: "SLA 98.5% & HSSE", sub: "● Zero ODOL & Standar K3 Terverifikasi", color: "#2563eb" }
       ];
+
+      const buyingNote = consumerData?.buyingPatternNote || "Pola pembelian: keputusan logistik proyek umumnya dibuat pada saat penyusunan TSA dan tender paket pengangkutan port-to-site.";
 
       return `
         ${renderMetricCards(cards)}
-        <div style="${sectionHeaderStyle}">Tabel 16.1: Pipeline Target Akun B2B Prioritas</div>
+        <div style="font-size: 11pt; font-weight: bold; color: #0d9488; margin-top: 6pt; margin-bottom: 2pt; font-family: 'Calibri', 'Segoe UI', Arial, sans-serif;">
+          06 Customer Potential — Pemetaan Segmen Pelanggan & Kebutuhan Utama
+        </div>
+        <div style="${sectionHeaderStyle}">Tabel 16.1: Matriks Segmen Pelanggan & Prioritas Akuisisi</div>
         <table style="${tableStyle}">
           <thead>
             <tr>
-              <th style="${thStyle}">Nama Akun Korporat</th>
-              <th style="${thStyle}">Kategori Klien</th>
-              <th style="${thStyle}">Lokasi Fasilitas</th>
-              <th style="${thStyle}">Estimasi Volume Kargo</th>
-              <th style="${thStyle}">Kebutuhan Spesifik</th>
+              <th style="${thStyle}; width: 22%;">Segmen</th>
+              <th style="${thStyle}; width: 34%;">Contoh (publik)</th>
+              <th style="${thStyle}; width: 28%;">Kebutuhan utama</th>
+              <th style="${thStyle}; width: 16%;">Prioritas</th>
             </tr>
           </thead>
           <tbody>
-            ${targetList.slice(0, 4).map((acc: any, idx: number) => `
-              <tr style="${idx % 2 === 1 ? "background-color: #f8fafc;" : ""}">
-                <td style="${tdStyle}"><strong>${acc.companyName}</strong></td>
-                <td style="${tdStyle}">${acc.category}</td>
-                <td style="${tdStyle}">${acc.location}</td>
-                <td style="${tdStyle}"><strong>${acc.demandVolume}</strong></td>
-                <td style="${tdStyle}">${acc.specificNeed}</td>
+            ${segList.map((row: any, idx: number) => `
+              <tr>
+                <td style="${idx % 2 === 0 ? tdStyle : tdAltStyle}"><strong>${row.segment}</strong></td>
+                <td style="${idx % 2 === 0 ? tdStyle : tdAltStyle}">${row.publicExamples}</td>
+                <td style="${idx % 2 === 0 ? tdStyle : tdAltStyle}">${row.primaryNeed}</td>
+                <td style="${idx % 2 === 0 ? tdStyle : tdAltStyle}"><strong>${row.priority}</strong></td>
               </tr>
             `).join('')}
           </tbody>
         </table>
+        <div style="font-size: 9pt; color: #334155; line-height: 1.5; margin-top: 6pt; text-align: justify; background-color: #f8fafc; border-left: 3pt solid #0d9488; padding: 6pt 8pt;">
+          <strong>Pola Pembelian:</strong> ${buyingNote.replace(/^Pola pembelian:\s*/i, "")}
+        </div>
       `;
     }
 

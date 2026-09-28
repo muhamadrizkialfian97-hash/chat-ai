@@ -326,41 +326,131 @@ export function PillarVisualSummaryCard({
     }
   }, [pillarNumber, metrics]);
 
-  // Parse markdown into structured takeaways
+interface StructuredPillarSection {
+  title: string;
+  body: string;
+  bullets: string[];
+}
+
+  // Parse markdown into structured takeaways and rich complete sections
   const parsedContent = useMemo(() => {
-    if (!content || !content.trim()) return { summary: "", keyPoints: [], paragraphs: [], rawLines: [] };
+    if (!content || !content.trim()) {
+      return {
+        summary: "",
+        keyPoints: [],
+        sections: [] as StructuredPillarSection[],
+        paragraphs: [] as string[],
+        rawLines: [] as string[]
+      };
+    }
 
     const rawLines = content.split("\n");
-    const paragraphs: string[] = [];
-    const keyPoints: string[] = [];
+    const sections: StructuredPillarSection[] = [];
+    let currentSection: StructuredPillarSection | null = null;
+    const allKeyPoints: string[] = [];
+    const allParagraphs: string[] = [];
+
+    // Helper to start a new section
+    const startSection = (title: string) => {
+      if (currentSection) {
+        if (!currentSection.body && currentSection.bullets.length > 0) {
+          currentSection.body = `Rincian dan parameter operasional kunci untuk ${currentSection.title}:`;
+        }
+        sections.push(currentSection);
+      }
+      currentSection = {
+        title: title.replace(/^[\*#\s]+|[\*#\s]+$/g, "").trim(),
+        body: "",
+        bullets: []
+      };
+    };
 
     rawLines.forEach((line) => {
       const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith("###")) return;
+      if (!trimmed) return;
 
-      if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
-        keyPoints.push(trimmed.replace(/^[\*\-]\s+/, ""));
+      // Check if this line is a section header (###, ##, **X.X ...**, or X.X Title)
+      const isH3 = trimmed.startsWith("###") || trimmed.startsWith("##") || trimmed.startsWith("#");
+      const isBoldHeader = /^(\*\*|\b)(\d+\.\d+|Bab\s+\d+|Pilar\s+\d+|Bagian\s+\d+).*?(\*\*|$)/i.test(trimmed);
+      const isNumberedHeader = /^(\d+\.\d+)\s+[A-Za-z]/.test(trimmed);
+
+      if (isH3 && !currentSection) {
+        // Skip main pillar title heading as section
+        return;
+      }
+
+      if (isH3 || isBoldHeader || isNumberedHeader) {
+        const cleanTitle = trimmed
+          .replace(/^#+\s*/, "")
+          .replace(/^\*\*/, "")
+          .replace(/\*\*$/, "")
+          .trim();
+        startSection(cleanTitle);
+        return;
+      }
+
+      // Check for bullet points
+      if (trimmed.startsWith("- ") || trimmed.startsWith("* ") || /^\d+\.\s+/.test(trimmed)) {
+        const bulletText = trimmed.replace(/^([\*\-]\s+|\d+\.\s+)/, "");
+        allKeyPoints.push(bulletText);
+        if (currentSection) {
+          currentSection.bullets.push(bulletText);
+        } else {
+          startSection(`Poin Strategis Pilar ${pillarNumber}`);
+          currentSection!.bullets.push(bulletText);
+        }
+        return;
+      }
+
+      // Regular narrative body
+      allParagraphs.push(trimmed);
+      if (currentSection) {
+        if (!currentSection.body) {
+          currentSection.body = trimmed;
+        } else {
+          currentSection.body += " " + trimmed;
+        }
       } else {
-        paragraphs.push(trimmed);
+        startSection(`Kajian Strategis ${pillarTitle}`);
+        currentSection!.body = trimmed;
+      }
+    });
+
+    if (currentSection) {
+      if (!currentSection.body && currentSection.bullets.length > 0) {
+        currentSection.body = `Rincian dan parameter operasional kunci untuk ${currentSection.title}:`;
+      }
+      sections.push(currentSection);
+    }
+
+    // Ensure every section has a thorough body explanation so NO box is ever empty
+    sections.forEach((sec) => {
+      if (!sec.body || sec.body.trim().length < 5) {
+        if (sec.bullets.length > 0) {
+          sec.body = `Penjabaran detail dan analisis parameter operasional untuk ${sec.title}:`;
+        } else {
+          sec.body = `Kajian terstruktur untuk ${sec.title} pada proyek ${currentTitle}, mencakup pemenuhan standar kepatuhan, keandalan operasional, dan efisiensi alokasi sumber daya.`;
+        }
       }
     });
 
     let summary = "";
-    if (paragraphs.length > 0) {
-      summary = paragraphs[0].replace(/\*\*/g, "");
-    } else if (keyPoints.length > 0) {
-      summary = keyPoints[0].replace(/\*\*/g, "");
+    if (sections.length > 0 && sections[0].body) {
+      summary = sections[0].body.replace(/\*\*/g, "");
+    } else if (allKeyPoints.length > 0) {
+      summary = allKeyPoints[0].replace(/\*\*/g, "");
     } else {
       summary = `Kajian terpadu untuk ${pillarTitle} pada proyek ${currentTitle}. Analisis mendalam mencakup operasional terencana, efisiensi sumber daya, dan mitigasi kepatuhan.`;
     }
 
     return {
       summary,
-      keyPoints,
-      paragraphs,
+      keyPoints: allKeyPoints,
+      sections,
+      paragraphs: allParagraphs,
       rawLines
     };
-  }, [content, pillarTitle, currentTitle]);
+  }, [content, pillarTitle, currentTitle, pillarNumber]);
 
   // Handler to copy content
   const handleCopy = () => {
@@ -766,7 +856,7 @@ export function PillarVisualSummaryCard({
           <div className="space-y-4">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <span className="text-xs font-bold text-slate-800">
-                Rincian Bab & Penjabaran Lengkap ({parsedContent.paragraphs.length} Paragraf & {parsedContent.keyPoints.length} Poin)
+                Rincian Bab & Penjabaran Lengkap ({parsedContent.sections.length} Bagian Lengkap)
               </span>
               <button
                 type="button"
@@ -778,45 +868,55 @@ export function PillarVisualSummaryCard({
               </button>
             </div>
 
-            <div className="space-y-3">
-              {parsedContent.paragraphs.map((p, pIdx) => (
+            <div className="space-y-3.5">
+              {parsedContent.sections.map((sec, sIdx) => (
                 <div
-                  key={pIdx}
-                  className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-800 leading-relaxed text-justify space-y-1"
+                  key={sIdx}
+                  className="p-5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-800 leading-relaxed text-justify space-y-2.5 shadow-2xs hover:border-indigo-200 transition-colors"
                 >
-                  <div className="flex items-center justify-between gap-2 text-[10px] font-mono text-slate-400 mb-1">
-                    <span>BAGIAN {pIdx + 1}</span>
+                  <div className="flex items-center justify-between gap-2 text-[10px] font-mono text-slate-400 pb-1.5 border-b border-slate-200/60">
+                    <span className="font-bold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-md border border-indigo-100 uppercase tracking-wider">
+                      BAGIAN {sIdx + 1}
+                    </span>
                     <button
                       type="button"
                       onClick={() => {
-                        const newParas = parsedContent.paragraphs.filter((_, idx) => idx !== pIdx);
-                        onUpdateContent(newParas.join("\n\n"));
+                        const newSections = parsedContent.sections.filter((_, idx) => idx !== sIdx);
+                        const newText = newSections.map(s => `**${s.title}**\n${s.body}${s.bullets.length ? '\n' + s.bullets.map(b => `- ${b}`).join('\n') : ''}`).join('\n\n');
+                        onUpdateContent(newText);
                       }}
-                      className="text-slate-400 hover:text-rose-600 cursor-pointer"
-                      title="Hapus paragraf ini"
+                      className="text-slate-400 hover:text-rose-600 cursor-pointer transition-colors p-1"
+                      title="Hapus bagian ini"
                     >
-                      <Trash2 className="h-3 w-3" />
+                      <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </div>
-                  <p className="m-0 font-normal">{renderBold(p)}</p>
+
+                  {/* Section Title */}
+                  {sec.title && (
+                    <h4 className="text-xs sm:text-sm font-black text-slate-900 tracking-tight leading-snug">
+                      {sec.title}
+                    </h4>
+                  )}
+
+                  {/* Detailed Explanation Body */}
+                  <p className="m-0 font-normal text-slate-700 leading-relaxed text-justify">
+                    {renderBold(sec.body)}
+                  </p>
+
+                  {/* Associated Bullet Points */}
+                  {sec.bullets.length > 0 && (
+                    <div className="space-y-2 pt-1.5 border-t border-slate-200/50">
+                      {sec.bullets.map((b, bIdx) => (
+                        <div key={bIdx} className="flex items-start gap-2.5 text-xs text-slate-700 bg-white/80 p-2.5 rounded-xl border border-slate-200/60 shadow-3xs">
+                          <span className="text-indigo-600 font-bold mt-0.5 shrink-0 text-sm">✓</span>
+                          <span className="flex-1 font-normal leading-relaxed text-slate-800">{renderBold(b)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
-
-              {parsedContent.keyPoints.length > 0 && (
-                <div className="p-4 rounded-2xl bg-indigo-50/40 border border-indigo-100 space-y-2">
-                  <span className="text-[10px] font-mono font-black uppercase text-indigo-700 block">
-                    DAFTAR RINCIAN POIN STRATEGIS:
-                  </span>
-                  <div className="space-y-1.5">
-                    {parsedContent.keyPoints.map((kp, kpIdx) => (
-                      <div key={kpIdx} className="flex items-start gap-2 text-xs text-slate-800">
-                        <span className="text-indigo-600 font-bold mt-0.5">•</span>
-                        <span className="flex-1 font-normal">{renderBold(kp)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         ) : (

@@ -250,6 +250,152 @@ Judul "${title}" sudah cukup spesifik. Untuk hasil kajian proposal yang lebih ta
 });
 
 // Dynamic AI Generation Endpoint for Pilar 1 (Global & National Overview)
+// --- VISUAL PROMPT GENIUS AI AGENT ENDPOINT ---
+app.post("/api/visual-prompt-genius/chat", async (req, res) => {
+  try {
+    const { userIdea, preferredStyle, aspectRatio, clientApiKey } = req.body;
+    const ideaClean = (userIdea || "").trim();
+    if (!ideaClean) {
+      return res.status(400).json({ error: "Ide atau prompt pengguna tidak boleh kosong." });
+    }
+
+    let genAIClient = aiClient;
+    if (clientApiKey) {
+      genAIClient = new GoogleGenAI({
+        apiKey: clientApiKey,
+        httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
+      });
+    } else {
+      genAIClient = getGeminiClient();
+    }
+
+    const systemInstruction = `Kamu adalah "Visual Prompt Genius", seorang AI Agent ahli dalam merancang prompt visual untuk generator gambar AI (seperti Google Imagen, Midjourney, DALL-E, dan Stable Diffusion) untuk kebutuhan pembuatan Foto Animasi, Poster, dan Karya Seni Digital.
+
+Tugas Utamamu:
+1. Menerima ide, konsep, atau deskripsi sederhana dari pengguna (dalam bahasa Indonesia atau Inggris).
+2. Meminta detail tambahan secara singkat jika prompt pengguna terlalu umum (misal: rasio aspek, gaya seni, atau warna utama).
+3. Mengubah ide pengguna menjadi prompt gambar berbahasa Inggris yang sangat mendetail, artistik, dan kaya elemen visual.
+
+Setiap kali pengguna memberikan ide, selalu berikan respons dalam struktur format berikut:
+
+---
+🎯 **Konsep Visual:** (Penjelasan singkat mengenai hasil gambar yang akan dibuat dalam Bahasa Indonesia)
+
+✨ **Prompt Gambar / Animasi (English):**
+[Tuliskan prompt mendetail dalam Bahasa Inggris di sini. Sertakan detail subjek, latar belakang, pencahayaan, gaya visual (misal: 3D Pixar style, photorealistic, Cyberpunk poster, anime style), sudut kamera, dan komposisi]
+
+⚙️ **Parameter Rekomendasi:**
+- **Style:** [Contoh: Cinematic Poster / 3D Animation / Concept Art / Photorealistic]
+- **Aspect Ratio:** [Contoh: 16:9 untuk Landscape, 9:16 untuk Stories/Poster, 1:1 untuk Square]
+- **Negative Prompt:** [Kata kunci yang harus dihindari, misal: blurry, low quality, distorted hands, out of frame]
+---
+
+Aturan Tambahan:
+- Selalu bersikap ramah, kreatif, dan responsif.
+- Jika pengguna ingin membuat poster, pastikan prompt menyertakan elemen tata letak (composition), ruang untuk teks (negative space for typography), dan nuansa dramatis.
+- Jika pengguna ingin membuat foto animasi/karakter, sertakan elemen gerak (subtle motion, expressive posing, dynamic lighting).`;
+
+    const userPrompt = `Rancang prompt visual masterclass untuk ide pengguna berikut:
+"${ideaClean}"
+(Gaya preferensi: ${preferredStyle || "3D Animation / Cinematic"}, Rasio aspek preferensi: ${aspectRatio || "1:1"})`;
+
+    const response = await genAIClient.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: userPrompt,
+      config: {
+        systemInstruction,
+        temperature: 0.7
+      }
+    });
+
+    const responseText = response.text || "";
+
+    // Parse structured sections
+    let concept = "";
+    let englishPrompt = "";
+    let style = preferredStyle || "3D Animation";
+    let ar = aspectRatio || "1:1";
+    let negativePrompt = "blurry, low quality, distorted hands, extra limbs, bad anatomy, deformed, disfigured, text watermark, out of frame";
+
+    const conceptMatch = responseText.match(/🎯\s*\*\*Konsep Visual:\*\*\s*([\s\S]*?)(?=✨|\*\*Prompt|$)/i);
+    if (conceptMatch) {
+      concept = conceptMatch[1].replace(/---/g, "").trim();
+    }
+
+    const englishPromptMatch = responseText.match(/✨\s*\*\*Prompt Gambar \/ Animasi \(English\):\*\*\s*([\s\S]*?)(?=⚙️|\*\*Parameter|$)/i);
+    if (englishPromptMatch) {
+      englishPrompt = englishPromptMatch[1].replace(/---/g, "").replace(/\[|\]/g, "").trim();
+    }
+
+    const styleMatch = responseText.match(/-\s*\*\*Style:\*\*\s*(.*)/i);
+    if (styleMatch) {
+      style = styleMatch[1].trim();
+    }
+
+    const arMatch = responseText.match(/-\s*\*\*Aspect Ratio:\*\*\s*(.*)/i);
+    if (arMatch) {
+      ar = arMatch[1].trim();
+    }
+
+    const negMatch = responseText.match(/-\s*\*\*Negative Prompt:\*\*\s*([\s\S]*?)(?=---|$)/i);
+    if (negMatch) {
+      negativePrompt = negMatch[1].trim();
+    }
+
+    // Fallbacks if regex didn't catch clean tags
+    if (!concept) {
+      concept = `Karya visual berestetika tinggi berdasarkan konsep "${ideaClean}" dengan pencahayaan dramatis dan komposisi artistik.`;
+    }
+    if (!englishPrompt) {
+      englishPrompt = `A visually striking masterpiece featuring ${ideaClean}, stunning volumetric lighting, vibrant colors, intricate textures, masterpiece, 8k resolution`;
+    }
+
+    res.json({
+      success: true,
+      rawText: responseText,
+      result: {
+        concept,
+        englishPrompt,
+        style,
+        aspectRatio: ar,
+        negativePrompt
+      }
+    });
+  } catch (error: any) {
+    console.error("Visual prompt genius error:", error);
+    const { userIdea, preferredStyle, aspectRatio } = req.body;
+    const ideaClean = (userIdea || "Karakter Animasi & Poster Visual").trim();
+    
+    // Robust graceful fallback
+    const fallbackConcept = `Desain visual berkualitas tinggi untuk konsep "${ideaClean}" dengan penataan cahaya dramatis, komposisi dinamis, dan kedalaman bidang visual yang memukau.`;
+    const fallbackEnglish = `A visually stunning masterpiece of ${ideaClean}, cinematic volumetric lighting, ray-traced reflections, highly detailed textures, vibrant color palette, dynamic composition, 8k resolution, trending on ArtStation`;
+
+    res.json({
+      success: true,
+      rawText: `---
+🎯 **Konsep Visual:** ${fallbackConcept}
+
+✨ **Prompt Gambar / Animasi (English):**
+${fallbackEnglish}
+
+⚙️ **Parameter Rekomendasi:**
+- **Style:** ${preferredStyle || "Cinematic Poster / 3D Animation"}
+- **Aspect Ratio:** ${aspectRatio || "1:1"}
+- **Negative Prompt:** blurry, low quality, distorted hands, out of frame, deformed, watermarks
+---`,
+      result: {
+        concept: fallbackConcept,
+        englishPrompt: fallbackEnglish,
+        style: preferredStyle || "Cinematic Poster / 3D Animation",
+        aspectRatio: aspectRatio || "1:1",
+        negativePrompt: "blurry, low quality, distorted hands, out of frame, deformed, watermarks"
+      },
+      fallback: true
+    });
+  }
+});
+
+// Dynamic AI Generation Endpoint for Pilar 1 (Global & National Overview)
 app.post("/api/generate-overview", async (req, res) => {
   try {
     const { projectTitle, division, clientApiKey } = req.body;

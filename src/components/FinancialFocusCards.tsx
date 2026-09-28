@@ -22,9 +22,11 @@ import {
   Sparkles,
   Layers,
   ShoppingBag,
-  Factory
+  Factory,
+  FileText
 } from "lucide-react";
 import { getFinancialRecommendations, FinancialRecommendation } from "../utils/financialRecommendations";
+import { InvestmentFeasibilityDeck } from "./InvestmentFeasibilityDeck";
 
 interface FinancialFocusProps {
   projectTitle: string;
@@ -34,8 +36,8 @@ export function FinancialFocusCards({ projectTitle }: FinancialFocusProps) {
   // Retrieve standardized financial recommendation based on project title & archetype
   const rec = useMemo(() => getFinancialRecommendations(projectTitle), [projectTitle]);
 
-  // Tab control for deep-dives
-  const [activeSegment, setActiveSegment] = useState<"capex" | "opex" | "pl" | "cashflow">("capex");
+  // Tab control for deep-dives: dossier is default premier executive view
+  const [activeSegment, setActiveSegment] = useState<"dossier" | "capex" | "opex" | "pl" | "cashflow">("dossier");
 
   // State 1: CAPEX Configurations
   const [capexAssetCount, setCapexAssetCount] = useState<number>(rec.capexAssetCount);
@@ -76,6 +78,35 @@ export function FinancialFocusCards({ projectTitle }: FinancialFocusProps) {
     setTaxRate(r.taxRate);
     setScenario("real");
   }, [projectTitle]);
+
+  // Quick Presets Handlers
+  const handleApplyLeanScenario = () => {
+    setCapexAssetCount(Math.max(rec.capexAssetCountMin, Math.floor(rec.capexAssetCount * 0.8)));
+    setCapexAssetPrice(Math.round((rec.capexAssetPrice * 0.85) / 1000000) * 1000000);
+    setCapexSecondary1(Math.round((rec.capexSecondary1Amount * 0.80) / 1000000) * 1000000);
+    setCapexSecondary2(Math.round((rec.capexSecondary2Amount * 0.80) / 1000000) * 1000000);
+    setCapexSecondary3(Math.round((rec.capexSecondary3Amount * 0.80) / 1000000) * 1000000);
+
+    setMonthlyOpex1(Math.round((rec.opex1Amount * 0.85) / 500000) * 500000);
+    setMonthlyOpex2(Math.round((rec.opex2Amount * 0.85) / 500000) * 500000);
+    setMonthlyOpex3(Math.round((rec.opex3Amount * 0.85) / 250000) * 250000);
+    setMonthlyOpex4(Math.round((rec.opex4Amount * 0.80) / 250000) * 250000);
+    setScenario("pes");
+  };
+
+  const handleApplyExpansionScenario = () => {
+    setCapexAssetCount(Math.min(rec.capexAssetCountMax, Math.ceil(rec.capexAssetCount * 1.35)));
+    setCapexAssetPrice(Math.round((rec.capexAssetPrice * 1.15) / 1000000) * 1000000);
+    setCapexSecondary1(Math.round((rec.capexSecondary1Amount * 1.25) / 1000000) * 1000000);
+    setCapexSecondary2(Math.round((rec.capexSecondary2Amount * 1.25) / 1000000) * 1000000);
+    setCapexSecondary3(Math.round((rec.capexSecondary3Amount * 1.25) / 1000000) * 1000000);
+
+    setMonthlyOpex1(Math.round((rec.opex1Amount * 1.25) / 500000) * 500000);
+    setMonthlyOpex2(Math.round((rec.opex2Amount * 1.25) / 500000) * 500000);
+    setMonthlyOpex3(Math.round((rec.opex3Amount * 1.20) / 250000) * 250000);
+    setMonthlyOpex4(Math.round((rec.opex4Amount * 1.30) / 250000) * 250000);
+    setScenario("opt");
+  };
 
   // Handler to manually restore exact project recommendation numbers
   const handleResetToRecommendations = () => {
@@ -243,7 +274,25 @@ export function FinancialFocusCards({ projectTitle }: FinancialFocusProps) {
       </div>
 
       {/* SEGMENT TAB BAR */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-6 relative z-10">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 mb-6 relative z-10">
+        <button
+          type="button"
+          onClick={() => setActiveSegment("dossier")}
+          className={`p-3 rounded-xl border cursor-pointer transition-all text-left flex items-center gap-2.5 ${
+            activeSegment === "dossier"
+              ? "bg-gradient-to-r from-teal-950/60 to-slate-900 border-teal-400 text-white shadow-lg shadow-teal-950/40"
+              : "bg-slate-950/30 border-slate-800 text-slate-400 hover:border-slate-700"
+          }`}
+        >
+          <div className={`p-1.5 rounded-lg shrink-0 ${activeSegment === "dossier" ? "bg-teal-400 text-slate-950" : "bg-slate-900 text-teal-400"}`}>
+            <FileText className="h-4 w-4" />
+          </div>
+          <div>
+            <span className="text-[8px] font-mono font-black text-teal-400 block uppercase">UTAMA</span>
+            <span className="text-[11px] font-black uppercase text-white">📑 07 Dossier Kelayakan</span>
+          </div>
+        </button>
+
         <button
           type="button"
           onClick={() => setActiveSegment("capex")}
@@ -257,8 +306,8 @@ export function FinancialFocusCards({ projectTitle }: FinancialFocusProps) {
             <DollarSign className="h-4 w-4" />
           </div>
           <div>
-            <span className="text-[8px] font-mono font-black text-slate-500 block uppercase">BAGIAN 1</span>
-            <span className="text-[11px] font-black uppercase text-white">💰 Alokasi Modal (CAPEX)</span>
+            <span className="text-[8px] font-mono font-black text-slate-500 block uppercase">SIMULATOR 1</span>
+            <span className="text-[11px] font-black uppercase text-white">💰 Alokasi CAPEX</span>
           </div>
         </button>
 
@@ -275,8 +324,8 @@ export function FinancialFocusCards({ projectTitle }: FinancialFocusProps) {
             <Activity className="h-4 w-4" />
           </div>
           <div>
-            <span className="text-[8px] font-mono font-black text-slate-500 block uppercase">BAGIAN 2</span>
-            <span className="text-[11px] font-black uppercase text-white">🛠️ Biaya Rutin (OPEX)</span>
+            <span className="text-[8px] font-mono font-black text-slate-500 block uppercase">SIMULATOR 2</span>
+            <span className="text-[11px] font-black uppercase text-white">🛠️ Biaya OPEX</span>
           </div>
         </button>
 
@@ -293,8 +342,8 @@ export function FinancialFocusCards({ projectTitle }: FinancialFocusProps) {
             <TrendingUp className="h-4 w-4" />
           </div>
           <div>
-            <span className="text-[8px] font-mono font-black text-slate-500 block uppercase">BAGIAN 3</span>
-            <span className="text-[11px] font-black uppercase text-white">📊 Proyeksi Laba Rugi</span>
+            <span className="text-[8px] font-mono font-black text-slate-500 block uppercase">SIMULATOR 3</span>
+            <span className="text-[11px] font-black uppercase text-white">📊 Laba Rugi (P&amp;L)</span>
           </div>
         </button>
 
@@ -311,14 +360,26 @@ export function FinancialFocusCards({ projectTitle }: FinancialFocusProps) {
             <RefreshCw className="h-4 w-4" />
           </div>
           <div>
-            <span className="text-[8px] font-mono font-black text-slate-500 block uppercase">BAGIAN 4</span>
-            <span className="text-[11px] font-black uppercase text-white">🔄 Cash Flow &amp; ROI</span>
+            <span className="text-[8px] font-mono font-black text-slate-500 block uppercase">SIMULATOR 4</span>
+            <span className="text-[11px] font-black uppercase text-white">🔄 Cash Flow &amp; BEP</span>
           </div>
         </button>
       </div>
 
-      {/* CONTENT AREA FOR INTERACTIVE SEGMENTS */}
+      {/* CONTENT AREA FOR INTERACTIVE SEGMENTS & DOSSIER */}
       <AnimatePresence mode="wait">
+        {/* PREMIER SEGMENT: 07 INVESTMENT FEASIBILITY DOSSIER DECK */}
+        {activeSegment === "dossier" && (
+          <motion.div
+            key="segment-dossier"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="relative z-10"
+          >
+            <InvestmentFeasibilityDeck projectTitle={projectTitle} />
+          </motion.div>
+        )}
         {/* SEGMENT 1: CAPEX DETAILS & CONTROLS */}
         {activeSegment === "capex" && (
           <motion.div

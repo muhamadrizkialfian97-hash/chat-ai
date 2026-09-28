@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Layers,
@@ -19,9 +19,10 @@ import {
   DollarSign,
   Target,
   Truck,
-  Compass
+  Compass,
+  Info
 } from "lucide-react";
-import { generateTamSamSomForTitle } from "../utils/tamSamSomGenerator";
+import { generateTamSamSomForTitle, TamSamSomResult } from "../utils/tamSamSomGenerator";
 import { exportAllSectionsToWord } from "../utils/projectDashboardHelper";
 
 interface TamSamSomDeepDiveProps {
@@ -35,9 +36,17 @@ export function TamSamSomDeepDive({ projectTitle, activeDivision }: TamSamSomDee
 
   const storageKey = `prama_tamsamsom_content_${currentTitle.toLowerCase().replace(/[^a-z0-9]/g, "_")}`;
 
-  // Content starts POLOS (empty) unless the user explicitly saved or generated it
+  // Currency display mode: "usd" or "idr" (default IDR, easily switchable)
+  const [currencyMode, setCurrencyMode] = useState<"idr" | "usd">("idr");
+
+  // Generate real-time structured data for current title
+  const data: TamSamSomResult = useMemo(() => {
+    return generateTamSamSomForTitle(currentTitle, currentDiv);
+  }, [currentTitle, currentDiv]);
+
+  // Saved narrative markdown content
   const [content, setContent] = useState<string>(() => {
-    return localStorage.getItem(storageKey) || "";
+    return localStorage.getItem(storageKey) || data.narrativeMarkdown;
   });
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -45,37 +54,24 @@ export function TamSamSomDeepDive({ projectTitle, activeDivision }: TamSamSomDee
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editText, setEditText] = useState<string>("");
   const [lastGeneratedForTitle, setLastGeneratedForTitle] = useState<string>(() => {
-    return localStorage.getItem(`${storageKey}_title`) || "";
+    return localStorage.getItem(`${storageKey}_title`) || currentTitle;
   });
 
-  // Cleanup any old legacy preset keys
+  // When projectTitle prop changes, sync data and update content
   useEffect(() => {
-    try {
-      const keysToRemove: string[] = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (
-          k &&
-          (k.startsWith("prama_tamsamsom_legacy_") ||
-            k.startsWith("tamsamsom_slider_") ||
-            k.startsWith("prama_tamsamsom_entities_") ||
-            k.startsWith("tam_sam_som_custom_") ||
-            k.startsWith("prama_tamsamsom_ai_"))
-        ) {
-          keysToRemove.push(k);
-        }
-      }
-      keysToRemove.forEach((k) => localStorage.removeItem(k));
-    } catch (e) {}
-  }, []);
-
-  // When projectTitle prop changes, load the saved content for that title or start polos
-  useEffect(() => {
-    const saved = localStorage.getItem(storageKey) || "";
-    setContent(saved);
-    setEditText(saved);
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      setContent(saved);
+      setEditText(saved);
+    } else {
+      setContent(data.narrativeMarkdown);
+      setEditText(data.narrativeMarkdown);
+      localStorage.setItem(storageKey, data.narrativeMarkdown);
+      localStorage.setItem(`${storageKey}_title`, currentTitle);
+    }
+    setLastGeneratedForTitle(currentTitle);
     setIsEditing(false);
-  }, [storageKey]);
+  }, [currentTitle, storageKey, data.narrativeMarkdown]);
 
   // Handler to generate fresh, 100% title-tailored content
   const handleGenerateContent = async (targetTitle: string = currentTitle) => {
@@ -96,13 +92,12 @@ export function TamSamSomDeepDive({ projectTitle, activeDivision }: TamSamSomDee
 
       let generatedMarkdown = "";
       if (res.ok) {
-        const data = await res.json();
-        if (data && data.content && typeof data.content === "string" && data.content.trim().length > 50) {
-          generatedMarkdown = data.content;
+        const resData = await res.json();
+        if (resData && resData.content && typeof resData.content === "string" && resData.content.trim().length > 50) {
+          generatedMarkdown = resData.content;
         }
       }
 
-      // If server returned fallback or couldn't reach API, use precision title generator
       if (!generatedMarkdown) {
         const localResult = generateTamSamSomForTitle(targetTitle, currentDiv);
         generatedMarkdown = localResult.narrativeMarkdown;
@@ -126,7 +121,7 @@ export function TamSamSomDeepDive({ projectTitle, activeDivision }: TamSamSomDee
     }
   };
 
-  // Handler to completely wipe content and make it POLOS (blank)
+  // Handler to wipe content and make it blank/polos
   const handleClearAll = () => {
     setContent("");
     setEditText("");
@@ -137,7 +132,7 @@ export function TamSamSomDeepDive({ projectTitle, activeDivision }: TamSamSomDee
 
   // Handler to start editing manually
   const handleStartEdit = () => {
-    setEditText(content);
+    setEditText(content || data.narrativeMarkdown);
     setIsEditing(true);
   };
 
@@ -150,103 +145,10 @@ export function TamSamSomDeepDive({ projectTitle, activeDivision }: TamSamSomDee
 
   // Copy narrative to clipboard
   const handleCopy = () => {
-    if (!content) return;
-    navigator.clipboard.writeText(content);
+    const textToCopy = content || data.narrativeMarkdown;
+    navigator.clipboard.writeText(textToCopy);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  // Markdown renderer for clean unified narrative
-  const renderSeamlessNarrative = (rawText: string) => {
-    if (!rawText || !rawText.trim()) return null;
-    const lines = rawText.split("\n");
-    const renderedNodes: React.ReactNode[] = [];
-
-    lines.forEach((line, index) => {
-      const trimmed = line.trim();
-
-      if (!trimmed) {
-        renderedNodes.push(<div key={`empty-${index}`} className="h-3" />);
-        return;
-      }
-
-      // Heading 3
-      if (trimmed.startsWith("### ")) {
-        const headingText = trimmed.replace(/^###\s+/, "");
-        renderedNodes.push(
-          <div key={`h3-${index}`} className="mt-6 mb-3 pt-3 border-t border-slate-800 first:border-t-0 first:pt-0">
-            <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-cyan-400 shrink-0" />
-              <h4 className="text-sm md:text-base font-black text-white uppercase tracking-tight">
-                {headingText}
-              </h4>
-            </div>
-          </div>
-        );
-        return;
-      }
-
-      // Heading 2 or 1
-      if (trimmed.startsWith("## ") || trimmed.startsWith("# ")) {
-        const headingText = trimmed.replace(/^#+\s+/, "");
-        renderedNodes.push(
-          <div key={`h2-${index}`} className="mt-7 mb-3.5 border-b border-cyan-500/20 pb-2">
-            <h3 className="text-base md:text-lg font-black text-cyan-300 uppercase tracking-tight flex items-center gap-2">
-              <Layers className="h-4 w-4 text-cyan-400" />
-              {headingText}
-            </h3>
-          </div>
-        );
-        return;
-      }
-
-      // Bullet points
-      if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
-        const bulletContent = trimmed.replace(/^[\*\-]\s+/, "");
-        const formatted = bulletContent.split(/(\*\*.*?\*\*)/g).map((part, pIdx) => {
-          if (part.startsWith("**") && part.endsWith("**")) {
-            return (
-              <strong key={pIdx} className="text-white font-extrabold">
-                {part.slice(2, -2)}
-              </strong>
-            );
-          }
-          return part;
-        });
-
-        renderedNodes.push(
-          <div key={`bullet-${index}`} className="flex items-start gap-2.5 ml-1 my-1.5 text-slate-300 text-xs md:text-[13px] leading-relaxed">
-            <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-cyan-400 shrink-0" />
-            <div className="flex-1">{formatted}</div>
-          </div>
-        );
-        return;
-      }
-
-      // Regular paragraph
-      const parts = trimmed.split(/(\*\*.*?\*\*)/g);
-      const formattedParts = parts.map((part, pIdx) => {
-        if (part.startsWith("**") && part.endsWith("**")) {
-          return (
-            <strong key={pIdx} className="text-white font-extrabold tracking-wide">
-              {part.slice(2, -2)}
-            </strong>
-          );
-        }
-        return part;
-      });
-
-      renderedNodes.push(
-        <p
-          key={`p-${index}`}
-          className="text-xs md:text-[13px] text-slate-300 leading-relaxed font-normal text-justify my-2.5"
-        >
-          {formattedParts}
-        </p>
-      );
-    });
-
-    return renderedNodes;
   };
 
   const isBlank = !content || content.trim().length === 0;
@@ -258,41 +160,72 @@ export function TamSamSomDeepDive({ projectTitle, activeDivision }: TamSamSomDee
   return (
     <div
       id="tamsamsom-deepdive-root"
-      className="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-slate-100 shadow-2xl mt-2 font-sans relative overflow-hidden"
+      className="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-7 text-slate-100 shadow-2xl mt-2 font-sans relative overflow-hidden"
     >
-      <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-0 right-0 w-96 h-96 bg-teal-500/5 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Header Bar */}
-      <div className="border-b border-slate-800 pb-5 mb-5">
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+      {/* Top Header & Actions Bar */}
+      <div className="border-b border-slate-800 pb-5 mb-6">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="px-2.5 py-0.5 text-[9.5px] font-black tracking-wider uppercase rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-mono flex items-center gap-1.5">
-              <Layers className="h-3 w-3 text-cyan-400" />
-              PILAR 12 • TAM, SAM, SOM (TOTAL & SERVICEABLE MARKET SIZING)
+            <span className="px-3 py-1 text-[10px] font-black tracking-wider uppercase rounded-lg bg-teal-500/10 text-teal-400 border border-teal-500/30 font-mono flex items-center gap-1.5 shadow-sm">
+              <Layers className="h-3.5 w-3.5 text-teal-400" />
+              PILAR 04 / 12 • TAM, SAM, SOM MARKET SIZING
             </span>
-            <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
-            <span className="px-2.5 py-0.5 text-[9.5px] font-bold uppercase rounded-md bg-slate-800 text-slate-300 border border-slate-700/80 font-mono">
-              JUDUL PROYEK: {currentTitle}
+            <span className="h-1.5 w-1.5 rounded-full bg-teal-400" />
+            <span className="px-2.5 py-1 text-[10px] font-bold uppercase rounded-lg bg-slate-800 text-slate-300 border border-slate-700 font-mono">
+              PROYEK: {currentTitle}
             </span>
-            {isBlank && (
-              <span className="px-2 py-0.5 text-[9px] font-bold uppercase rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/20 font-mono">
-                STATUS: POLOS
-              </span>
-            )}
           </div>
 
-          {/* Action buttons */}
+          {/* Action buttons toolbar */}
           <div className="flex items-center gap-2 flex-wrap">
+            {/* Currency switcher */}
+            <div className="flex items-center bg-slate-800/90 border border-slate-700/80 rounded-xl p-0.5 text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => setCurrencyMode("idr")}
+                className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
+                  currencyMode === "idr"
+                    ? "bg-teal-600 text-white shadow-sm"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                IDR (Rp)
+              </button>
+              <button
+                type="button"
+                onClick={() => setCurrencyMode("usd")}
+                className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
+                  currencyMode === "usd"
+                    ? "bg-teal-600 text-white shadow-sm"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                USD ($)
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleCopy}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition border border-slate-700 shadow-sm cursor-pointer active:scale-95"
+              title="Salin analisis lengkap ke clipboard"
+            >
+              {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+              <span>{copied ? "Tersalin!" : "Salin"}</span>
+            </button>
+
             <button
               type="button"
               onClick={() => {
                 try {
                   const saved = localStorage.getItem("prama_dashboard_sections");
                   const map = saved ? JSON.parse(saved) : {};
-                  map[12] = content;
+                  map[12] = content || data.narrativeMarkdown;
                   exportAllSectionsToWord(currentTitle, map);
-                } catch(e) {
-                  exportAllSectionsToWord(currentTitle, { 12: content });
+                } catch (e) {
+                  exportAllSectionsToWord(currentTitle, { 12: content || data.narrativeMarkdown });
                 }
               }}
               className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition shadow-md shadow-emerald-600/20 cursor-pointer active:scale-95"
@@ -306,59 +239,68 @@ export function TamSamSomDeepDive({ projectTitle, activeDivision }: TamSamSomDee
               type="button"
               onClick={() => handleGenerateContent(currentTitle)}
               disabled={isLoading}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold transition shadow-md shadow-cyan-600/20 cursor-pointer active:scale-95 disabled:opacity-50"
-              title="Buat isian baru yang sesuai dengan judul proyek"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 text-white rounded-xl text-xs font-bold transition shadow-md shadow-teal-600/20 cursor-pointer active:scale-95 disabled:opacity-50"
+              title="Sinkronisasi ulang perhitungan sesuai judul proyek"
             >
-              <Sparkles className={`h-3.5 w-3.5 ${isLoading ? "animate-spin text-cyan-200" : ""}`} />
-              <span>{isLoading ? "Menghitung Potensi Pasar..." : isBlank ? "Buat Isian Sesuai Judul" : "Buat Ulang Sesuai Judul"}</span>
+              <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin text-teal-200" : ""}`} />
+              <span>{isLoading ? "Menghitung..." : "Sinkronkan Sesuai Judul"}</span>
             </button>
           </div>
         </div>
 
-        <h3 className="text-lg md:text-xl font-black uppercase tracking-tight text-white flex items-center gap-2">
-          <Layers className="h-5 w-5 text-cyan-400" />
-          TAM, SAM, SOM & Fleet Monetization Breakdown
-        </h3>
-        <p className="text-xs text-slate-400 mt-1 font-medium leading-relaxed">
-          Kajian potensi pasar makro (Total Addressable Market), jangkauan koridor logistik terjangkau (Serviceable Addressable Market), serta target penetrasi riil armada (Serviceable Obtainable Market) khusus untuk proyek{" "}
-          <span className="text-cyan-300 font-extrabold">"{currentTitle}"</span>.
-        </p>
+        {/* Title & Section Header matching the Executive Document Presentation */}
+        <div className="pt-2">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl md:text-3xl font-black text-teal-400 tracking-tight font-display">
+              04
+            </span>
+            <h2 className="text-xl md:text-2xl font-black uppercase tracking-tight text-white font-display">
+              TAM / SAM / SOM
+            </h2>
+          </div>
+          <p className="text-xs md:text-sm text-slate-300 font-medium mt-1 leading-relaxed">
+            Ukuran pasar layanan{" "}
+            <span className="text-teal-300 font-extrabold">{data.sectorName}</span> di Indonesia ({data.timelineRange})
+          </p>
+          {/* Cyan/Teal Horizontal Accent Rule */}
+          <div className="h-1 w-full bg-gradient-to-r from-teal-400 via-cyan-400 to-teal-500 rounded-full mt-3 opacity-90 shadow-sm" />
+        </div>
       </div>
 
-      {/* If current title is different from what was previously generated, show quick sync badge */}
+      {/* Sync notification badge if title was recently altered */}
       {isTitleDifferent && (
-        <div className="mb-4 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="mb-5 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-xs text-amber-200">
             <span className="h-2 w-2 rounded-full bg-amber-400 shrink-0 animate-ping" />
             <span>
-              Judul proyek telah diperbarui menjadi: <strong className="text-white">"{currentTitle}"</strong>
+              Judul proyek aktif: <strong className="text-white">"{currentTitle}"</strong>
             </span>
           </div>
           <button
             type="button"
             onClick={() => handleGenerateContent(currentTitle)}
-            className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-bold rounded-lg transition cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-lg transition cursor-pointer"
           >
-            <Sparkles className="h-3 w-3" />
-            <span>Buat Isian Baru untuk Judul Ini</span>
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>Hitung Ulang Sesuai Judul Baru</span>
           </button>
         </div>
       )}
 
-      {/* Main Canvas Area */}
-      <div className="bg-slate-950/70 border border-slate-800/90 rounded-2xl p-5 md:p-6 shadow-inner relative min-h-[220px]">
+      {/* Main Executive Presentation Container */}
+      <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-5 sm:p-7 shadow-inner relative">
         {isLoading ? (
-          <div className="py-14 px-4 text-center flex flex-col items-center justify-center gap-3">
+          <div className="py-16 px-4 text-center flex flex-col items-center justify-center gap-3">
             <div className="relative">
-              <div className="h-10 w-10 rounded-full border-2 border-cyan-500/20 border-t-cyan-400 animate-spin" />
-              <Sparkles className="h-4 w-4 text-cyan-400 absolute inset-0 m-auto animate-pulse" />
+              <div className="h-12 w-12 rounded-full border-2 border-teal-500/20 border-t-teal-400 animate-spin" />
+              <Sparkles className="h-5 w-5 text-teal-400 absolute inset-0 m-auto animate-pulse" />
             </div>
             <p className="text-sm font-bold text-white tracking-wide">
-              Menghitung Estimasi Pasar TAM, SAM, SOM Sesuai Judul...
+              Menghitung Estimasi Sizing Pasar TAM, SAM, SOM...
             </p>
             <p className="text-xs text-slate-400 max-w-md text-center leading-relaxed">
-              Menganalisis volume komoditas regional, tarif jasa angkut riil, batas koridor geografis, serta alokasi kapasitas armada untuk{" "}
-              <span className="text-cyan-300 font-bold">"{currentTitle}"</span>.
+              Memetakan volume komoditas regional, benchmark tarif indikatif, filter jangkauan koridor, dan alokasi kapasitas untuk{" "}
+              <span className="text-teal-300 font-bold">"{currentTitle}"</span>.
             </p>
           </div>
         ) : isEditing ? (
@@ -366,8 +308,8 @@ export function TamSamSomDeepDive({ projectTitle, activeDivision }: TamSamSomDee
           <div className="space-y-4">
             <div className="flex items-center justify-between pb-2 border-b border-slate-800">
               <div className="flex items-center gap-2 text-xs font-bold text-slate-200">
-                <Edit3 className="h-4 w-4 text-cyan-400" />
-                <span>Mode Edit Teks Mandiri (Pilar 12: TAM, SAM, SOM)</span>
+                <Edit3 className="h-4 w-4 text-teal-400" />
+                <span>Mode Edit Teks Mandiri (Pilar 04 / 12: TAM, SAM, SOM)</span>
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -381,7 +323,7 @@ export function TamSamSomDeepDive({ projectTitle, activeDivision }: TamSamSomDee
                 <button
                   type="button"
                   onClick={handleSaveEdit}
-                  className="flex items-center gap-1 px-3 py-1 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold rounded-lg transition"
+                  className="flex items-center gap-1 px-3 py-1 bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold rounded-lg transition"
                 >
                   <Save className="h-3.5 w-3.5" />
                   <span>Simpan Perubahan</span>
@@ -392,92 +334,210 @@ export function TamSamSomDeepDive({ projectTitle, activeDivision }: TamSamSomDee
             <textarea
               value={editText}
               onChange={(e) => setEditText(e.target.value)}
-              placeholder="Tuliskan analisis potensi pasar TAM, SAM, SOM di sini (mendukung format Markdown: ### Judul, **Tebal**, - Poin)..."
+              placeholder="Tuliskan analisis potensi pasar TAM, SAM, SOM di sini..."
               rows={14}
-              className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-xs md:text-sm text-slate-100 font-mono focus:outline-hidden focus:border-cyan-500 transition leading-relaxed resize-y"
+              className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-xs md:text-sm text-slate-100 font-mono focus:outline-hidden focus:border-teal-500 transition leading-relaxed resize-y"
             />
           </div>
-        ) : isBlank ? (
-          /* Clean Blank State (POLOS) */
-          <div className="py-12 px-4 text-center flex flex-col items-center justify-center gap-4">
-            <div className="h-14 w-14 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 shadow-inner">
-              <FileText className="h-7 w-7 text-slate-400" />
+        ) : (
+          /* Populated Executive Slide / Dashboard View matching uploaded image */
+          <div className="space-y-8">
+            
+            {/* Top Infographic Area: Concentric Circles (Left) + Breakdown Annotations (Right) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 sm:p-6 shadow-sm">
+              
+              {/* Left Column: Concentric Circles Diagram */}
+              <div className="lg:col-span-5 flex flex-col items-center justify-center">
+                <div className="relative w-72 h-72 sm:w-80 sm:h-80 flex items-center justify-center select-none">
+                  
+                  {/* Outer Circle: TAM */}
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-slate-500/80 via-slate-600/80 to-slate-700/90 border-2 border-slate-400/40 shadow-xl flex flex-col items-center pt-5 sm:pt-6 transition-transform hover:scale-[1.01]">
+                    <span className="text-xs sm:text-sm font-black tracking-widest text-white/90 uppercase font-mono">
+                      TAM
+                    </span>
+                    <span className="text-sm sm:text-base font-extrabold text-white tracking-tight drop-shadow-sm">
+                      {currencyMode === "usd" ? data.tamValueShortUsd : data.tamValueShortIdr}
+                    </span>
+                  </div>
+
+                  {/* Middle Circle: SAM (Centered inside bottom-half) */}
+                  <div className="absolute bottom-3 w-52 h-52 sm:w-56 sm:h-56 rounded-full bg-gradient-to-br from-teal-500 via-teal-600 to-teal-700 border-2 border-teal-300/60 shadow-2xl flex flex-col items-center pt-4 sm:pt-5 transition-transform hover:scale-[1.02]">
+                    <span className="text-xs sm:text-sm font-black tracking-widest text-white uppercase font-mono">
+                      SAM
+                    </span>
+                    <span className="text-xs sm:text-sm font-extrabold text-white tracking-tight drop-shadow-sm">
+                      {currencyMode === "usd" ? data.samValueShortUsd : data.samValueShortIdr}
+                    </span>
+                  </div>
+
+                  {/* Inner Bottom Circle: SOM */}
+                  <div className="absolute bottom-4 w-32 h-32 sm:w-36 sm:h-36 rounded-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border-2 border-slate-600 shadow-2xl flex flex-col items-center justify-center p-2 text-center transition-transform hover:scale-[1.03]">
+                    <span className="text-xs font-black tracking-widest text-teal-300 uppercase font-mono">
+                      SOM
+                    </span>
+                    <span className="text-[11px] sm:text-xs font-extrabold text-white tracking-tight leading-tight">
+                      {currencyMode === "usd" ? data.somValueShortUsd : data.somValueShortIdr}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-4 text-center">
+                  <span className="text-[10px] text-slate-400 font-mono tracking-wide">
+                    {currencyMode === "usd" ? "Nilai dalam Valuta USD (Benchmark Internasional)" : "Nilai dalam Valuta Rupiah (IDR)"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Right Column: Structured Analytical Callouts */}
+              <div className="lg:col-span-7 flex flex-col justify-center space-y-5">
+                
+                {/* TAM Callout */}
+                <div className="space-y-1 pl-3 border-l-3 border-slate-400">
+                  <h4 className="text-xs sm:text-sm font-black text-white tracking-tight">
+                    {data.tamCallout.title}
+                  </h4>
+                  <p className="text-xs text-slate-300 font-mono leading-relaxed">
+                    {data.tamCallout.formula}
+                  </p>
+                  <p className="text-xs font-bold text-slate-300">
+                    {data.tamCallout.subText}
+                  </p>
+                </div>
+
+                {/* SAM Callout */}
+                <div className="space-y-1 pl-3 border-l-3 border-teal-400">
+                  <h4 className="text-xs sm:text-sm font-black text-teal-300 tracking-tight">
+                    {data.samCallout.title}
+                  </h4>
+                  <p className="text-xs text-slate-300 font-mono leading-relaxed">
+                    {data.samCallout.formula}
+                  </p>
+                  <p className="text-xs font-bold text-teal-200">
+                    {data.samCallout.subText}
+                  </p>
+                </div>
+
+                {/* SOM Callout */}
+                <div className="space-y-1 pl-3 border-l-3 border-cyan-400">
+                  <h4 className="text-xs sm:text-sm font-black text-cyan-300 tracking-tight">
+                    {data.somCallout.title}
+                  </h4>
+                  <p className="text-xs text-slate-300 font-mono leading-relaxed">
+                    {data.somCallout.formula}
+                  </p>
+                  <p className="text-xs font-bold text-cyan-200">
+                    {data.somCallout.subText}
+                  </p>
+                </div>
+
+                {/* Footnote Note */}
+                <div className="pt-2">
+                  <p className="text-[11px] text-slate-400 italic">
+                    Estimasi analitik; tarif per unit/ton/MW adalah benchmark indikatif (analisis parameter operasional).
+                  </p>
+                </div>
+              </div>
             </div>
 
-            <div className="max-w-md">
-              <h4 className="text-sm font-bold text-white mb-1">
-                Kanvas Potensi Pasar (TAM, SAM, SOM) Masih Polos
-              </h4>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Belum ada perhitungan potensi pasar untuk proyek <span className="text-cyan-300 font-bold">"{currentTitle}"</span>. Klik tombol di bawah untuk menghasilkan estimasi nilai pasar makro (TAM), pasar koridor terjangkau (SAM), dan target penetrasi riil armada (SOM) yang 100% se-arah dengan judul ini, atau tulis sendiri secara manual.
+            {/* Figure Caption matching document standard */}
+            <div className="text-xs text-slate-400 font-medium italic -mt-4 pl-1">
+              {data.figureCaption}
+            </div>
+
+            {/* Executive Structured Table (Dark Navy Header & High Contrast Grid) */}
+            <div className="overflow-hidden rounded-xl border border-slate-700 shadow-md">
+              <table className="w-full text-left border-collapse font-sans text-xs md:text-sm">
+                <thead>
+                  <tr className="bg-[#0b1d33] text-white border-b border-slate-700">
+                    <th className="py-3 px-4 font-black uppercase tracking-wider text-xs w-28 md:w-36">
+                      Lapisan
+                    </th>
+                    <th className="py-3 px-4 font-black uppercase tracking-wider text-xs">
+                      Definisi & asumsi
+                    </th>
+                    <th className="py-3 px-4 font-black uppercase tracking-wider text-xs text-right w-44 md:w-60">
+                      Nilai ({currencyMode === "usd" ? "US$" : "Rp"})
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800 bg-slate-900/90 text-slate-200">
+                  {data.tableData.map((row, idx) => {
+                    const isAdjacent = row.isAdjacent;
+                    const valText = currencyMode === "usd" ? row.valueUsd : row.valueIdr;
+                    
+                    return (
+                      <tr
+                        key={idx}
+                        className={`transition-colors hover:bg-slate-800/60 ${
+                          isAdjacent ? "bg-slate-900/40 italic" : idx % 2 === 0 ? "bg-slate-900/90" : "bg-slate-950/60"
+                        }`}
+                      >
+                        <td className="py-3.5 px-4 font-black text-white whitespace-nowrap align-top">
+                          <span
+                            className={`inline-block px-2 py-0.5 rounded text-[11px] font-mono uppercase ${
+                              row.layer === "TAM"
+                                ? "bg-slate-700 text-slate-200"
+                                : row.layer === "SAM"
+                                ? "bg-teal-900/80 text-teal-300 border border-teal-700/50"
+                                : row.layer === "SOM"
+                                ? "bg-cyan-950 text-cyan-300 border border-cyan-800/60 font-bold"
+                                : "bg-slate-800 text-slate-300"
+                            }`}
+                          >
+                            {row.layer}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 text-slate-300 leading-relaxed align-top">
+                          {row.definition}
+                        </td>
+                        <td className="py-3.5 px-4 font-mono font-bold text-right text-teal-300 whitespace-normal align-top">
+                          {valText}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* In-Depth Analytical Sector Narrative Paragraph */}
+            <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-5 text-slate-300 text-xs md:text-sm leading-relaxed text-justify space-y-3">
+              <div className="flex items-center gap-2 text-teal-300 font-bold text-xs uppercase tracking-wider font-mono">
+                <Info className="h-4 w-4 text-teal-400 shrink-0" />
+                <span>Kajian Narasi Analitis Sektor Terpadu</span>
+              </div>
+              <p>
+                {data.deepDiveNarrative}
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => handleGenerateContent(currentTitle)}
-                className="flex items-center gap-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-cyan-600/20 cursor-pointer active:scale-95"
-              >
-                <Sparkles className="h-4 w-4" />
-                <span>Buat Isian Baru Sesuai Judul</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleStartEdit}
-                className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-xl text-xs font-bold transition cursor-pointer active:scale-95"
-              >
-                <Edit3 className="h-3.5 w-3.5 text-slate-400" />
-                <span>Tulis Manual</span>
-              </button>
-            </div>
-          </div>
-        ) : (
-          /* Populated Unified Content */
-          <div className="space-y-2">
-            {/* Top Insight Bar */}
-            <div className="mb-4 bg-cyan-500/10 border border-cyan-500/20 rounded-xl p-3 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <ShieldCheck className="h-4 w-4 text-cyan-400 shrink-0" />
-                <span className="text-xs font-bold text-cyan-200 truncate">
-                  Fokus Analisis Potensi Pasar: <span className="text-white font-extrabold">{currentTitle}</span>
-                </span>
+            {/* Footer Status & Edit Actions */}
+            <div className="pt-2 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400">
+              <div className="flex items-center gap-1.5 text-teal-400 font-bold">
+                <CheckCircle2 className="h-4 w-4" />
+                <span>Analisis TAM / SAM / SOM aktif terhubung real-time dengan judul proyek</span>
               </div>
-              <span className="text-[10px] font-mono uppercase bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded shrink-0 font-bold">
-                100% Se-arah Judul
-              </span>
-            </div>
-
-            {/* Seamless Narrative Content */}
-            <div className="prose prose-invert max-w-none">
-              {renderSeamlessNarrative(content)}
-            </div>
-
-            {/* Footer Bar */}
-            <div className="mt-6 pt-4 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
-              <div className="flex items-center gap-1.5 text-cyan-400 font-bold">
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                <span>Analisis TAM, SAM, SOM aktif tersinkronisasi dengan judul proyek</span>
-              </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <button
                   type="button"
                   onClick={handleStartEdit}
-                  className="hover:text-cyan-400 transition cursor-pointer font-medium"
+                  className="hover:text-teal-300 transition cursor-pointer font-medium flex items-center gap-1"
                 >
-                  Edit Teks
+                  <Edit3 className="h-3.5 w-3.5" />
+                  <span>Edit Teks Mandiri</span>
                 </button>
                 <span>•</span>
                 <button
                   type="button"
                   onClick={handleClearAll}
-                  className="hover:text-rose-400 transition cursor-pointer font-medium"
+                  className="hover:text-rose-400 transition cursor-pointer font-medium flex items-center gap-1"
                 >
-                  Kosongkan
+                  <Trash2 className="h-3.5 w-3.5" />
+                  <span>Kosongkan</span>
                 </button>
               </div>
             </div>
+
           </div>
         )}
       </div>

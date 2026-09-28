@@ -66,6 +66,7 @@ import { TamSamSomDeepDive } from "./components/TamSamSomDeepDive";
 import { ServiceDesignDeepDive } from "./components/ServiceDesignDeepDive";
 import { PotentialConsumersDeepDive } from "./components/PotentialConsumersDeepDive";
 import { PillarVisualSummaryCard } from "./components/PillarVisualSummaryCard";
+import VisualPromptGenius from "./components/VisualPromptGenius";
 const pramaLogo = "https://lh3.googleusercontent.com/d/1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X";
 
 export interface User {
@@ -1154,7 +1155,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<"chat" | "files">("chat");
 
   // Tab selector inside main dashboard
-  const [dashboardView, setDashboardView] = useState<"divisions" | "saved_docs" | "approval_requests" | "project_dashboard" | "chat_intelligence" | "robot_voice">("divisions");
+  const [dashboardView, setDashboardView] = useState<"divisions" | "saved_docs" | "approval_requests" | "project_dashboard" | "chat_intelligence" | "robot_voice" | "visual_prompt_genius">("divisions");
 
   // --- ROBOT VOICE & MEDIA AUTOMATION STATES ---
   const [activeRobotSubtab, setActiveRobotSubtab] = useState<"tts" | "to_text" | "to_video">("tts");
@@ -4800,7 +4801,7 @@ ${lastMsgText}`;
         />
 
         {/* Division selector Body */}
-        <div className={`${(dashboardView === "project_dashboard" || dashboardView === "chat_intelligence" || dashboardView === "divisions") ? "max-w-[98%] 2xl:max-w-[1650px]" : "max-w-7xl"} mx-auto px-4 py-11 text-center flex-grow flex flex-col justify-center transition-all duration-300`}>
+        <div className={`${(dashboardView === "project_dashboard" || dashboardView === "chat_intelligence" || dashboardView === "divisions" || dashboardView === "visual_prompt_genius") ? "max-w-[98%] 2xl:max-w-[1650px]" : "max-w-7xl"} mx-auto px-4 py-11 text-center flex-grow flex flex-col justify-center transition-all duration-300`}>
           
           {/* Menu switcher moved directly inside division cards */}
           <div className="mb-6"></div>
@@ -5739,15 +5740,12 @@ ${lastMsgText}`;
 
                                   {/* INTERACTIVE FINANCIAL SIMULATOR (PILAR 3 ONLY) */}
                                   {activeDashboardSection === 3 && (
-                                    <div className="mb-8 space-y-6">
+                                    <div className="mb-8">
                                       <InteractiveFinancialSimulator 
                                         projectTitle={dashboardProjectTitle} 
                                         division={activeDivision || "Logistics Swarnadwipa"}
                                         initialCapex={chatBIState.initialCapex || 550}
                                         salesIncrease={chatBIState.salesIncrease || 1200}
-                                      />
-                                      <FinancialFocusCards 
-                                        projectTitle={dashboardProjectTitle}
                                       />
                                     </div>
                                   )}
@@ -8491,6 +8489,19 @@ ${lastMsgText}`;
                   )}
                 </div>
               </div>
+            </motion.div>
+          ) : dashboardView === "visual_prompt_genius" ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.35, rotateX: 12, y: 80, filter: "blur(15px)" }}
+              animate={{ opacity: 1, scale: 1, rotateX: 0, y: 0, filter: "blur(0px)" }}
+              transition={{ type: "spring", stiffness: 70, damping: 13, mass: 1.1 }}
+              style={{ perspective: "1200px", transformStyle: "preserve-3d" }}
+              className="max-w-full 2xl:max-w-[1650px] mx-auto w-full transition-all duration-300"
+            >
+              <VisualPromptGenius
+                onBackToHub={() => setDashboardView("divisions")}
+                clientApiKey={clientApiKey}
+              />
             </motion.div>
           ) : (
             /* Division Bento-like Selection Grid */

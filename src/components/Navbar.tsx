@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { auth } from "../firebase";
 import { signOut, User } from "firebase/auth";
-import { Database, LogOut, Briefcase, ChevronRight, Bell, HardDrive, Users, CheckCircle, Info, LayoutDashboard, Download, Cpu, Settings } from "lucide-react";
+import { Database, LogOut, Briefcase, ChevronRight, Bell, HardDrive, Users, CheckCircle, Info, LayoutDashboard, Download, Cpu, Settings, Sparkles, Image as ImageIcon } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 const pramaLogo = "https://lh3.googleusercontent.com/d/1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X";
 
@@ -14,7 +14,7 @@ interface NavbarProps {
   onLogout?: () => void;
   pendingRequestsCount?: number;
   filesCount?: number;
-  onNavigateToView?: (view: "divisions" | "saved_docs" | "approval_requests" | "project_dashboard") => void;
+  onNavigateToView?: (view: "divisions" | "saved_docs" | "approval_requests" | "project_dashboard" | "visual_prompt_genius") => void;
   onDownloadFullHTML?: () => void;
   onOpenAISettings?: () => void;
 }

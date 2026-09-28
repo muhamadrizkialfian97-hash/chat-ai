@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
-import { Download, Table, X, Edit2, Play, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import { Download, Table, X, Edit2, Play, Plus, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import { ExcelData, exportToExcelFile } from "../utils/excelExporter";
+import { getFinancialRecommendations } from "../utils/financialRecommendations";
 
 interface ExcelPreviewModalProps {
   projectTitle: string;
@@ -21,64 +22,95 @@ export function ExcelPreviewModal({
   annualSavings,
   salesIncrease
 }: ExcelPreviewModalProps) {
+  const rec = useMemo(() => getFinancialRecommendations(projectTitle), [projectTitle]);
   const [activeTab, setActiveTab] = useState<"tamsamsom" | "pl">("tamsamsom");
   
-  // Interactive finance variables populated with template default values
-  const [tam, setTam] = useState<number>(500000000000);
-  const [sam, setSam] = useState<number>(75000000000);
-  const [som, setSom] = useState<number>(15000000000);
+  // Interactive finance variables populated with project recommendation values
+  const [tam, setTam] = useState<number>(rec.tam);
+  const [sam, setSam] = useState<number>(rec.sam);
+  const [som, setSom] = useState<number>(rec.som);
 
   // Capex components
-  const [capexTrucks, setCapexTrucks] = useState<number>(1336500000);
-  const [capexIT, setCapexIT] = useState<number>(148500000);
-  const [capexGudang, setCapexGudang] = useState<number>(99000000);
-  const [capexIzin, setCapexIzin] = useState<number>(66000000);
+  const [capexTrucks, setCapexTrucks] = useState<number>(rec.capexAssetCount * rec.capexAssetPrice);
+  const [capexIT, setCapexIT] = useState<number>(rec.capexSecondary1Amount);
+  const [capexGudang, setCapexGudang] = useState<number>(rec.capexSecondary2Amount);
+  const [capexIzin, setCapexIzin] = useState<number>(rec.capexSecondary3Amount);
 
   // Year 1-3 Revenue Projections
-  const [revenueY1, setRevenueY1] = useState<number>(1620000000);
-  const [revenueY2, setRevenueY2] = useState<number>(2025000000);
-  const [revenueY3, setRevenueY3] = useState<number>(2430000000);
+  const [revenueY1, setRevenueY1] = useState<number>(rec.revenueY1);
+  const [revenueY2, setRevenueY2] = useState<number>(rec.revenueY2);
+  const [revenueY3, setRevenueY3] = useState<number>(rec.revenueY3);
 
   // Year 1-3 OPEX components
-  const [gajiY1, setGajiY1] = useState<number>(240000000);
-  const [gajiY2, setGajiY2] = useState<number>(264000000);
-  const [gajiY3, setGajiY3] = useState<number>(290400000);
+  const [gajiY1, setGajiY1] = useState<number>(rec.opex2Amount * 12);
+  const [gajiY2, setGajiY2] = useState<number>(Math.round(rec.opex2Amount * 12 * 1.08));
+  const [gajiY3, setGajiY3] = useState<number>(Math.round(rec.opex2Amount * 12 * 1.18));
 
-  const [bbmY1, setBbmY1] = useState<number>(360000000);
-  const [bbmY2, setBbmY2] = useState<number>(432000000);
-  const [bbmY3, setBbmY3] = useState<number>(496800000);
+  const [bbmY1, setBbmY1] = useState<number>(rec.opex1Amount * 12);
+  const [bbmY2, setBbmY2] = useState<number>(Math.round(rec.opex1Amount * 12 * 1.15));
+  const [bbmY3, setBbmY3] = useState<number>(Math.round(rec.opex1Amount * 12 * 1.30));
 
-  const [maintY1, setMaintY1] = useState<number>(40000000);
-  const [maintY2, setMaintY2] = useState<number>(50000000);
-  const [maintY3, setMaintY3] = useState<number>(60000000);
+  const [maintY1, setMaintY1] = useState<number>(rec.opex3Amount * 12);
+  const [maintY2, setMaintY2] = useState<number>(Math.round(rec.opex3Amount * 12 * 1.12));
+  const [maintY3, setMaintY3] = useState<number>(Math.round(rec.opex3Amount * 12 * 1.25));
 
-  const [sewaY1, setSewaY1] = useState<number>(120000000);
-  const [sewaY2, setSewaY2] = useState<number>(125000000);
-  const [sewaY3, setSewaY3] = useState<number>(130000000);
+  const [sewaY1, setSewaY1] = useState<number>(rec.opex4Amount * 12);
+  const [sewaY2, setSewaY2] = useState<number>(Math.round(rec.opex4Amount * 12 * 1.05));
+  const [sewaY3, setSewaY3] = useState<number>(Math.round(rec.opex4Amount * 12 * 1.10));
+
+  const resetToProjectRec = () => {
+    const r = getFinancialRecommendations(projectTitle);
+    setTam(r.tam);
+    setSam(r.sam);
+    setSom(r.som);
+    setCapexTrucks(r.capexAssetCount * r.capexAssetPrice);
+    setCapexIT(r.capexSecondary1Amount);
+    setCapexGudang(r.capexSecondary2Amount);
+    setCapexIzin(r.capexSecondary3Amount);
+    setRevenueY1(r.revenueY1);
+    setRevenueY2(r.revenueY2);
+    setRevenueY3(r.revenueY3);
+    setGajiY1(r.opex2Amount * 12);
+    setGajiY2(Math.round(r.opex2Amount * 12 * 1.08));
+    setGajiY3(Math.round(r.opex2Amount * 12 * 1.18));
+    setBbmY1(r.opex1Amount * 12);
+    setBbmY2(Math.round(r.opex1Amount * 12 * 1.15));
+    setBbmY3(Math.round(r.opex1Amount * 12 * 1.30));
+    setMaintY1(r.opex3Amount * 12);
+    setMaintY2(Math.round(r.opex3Amount * 12 * 1.12));
+    setMaintY3(Math.round(r.opex3Amount * 12 * 1.25));
+    setSewaY1(r.opex4Amount * 12);
+    setSewaY2(Math.round(r.opex4Amount * 12 * 1.05));
+    setSewaY3(Math.round(r.opex4Amount * 12 * 1.10));
+  };
 
   useEffect(() => {
     if (isOpen) {
-      if (initialCapex && initialCapex > 0) {
-        // Convert Juta to Full IDR
-        const capexFull = initialCapex * 1000000;
-        setCapexTrucks(Math.round(capexFull * 0.81));
-        setCapexIT(Math.round(capexFull * 0.09));
-        setCapexGudang(Math.round(capexFull * 0.06));
-        setCapexIzin(Math.round(capexFull * 0.04));
-      }
-      if (salesIncrease && salesIncrease > 0) {
-        const revFull = salesIncrease * 1000000;
-        setRevenueY1(revFull);
-        setRevenueY2(Math.round(revFull * 1.25));
-        setRevenueY3(Math.round(revFull * 1.50));
-
-        const estSom = salesIncrease * 12.5 * 1000000;
-        setSom(estSom);
-        setSam(estSom * 5);
-        setTam(estSom * 33.3);
-      }
+      const r = getFinancialRecommendations(projectTitle);
+      setTam(r.tam);
+      setSam(r.sam);
+      setSom(r.som);
+      setCapexTrucks(r.capexAssetCount * r.capexAssetPrice);
+      setCapexIT(r.capexSecondary1Amount);
+      setCapexGudang(r.capexSecondary2Amount);
+      setCapexIzin(r.capexSecondary3Amount);
+      setRevenueY1(r.revenueY1);
+      setRevenueY2(r.revenueY2);
+      setRevenueY3(r.revenueY3);
+      setGajiY1(r.opex2Amount * 12);
+      setGajiY2(Math.round(r.opex2Amount * 12 * 1.08));
+      setGajiY3(Math.round(r.opex2Amount * 12 * 1.18));
+      setBbmY1(r.opex1Amount * 12);
+      setBbmY2(Math.round(r.opex1Amount * 12 * 1.15));
+      setBbmY3(Math.round(r.opex1Amount * 12 * 1.30));
+      setMaintY1(r.opex3Amount * 12);
+      setMaintY2(Math.round(r.opex3Amount * 12 * 1.12));
+      setMaintY3(Math.round(r.opex3Amount * 12 * 1.25));
+      setSewaY1(r.opex4Amount * 12);
+      setSewaY2(Math.round(r.opex4Amount * 12 * 1.05));
+      setSewaY3(Math.round(r.opex4Amount * 12 * 1.10));
     }
-  }, [isOpen, initialCapex, salesIncrease, annualSavings]);
+  }, [isOpen, projectTitle]);
 
   // Selected cell state for simulation
   const [selectedCell, setSelectedCell] = useState<{ row: number; col: string; val: string; formula: string; id?: string }>({
@@ -177,13 +209,21 @@ export function ExcelPreviewModal({
       capexIT,
       capexGudang,
       capexIzin,
+      capex1Label: rec.assetName,
+      capex2Label: rec.capexSecondary1Name,
+      capex3Label: rec.capexSecondary2Name,
+      capex4Label: rec.capexSecondary3Name,
       revenueY1,
       revenueY2,
       revenueY3,
       gajiY1, gajiY2, gajiY3,
       bbmY1, bbmY2, bbmY3,
       maintY1, maintY2, maintY3,
-      sewaY1, sewaY2, sewaY3
+      sewaY1, sewaY2, sewaY3,
+      opex1Label: rec.opex2Name, // Payroll
+      opex2Label: rec.opex1Name, // COGS / BBM
+      opex3Label: rec.opex3Name, // Utilities / Maintenance
+      opex4Label: rec.opex4Name  // Overhead / Marketing
     };
     exportToExcelFile(data);
   };
@@ -553,11 +593,11 @@ export function ExcelPreviewModal({
                   <td colSpan={2} className="border border-slate-300"></td>
                 </tr>
 
-                {/* Row 6: Armada */}
+                {/* Row 6: Primary Asset */}
                 <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 6, col: "C", val: capexTrucks.toString(), formula: "", id: "capexTrucks" })}>
                   <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">6</td>
                   <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-3 text-left">Armada Truk Logistik (DP / Pembelian Cash)</td>
+                  <td className="border border-slate-300 px-3 text-left font-semibold">{rec.assetName}</td>
                   <td className="border border-slate-300 px-3 text-right bg-white select-text">
                     <input 
                       type="number"
@@ -568,18 +608,18 @@ export function ExcelPreviewModal({
                         setCapexTrucks(val);
                         setSelectedCell(prev => prev.row === 6 && prev.col === "C" ? { ...prev, val: val.toString() } : prev);
                       }}
-                      className="w-full text-right outline-none border-none p-0 focus:ring-1 focus:ring-emerald-500 text-xs font-mono"
+                      className="w-full text-right outline-none border-none p-0 focus:ring-1 focus:ring-emerald-500 text-xs font-mono font-bold"
                     />
                   </td>
-                  <td colSpan={2} className="border border-slate-300 px-3 italic text-slate-500 text-left">Misal: 3 Unit Truk Engkel</td>
+                  <td colSpan={2} className="border border-slate-300 px-3 italic text-slate-500 text-left">{rec.capexAssetCount} {rec.assetUnitLabel} @ Rp {rec.capexAssetPrice.toLocaleString("id-ID")}</td>
                   <td colSpan={2} className="border border-slate-200 bg-[#fafafa]"></td>
                 </tr>
 
-                {/* Row 7: Sistem IT */}
+                {/* Row 7: Secondary 1 */}
                 <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 7, col: "C", val: capexIT.toString(), formula: "", id: "capexIT" })}>
                   <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">7</td>
                   <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-3 text-left">Sistem IT / Transport Management System (TMS)</td>
+                  <td className="border border-slate-300 px-3 text-left font-semibold">{rec.capexSecondary1Name}</td>
                   <td className="border border-slate-300 px-3 text-right bg-white select-text">
                     <input 
                       type="number"
@@ -590,18 +630,18 @@ export function ExcelPreviewModal({
                         setCapexIT(val);
                         setSelectedCell(prev => prev.row === 7 && prev.col === "C" ? { ...prev, val: val.toString() } : prev);
                       }}
-                      className="w-full text-right outline-none border-none p-0 focus:ring-1 focus:ring-emerald-500 text-xs font-mono"
+                      className="w-full text-right outline-none border-none p-0 focus:ring-1 focus:ring-emerald-500 text-xs font-mono font-bold"
                     />
                   </td>
-                  <td colSpan={2} className="border border-slate-300 px-3 italic text-slate-500 text-left">Lisensi &amp; Setup Awal</td>
+                  <td colSpan={2} className="border border-slate-300 px-3 italic text-slate-500 text-left">Infrastruktur &amp; Setup Awal</td>
                   <td colSpan={2} className="border border-slate-200 bg-[#fafafa]"></td>
                 </tr>
 
-                {/* Row 8: Peralatan Gudang */}
+                {/* Row 8: Secondary 2 */}
                 <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 8, col: "C", val: capexGudang.toString(), formula: "", id: "capexGudang" })}>
                   <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">8</td>
                   <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-3 text-left">Peralatan Gudang &amp; Pallet</td>
+                  <td className="border border-slate-300 px-3 text-left font-semibold">{rec.capexSecondary2Name}</td>
                   <td className="border border-slate-300 px-3 text-right bg-white select-text">
                     <input 
                       type="number"
@@ -612,18 +652,18 @@ export function ExcelPreviewModal({
                         setCapexGudang(val);
                         setSelectedCell(prev => prev.row === 8 && prev.col === "C" ? { ...prev, val: val.toString() } : prev);
                       }}
-                      className="w-full text-right outline-none border-none p-0 focus:ring-1 focus:ring-emerald-500 text-xs font-mono"
+                      className="w-full text-right outline-none border-none p-0 focus:ring-1 focus:ring-emerald-500 text-xs font-mono font-bold"
                     />
                   </td>
-                  <td colSpan={2} className="border border-slate-300 px-3 italic text-slate-500 text-left">Rak, Hand Pallet, Safety Tools</td>
+                  <td colSpan={2} className="border border-slate-300 px-3 italic text-slate-500 text-left">Fasilitas Lokasi &amp; Ruang Operasi</td>
                   <td colSpan={2} className="border border-slate-200 bg-[#fafafa]"></td>
                 </tr>
 
-                {/* Row 9: Perizinan */}
+                {/* Row 9: Secondary 3 */}
                 <tr className="hover:bg-slate-50 h-7" onClick={() => setSelectedCell({row: 9, col: "C", val: capexIzin.toString(), formula: "", id: "capexIzin" })}>
                   <td className="bg-[#f3f2f1] text-center border border-slate-300 font-mono text-slate-400">9</td>
                   <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 px-3 text-left">Perizinan &amp; Legalitas Proyek</td>
+                  <td className="border border-slate-300 px-3 text-left font-semibold">{rec.capexSecondary3Name}</td>
                   <td className="border border-slate-300 px-3 text-right bg-white select-text">
                     <input 
                       type="number"
@@ -634,10 +674,10 @@ export function ExcelPreviewModal({
                         setCapexIzin(val);
                         setSelectedCell(prev => prev.row === 9 && prev.col === "C" ? { ...prev, val: val.toString() } : prev);
                       }}
-                      className="w-full text-right outline-none border-none p-0 focus:ring-1 focus:ring-emerald-500 text-xs font-mono"
+                      className="w-full text-right outline-none border-none p-0 focus:ring-1 focus:ring-emerald-500 text-xs font-mono font-bold"
                     />
                   </td>
-                  <td colSpan={2} className="border border-slate-300 px-3 italic text-slate-500 text-left">Sertifikasi &amp; izin jalan armada</td>
+                  <td colSpan={2} className="border border-slate-300 px-3 italic text-slate-500 text-left">Perizinan OSS, Asuransi &amp; Modal Kerja</td>
                   <td colSpan={2} className="border border-slate-200 bg-[#fafafa]"></td>
                 </tr>
 

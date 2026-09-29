@@ -63,8 +63,8 @@ export function generateMarketOpportunityReportData(rawTitle: string, division?:
         status: "Beroperasi",
         statusColor: "#0d9488",
         techDetails: "75 MW; 30 WTG 2,5 MW, tower 80 m, blade 57 m [14]",
-        tariffOrValue: "PPA 30 th, US$0,114/kWh [15]; investasi ±US$150 jt [14]",
-        relevantNotes: "Diakuisisi Barito Renewables US$102,2 jt (±US$1,36 jt/MW) pada 2024 [21]"
+        tariffOrValue: "PPA 30 th, Rp 1.824/kWh (US$0,114); investasi ±Rp 2,4 Triliun",
+        relevantNotes: "Diakuisisi Barito Renewables ±Rp 1,63 Triliun (±Rp 21,7 Miliar/MW) pada 2024 [21]"
       },
       {
         name: "Tolo I Jeneponto (2018)",
@@ -209,7 +209,7 @@ export function generateMarketOpportunityReportData(rawTitle: string, division?:
         status: "Tahap Konstruksi",
         statusColor: "#f59e0b",
         techDetails: "Fasilitas pelleting kayu limbah HTI & rotasi cepat",
-        tariffOrValue: "FOB Tongkang US$115–US$130/Ton",
+        tariffOrValue: "FOB Tongkang Rp 1,84–2,08 Juta/Ton (US$115–130/Ton)",
         relevantNotes: "Target pasar ekspor Jepang/Korea & cofiring PLTU PLN"
       },
       {

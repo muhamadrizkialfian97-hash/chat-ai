@@ -29,20 +29,11 @@ export function InvestmentFeasibilityDeck({ projectTitle }: InvestmentFeasibilit
   const currentTitle = (projectTitle || "").trim() || "Kajian Kelayakan Investasi Strategis";
   const rec: FinancialRecommendation = useMemo(() => getFinancialRecommendations(currentTitle), [currentTitle]);
 
-  // Currency toggle: IDR or USD
-  const [currencyMode, setCurrencyMode] = useState<"idr" | "usd">("idr");
-
-  // Selected slide / page view: 1 (Definisi & Asumsi), 2 (Struktur CAPEX & Arus Kas), 3 (Skenario & Sensitivitas)
+  // Active slide / page view: 1 (Definisi & Asumsi), 2 (Struktur CAPEX & Arus Kas), 3 (Skenario & Sensitivitas)
   const [activeSlide, setActiveSlide] = useState<1 | 2 | 3>(1);
 
-  // Helper format currency
+  // Currency standard: Rupiah (IDR) to eliminate bias and keep analysis directed
   const fmt = (num: number) => {
-    if (currencyMode === "usd") {
-      const usdVal = num / 16000;
-      if (usdVal >= 1000000) return `US$ ${(usdVal / 1000000).toFixed(1)} jt`;
-      if (usdVal >= 1000) return `US$ ${(usdVal / 1000).toFixed(0)} rb`;
-      return `US$ ${Math.round(usdVal)}`;
-    }
     if (num >= 1000000000000) return `Rp ${(num / 1000000000000).toFixed(2)} Triliun`;
     if (num >= 1000000000) return `Rp ${(num / 1000000000).toFixed(1)} Miliar`;
     if (num >= 1000000) return `Rp ${(num / 1000000).toFixed(0)} Juta`;
@@ -123,7 +114,7 @@ export function InvestmentFeasibilityDeck({ projectTitle }: InvestmentFeasibilit
         statusColor: "text-rose-400"
       }
     };
-  }, [totalCapex, annualRev, annualOpex, netProfit, ebitda, baseIrr, paybackYears, currencyMode, rec.annualDepreciation, rec.taxRate]);
+  }, [totalCapex, annualRev, annualOpex, netProfit, ebitda, baseIrr, paybackYears, rec.annualDepreciation, rec.taxRate]);
 
   // CAPEX breakdown percentages
   const capexBreakdown = useMemo(() => {
@@ -167,7 +158,7 @@ export function InvestmentFeasibilityDeck({ projectTitle }: InvestmentFeasibilit
         debtStatus: "Maksimalisasi Dividen Ekuitas"
       }
     ];
-  }, [annualRev, annualOpex, ebitda, netProfit, currencyMode]);
+  }, [annualRev, annualOpex, ebitda, netProfit]);
 
   return (
     <div className="space-y-6 text-left font-sans">
@@ -188,27 +179,11 @@ export function InvestmentFeasibilityDeck({ projectTitle }: InvestmentFeasibilit
           </p>
         </div>
 
-        {/* Currency toggle & Slide switcher */}
+        {/* Currency badge & Slide switcher */}
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center bg-slate-800/90 border border-slate-700/80 rounded-xl p-0.5 text-xs font-bold">
-            <button
-              type="button"
-              onClick={() => setCurrencyMode("idr")}
-              className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
-                currencyMode === "idr" ? "bg-teal-600 text-white shadow-sm" : "text-slate-400 hover:text-white"
-              }`}
-            >
-              IDR (Rp)
-            </button>
-            <button
-              type="button"
-              onClick={() => setCurrencyMode("usd")}
-              className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
-                currencyMode === "usd" ? "bg-teal-600 text-white shadow-sm" : "text-slate-400 hover:text-white"
-              }`}
-            >
-              USD ($)
-            </button>
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-xs font-bold text-emerald-300 shadow-sm">
+            <span className="h-2 w-2 rounded-full bg-emerald-400" />
+            <span>Valuta Standar: Rupiah (IDR / Rp)</span>
           </div>
 
           <div className="flex items-center bg-slate-800/90 border border-slate-700/80 rounded-xl p-0.5 text-xs font-bold">

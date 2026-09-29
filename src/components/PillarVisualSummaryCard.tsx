@@ -38,10 +38,14 @@ import {
   RefreshCw,
   Sliders,
   SlidersHorizontal,
-  Maximize2
+  Maximize2,
+  BookOpen,
+  BookmarkCheck,
+  Library
 } from "lucide-react";
 import { generateAcademicMakalah } from "../utils/academicMakalahGenerator";
 import { generatePillarsForProject, exportAllSectionsToWord, getProjectMetrics } from "../utils/projectDashboardHelper";
+import { getReferencesForPillar, PillarReferenceData } from "../utils/pillarReferenceHelper";
 
 interface PillarVisualSummaryCardProps {
   pillarNumber: number;
@@ -69,13 +73,19 @@ export function PillarVisualSummaryCard({
   onSyncAllPillars
 }: PillarVisualSummaryCardProps) {
   const [copied, setCopied] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<"summary" | "detail" | "document">("summary");
+  const [copiedRefs, setCopiedRefs] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<"summary" | "detail" | "reference" | "document">("summary");
   const [showClearConfirm, setShowClearConfirm] = useState<boolean>(false);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
 
   const currentTitle = (projectTitle || "").trim() || "Kajian Kelayakan Strategis Logistik";
   const currentDiv = activeDivision || "Logistik & Transportasi";
   const lowerTitle = currentTitle.toLowerCase();
+
+  // Authoritative reference data tailored to this pillar and project
+  const refData: PillarReferenceData = useMemo(() => {
+    return getReferencesForPillar(pillarNumber, currentTitle);
+  }, [pillarNumber, currentTitle]);
 
   // Detect industry theme
   const industryTheme = useMemo(() => {
@@ -711,8 +721,8 @@ interface StructuredPillarSection {
             </div>
           </div>
 
-          {/* Tab Switcher: Inti Pokok vs Kotak Rincian vs Dokumen Narasi */}
-          <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 shrink-0 self-start sm:self-auto select-none">
+          {/* Tab Switcher: Inti Pokok vs Kotak Rincian vs Landasan Referensi vs Dokumen Narasi */}
+          <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 shrink-0 self-start sm:self-auto select-none flex-wrap">
             <button
               type="button"
               onClick={() => setActiveTab("summary")}
@@ -738,6 +748,19 @@ interface StructuredPillarSection {
             >
               <LayoutGrid className="h-3.5 w-3.5" />
               <span>Kotak Rincian</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("reference")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                activeTab === "reference"
+                  ? "bg-indigo-600 text-white shadow-xs"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
+              }`}
+              title="Tampilan Landasan Hukum, Regulasi Resmi & Daftar Rujukan Dokumen"
+            >
+              <BookOpen className="h-3.5 w-3.5" />
+              <span>Landasan Referensi & Regulasi</span>
             </button>
             <button
               type="button"
@@ -836,19 +859,191 @@ interface StructuredPillarSection {
               </div>
             )}
 
+            {/* Official Regulatory & Empirical Reference Snapshot Card */}
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 border border-indigo-900/60 text-slate-100 shadow-md space-y-3">
+              <div className="flex items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <div className="h-7 w-7 rounded-lg bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-xs font-black">
+                    <Scale className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-mono font-black uppercase tracking-wider text-indigo-400 block">
+                      RUJUKAN RESMI & STANDAR REGULASI
+                    </span>
+                    <h5 className="text-xs font-black text-white">
+                      Landasan Kepatuhan & Benchmark Empiris Pilar #{pillarNumber}
+                    </h5>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("reference")}
+                  className="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold transition cursor-pointer"
+                >
+                  Buka Referensi Lengkap ➔
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                <div className="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700/60">
+                  <span className="text-[10px] font-mono text-slate-400 font-bold block mb-1">🏛️ REGULASI & PERATURAN RI:</span>
+                  <span className="text-white font-medium block leading-snug">{refData.governingLaws[0]}</span>
+                </div>
+                <div className="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700/60">
+                  <span className="text-[10px] font-mono text-slate-400 font-bold block mb-1">📋 STANDAR TEKNIS INDUSTRI:</span>
+                  <span className="text-teal-300 font-medium block leading-snug">{refData.technicalStandards[0]}</span>
+                </div>
+              </div>
+            </div>
+
             {/* Quick Switch Prompt */}
             <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
               <span className="text-[11px]">
-                Menampilkan ringkasan inti. Ingin membaca penjabaran lengkap?
+                Menampilkan ringkasan inti. Ingin membaca penjabaran lengkap atau referensi?
               </span>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("reference")}
+                  className="text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1 cursor-pointer"
+                >
+                  <span>Landasan Hukum & Rujukan</span>
+                  <span>➔</span>
+                </button>
+                <span className="text-slate-300">•</span>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("detail")}
+                  className="text-cyan-600 hover:text-cyan-800 font-bold flex items-center gap-1 cursor-pointer"
+                >
+                  <span>Buka Rincian Detail</span>
+                  <span>➔</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : activeTab === "reference" ? (
+          /* REFERENCE MODE: COMPREHENSIVE REGULATORY & CITATION DASHBOARD */
+          <div className="space-y-5 text-left font-sans">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-md bg-indigo-100 text-indigo-800 text-[10px] font-mono font-black uppercase">
+                    PILAR #{pillarNumber} • {refData.sectorContext}
+                  </span>
+                  <span className="text-[10px] font-mono text-emerald-600 font-bold flex items-center gap-1">
+                    <CheckCircle2 className="h-3 w-3" /> Sumber Tervalidasi
+                  </span>
+                </div>
+                <h4 className="text-sm sm:text-base font-black text-slate-900 mt-1">
+                  Landasan Hukum, Standar Industri & Indeks Referensi Resmi
+                </h4>
+              </div>
+
               <button
                 type="button"
-                onClick={() => setActiveTab("detail")}
-                className="text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1 cursor-pointer"
+                onClick={() => {
+                  const bibText = `DAFTAR REFERENSI & RUJUKAN RESMI (Pilar ${pillarNumber}: ${pillarTitle})\nProyek: ${currentTitle}\n\n1. Landasan Regulasi RI:\n${refData.governingLaws.map(l => `- ${l}`).join("\n")}\n\n2. Standar Teknis Industri:\n${refData.technicalStandards.map(s => `- ${s}`).join("\n")}\n\n3. Benchmark Empiris:\n${refData.empiricalBenchmarks.map(b => `- ${b}`).join("\n")}\n\n4. Indeks Dokumen:\n${refData.referenceList.map(r => `[${r.code}] ${r.title}. ${r.institution} (${r.yearOrEdition}).`).join("\n")}`;
+                  navigator.clipboard.writeText(bibText);
+                  setCopiedRefs(true);
+                  setTimeout(() => setCopiedRefs(false), 2000);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition cursor-pointer self-start sm:self-auto"
+                title="Salin seluruh daftar referensi ke clipboard"
               >
-                <span>Buka Rincian Detail</span>
-                <span>➔</span>
+                {copiedRefs ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+                <span>{copiedRefs ? "Referensi Tersalin!" : "Salin Daftar Referensi"}</span>
               </button>
+            </div>
+
+            {/* 1. Governing Laws Box */}
+            <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 text-slate-100 space-y-2.5 shadow-sm">
+              <div className="flex items-center gap-2 text-indigo-400 font-black text-xs uppercase tracking-wide">
+                <Scale className="h-4 w-4" />
+                <span>1. Landasan Hukum, Undang-Undang & Peraturan Pemerintah RI</span>
+              </div>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Analisis pilar ini memiliki payung hukum yang mengikat dan wajib dipatuhi dalam perencanaan serta eksekusi operasional:
+              </p>
+              <div className="space-y-1.5 pt-1">
+                {refData.governingLaws.map((law, idx) => (
+                  <div key={idx} className="flex items-start gap-2.5 text-xs bg-slate-800/90 p-2.5 rounded-xl border border-slate-700">
+                    <span className="font-mono text-indigo-400 font-black shrink-0">§{idx + 1}</span>
+                    <span className="font-bold text-white leading-relaxed">{law}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 2. Technical Standards & Empirical Benchmarks */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                <div className="flex items-center gap-2 text-slate-800 font-black text-xs uppercase">
+                  <BookmarkCheck className="h-4 w-4 text-teal-600" />
+                  <span>2. Standar Teknis & Akreditasi Industri</span>
+                </div>
+                <ul className="space-y-1.5 pt-1">
+                  {refData.technicalStandards.map((std, idx) => (
+                    <li key={idx} className="flex items-start gap-2 text-xs text-slate-700 leading-relaxed">
+                      <span className="text-teal-600 font-bold mt-0.5">•</span>
+                      <span>{std}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                <div className="flex items-center gap-2 text-slate-800 font-black text-xs uppercase">
+                  <Activity className="h-4 w-4 text-cyan-600" />
+                  <span>3. Benchmark Kuantitatif Sektoral</span>
+                </div>
+                <ul className="space-y-1.5 pt-1">
+                  {refData.empiricalBenchmarks.map((bm, idx) => (
+                    <li key={idx} className="flex items-start gap-2 text-xs text-slate-700 leading-relaxed">
+                      <span className="text-cyan-600 font-bold mt-0.5">✓</span>
+                      <span>{bm}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            {/* 3. Reference Table List */}
+            <div className="overflow-hidden rounded-xl border border-slate-200 shadow-xs">
+              <div className="bg-[#0b1d33] px-4 py-2.5 text-white flex items-center justify-between">
+                <span className="text-xs font-black uppercase tracking-wider font-display flex items-center gap-2">
+                  <Library className="h-3.5 w-3.5 text-cyan-400" />
+                  Daftar Pustaka & Indeks Dokumen Acuan Resmi
+                </span>
+                <span className="text-[10px] font-mono text-cyan-300 font-bold">
+                  {refData.referenceList.length} Rujukan Pokok
+                </span>
+              </div>
+              <div className="divide-y divide-slate-100 bg-white">
+                {refData.referenceList.map((item, idx) => (
+                  <div key={idx} className="p-3.5 text-xs hover:bg-slate-50 transition-colors space-y-1">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="px-2 py-0.5 rounded bg-slate-100 font-mono font-black text-[10px] text-slate-800 border border-slate-200">
+                        [{item.code}]
+                      </span>
+                      <span className="text-[10px] font-mono font-bold text-indigo-600">
+                        {item.institution} ({item.yearOrEdition})
+                      </span>
+                    </div>
+                    <h5 className="font-bold text-slate-900 leading-snug pt-0.5">
+                      {item.title}
+                    </h5>
+                    <p className="text-[11px] text-slate-600 leading-relaxed m-0">
+                      <strong>Penerapan:</strong> {item.relevance}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Citation Statement Note */}
+            <div className="p-3 rounded-xl bg-indigo-50/70 border border-indigo-100 text-[11.5px] text-indigo-900 leading-relaxed">
+              💡 <strong>Catatan Integritas Data:</strong> {refData.citationNote} Seluruh angka, formulasi CAPEX/OPEX, SLA, dan strategi pada pilar ini dapat dipertanggungjawabkan dalam pengujian studi kelayakan formal (*feasibility study audit*).
             </div>
           </div>
         ) : activeTab === "detail" ? (
@@ -917,6 +1112,26 @@ interface StructuredPillarSection {
                   )}
                 </div>
               ))}
+
+              {/* Integrated Regulatory Reference Box at bottom of detail view */}
+              <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 text-slate-200 text-xs space-y-2">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                  <span className="font-bold text-indigo-400 uppercase text-[11px] flex items-center gap-1.5 font-mono">
+                    <BookOpen className="h-3.5 w-3.5" />
+                    Landasan Regulasi & Rujukan Pokok Pilar #{pillarNumber}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("reference")}
+                    className="text-cyan-400 hover:text-cyan-300 font-bold text-[11px] underline cursor-pointer"
+                  >
+                    Buka Rujukan Lengkap
+                  </button>
+                </div>
+                <p className="text-[11.5px] text-slate-300 leading-relaxed m-0">
+                  <strong>Regulasi Utama:</strong> {refData.governingLaws[0]} • <strong>Standar Teknis:</strong> {refData.technicalStandards[0]}
+                </p>
+              </div>
             </div>
           </div>
         ) : (

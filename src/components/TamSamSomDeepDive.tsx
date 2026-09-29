@@ -36,10 +36,7 @@ export function TamSamSomDeepDive({ projectTitle, activeDivision }: TamSamSomDee
 
   const storageKey = `prama_tamsamsom_content_${currentTitle.toLowerCase().replace(/[^a-z0-9]/g, "_")}`;
 
-  // Currency display mode: "usd" or "idr" (default IDR, easily switchable)
-  const [currencyMode, setCurrencyMode] = useState<"idr" | "usd">("idr");
-
-  // Generate real-time structured data for current title
+  // Generate real-time structured data for current title in Indonesian Rupiah (IDR)
   const data: TamSamSomResult = useMemo(() => {
     return generateTamSamSomForTitle(currentTitle, currentDiv);
   }, [currentTitle, currentDiv]);
@@ -180,30 +177,10 @@ export function TamSamSomDeepDive({ projectTitle, activeDivision }: TamSamSomDee
 
           {/* Action buttons toolbar */}
           <div className="flex items-center gap-2 flex-wrap">
-            {/* Currency switcher */}
-            <div className="flex items-center bg-slate-800/90 border border-slate-700/80 rounded-xl p-0.5 text-xs font-bold">
-              <button
-                type="button"
-                onClick={() => setCurrencyMode("idr")}
-                className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
-                  currencyMode === "idr"
-                    ? "bg-teal-600 text-white shadow-sm"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                IDR (Rp)
-              </button>
-              <button
-                type="button"
-                onClick={() => setCurrencyMode("usd")}
-                className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
-                  currencyMode === "usd"
-                    ? "bg-teal-600 text-white shadow-sm"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                USD ($)
-              </button>
+            {/* Valuta Standar Rupiah badge */}
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-xs font-bold text-emerald-300 shadow-sm">
+              <span className="h-2 w-2 rounded-full bg-emerald-400" />
+              <span>Valuta Standar: Rupiah (IDR / Rp)</span>
             </div>
 
             <button
@@ -356,7 +333,7 @@ export function TamSamSomDeepDive({ projectTitle, activeDivision }: TamSamSomDee
                       TAM
                     </span>
                     <span className="text-sm sm:text-base font-extrabold text-white tracking-tight drop-shadow-sm">
-                      {currencyMode === "usd" ? data.tamValueShortUsd : data.tamValueShortIdr}
+                      {data.tamValueShortIdr}
                     </span>
                   </div>
 
@@ -366,7 +343,7 @@ export function TamSamSomDeepDive({ projectTitle, activeDivision }: TamSamSomDee
                       SAM
                     </span>
                     <span className="text-xs sm:text-sm font-extrabold text-white tracking-tight drop-shadow-sm">
-                      {currencyMode === "usd" ? data.samValueShortUsd : data.samValueShortIdr}
+                      {data.samValueShortIdr}
                     </span>
                   </div>
 
@@ -376,14 +353,14 @@ export function TamSamSomDeepDive({ projectTitle, activeDivision }: TamSamSomDee
                       SOM
                     </span>
                     <span className="text-[11px] sm:text-xs font-extrabold text-white tracking-tight leading-tight">
-                      {currencyMode === "usd" ? data.somValueShortUsd : data.somValueShortIdr}
+                      {data.somValueShortIdr}
                     </span>
                   </div>
                 </div>
 
                 <div className="mt-4 text-center">
-                  <span className="text-[10px] text-slate-400 font-mono tracking-wide">
-                    {currencyMode === "usd" ? "Nilai dalam Valuta USD (Benchmark Internasional)" : "Nilai dalam Valuta Rupiah (IDR)"}
+                  <span className="text-[10px] text-emerald-400 font-mono tracking-wide font-bold">
+                    Valuta Standar: Rupiah (IDR / Rp)
                   </span>
                 </div>
               </div>
@@ -433,7 +410,7 @@ export function TamSamSomDeepDive({ projectTitle, activeDivision }: TamSamSomDee
                 {/* Footnote Note */}
                 <div className="pt-2">
                   <p className="text-[11px] text-slate-400 italic">
-                    Estimasi analitik; tarif per unit/ton/MW adalah benchmark indikatif (analisis parameter operasional).
+                    Estimasi analitik; tarif per unit/ton/MW adalah benchmark indikatif (analisis parameter operasional dalam Rupiah).
                   </p>
                 </div>
               </div>
@@ -456,14 +433,14 @@ export function TamSamSomDeepDive({ projectTitle, activeDivision }: TamSamSomDee
                       Definisi & asumsi
                     </th>
                     <th className="py-3 px-4 font-black uppercase tracking-wider text-xs text-right w-44 md:w-60">
-                      Nilai ({currencyMode === "usd" ? "US$" : "Rp"})
+                      Nilai (Rupiah / Rp)
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800 bg-slate-900/90 text-slate-200">
                   {data.tableData.map((row, idx) => {
                     const isAdjacent = row.isAdjacent;
-                    const valText = currencyMode === "usd" ? row.valueUsd : row.valueIdr;
+                    const valText = row.valueIdr;
                     
                     return (
                       <tr

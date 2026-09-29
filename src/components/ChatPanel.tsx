@@ -844,6 +844,8 @@ function renderFormattedText(text: string) {
   const elements: React.ReactNode[] = [];
   let currentTableRows: string[][] = [];
   let inTable = false;
+  let inCodeBlock = false;
+  let codeBlockLines: string[] = [];
 
   const flushTable = (key: string | number) => {
     if (currentTableRows.length === 0) return null;
@@ -856,28 +858,27 @@ function renderFormattedText(text: string) {
       return null;
     }
 
-    const colCount = cleanRows[0].length;
-    let hasHeader = currentTableRows.length > 1 && currentTableRows[1].some(cell => /^:?-+:?$/.test(cell.trim()));
+    const hasHeader = currentTableRows.length > 1 && currentTableRows[1].some(cell => /^:?-+:?$/.test(cell.trim()));
     
     const tableElement = (
-      <div key={key} className="overflow-x-auto my-4 border border-slate-200 rounded-xl shadow-xs max-w-full">
-        <table className="min-w-full divide-y divide-slate-200 text-left border-collapse">
+      <div key={key} className="overflow-x-auto my-3 border border-slate-700/80 rounded-xl shadow-md max-w-full">
+        <table className="min-w-full divide-y divide-slate-700 text-left border-collapse">
           {hasHeader && (
-            <thead className="bg-[#0f172a] text-white">
+            <thead className="bg-[#0b1d33] text-white">
               <tr>
                 {cleanRows[0].map((cell, cIdx) => (
-                  <th key={cIdx} className="px-3 py-2 text-[10px] sm:text-xs font-bold uppercase tracking-wider font-display border border-slate-700">
+                  <th key={cIdx} className="px-3.5 py-2.5 text-[11px] sm:text-xs font-black uppercase tracking-wider font-display border border-slate-700">
                     {parseInlineMarkdown(cell.trim())}
                   </th>
                 ))}
               </tr>
             </thead>
           )}
-          <tbody className="divide-y divide-slate-200 bg-white">
+          <tbody className="divide-y divide-slate-800 bg-slate-900/90 text-slate-200">
             {cleanRows.slice(hasHeader ? 1 : 0).map((row, rIdx) => (
-              <tr key={rIdx} className={rIdx % 2 === 0 ? "bg-slate-50/50 hover:bg-slate-50" : "bg-white hover:bg-slate-50"}>
+              <tr key={rIdx} className={rIdx % 2 === 0 ? "bg-slate-900/90 hover:bg-slate-800/80" : "bg-slate-950/70 hover:bg-slate-800/80"}>
                 {row.map((cell, cIdx) => (
-                  <td key={cIdx} className="px-3 py-2 text-[11px] sm:text-xs text-slate-700 leading-relaxed border border-slate-100">
+                  <td key={cIdx} className="px-3.5 py-2 text-[11px] sm:text-xs text-slate-200 leading-relaxed border border-slate-800/80">
                     {parseInlineMarkdown(cell.trim())}
                   </td>
                 ))}
@@ -893,9 +894,92 @@ function renderFormattedText(text: string) {
     return tableElement;
   };
 
+  const renderVisualGraphCard = (rawLines: string[], key: string | number) => {
+    return (
+      <div key={key} className="my-3.5 bg-slate-950 border border-slate-800 rounded-2xl p-4 text-slate-100 shadow-xl overflow-hidden relative font-sans">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-teal-500/10 rounded-full blur-2xl pointer-events-none" />
+        <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-800">
+          <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-teal-500/20 text-teal-400 border border-teal-500/30 text-xs font-black">
+            📊
+          </span>
+          <span className="text-xs font-black tracking-wide text-teal-300 uppercase font-display">
+            Grafik Visual & Diagram Proporsi Angka
+          </span>
+        </div>
+        <div className="space-y-2.5">
+          {rawLines.map((line, lIdx) => {
+            const trimmedLine = line.trim();
+            if (!trimmedLine) return null;
+
+            if (trimmedLine.startsWith("[") && trimmedLine.endsWith("]")) {
+              return (
+                <div key={lIdx} className="text-[11px] font-black text-cyan-400 uppercase tracking-wider pt-1">
+                  {trimmedLine}
+                </div>
+              );
+            }
+
+            // Check if line has a bar like [████]
+            const barMatch = trimmedLine.match(/^([^:\[]+)\s*:\s*(\[.*?\])?\s*(.*)$/);
+            if (barMatch) {
+              const label = barMatch[1].trim();
+              const barStr = barMatch[2] || "";
+              const valStr = barMatch[3].trim();
+              
+              // Extract numeric percentage if any
+              const pctMatch = valStr.match(/([\d\.,]+)%/);
+              const pct = pctMatch ? Math.min(100, Math.max(5, parseFloat(pctMatch[1].replace(",", ".")))) : 50;
+
+              return (
+                <div key={lIdx} className="space-y-1 bg-slate-900/80 rounded-xl p-2.5 border border-slate-800/80">
+                  <div className="flex justify-between items-center text-xs gap-2">
+                    <span className="font-bold text-slate-200">{label}</span>
+                    <span className="font-mono font-black text-teal-300 shrink-0">{valStr}</span>
+                  </div>
+                  <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-teal-500 via-cyan-400 to-teal-400 rounded-full transition-all duration-500"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            }
+
+            return (
+              <div key={lIdx} className="text-xs font-mono text-slate-300 leading-relaxed">
+                {trimmedLine}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   for (let idx = 0; idx < lines.length; idx++) {
     const line = lines[idx];
     const trimmed = line.trim();
+
+    // Code block checking
+    if (trimmed.startsWith("```")) {
+      if (inCodeBlock) {
+        // End of code block
+        elements.push(renderVisualGraphCard(codeBlockLines, `code-${idx}`));
+        codeBlockLines = [];
+        inCodeBlock = false;
+        continue;
+      } else {
+        inCodeBlock = true;
+        codeBlockLines = [];
+        continue;
+      }
+    }
+
+    if (inCodeBlock) {
+      codeBlockLines.push(line);
+      continue;
+    }
 
     // Table checking
     if (trimmed.startsWith("|") && trimmed.endsWith("|")) {
@@ -918,9 +1002,17 @@ function renderFormattedText(text: string) {
     }
 
     // 1. Headings (### or ## or #)
+    if (trimmed.startsWith("####")) {
+      elements.push(
+        <h5 key={`h4-${idx}`} className="font-display font-extrabold text-slate-900 border-none text-xs sm:text-sm mt-3 mb-1 block">
+          {parseInlineMarkdown(trimmed.replace(/^####\s+/, ""))}
+        </h5>
+      );
+      continue;
+    }
     if (trimmed.startsWith("###")) {
       elements.push(
-        <h4 key={`h3-${idx}`} className="font-display font-extrabold text-slate-900 border-none text-sm mt-3 mb-1 block">
+        <h4 key={`h3-${idx}`} className="font-display font-extrabold text-slate-900 border-none text-sm sm:text-base mt-3.5 mb-1.5 block">
           {parseInlineMarkdown(trimmed.replace(/^###\s+/, ""))}
         </h4>
       );
@@ -928,7 +1020,7 @@ function renderFormattedText(text: string) {
     }
     if (trimmed.startsWith("##")) {
       elements.push(
-        <h3 key={`h2-${idx}`} className="font-display font-extrabold text-slate-900 border-none text-base mt-4 mb-2 block">
+        <h3 key={`h2-${idx}`} className="font-display font-extrabold text-slate-900 border-none text-base sm:text-lg mt-4 mb-2 block">
           {parseInlineMarkdown(trimmed.replace(/^##\s+/, ""))}
         </h3>
       );
@@ -936,7 +1028,7 @@ function renderFormattedText(text: string) {
     }
     if (trimmed.startsWith("#")) {
       elements.push(
-        <h2 key={`h1-${idx}`} className="font-display font-extrabold text-slate-900 border-none text-lg mt-5 mb-2 block">
+        <h2 key={`h1-${idx}`} className="font-display font-extrabold text-slate-900 border-none text-lg sm:text-xl mt-5 mb-2 block">
           {parseInlineMarkdown(trimmed.replace(/^#\s+/, ""))}
         </h2>
       );
@@ -947,11 +1039,11 @@ function renderFormattedText(text: string) {
     const orderedListMatch = trimmed.match(/^(\d+)\.\s+(.*)/);
     if (orderedListMatch) {
       elements.push(
-        <div key={`ol-${idx}`} className="flex gap-2.5 ml-3 my-1.5 text-xs text-slate-700 leading-relaxed">
+        <div key={`ol-${idx}`} className="flex gap-2.5 ml-2 my-1.5 text-xs text-slate-700 leading-relaxed">
           <span className="font-mono bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded font-black text-[10px] shadow-3sm shrink-0 h-fit">
             {orderedListMatch[1]}.
           </span>
-          <p className="flex-1 mt-0.5">{parseInlineMarkdown(orderedListMatch[2])}</p>
+          <div className="flex-1 mt-0.5">{parseInlineMarkdown(orderedListMatch[2])}</div>
         </div>
       );
       continue;
@@ -961,11 +1053,11 @@ function renderFormattedText(text: string) {
     const alphaListMatch = trimmed.match(/^([a-zA-Z])\.\s+(.*)/);
     if (alphaListMatch) {
       elements.push(
-        <div key={`al-${idx}`} className="flex gap-2.5 ml-8 my-1 text-xs text-slate-600 leading-relaxed">
+        <div key={`al-${idx}`} className="flex gap-2.5 ml-6 my-1 text-xs text-slate-600 leading-relaxed">
           <span className="font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-bold text-[9px] shadow-3sm shrink-0 h-fit uppercase">
             {alphaListMatch[1]}.
           </span>
-          <p className="flex-1 mt-0.5">{parseInlineMarkdown(alphaListMatch[2])}</p>
+          <div className="flex-1 mt-0.5">{parseInlineMarkdown(alphaListMatch[2])}</div>
         </div>
       );
       continue;
@@ -975,9 +1067,9 @@ function renderFormattedText(text: string) {
     if (trimmed.startsWith("- ") || trimmed.startsWith("* ") || trimmed.startsWith("• ")) {
       const content = trimmed.replace(/^[-*•]\s+/, "");
       elements.push(
-        <div key={`ul-${idx}`} className="flex gap-2.5 ml-3 my-1 text-xs text-slate-700 items-start leading-relaxed animate-none">
-          <span className="text-sky-500 mt-1.5 shrink-0 select-none text-[10px]">•</span>
-          <p className="flex-1 mt-0.5">{parseInlineMarkdown(content)}</p>
+        <div key={`ul-${idx}`} className="flex gap-2.5 ml-2 my-1 text-xs text-slate-700 items-start leading-relaxed animate-none">
+          <span className="text-teal-500 mt-1.5 shrink-0 select-none text-[10px] font-black">•</span>
+          <div className="flex-1 mt-0.5">{parseInlineMarkdown(content)}</div>
         </div>
       );
       continue;
@@ -989,6 +1081,10 @@ function renderFormattedText(text: string) {
         {parseInlineMarkdown(line)}
       </p>
     );
+  }
+
+  if (inCodeBlock && codeBlockLines.length > 0) {
+    elements.push(renderVisualGraphCard(codeBlockLines, `code-end`));
   }
 
   if (inTable) {

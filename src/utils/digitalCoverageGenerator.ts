@@ -114,17 +114,17 @@ export function generateDigitalCoverageForTitle(
       {
         stage: "v1 (12 bulan)",
         scope: "Tracking serial, ETA kapal, yard, konvoi GPS, dashboard klien",
-        indicativeCost: "US$0,5 jt"
+        indicativeCost: "Rp 8,0 Miliar"
       },
       {
         stage: "v2 (24 bulan)",
         scope: "IoT blade, integrasi ERP OEM & sistem kepabeanan, analitik keterlambatan",
-        indicativeCost: "US$0,3 jt"
+        indicativeCost: "Rp 4,8 Miliar"
       },
       {
         stage: "Run",
         scope: "Lisensi, cloud, 2 analis",
-        indicativeCost: "US$0,3 jt/th"
+        indicativeCost: "Rp 4,8 Miliar/th"
       }
     ];
 
@@ -212,17 +212,17 @@ export function generateDigitalCoverageForTitle(
       {
         stage: "v1 (12 bulan)",
         scope: "Tracking satelit armada HTI, barcode kayu, timbangan RFID, portal dispatch",
-        indicativeCost: "US$0,4 jt"
+        indicativeCost: "Rp 6,4 Miliar"
       },
       {
         stage: "v2 (24 bulan)",
         scope: "Integrasi sistem SIPUHH KLHK & ERP pabrik pulp, modul prediksi cuaca jalan",
-        indicativeCost: "US$0,25 jt"
+        indicativeCost: "Rp 4,0 Miliar"
       },
       {
         stage: "Run",
         scope: "Bandwidth satelit, server cloud, 2 operator pemantau",
-        indicativeCost: "US$0,2 jt/th"
+        indicativeCost: "Rp 3,2 Miliar/th"
       }
     ];
 
@@ -307,17 +307,17 @@ export function generateDigitalCoverageForTitle(
       {
         stage: "v1 (12 bulan)",
         scope: "Telematika GPS tangki, modul e-POD, sensor tekanan bejana, portal batching plant",
-        indicativeCost: "US$0,35 jt"
+        indicativeCost: "Rp 5,6 Miliar"
       },
       {
         stage: "v2 (24 bulan)",
         scope: "Integrasi API SAP pabrik semen, otomatisasi e-Seal digital, analitik rute",
-        indicativeCost: "US$0,2 jt"
+        indicativeCost: "Rp 3,2 Miliar"
       },
       {
         stage: "Run",
         scope: "Lisensi aplikasi, cloud AWS/GCP, pemeliharaan sensor",
-        indicativeCost: "US$0,15 jt/th"
+        indicativeCost: "Rp 2,4 Miliar/th"
       }
     ];
 
@@ -403,17 +403,17 @@ export function generateDigitalCoverageForTitle(
       {
         stage: "v1 (12 bulan)",
         scope: "FMS GPS presisi tinggi, kamera AI DSS fatigue, timbangan RFID jetty",
-        indicativeCost: "US$0,45 jt"
+        indicativeCost: "Rp 7,2 Miliar"
       },
       {
         stage: "v2 (24 bulan)",
         scope: "Integrasi API SIMBARA ESDM & ERP Smelter, telemetri on-board weighing",
-        indicativeCost: "US$0,25 jt"
+        indicativeCost: "Rp 4,0 Miliar"
       },
       {
         stage: "Run",
         scope: "Pemeliharaan radio/seluler tambang, cloud, tim analis 24/7",
-        indicativeCost: "US$0,25 jt/th"
+        indicativeCost: "Rp 4,0 Miliar/th"
       }
     ];
 
@@ -494,17 +494,17 @@ export function generateDigitalCoverageForTitle(
     {
       stage: "v1 (12 bulan)",
       scope: "Pelacakan rute GPS, modul e-POD, dashboard integrasi klien",
-      indicativeCost: "US$0,4 jt"
+      indicativeCost: "Rp 6,4 Miliar"
     },
     {
       stage: "v2 (24 bulan)",
       scope: "Sensor IoT kondisi kargo, analitik prediktif & integrasi API ERP",
-      indicativeCost: "US$0,25 jt"
+      indicativeCost: "Rp 4,0 Miliar"
     },
     {
       stage: "Run",
       scope: "Biaya lisensi cloud, infrastruktur keamanan, tim analis",
-      indicativeCost: "US$0,2 jt/th"
+      indicativeCost: "Rp 3,2 Miliar/th"
     }
   ];
 
